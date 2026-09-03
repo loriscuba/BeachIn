@@ -14,4 +14,15 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
+  build: {
+    rollupOptions: {
+      // Per l'anteprima statica single-file (VITE_ROUTER=hash) si forza un unico
+      // bundle, così può essere inlinato in un solo file. La build reale invece
+      // fa code-splitting: chunk leggeri per pagina + Recharts a parte.
+      output:
+        process.env.VITE_ROUTER === 'hash'
+          ? { inlineDynamicImports: true }
+          : { manualChunks: { charts: ['recharts'] } },
+    },
+  },
 })

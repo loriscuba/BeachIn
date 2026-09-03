@@ -1,6 +1,8 @@
-import { Building2, Umbrella, CalendarRange, Percent, Users2, ShieldCheck } from 'lucide-react'
+import { Building2, Umbrella, CalendarRange, Percent, Users2, ShieldCheck, RotateCcw, FlaskConical } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { useDemoData } from '@/context/DemoDataContext'
 import { config, STATI_POSTAZIONE } from '@/data/config'
 import { data, percento } from '@/lib/formatters'
 
@@ -21,6 +23,7 @@ const ruoli = [
 ]
 
 export default function Impostazioni() {
+  const { reset } = useDemoData()
   return (
     <div className="space-y-4">
       <p className="text-sm text-profondo/60">
@@ -30,6 +33,24 @@ export default function Impostazioni() {
         </code>{' '}
         e vanno corretti prima della demo. Il resto dell’app li legge da lì.
       </p>
+
+      {/* Dati dimostrativi */}
+      <Card>
+        <CardBody className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="h-5 w-5 text-tenda" />
+            <div>
+              <p className="text-sm font-semibold text-profondo">Dati dimostrativi</p>
+              <p className="text-xs text-profondo/55">
+                Le modifiche fatte in demo (assegnazioni, incassi, costi, prenotazioni) restano in memoria. Ripristina per ripartire da capo.
+              </p>
+            </div>
+          </div>
+          <Button variante="secondario" dimensione="sm" onClick={reset}>
+            <RotateCcw className="h-4 w-4" /> Ripristina dati demo
+          </Button>
+        </CardBody>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Anagrafica */}
