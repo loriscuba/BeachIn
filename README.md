@@ -43,7 +43,9 @@ finché non è riempita, cosa conterrà e in quale fase.
 
 - [x] **Fase 1** — Setup, design system, `DESIGN.md`, AppShell con navigazione
       e tutte le pagine raggiungibili
-- [ ] Fase 2 — Tipi, seed completi e `api.ts`
+- [x] **Fase 2** — Tipi, seed completi, `api.ts` e context delle mutazioni. Serie
+      giornaliera deterministica come fonte di verità: i totali riconciliano tra
+      le pagine (bar, ristorante e coperti tornano al centesimo)
 - [ ] Fase 3 — Arenile con pianta interattiva
 - [ ] Fase 4 — Cruscotto con KPI e grafici
 - [ ] Fase 5 — Tariffe, Clienti, Bar, Ristorante

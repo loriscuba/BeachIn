@@ -67,7 +67,9 @@ export const config = {
     incassoSpiaggiaStagione: 210_000,
     incassoBarStagione: 155_000,
     incassoRistoranteStagione: 195_000,
-    costiTotaliStagione: 450_000,
+    incassoNoleggiStagione: 30_000,
+    incassoEventiStagione: 16_000,
+    costiTotaliStagione: 468_000,
   },
 
   // — Valuta / locale —
