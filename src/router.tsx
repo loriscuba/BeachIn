@@ -1,5 +1,10 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
+
+// Su hosting statico (es. anteprima pubblicata) si usa il routing via hash,
+// impostando VITE_ROUTER=hash in fase di build. L'app reale resta su history.
+const creaRouter =
+  import.meta.env.VITE_ROUTER === 'hash' ? createHashRouter : createBrowserRouter
 
 import Cruscotto from '@/pages/Cruscotto'
 import Arenile from '@/pages/Arenile'
@@ -16,7 +21,7 @@ import SitoAnteprima from '@/pages/SitoAnteprima'
 import Impostazioni from '@/pages/Impostazioni'
 import NonTrovata from '@/pages/NonTrovata'
 
-export const router = createBrowserRouter([
+export const router = creaRouter([
   {
     path: '/',
     element: <AppShell />,
