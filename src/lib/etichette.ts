@@ -52,6 +52,27 @@ export const etichetteCategoriaPiatto: Record<CategoriaPiatto, string> = {
   bevande: 'Bevande',
 }
 
+export const etichetteStatoPagamento: Record<string, string> = {
+  pagato: 'Pagato',
+  da_pagare: 'Da pagare',
+  scaduto: 'Scaduto',
+}
+
+export const etichetteRicorrenza: Record<string, string> = {
+  una_tantum: 'Una tantum',
+  mensile: 'Mensile',
+  annuale: 'Annuale',
+  stagionale: 'Stagionale',
+}
+
+export const etichetteMetodo: Record<string, string> = {
+  bonifico: 'Bonifico',
+  rid: 'RID',
+  carta: 'Carta',
+  contanti: 'Contanti',
+  f24: 'F24',
+}
+
 export const etichetteAllergene: Record<string, string> = {
   glutine: 'Glutine',
   crostacei: 'Crostacei',

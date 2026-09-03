@@ -54,7 +54,10 @@ finché non è riempita, cosa conterrà e in quale fase.
 - [x] **Fase 5** — Tariffe (matrice editabile + simulatore preventivo + accessorie),
       Clienti (elenco, scheda, storici), Bar (vendite, listino, giacenze, conti
       aperti) e Ristorante (prenotazioni, tavoli, menù con food cost e margini)
-- [ ] Fase 6 — Costi e Conto economico
+- [x] **Fase 6** — Costi (elenco completo filtrabile, sintesi fissi/variabili,
+      incidenza per categoria, calendario scadenze, form nuovo costo) e Conto
+      economico (per centro, margine di contribuzione, break-even, indicatori,
+      vista stagionale e mensile)
 - [ ] Fase 7 — Personale, Eventi
 - [ ] Fase 8 — Sito e anteprima pubblica
 - [ ] Fase 9 — Rifinitura: responsive, stati di caricamento e vuoti, coerenza
