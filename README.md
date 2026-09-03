@@ -51,7 +51,9 @@ finché non è riempita, cosa conterrà e in quale fase.
       (assegna, libera, sposta, fuori servizio, incassa) e filtri
 - [x] **Fase 4** — Cruscotto con KPI della giornata, grafico incassi per centro,
       occupazione per fila, mix ricavi, meteo a 4 giorni, scadenze e alert operativi
-- [ ] Fase 5 — Tariffe, Clienti, Bar, Ristorante
+- [x] **Fase 5** — Tariffe (matrice editabile + simulatore preventivo + accessorie),
+      Clienti (elenco, scheda, storici), Bar (vendite, listino, giacenze, conti
+      aperti) e Ristorante (prenotazioni, tavoli, menù con food cost e margini)
 - [ ] Fase 6 — Costi e Conto economico
 - [ ] Fase 7 — Personale, Eventi
 - [ ] Fase 8 — Sito e anteprima pubblica
