@@ -46,7 +46,9 @@ finché non è riempita, cosa conterrà e in quale fase.
 - [x] **Fase 2** — Tipi, seed completi, `api.ts` e context delle mutazioni. Serie
       giornaliera deterministica come fonte di verità: i totali riconciliano tra
       le pagine (bar, ristorante e coperti tornano al centesimo)
-- [ ] Fase 3 — Arenile con pianta interattiva
+- [x] **Fase 3** — Arenile con pianta interattiva (vista dall'alto, ombrelloni a
+      spicchi, passerelle, cabine, torrette), pannello postazione con azioni
+      (assegna, libera, sposta, fuori servizio, incassa) e filtri
 - [ ] Fase 4 — Cruscotto con KPI e grafici
 - [ ] Fase 5 — Tariffe, Clienti, Bar, Ristorante
 - [ ] Fase 6 — Costi e Conto economico
