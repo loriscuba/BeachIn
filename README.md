@@ -49,7 +49,8 @@ finché non è riempita, cosa conterrà e in quale fase.
 - [x] **Fase 3** — Arenile con pianta interattiva (vista dall'alto, ombrelloni a
       spicchi, passerelle, cabine, torrette), pannello postazione con azioni
       (assegna, libera, sposta, fuori servizio, incassa) e filtri
-- [ ] Fase 4 — Cruscotto con KPI e grafici
+- [x] **Fase 4** — Cruscotto con KPI della giornata, grafico incassi per centro,
+      occupazione per fila, mix ricavi, meteo a 4 giorni, scadenze e alert operativi
 - [ ] Fase 5 — Tariffe, Clienti, Bar, Ristorante
 - [ ] Fase 6 — Costi e Conto economico
 - [ ] Fase 7 — Personale, Eventi
