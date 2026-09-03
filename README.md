@@ -61,6 +61,8 @@ finché non è riempita, cosa conterrà e in quale fase.
 - [x] **Fase 7** — Personale (organico, costo per ruolo, ore lavorate vs
       contratto, griglia turni settimanali) ed Eventi (calendario di stagione e
       scheda evento con budget, costi, ricavi e margine)
-- [ ] Fase 8 — Sito e anteprima pubblica
+- [x] **Fase 8** — Sito internet (prenotazioni online da confermare, pagine,
+      editor homepage, galleria, news, recensioni, messaggi, SEO, disponibilità
+      e listino sincronizzati) e vetrina pubblica generata dagli stessi dati
 - [ ] Fase 9 — Rifinitura: responsive, stati di caricamento e vuoti, coerenza
       dei numeri
