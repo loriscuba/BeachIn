@@ -58,7 +58,9 @@ finché non è riempita, cosa conterrà e in quale fase.
       incidenza per categoria, calendario scadenze, form nuovo costo) e Conto
       economico (per centro, margine di contribuzione, break-even, indicatori,
       vista stagionale e mensile)
-- [ ] Fase 7 — Personale, Eventi
+- [x] **Fase 7** — Personale (organico, costo per ruolo, ore lavorate vs
+      contratto, griglia turni settimanali) ed Eventi (calendario di stagione e
+      scheda evento con budget, costi, ricavi e margine)
 - [ ] Fase 8 — Sito e anteprima pubblica
 - [ ] Fase 9 — Rifinitura: responsive, stati di caricamento e vuoti, coerenza
       dei numeri
