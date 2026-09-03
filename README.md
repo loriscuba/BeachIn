@@ -1,1 +1,54 @@
 # BeachIn
+
+Cruscotto gestionale per uno stabilimento balneare — **demo commerciale**.
+Nessun database, nessun backend, nessuna autenticazione: tutti i dati sono
+statici e mockati in TypeScript, ma strutturati come se arrivassero da un'API.
+
+> ⚠️ **Dati dimostrativi.** Le modifiche fatte durante la demo restano in
+> memoria e al refresh tornano allo stato iniziale.
+
+## Avvio
+
+```bash
+npm install
+npm run dev
+```
+
+L'app parte su http://localhost:5173. Serve solo Node 18+.
+
+Altri comandi:
+
+- `npm run build` — type-check e build di produzione
+- `npm run preview` — anteprima della build
+
+## Stack
+
+React 18 · Vite · TypeScript · Tailwind CSS · react-router-dom · Recharts ·
+lucide-react · date-fns (locale `it`). Interfaccia e dati **in italiano**,
+valuta EUR, formato `it-IT`.
+
+## Dove cambiare i dati prima della demo
+
+- `src/data/config.ts` — parametri dello stabilimento in un solo file: nome,
+  località, stagione, file e postazioni dell'arenile, orari, aliquote, numeri
+  di scala. **Parti da qui.**
+- `src/data/seed/*` — dati statici per dominio *(in arrivo nella Fase 2)*.
+
+Il sistema di design è documentato in [`DESIGN.md`](./DESIGN.md).
+
+## Stato di avanzamento
+
+Il progetto procede per fasi (vedi il prompt). Ogni pagina raggiungibile mostra,
+finché non è riempita, cosa conterrà e in quale fase.
+
+- [x] **Fase 1** — Setup, design system, `DESIGN.md`, AppShell con navigazione
+      e tutte le pagine raggiungibili
+- [ ] Fase 2 — Tipi, seed completi e `api.ts`
+- [ ] Fase 3 — Arenile con pianta interattiva
+- [ ] Fase 4 — Cruscotto con KPI e grafici
+- [ ] Fase 5 — Tariffe, Clienti, Bar, Ristorante
+- [ ] Fase 6 — Costi e Conto economico
+- [ ] Fase 7 — Personale, Eventi
+- [ ] Fase 8 — Sito e anteprima pubblica
+- [ ] Fase 9 — Rifinitura: responsive, stati di caricamento e vuoti, coerenza
+      dei numeri
