@@ -7,21 +7,24 @@
  * Le pagine importano questo context (non i seed) per leggere/mutare lo stato
  * dal vivo; per i dati in sola lettura usano invece api.ts.
  */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
   ContoOmbrellone,
   PaginaSito,
   Postazione,
   PrenotazioneOnline,
+  RigaConto,
   StatoPostazione,
   VoceCosto,
 } from '@/data/types'
 
 import { postazioni as seedPostazioni } from '@/data/seed/spiaggia'
-import { contiOmbrellone as seedConti } from '@/data/seed/bar'
+import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
 import { statoSito } from '@/data/seed/sito'
+import { clienti } from '@/data/seed/clienti'
+import { config } from '@/data/config'
 
 const clona = <T,>(v: T): T =>
   typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v))
@@ -32,6 +35,13 @@ export interface AssegnaOpzioni {
   periodoAl?: string
   tariffaApplicata?: number
   stagionale?: boolean
+}
+
+export type TipoAttivita = 'postazione' | 'bar' | 'sito' | 'info'
+export interface AttivitaDemo {
+  id: number
+  tipo: TipoAttivita
+  testo: string
 }
 
 interface DemoDataValue {
@@ -61,6 +71,14 @@ interface DemoDataValue {
   pubblicaPagina: (id: string) => void
   pubblicaListino: () => void
 
+  // Demo guidata
+  incassoDemo: number
+  demoInCorso: boolean
+  demoProgresso: number // 0–1
+  attivita: AttivitaDemo[]
+  avviaDemo: () => void
+  fermaDemo: () => void
+
   reset: () => void
 }
 
@@ -75,6 +93,18 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   )
   const [pagine, setPagine] = useState<PaginaSito[]>(() => clona(statoSito.pagine))
   const [listinoPubblicato, setListinoPubblicato] = useState(true)
+
+  // — Demo guidata —
+  const [incassoDemo, setIncassoDemo] = useState(0)
+  const [demoInCorso, setDemoInCorso] = useState(false)
+  const [demoProgresso, setDemoProgresso] = useState(0)
+  const [attivita, setAttivita] = useState<AttivitaDemo[]>([])
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const passoRef = useRef(0)
+  const postazioniRef = useRef(postazioni)
+  useEffect(() => {
+    postazioniRef.current = postazioni
+  }, [postazioni])
 
   const patchPost = useCallback((id: string, patch: Partial<Postazione>) => {
     setPostazioni((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
@@ -173,13 +203,104 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const pubblicaListino = useCallback(() => setListinoPubblicato(true), [])
 
   const reset = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
     setPostazioni(clona(seedPostazioni))
     setConti(clona(seedConti))
     setCosti(clona(seedCosti))
     setPrenotazioni(clona(statoSito.prenotazioni))
     setPagine(clona(statoSito.pagine))
     setListinoPubblicato(true)
+    setDemoInCorso(false)
+    setIncassoDemo(0)
+    setDemoProgresso(0)
+    setAttivita([])
+    passoRef.current = 0
   }, [])
+
+  // —— Demo guidata: simula una giornata tipo in ~90 secondi ——
+  const oggi = config.stagione.oggi
+  const TOTALE_PASSI = 60
+  const nomiSito = ['Fam. Ricci', 'Sig. Bruno', 'Gruppo Neri', 'Elena P.', 'Fam. Gallo', 'Marco V.', 'Chiara L.', 'Fam. Costa']
+  const clientiVolanti = useMemo(
+    () => clienti.filter((c) => !c.postazioneId && c.tipologia !== 'occasionale'),
+    []
+  )
+
+  const spingiAttivita = useCallback((tipo: TipoAttivita, testo: string) => {
+    setAttivita((prev) => [{ id: passoRef.current * 10 + prev.length, tipo, testo }, ...prev].slice(0, 6))
+  }, [])
+
+  const fermaDemo = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    setDemoInCorso(false)
+  }, [])
+
+  const eseguiPasso = useCallback(() => {
+    const passo = passoRef.current + 1
+    passoRef.current = passo
+    setDemoProgresso(Math.min(1, passo / TOTALE_PASSI))
+    const post = postazioniRef.current
+    const azione = passo % 6 === 0 ? 'sito' : passo % 3 === 0 ? 'bar' : 'postazione'
+
+    if (azione === 'postazione') {
+      const libera = post.find((p) => p.stato === 'libera')
+      if (libera) {
+        const cli = clientiVolanti[passo % clientiVolanti.length]
+        const tariffa = libera.tariffaApplicata ?? 30
+        setPostazioni((prev) => prev.map((p) => (p.id === libera.id ? { ...p, stato: 'occupata', clienteId: cli?.id, periodoDal: oggi, periodoAl: oggi } : p)))
+        setIncassoDemo((v) => v + tariffa)
+        spingiAttivita('postazione', `Ombrellone ${libera.id} assegnato a ${cli ? `${cli.nome} ${cli.cognome}` : 'un cliente'} · ${tariffa} €`)
+      }
+    } else if (azione === 'bar') {
+      const occ = post.filter((p) => p.stato === 'occupata')
+      const target = occ[passo % Math.max(1, occ.length)]
+      if (target) {
+        const a1 = articoliBar[passo % articoliBar.length]
+        const a2 = articoliBar[(passo * 3) % articoliBar.length]
+        const righe: RigaConto[] = [
+          { articoloId: a1.id, nome: a1.nome, quantita: 2, prezzoUnitario: a1.prezzoVendita, ora: '12:30' },
+          { articoloId: a2.id, nome: a2.nome, quantita: 1, prezzoUnitario: a2.prezzoVendita, ora: '12:35' },
+        ]
+        const tot = 2 * a1.prezzoVendita + a2.prezzoVendita
+        setConti((prev) => [{ id: `CO-DEMO-${passo}`, postazioneId: target.id, clienteId: target.clienteId, aperto: true, apertoIl: oggi, righe }, ...prev])
+        setIncassoDemo((v) => v + tot)
+        spingiAttivita('bar', `Ordine al bar sull'ombrellone ${target.id}: 2× ${a1.nome} · ${Math.round(tot)} €`)
+      }
+    } else {
+      const nome = nomiSito[passo % nomiSito.length]
+      setPrenotazioni((prev) => [{ id: `PO-DEMO-${passo}`, ricevutaIl: oggi, nome, email: 'ospite@example.it', telefono: '340 0000000', dal: oggi, al: oggi, tipologiaPostazione: 'ombrellone_2_lettini', persone: 2 + (passo % 3), stato: 'da_confermare', messaggio: 'Richiesta arrivata dal sito' }, ...prev])
+      spingiAttivita('sito', `Nuova prenotazione dal sito: ${nome}`)
+    }
+
+    if (passo >= TOTALE_PASSI) {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+      setDemoInCorso(false)
+      setDemoProgresso(1)
+      spingiAttivita('info', 'Giornata completata. Con “Ripristina” si riparte da capo.')
+    }
+  }, [clientiVolanti, oggi, spingiAttivita])
+
+  const avviaDemo = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    // Stato "del mattino": solo gli stagionali occupati, tutto il resto libero
+    const mattino = clona(seedPostazioni).map((p) =>
+      p.stato === 'occupata' || p.stato === 'prenotata'
+        ? { ...p, stato: 'libera' as StatoPostazione, clienteId: undefined, periodoDal: undefined, periodoAl: undefined, contoBarId: undefined }
+        : p
+    )
+    postazioniRef.current = mattino
+    setPostazioni(mattino)
+    setConti([])
+    setPrenotazioni(clona(statoSito.prenotazioni))
+    setIncassoDemo(0)
+    setDemoProgresso(0)
+    passoRef.current = 0
+    setAttivita([{ id: 0, tipo: 'info', testo: 'Buongiorno! Lo stabilimento apre: arrivano i primi clienti…' }])
+    setDemoInCorso(true)
+    timerRef.current = setInterval(eseguiPasso, 1400)
+  }, [eseguiPasso])
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current) }, [])
 
   const value = useMemo<DemoDataValue>(
     () => ({
@@ -200,6 +321,12 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rifiutaPrenotazione,
       pubblicaPagina,
       pubblicaListino,
+      incassoDemo,
+      demoInCorso,
+      demoProgresso,
+      attivita,
+      avviaDemo,
+      fermaDemo,
       reset,
     }),
     [
@@ -220,6 +347,12 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rifiutaPrenotazione,
       pubblicaPagina,
       pubblicaListino,
+      incassoDemo,
+      demoInCorso,
+      demoProgresso,
+      attivita,
+      avviaDemo,
+      fermaDemo,
       reset,
     ]
   )

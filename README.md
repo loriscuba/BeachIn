@@ -102,6 +102,16 @@ Da seguire davanti al cliente. Apri l'app e vai in ordine.
 
 > Suggerimento: prima di ricominciare, **Impostazioni → Ripristina dati demo**.
 
+### Scorciatoia: demo guidata
+
+In alternativa al percorso manuale, il pulsante **"Avvia demo"** (in alto, nella
+topbar) simula una **giornata tipo in ~90 secondi**: lo stabilimento parte dal
+mattino e si riempie da solo — arrivano clienti e si occupano gli ombrelloni,
+entrano ordini al bar, arrivano prenotazioni dal sito, e i **KPI del Cruscotto
+salgono in tempo reale** (occupazione e incasso simulato). Un riquadro in basso
+a destra mostra il progresso e il flusso delle attività. È **fermabile** e
+**riavviabile** da capo.
+
 ## Stato di avanzamento
 
 - [x] **Fase 1** — Setup, design system, `DESIGN.md`, AppShell e navigazione

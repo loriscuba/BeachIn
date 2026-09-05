@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
+import { DemoPlayer } from '@/components/demo/DemoPlayer'
 import { navigazione } from '@/config/navigazione'
 import { config } from '@/data/config'
 
@@ -47,6 +48,8 @@ export function AppShell() {
           </div>
         </main>
       </div>
+
+      <DemoPlayer />
     </div>
   )
 }

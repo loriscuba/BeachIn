@@ -25,7 +25,7 @@ const meteoLabel: Record<Meteo, string> = {
 }
 
 export default function Cruscotto() {
-  const { postazioni, prenotazioniOnline, costi } = useDemoData()
+  const { postazioni, prenotazioniOnline, costi, incassoDemo } = useDemoData()
   const [kpi, setKpi] = useState<KpiCruscotto>()
   const [giorni, setGiorni] = useState<GiornoStagione[]>([])
   const [articoli, setArticoli] = useState<ArticoloBar[]>([])
@@ -94,12 +94,16 @@ export default function Cruscotto() {
   }
 
   const oggi = kpi.oggi
-  const deltaOcc = kpi.occupazioneOggi - kpi.occupazioneAnnoScorso
+  // Occupazione dal vivo (riflette assegnazioni e demo guidata)
+  const occupazioneOggi = contatori.occupazione
+  const deltaOcc = occupazioneOggi - kpi.occupazioneAnnoScorso
+  const incassoTotale = kpi.incassoOggi + incassoDemo
   const areeIncasso = [
     { label: 'Spiaggia', valore: oggi.incassoSpiaggia, colore: coloriCentro.spiaggia },
     { label: 'Bar', valore: oggi.incassoBar, colore: coloriCentro.bar },
     { label: 'Ristorante', valore: oggi.incassoRistorante, colore: coloriCentro.ristorante },
     { label: 'Noleggi', valore: oggi.incassoNoleggi, colore: coloriCentro.noleggi },
+    ...(incassoDemo > 0 ? [{ label: 'In demo (simulato)', valore: incassoDemo, colore: '#0F3B4C' }] : []),
   ]
 
   return (
@@ -112,7 +116,7 @@ export default function Cruscotto() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-profondo/50">
               Incasso di oggi
             </p>
-            <p className="num mt-0.5 text-3xl font-bold text-profondo">{euro(kpi.incassoOggi)}</p>
+            <p className="num mt-0.5 text-3xl font-bold text-profondo">{euro(incassoTotale)}</p>
             <div className="mt-2 space-y-1">
               {areeIncasso.map((a) => (
                 <div key={a.label} className="flex items-center justify-between text-xs">
@@ -130,7 +134,7 @@ export default function Cruscotto() {
         <StatTile
           icona={Umbrella}
           etichetta="Occupazione arenile"
-          valore={percento(kpi.occupazioneOggi)}
+          valore={percento(occupazioneOggi)}
           sotto={
             <span className={cn('inline-flex items-center gap-1 font-medium', deltaOcc >= 0 ? 'text-acqua' : 'text-boa')}>
               {deltaOcc >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
