@@ -17,17 +17,19 @@ type FiltroTipologia = TipologiaPostazione | 'tutte'
 const statiOrdine: StatoPostazione[] = ['libera', 'occupata', 'prenotata', 'stagionale', 'fuori_servizio']
 
 export default function Arenile() {
-  const { postazioni } = useDemoData()
-  const [clienti, setClienti] = useState<Cliente[]>([])
+  const { postazioni, clientiAggiunti } = useDemoData()
+  const [clientiApi, setClientiApi] = useState<Cliente[]>([])
   const [selezionataId, setSelezionataId] = useState<string | undefined>()
   const [filtroStato, setFiltroStato] = useState<FiltroStato>('tutte')
   const [filtroTip, setFiltroTip] = useState<FiltroTipologia>('tutte')
   const [ricerca, setRicerca] = useState('')
 
   useEffect(() => {
-    getClienti().then(setClienti)
+    getClienti().then(setClientiApi)
   }, [])
 
+  // I clienti creati in demo sono subito assegnabili
+  const clienti = useMemo(() => [...clientiAggiunti, ...clientiApi], [clientiAggiunti, clientiApi])
   const contatori = useMemo(() => contatoriArenile(postazioni), [postazioni])
   const clientiMap = useMemo(() => new Map(clienti.map((c) => [c.id, c])), [clienti])
 

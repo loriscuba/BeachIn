@@ -10,6 +10,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
+  Cliente,
   ContoOmbrellone,
   PaginaSito,
   Postazione,
@@ -62,6 +63,10 @@ interface DemoDataValue {
   // Bar
   incassaConto: (contoId: string) => void
 
+  // Clienti aggiunti in demo (si affiancano a quelli caricati da api)
+  clientiAggiunti: Cliente[]
+  aggiungiCliente: (cliente: Cliente) => void
+
   // Costi
   aggiungiCosto: (voce: VoceCosto) => void
 
@@ -93,6 +98,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   )
   const [pagine, setPagine] = useState<PaginaSito[]>(() => clona(statoSito.pagine))
   const [listinoPubblicato, setListinoPubblicato] = useState(true)
+  const [clientiAggiunti, setClientiAggiunti] = useState<Cliente[]>([])
 
   // — Demo guidata —
   const [incassoDemo, setIncassoDemo] = useState(0)
@@ -186,6 +192,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setCosti((prev) => [voce, ...prev])
   }, [])
 
+  const aggiungiCliente = useCallback((cliente: Cliente) => {
+    setClientiAggiunti((prev) => [cliente, ...prev])
+  }, [])
+
   const confermaPrenotazione = useCallback((id: string) => {
     setPrenotazioni((prev) =>
       prev.map((p) => (p.id === id ? { ...p, stato: 'confermata' } : p))
@@ -210,6 +220,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPrenotazioni(clona(statoSito.prenotazioni))
     setPagine(clona(statoSito.pagine))
     setListinoPubblicato(true)
+    setClientiAggiunti([])
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -316,6 +327,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaFuoriServizio,
       cambiaStato,
       incassaConto,
+      clientiAggiunti,
+      aggiungiCliente,
       aggiungiCosto,
       confermaPrenotazione,
       rifiutaPrenotazione,
@@ -342,6 +355,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaFuoriServizio,
       cambiaStato,
       incassaConto,
+      clientiAggiunti,
+      aggiungiCliente,
       aggiungiCosto,
       confermaPrenotazione,
       rifiutaPrenotazione,

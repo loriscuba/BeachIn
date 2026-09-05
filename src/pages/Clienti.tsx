@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Search, X, Phone, Mail, Umbrella, Wallet, CalendarDays, FileText, Baby } from 'lucide-react'
+import { Loader2, Search, X, Phone, Mail, Umbrella, Wallet, CalendarDays, FileText, Baby, Plus } from 'lucide-react'
 import type { Cliente, TipologiaCliente } from '@/data/types'
 import { getClienti } from '@/data/api'
+import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Tabs } from '@/components/ui/Tabs'
 import { Drawer } from '@/components/ui/Drawer'
+import { Modal } from '@/components/ui/Modal'
 import { Tabella, type Colonna } from '@/components/ui/Tabella'
 import { euro, iniziali, percento } from '@/lib/formatters'
 import { etichetteTipologiaCliente } from '@/lib/etichette'
@@ -20,19 +23,24 @@ const tonoTipologia: Record<TipologiaCliente, 'stagionale' | 'mare' | 'acqua' | 
 }
 
 export default function Clienti() {
-  const [clienti, setClienti] = useState<Cliente[]>([])
+  const { clientiAggiunti, aggiungiCliente } = useDemoData()
+  const [caricati, setCaricati] = useState<Cliente[]>([])
   const [caricato, setCaricato] = useState(false)
   const [vista, setVista] = useState<Vista>('elenco')
   const [ricerca, setRicerca] = useState('')
   const [filtro, setFiltro] = useState<TipologiaCliente | 'tutti'>('tutti')
   const [selezionato, setSelezionato] = useState<Cliente>()
+  const [modale, setModale] = useState(false)
 
   useEffect(() => {
     getClienti().then((c) => {
-      setClienti(c)
+      setCaricati(c)
       setCaricato(true)
     })
   }, [])
+
+  // I clienti creati in demo si affiancano a quelli caricati
+  const clienti = useMemo(() => [...clientiAggiunti, ...caricati], [clientiAggiunti, caricati])
 
   const filtrati = useMemo(() => {
     const q = ricerca.trim().toLowerCase()
@@ -117,6 +125,9 @@ export default function Clienti() {
               opzioni={[{ valore: 'tutti', etichetta: 'Tutte le tipologie' }, ...Object.entries(etichetteTipologiaCliente).map(([v, l]) => ({ valore: v, etichetta: l }))]}
             />
           </div>
+          <Button variante="primario" dimensione="sm" onClick={() => setModale(true)}>
+            <Plus className="h-4 w-4" /> Nuovo cliente
+          </Button>
         </div>
       </div>
 
@@ -130,7 +141,89 @@ export default function Clienti() {
       </Card>
 
       <SchedaCliente cliente={selezionato} onChiudi={() => setSelezionato(undefined)} />
+
+      <NuovoCliente
+        aperto={modale}
+        onChiudi={() => setModale(false)}
+        onSalva={(c) => { aggiungiCliente(c); setModale(false); setSelezionato(c) }}
+      />
     </div>
+  )
+}
+
+function NuovoCliente({ aperto, onChiudi, onSalva }: { aperto: boolean; onChiudi: () => void; onSalva: (c: Cliente) => void }) {
+  const vuoto = {
+    nome: '', cognome: '', telefono: '', email: '',
+    tipologia: 'giornaliero' as TipologiaCliente, componenti: '2', conBambini: false,
+    postazionePreferita: '', clienteDaAnni: '0', note: '',
+  }
+  const [f, setF] = useState(vuoto)
+  const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
+  const valido = f.nome.trim() && f.cognome.trim()
+
+  const salva = () => {
+    const nome = f.nome.trim()
+    const cognome = f.cognome.trim()
+    onSalva({
+      id: `C-NEW-${Date.now()}`,
+      nome, cognome,
+      telefono: f.telefono.trim() || '—',
+      email: f.email.trim() || `${nome.toLowerCase()}.${cognome.toLowerCase().replace(/[^a-z]/g, '')}@example.it`,
+      tipologia: f.tipologia,
+      componenti: Math.max(1, Number(f.componenti) || 1),
+      conBambini: f.conBambini,
+      postazionePreferita: f.postazionePreferita.trim() || undefined,
+      postazioneId: undefined,
+      clienteDaAnni: Math.max(0, Number(f.clienteDaAnni) || 0),
+      saldoAperto: 0,
+      valoreStagione: 0,
+      note: f.note.trim() || undefined,
+    })
+    setF(vuoto)
+  }
+
+  return (
+    <Modal
+      aperto={aperto}
+      onChiudi={onChiudi}
+      titolo="Nuovo cliente"
+      piede={
+        <div className="flex justify-end gap-2">
+          <Button variante="secondario" onClick={onChiudi}>Annulla</Button>
+          <Button variante="primario" onClick={salva} disabled={!valido}>Salva cliente</Button>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <CampoC label="Nome"><input className={icc} value={f.nome} onChange={(e) => set('nome', e.target.value)} /></CampoC>
+        <CampoC label="Cognome"><input className={icc} value={f.cognome} onChange={(e) => set('cognome', e.target.value)} /></CampoC>
+        <CampoC label="Telefono"><input className={`${icc} num`} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></CampoC>
+        <CampoC label="Email"><input className={icc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="opzionale" /></CampoC>
+        <CampoC label="Tipologia">
+          <Select value={f.tipologia} onChange={(e) => set('tipologia', e.target.value)}
+            opzioni={Object.entries(etichetteTipologiaCliente).map(([v, l]) => ({ valore: v, etichetta: l }))} />
+        </CampoC>
+        <CampoC label="Componenti"><input type="number" min={1} className={`${icc} num`} value={f.componenti} onChange={(e) => set('componenti', e.target.value)} /></CampoC>
+        <CampoC label="Cliente da (anni)"><input type="number" min={0} className={`${icc} num`} value={f.clienteDaAnni} onChange={(e) => set('clienteDaAnni', e.target.value)} /></CampoC>
+        <CampoC label="Postazione preferita"><input className={icc} value={f.postazionePreferita} onChange={(e) => set('postazionePreferita', e.target.value)} placeholder="es. Fila B" /></CampoC>
+        <label className="col-span-2 flex items-center gap-2 text-sm text-profondo">
+          <input type="checkbox" checked={f.conBambini} onChange={(e) => set('conBambini', e.target.checked)} className="h-4 w-4 rounded border-calce-300 text-cabina focus-visible:focus-ring" />
+          Con bambini
+        </label>
+        <CampoC label="Note" span2><textarea rows={2} className={`${icc} h-auto py-2`} value={f.note} onChange={(e) => set('note', e.target.value)} /></CampoC>
+      </div>
+    </Modal>
+  )
+}
+
+const icc = 'h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring'
+
+function CampoC({ label, span2, children }: { label: string; span2?: boolean; children: React.ReactNode }) {
+  return (
+    <label className={cn('block', span2 && 'col-span-2')}>
+      <span className="mb-1 block text-xs font-medium text-profondo/60">{label}</span>
+      {children}
+    </label>
   )
 }
 
