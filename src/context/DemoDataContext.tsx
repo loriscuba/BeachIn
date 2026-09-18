@@ -87,6 +87,17 @@ export interface DatiRichiestaEvento {
   note?: string
 }
 
+export interface DatiPartecipanteEvento {
+  nome: string
+  eventoId: string
+  eventoNome: string
+  eventoData: string
+  persone: number
+  email?: string
+  telefono?: string
+  note?: string
+}
+
 interface DemoDataValue {
   postazioni: Postazione[]
   conti: ContoOmbrellone[]
@@ -126,6 +137,8 @@ interface DemoDataValue {
   confermaEvento: (id: string) => void
   rifiutaEvento: (id: string) => void
   inviaRichiestaEvento: (dati: DatiRichiestaEvento) => void
+  aggiungiPartecipanteEvento: (dati: DatiPartecipanteEvento) => void
+  rimuoviPartecipanteEvento: (id: string) => void
   pubblicaPagina: (id: string) => void
   pubblicaListino: () => void
 
@@ -339,7 +352,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const inviaRichiestaEvento = useCallback((d: DatiRichiestaEvento) => {
     setRichiesteEventi((prev) => [
-      { id: nuovoId('RE'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'da_confermare', note: d.note },
+      { id: nuovoId('RE'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'da_confermare', note: d.note, origine: 'sito' },
       ...prev,
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, `Richiesta ricevuta — ${d.eventoNome}`,
@@ -361,6 +374,17 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     if (r) pushMail('cliente', 'rifiuto', config.nome, r.email, `Posti esauriti — ${r.eventoNome}`,
       `Gentile ${r.nome},\nci dispiace, i posti per “${r.eventoNome}” del ${gg(r.eventoData)} sono esauriti.\n\n${config.nome}`)
   }, [pushMail])
+
+  const aggiungiPartecipanteEvento = useCallback((d: DatiPartecipanteEvento) => {
+    setRichiesteEventi((prev) => [
+      { id: nuovoId('RE'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email ?? '', telefono: d.telefono ?? '', eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'confermata', note: d.note, origine: 'manuale' },
+      ...prev,
+    ])
+  }, [])
+
+  const rimuoviPartecipanteEvento = useCallback((id: string) => {
+    setRichiesteEventi((prev) => prev.filter((p) => p.id !== id))
+  }, [])
 
   const segnaEmailLetta = useCallback((id: string) => {
     setPostaCliente((p) => p.map((m) => (m.id === id ? { ...m, letto: true } : m)))
@@ -518,6 +542,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       confermaEvento,
       rifiutaEvento,
       inviaRichiestaEvento,
+      aggiungiPartecipanteEvento,
+      rimuoviPartecipanteEvento,
       pubblicaPagina,
       pubblicaListino,
       postaCliente,
@@ -562,6 +588,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       confermaEvento,
       rifiutaEvento,
       inviaRichiestaEvento,
+      aggiungiPartecipanteEvento,
+      rimuoviPartecipanteEvento,
       pubblicaPagina,
       pubblicaListino,
       postaCliente,

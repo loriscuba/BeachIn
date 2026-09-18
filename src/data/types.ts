@@ -495,6 +495,8 @@ export interface RichiestaEvento {
   persone: number
   stato: StatoPrenotazioneOnline
   note?: string
+  /** Origine della richiesta: dal sito o inserita a mano (prenotazione in loco). */
+  origine?: 'sito' | 'manuale'
 }
 
 // ————————————————————————————————————————————————————————————

@@ -3,8 +3,8 @@ import {
   Trophy, Music, PartyPopper, UtensilsCrossed, Flower2, Gift, CalendarDays, Users, TrendingUp, Wallet,
   Plus, Pencil, Trash2, ImagePlus, X, Ticket,
 } from 'lucide-react'
-import type { Evento, TipoEvento } from '@/data/types'
-import { useDemoData } from '@/context/DemoDataContext'
+import type { Evento, RichiestaEvento, TipoEvento } from '@/data/types'
+import { useDemoData, type DatiPartecipanteEvento } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -23,7 +23,7 @@ const iconaTipo: Record<TipoEvento, typeof Trophy> = {
 const mesiLabel: Record<string, string> = { '05': 'Maggio', '06': 'Giugno', '07': 'Luglio', '08': 'Agosto', '09': 'Settembre' }
 
 export default function Eventi() {
-  const { eventi, aggiungiEvento, modificaEvento, eliminaEvento } = useDemoData()
+  const { eventi, aggiungiEvento, modificaEvento, eliminaEvento, richiesteEventi, aggiungiPartecipanteEvento, rimuoviPartecipanteEvento } = useDemoData()
   const [sel, setSel] = useState<Evento>()
   const [form, setForm] = useState<{ open: boolean; evento?: Evento }>({ open: false })
 
@@ -99,9 +99,12 @@ export default function Eventi() {
 
       <SchedaEvento
         evento={sel}
+        partecipanti={sel ? richiesteEventi.filter((r) => r.eventoId === sel.id && r.stato === 'confermata') : []}
         onChiudi={() => setSel(undefined)}
         onModifica={(e) => { setSel(undefined); setForm({ open: true, evento: e }) }}
         onElimina={(e) => { if (confirm(`Eliminare l’evento “${e.nome}”?`)) { eliminaEvento(e.id); setSel(undefined) } }}
+        onAggiungiPartecipante={aggiungiPartecipanteEvento}
+        onRimuoviPartecipante={rimuoviPartecipanteEvento}
       />
 
       <FormEvento
@@ -113,10 +116,19 @@ export default function Eventi() {
   )
 }
 
-function SchedaEvento({ evento: e, onChiudi, onModifica, onElimina }: { evento?: Evento; onChiudi: () => void; onModifica: (e: Evento) => void; onElimina: (e: Evento) => void }) {
+function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina, onAggiungiPartecipante, onRimuoviPartecipante }: {
+  evento?: Evento
+  partecipanti: RichiestaEvento[]
+  onChiudi: () => void
+  onModifica: (e: Evento) => void
+  onElimina: (e: Evento) => void
+  onAggiungiPartecipante: (d: DatiPartecipanteEvento) => void
+  onRimuoviPartecipante: (id: string) => void
+}) {
   const Icona = e ? iconaTipo[e.tipo] : Trophy
   const margine = e ? e.ricavi - e.costiSostenuti : 0
   const scostamento = e ? e.costiSostenuti - e.budget : 0
+  const totPersone = partecipanti.reduce((s, p) => s + p.persone, 0)
 
   return (
     <Drawer
@@ -159,9 +171,75 @@ function SchedaEvento({ evento: e, onChiudi, onModifica, onElimina }: { evento?:
           <div className={cn('rounded-lg px-3 py-2 text-xs', scostamento <= 0 ? 'bg-acqua/20 text-profondo' : 'bg-tenda/20 text-[#7A5A12]')}>
             {e.budget === 0 ? 'Evento privato senza budget di spesa dedicato.' : scostamento <= 0 ? `Costi entro budget (${euro(-scostamento)} risparmiati).` : `Costi oltre budget di ${euro(scostamento)}.`}
           </div>
+
+          {/* Partecipanti confermati */}
+          <Partecipanti evento={e} lista={partecipanti} totPersone={totPersone} onAggiungi={onAggiungiPartecipante} onRimuovi={onRimuoviPartecipante} />
         </div>
       )}
     </Drawer>
+  )
+}
+
+function Partecipanti({ evento: e, lista, totPersone, onAggiungi, onRimuovi }: {
+  evento: Evento
+  lista: RichiestaEvento[]
+  totPersone: number
+  onAggiungi: (d: DatiPartecipanteEvento) => void
+  onRimuovi: (id: string) => void
+}) {
+  const [nuovo, setNuovo] = useState<{ nome: string; persone: string; telefono: string }>({ nome: '', persone: '1', telefono: '' })
+  const [apriForm, setApriForm] = useState(false)
+  const aggiungi = () => {
+    if (!nuovo.nome.trim()) return
+    onAggiungi({
+      nome: nuovo.nome.trim(), eventoId: e.id, eventoNome: e.nome, eventoData: e.data,
+      persone: Math.max(1, Number(nuovo.persone) || 1), telefono: nuovo.telefono.trim() || undefined,
+    })
+    setNuovo({ nome: '', persone: '1', telefono: '' })
+  }
+  return (
+    <div className="rounded-lg border border-calce-200 bg-white">
+      <div className="flex items-center justify-between border-b border-calce-200 px-3 py-2.5">
+        <span className="flex items-center gap-2 text-sm font-semibold text-profondo"><Ticket className="h-4 w-4 text-cabina" /> Partecipanti confermati</span>
+        <Badge tono={lista.length ? 'acqua' : 'neutro'}>{lista.length} {lista.length === 1 ? 'nome' : 'nomi'} · {numero(totPersone)} pers.</Badge>
+      </div>
+      {lista.length === 0 ? (
+        <p className="px-3 py-3 text-center text-xs text-profondo/45">Ancora nessun partecipante confermato.</p>
+      ) : (
+        <ul className="divide-y divide-calce-200">
+          {lista.map((p) => (
+            <li key={p.id} className="flex items-center justify-between gap-2 px-3 py-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-profondo">{p.nome} <span className="font-normal text-profondo/50">· {p.persone} pers.</span></p>
+                <p className="text-[11px] text-profondo/45">
+                  {p.origine === 'manuale' ? 'inserito in loco' : 'dal sito'}{p.telefono ? ` · ${p.telefono}` : p.email ? ` · ${p.email}` : ''}
+                </p>
+              </div>
+              {p.origine === 'manuale' && (
+                <button onClick={() => onRimuovi(p.id)} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-profondo/45 transition-colors hover:bg-boa/10 hover:text-boa" aria-label="Rimuovi partecipante"><Trash2 className="h-4 w-4" /></button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="border-t border-calce-200 p-2">
+        {apriForm ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
+              <input className={`${ic} col-span-2`} value={nuovo.nome} onChange={(ev) => setNuovo((n) => ({ ...n, nome: ev.target.value }))} placeholder="Nome e cognome" autoFocus onKeyDown={(ev) => ev.key === 'Enter' && aggiungi()} />
+              <input type="number" min={1} className={`${ic} num`} value={nuovo.persone} onChange={(ev) => setNuovo((n) => ({ ...n, persone: ev.target.value }))} placeholder="pers." />
+            </div>
+            <input className={ic} value={nuovo.telefono} onChange={(ev) => setNuovo((n) => ({ ...n, telefono: ev.target.value }))} placeholder="Telefono (facoltativo)" onKeyDown={(ev) => ev.key === 'Enter' && aggiungi()} />
+            <div className="flex justify-end gap-2">
+              <Button variante="secondario" dimensione="sm" onClick={() => setApriForm(false)}>Chiudi</Button>
+              <Button variante="primario" dimensione="sm" onClick={aggiungi} disabled={!nuovo.nome.trim()}><Plus className="h-4 w-4" /> Aggiungi</Button>
+            </div>
+          </div>
+        ) : (
+          <Button variante="secondario" dimensione="sm" onClick={() => setApriForm(true)} className="w-full justify-center"><Plus className="h-4 w-4" /> Aggiungi partecipante (in loco)</Button>
+        )}
+      </div>
+    </div>
   )
 }
 
