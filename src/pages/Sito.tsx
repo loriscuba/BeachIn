@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Loader2, ExternalLink, CalendarCheck, MessageSquare, Star, BarChart3, Globe, Check, X as XIcon,
-  Image, Newspaper, Tags, Umbrella, Search, FileText, UtensilsCrossed, Inbox, Mail,
+  Image, Newspaper, Tags, Umbrella, Search, FileText, UtensilsCrossed, Inbox, Mail, Ticket,
 } from 'lucide-react'
 import type { Email, StatoSito, Turno } from '@/data/types'
 import { getDisponibilitaSito, getStatoSito } from '@/data/api'
@@ -22,6 +22,7 @@ export default function Sito() {
   const {
     prenotazioniOnline, confermaPrenotazione, rifiutaPrenotazione,
     richiesteRistorante, confermaRistorante, rifiutaRistorante,
+    richiesteEventi, confermaEvento, rifiutaEvento,
     postaAdmin, segnaEmailLetta, pagine, pubblicaPagina, listinoPubblicato,
   } = useDemoData()
   const [sito, setSito] = useState<StatoSito>()
@@ -38,7 +39,8 @@ export default function Sito() {
 
   const daConfermareOmbr = prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length
   const daConfermareRist = richiesteRistorante.filter((p) => p.stato === 'da_confermare').length
-  const daConfermare = daConfermareOmbr + daConfermareRist
+  const daConfermareEve = richiesteEventi.filter((p) => p.stato === 'da_confermare').length
+  const daConfermare = daConfermareOmbr + daConfermareRist + daConfermareEve
   const postaNonLetta = postaAdmin.filter((m) => !m.letto).length
   const nonLetti = sito?.messaggi.filter((m) => !m.letto).length ?? 0
   const votoMedio = useMemo(() => {
@@ -165,6 +167,27 @@ export default function Sito() {
                         {p.note && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.note}”</p>}
                       </div>
                       <AzioniRichiesta stato={p.stato} onConferma={() => confermaRistorante(p.id)} onRifiuta={() => rifiutaRistorante(p.id)} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
+
+          {/* Eventi */}
+          <Card>
+            <CardHeader titolo={<span className="inline-flex items-center gap-2"><Ticket className="h-4 w-4 text-cabina" /> Eventi</span>} sottotitolo={`${richiesteEventi.length} richieste`} />
+            <CardBody className="pt-1">
+              {richiesteEventi.length === 0 ? <Vuoto testo="Nessuna richiesta di partecipazione. Provane una dal sito → sezione “Eventi”." /> : (
+                <ul className="divide-y divide-calce-200">
+                  {richiesteEventi.map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-profondo">{p.nome} <span className="font-normal text-profondo/50">· {p.persone} pers.</span></p>
+                        <p className="num text-xs text-profondo/55">{p.eventoNome} · {fmtData(p.eventoData)}</p>
+                        {p.note && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.note}”</p>}
+                      </div>
+                      <AzioniRichiesta stato={p.stato} onConferma={() => confermaEvento(p.id)} onRifiuta={() => rifiutaEvento(p.id)} />
                     </li>
                   ))}
                 </ul>

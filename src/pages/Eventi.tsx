@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   Trophy, Music, PartyPopper, UtensilsCrossed, Flower2, Gift, CalendarDays, Users, TrendingUp, Wallet,
-  Plus, Pencil, Trash2,
+  Plus, Pencil, Trash2, ImagePlus, X, Ticket,
 } from 'lucide-react'
 import type { Evento, TipoEvento } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { euro, numero, dataEstesa, giornoMese } from '@/lib/formatters'
 import { etichetteTipoEvento } from '@/lib/etichette'
+import { ridimensionaImmagine } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
@@ -72,10 +73,14 @@ export default function Eventi() {
                   return (
                     <li key={e.id}>
                       <button onClick={() => setSel(e)} className="flex w-full items-center gap-3 rounded-lg border border-calce-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-calce-300 hover:bg-calce/50">
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-profondo/8 text-cabina"><Icona className="h-5 w-5" /></span>
+                        {e.foto ? (
+                          <img src={e.foto} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                        ) : (
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-profondo/8 text-cabina"><Icona className="h-5 w-5" /></span>
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-profondo">{e.nome}</p>
-                          <p className="num text-xs text-profondo/55">{giornoMese(e.data)} · {e.partecipanti > 0 ? `${e.partecipanti} partecipanti` : 'in programma'}</p>
+                          <p className="num text-xs text-profondo/55">{giornoMese(e.data)} · {e.prezzo ? euro(e.prezzo) : (e.partecipanti > 0 ? `${e.partecipanti} partecipanti` : 'in programma')}</p>
                         </div>
                         <div className="shrink-0 text-right">
                           {futuro && e.ricavi === 0 ? <Badge tono="tenda">In programma</Badge> : (
@@ -128,16 +133,22 @@ function SchedaEvento({ evento: e, onChiudi, onModifica, onElimina }: { evento?:
       ) : undefined}
       piede={e ? (
         <div className="flex gap-2">
-          <Button variante="secondario" onClick={() => onModifica(e)} bloccato><Pencil className="h-4 w-4" /> Modifica</Button>
+          <Button variante="secondario" onClick={() => onModifica(e)}><Pencil className="h-4 w-4" /> Modifica</Button>
           <Button variante="pericolo" onClick={() => onElimina(e)}><Trash2 className="h-4 w-4" /> Elimina</Button>
         </div>
       ) : undefined}
     >
       {e && (
         <div className="space-y-4">
+          {e.foto && <img src={e.foto} alt="" className="h-44 w-full rounded-xl object-cover" />}
           <p className="text-sm text-profondo/75">{e.descrizione}</p>
-          <div className="flex items-center gap-2 rounded-lg border border-calce-200 bg-white px-3 py-2 text-sm">
-            <Users className="h-4 w-4 text-cabina" /><span className="text-profondo/75">{e.partecipanti > 0 ? `${numero(e.partecipanti)} partecipanti` : 'Evento in programma'}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-lg border border-calce-200 bg-white px-3 py-2 text-sm">
+              <Users className="h-4 w-4 text-cabina" /><span className="text-profondo/75">{e.partecipanti > 0 ? `${numero(e.partecipanti)} partecipanti` : 'Evento in programma'}</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-calce-200 bg-white px-3 py-2 text-sm">
+              <Ticket className="h-4 w-4 text-cabina" /><span className="text-profondo/75">{e.prezzo ? `${euro(e.prezzo)} a persona` : 'Ingresso gratuito'}</span>
+            </div>
           </div>
           <div className="rounded-lg border border-calce-200 bg-white">
             <RigaCE label="Budget" valore={euro(e.budget)} muto />
@@ -156,35 +167,58 @@ function SchedaEvento({ evento: e, onChiudi, onModifica, onElimina }: { evento?:
 
 function FormEvento({ stato, onChiudi, onSalva }: { stato: { open: boolean; evento?: Evento }; onChiudi: () => void; onSalva: (e: Evento) => void }) {
   const e = stato.evento
-  const vuoto = { nome: '', tipo: 'musica' as TipoEvento, data: config.stagione.oggi, budget: '0', costiSostenuti: '0', ricavi: '0', partecipanti: '0', descrizione: '' }
+  const vuoto = { nome: '', tipo: 'musica' as TipoEvento, data: config.stagione.oggi, budget: '0', costiSostenuti: '0', ricavi: '0', partecipanti: '0', descrizione: '', prezzo: '0', foto: '' }
   const iniziale = e
-    ? { nome: e.nome, tipo: e.tipo, data: e.data, budget: String(e.budget), costiSostenuti: String(e.costiSostenuti), ricavi: String(e.ricavi), partecipanti: String(e.partecipanti), descrizione: e.descrizione }
+    ? { nome: e.nome, tipo: e.tipo, data: e.data, budget: String(e.budget), costiSostenuti: String(e.costiSostenuti), ricavi: String(e.ricavi), partecipanti: String(e.partecipanti), descrizione: e.descrizione, prezzo: String(e.prezzo ?? 0), foto: e.foto ?? '' }
     : vuoto
   // chiave per re-inizializzare lo stato del form quando cambia l'evento
   return <FormEventoInterno key={e?.id ?? 'nuovo'} iniziale={iniziale} open={stato.open} modifica={!!e} idEsistente={e?.id} onChiudi={onChiudi} onSalva={onSalva} />
 }
 
 function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, onSalva }: {
-  iniziale: { nome: string; tipo: TipoEvento; data: string; budget: string; costiSostenuti: string; ricavi: string; partecipanti: string; descrizione: string }
+  iniziale: { nome: string; tipo: TipoEvento; data: string; budget: string; costiSostenuti: string; ricavi: string; partecipanti: string; descrizione: string; prezzo: string; foto: string }
   open: boolean; modifica: boolean; idEsistente?: string; onChiudi: () => void; onSalva: (e: Evento) => void
 }) {
   const [f, setF] = useState(iniziale)
+  const [caricando, setCaricando] = useState(false)
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
   const valido = f.nome.trim() !== ''
+  const caricaFoto = async (file?: File) => {
+    if (!file) return
+    setCaricando(true)
+    try { set('foto', await ridimensionaImmagine(file)) } catch { /* ignora file non validi */ } finally { setCaricando(false) }
+  }
   const salva = () => onSalva({
     id: idEsistente ?? `E-NEW-${Date.now()}`,
     nome: f.nome.trim(), tipo: f.tipo, data: f.data,
     budget: Number(f.budget) || 0, costiSostenuti: Number(f.costiSostenuti) || 0,
     ricavi: Number(f.ricavi) || 0, partecipanti: Number(f.partecipanti) || 0,
     descrizione: f.descrizione.trim(),
+    prezzo: Number(f.prezzo) || 0,
+    foto: f.foto || undefined,
   })
   return (
     <Modal aperto={open} onChiudi={onChiudi} titolo={modifica ? 'Modifica evento' : 'Nuovo evento'}
       piede={<div className="flex justify-end gap-2"><Button variante="secondario" onClick={onChiudi}>Annulla</Button><Button variante="primario" onClick={salva} disabled={!valido}>{modifica ? 'Salva modifiche' : 'Crea evento'}</Button></div>}>
       <div className="grid grid-cols-2 gap-3">
+        <CampoE label="Foto evento" span2>
+          {f.foto ? (
+            <div className="relative overflow-hidden rounded-lg border border-calce-200">
+              <img src={f.foto} alt="" className="h-36 w-full object-cover" />
+              <button type="button" onClick={() => set('foto', '')} className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white transition-colors hover:bg-black/75" aria-label="Rimuovi foto"><X className="h-4 w-4" /></button>
+            </div>
+          ) : (
+            <label className="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-calce-300 bg-calce/40 text-profondo/55 transition-colors hover:border-cabina hover:text-cabina">
+              <ImagePlus className="h-6 w-6" />
+              <span className="text-xs font-medium">{caricando ? 'Caricamento…' : 'Carica una foto'}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => caricaFoto(e.target.files?.[0])} />
+            </label>
+          )}
+        </CampoE>
         <CampoE label="Nome" span2><input className={ic} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="es. Aperitivo in musica" /></CampoE>
         <CampoE label="Tipo"><Select value={f.tipo} onChange={(e) => set('tipo', e.target.value)} opzioni={Object.entries(etichetteTipoEvento).map(([v, l]) => ({ valore: v, etichetta: l }))} /></CampoE>
         <CampoE label="Data"><input type="date" className={ic} value={f.data} onChange={(e) => set('data', e.target.value)} /></CampoE>
+        <CampoE label="Prezzo partecipazione (€)" span2><input type="number" className={`${ic} num`} value={f.prezzo} onChange={(e) => set('prezzo', e.target.value)} placeholder="0 = evento gratuito" /></CampoE>
         <CampoE label="Budget (€)"><input type="number" className={`${ic} num`} value={f.budget} onChange={(e) => set('budget', e.target.value)} /></CampoE>
         <CampoE label="Costi sostenuti (€)"><input type="number" className={`${ic} num`} value={f.costiSostenuti} onChange={(e) => set('costiSostenuti', e.target.value)} /></CampoE>
         <CampoE label="Ricavi (€)"><input type="number" className={`${ic} num`} value={f.ricavi} onChange={(e) => set('ricavi', e.target.value)} /></CampoE>

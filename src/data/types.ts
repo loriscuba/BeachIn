@@ -384,6 +384,8 @@ export interface Evento {
   ricavi: number
   partecipanti: number
   descrizione: string
+  foto?: string // data URI dell'immagine caricata (opzionale)
+  prezzo?: number // prezzo di partecipazione, se l'evento è prenotabile
 }
 
 // ————————————————————————————————————————————————————————————
@@ -476,6 +478,21 @@ export interface RichiestaRistorante {
   data: string
   turno: Turno
   coperti: number
+  stato: StatoPrenotazioneOnline
+  note?: string
+}
+
+/** Richiesta di partecipazione a un evento, arrivata dal sito. */
+export interface RichiestaEvento {
+  id: string
+  ricevutaIl: string
+  nome: string
+  email: string
+  telefono: string
+  eventoId: string
+  eventoNome: string
+  eventoData: string
+  persone: number
   stato: StatoPrenotazioneOnline
   note?: string
 }

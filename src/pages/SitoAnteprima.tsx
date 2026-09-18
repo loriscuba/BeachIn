@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowLeft, Umbrella, Home, Coffee, UtensilsCrossed, Waves, Car, Star, Phone, Mail, MapPin,
-  Clock, Check, Inbox, CalendarDays, Menu as MenuIcon, X, Sparkles,
+  Clock, Check, Inbox, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket,
 } from 'lucide-react'
-import type { FilaId, Periodo, Piatto, StatoSito, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
+import type { Evento, FilaId, Periodo, Piatto, StatoSito, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
 import { getDisponibilitaSito, getListinoPubblicato, getMenu, getStatoSito } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Logo } from '@/components/layout/Logo'
 import { Drawer } from '@/components/ui/Drawer'
+import { Modal } from '@/components/ui/Modal'
 import { euro, dataEstesa, data as fmtData, giornoMese } from '@/lib/formatters'
 import { etichettePeriodo, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
@@ -38,6 +39,7 @@ export default function SitoAnteprima() {
   const [postaAperta, setPostaAperta] = useState(false)
   const [menuMobile, setMenuMobile] = useState(false)
   const [toast, setToast] = useState<string>()
+  const [eventoSel, setEventoSel] = useState<Evento>()
 
   useEffect(() => {
     Promise.all([getStatoSito(), getDisponibilitaSito(), getListinoPubblicato(), getMenu()]).then(
@@ -199,11 +201,22 @@ export default function SitoAnteprima() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {eventiFuturi.length === 0 && <p className="text-sm text-profondo/50">Nessun evento in programma al momento.</p>}
             {eventiFuturi.map((e) => (
-              <div key={e.id} className="rounded-2xl border border-calce-200 bg-white p-5">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-tenda/20 px-2 py-0.5 text-xs font-semibold text-[#7A5A12]"><CalendarDays className="h-3.5 w-3.5" /> {giornoMese(e.data)}</span>
-                <h3 className="mt-2 font-bold text-profondo">{e.nome}</h3>
-                <p className="mt-1 text-sm text-profondo/60 line-clamp-3">{e.descrizione}</p>
-              </div>
+              <button
+                key={e.id}
+                onClick={() => setEventoSel(e)}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-calce-200 bg-white text-left transition-shadow hover:shadow-pop"
+              >
+                <div className="relative h-32 w-full overflow-hidden bg-gradient-to-br from-cabina to-profondo">
+                  {e.foto && <img src={e.foto} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />}
+                  <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-profondo backdrop-blur"><CalendarDays className="h-3.5 w-3.5" /> {giornoMese(e.data)}</span>
+                  {!!e.prezzo && <span className="absolute right-2 top-2 rounded-full bg-boa px-2 py-0.5 text-xs font-bold text-white">{euro(e.prezzo)}</span>}
+                </div>
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="font-bold text-profondo">{e.nome}</h3>
+                  <p className="mt-1 flex-1 text-sm text-profondo/60 line-clamp-2">{e.descrizione}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cabina">Scopri e prenota →</span>
+                </div>
+              </button>
             ))}
           </div>
         </section>
@@ -268,7 +281,71 @@ export default function SitoAnteprima() {
 
       {/* La mia posta (cliente) */}
       <PostaCliente aperta={postaAperta} onChiudi={() => setPostaAperta(false)} />
+
+      {/* Dettaglio evento + prenotazione */}
+      <EventoModal
+        evento={eventoSel}
+        onChiudi={() => setEventoSel(undefined)}
+        onPrenotato={(nome) => { setEventoSel(undefined); mostraToast(`Richiesta di partecipazione inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }}
+      />
     </div>
+  )
+}
+
+function EventoModal({ evento: e, onChiudi, onPrenotato }: { evento?: Evento; onChiudi: () => void; onPrenotato: (nome: string) => void }) {
+  const { inviaRichiestaEvento } = useDemoData()
+  const [f, setF] = useState({ nome: '', email: '', telefono: '', persone: '2', note: '' })
+  const [inviato, setInviato] = useState(false)
+  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
+  const valido = f.nome.trim() && f.email.trim()
+
+  // reset del form quando cambia l'evento selezionato
+  useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '' }); setInviato(false) }, [e?.id])
+
+  const invia = (ev: React.FormEvent) => {
+    ev.preventDefault()
+    if (!e) return
+    inviaRichiestaEvento({
+      nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(),
+      eventoId: e.id, eventoNome: e.nome, eventoData: e.data,
+      persone: Math.max(1, Number(f.persone) || 1), note: f.note.trim() || undefined,
+    })
+    setInviato(true)
+    onPrenotato(f.nome.trim().split(' ')[0])
+  }
+
+  return (
+    <Modal aperto={!!e} onChiudi={onChiudi} titolo={e?.nome ?? ''}>
+      {e && (
+        <div className="space-y-4">
+          {e.foto && <img src={e.foto} alt="" className="-mt-1 h-48 w-full rounded-xl object-cover" />}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-tenda/20 px-2.5 py-1 text-xs font-semibold text-[#7A5A12]"><CalendarDays className="h-3.5 w-3.5" /> <span className="capitalize">{dataEstesa(e.data)}</span></span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-cabina/10 px-2.5 py-1 text-xs font-semibold text-cabina"><Ticket className="h-3.5 w-3.5" /> {e.prezzo ? `${euro(e.prezzo)} a persona` : 'Ingresso gratuito'}</span>
+          </div>
+          <p className="whitespace-pre-line text-sm text-profondo/75">{e.descrizione}</p>
+
+          {inviato ? (
+            <div className="rounded-2xl border border-acqua/40 bg-acqua/10 p-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-acqua text-white"><Check className="h-5 w-5" /></span>
+                <div><p className="font-semibold text-profondo">Richiesta inviata!</p><p className="text-sm text-profondo/60">Trovi la ricevuta ne “La mia posta”. Ti confermiamo la partecipazione dal gestionale.</p></div>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={invia} className="grid grid-cols-2 gap-3 rounded-2xl border border-calce-200 bg-calce/40 p-4">
+              <p className="col-span-2 flex items-center gap-1.5 font-bold text-profondo"><Ticket className="h-4 w-4 text-cabina" /> Prenota la tua partecipazione</p>
+              <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(ev) => set('nome', ev.target.value)} placeholder="Mario Rossi" /></Campo>
+              <Campo label="Email"><input type="email" required className={pc} value={f.email} onChange={(ev) => set('email', ev.target.value)} placeholder="tu@email.it" /></Campo>
+              <Campo label="Telefono"><input className={pc} value={f.telefono} onChange={(ev) => set('telefono', ev.target.value)} placeholder="340 1234567" /></Campo>
+              <Campo label="Persone"><input type="number" min={1} className={pc} value={f.persone} onChange={(ev) => set('persone', ev.target.value)} /></Campo>
+              <Campo label="Note"><input className={pc} value={f.note} onChange={(ev) => set('note', ev.target.value)} placeholder="facoltative" /></Campo>
+              <button type="submit" disabled={!valido} className="col-span-2 mt-1 h-11 rounded-lg bg-boa font-semibold text-white transition-colors hover:bg-boa/90 disabled:opacity-50">Invia richiesta</button>
+            </form>
+          )}
+        </div>
+      )}
+    </Modal>
   )
 }
 

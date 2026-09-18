@@ -17,6 +17,7 @@ import type {
   PaginaSito,
   Postazione,
   PrenotazioneOnline,
+  RichiestaEvento,
   RichiestaRistorante,
   RigaConto,
   StatoPostazione,
@@ -74,6 +75,18 @@ export interface DatiRichiestaRistorante {
   note?: string
 }
 
+/** Dati per una richiesta di partecipazione a un evento inviata dal sito. */
+export interface DatiRichiestaEvento {
+  nome: string
+  email: string
+  telefono: string
+  eventoId: string
+  eventoNome: string
+  eventoData: string
+  persone: number
+  note?: string
+}
+
 interface DemoDataValue {
   postazioni: Postazione[]
   conti: ContoOmbrellone[]
@@ -108,6 +121,11 @@ interface DemoDataValue {
   confermaRistorante: (id: string) => void
   rifiutaRistorante: (id: string) => void
   inviaRichiestaRistorante: (dati: DatiRichiestaRistorante) => void
+  // Sito — richieste eventi
+  richiesteEventi: RichiestaEvento[]
+  confermaEvento: (id: string) => void
+  rifiutaEvento: (id: string) => void
+  inviaRichiestaEvento: (dati: DatiRichiestaEvento) => void
   pubblicaPagina: (id: string) => void
   pubblicaListino: () => void
 
@@ -146,6 +164,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [listinoPubblicato, setListinoPubblicato] = useState(true)
   const [clientiAggiunti, setClientiAggiunti] = useState<Cliente[]>([])
   const [richiesteRistorante, setRichiesteRistorante] = useState<RichiestaRistorante[]>([])
+  const [richiesteEventi, setRichiesteEventi] = useState<RichiestaEvento[]>([])
   const [postaCliente, setPostaCliente] = useState<Email[]>([])
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
@@ -251,8 +270,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   // — Posta / prenotazioni dal sito —
   const prenRef = useRef(prenotazioniOnline)
   const richRef = useRef(richiesteRistorante)
+  const evtRef = useRef(richiesteEventi)
   useEffect(() => { prenRef.current = prenotazioniOnline }, [prenotazioniOnline])
   useEffect(() => { richRef.current = richiesteRistorante }, [richiesteRistorante])
+  useEffect(() => { evtRef.current = richiesteEventi }, [richiesteEventi])
 
   const gg = (iso?: string) => (iso ? iso.split('-').reverse().join('/') : '')
   const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'pranzo' : 'cena')
@@ -316,6 +337,31 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       `Gentile ${r.nome},\nci dispiace, per ${turnoLabel(r.turno)} del ${gg(r.data)} siamo al completo.\nProva con un altro turno o data.\n\n${config.nome}`)
   }, [pushMail])
 
+  const inviaRichiestaEvento = useCallback((d: DatiRichiestaEvento) => {
+    setRichiesteEventi((prev) => [
+      { id: nuovoId('RE'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'da_confermare', note: d.note },
+      ...prev,
+    ])
+    pushMail('cliente', 'richiesta', config.nome, d.email, `Richiesta ricevuta — ${d.eventoNome}`,
+      `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di partecipazione a “${d.eventoNome}” del ${gg(d.eventoData)} per ${d.persone} persone.\nTi confermeremo a breve.\n\n${config.nome}`)
+    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email, `Nuova richiesta evento: ${d.eventoNome}`,
+      `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nEvento: ${d.eventoNome} del ${gg(d.eventoData)} · ${d.persone} persone${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
+  }, [pushMail])
+
+  const confermaEvento = useCallback((id: string) => {
+    const r = evtRef.current.find((p) => p.id === id)
+    setRichiesteEventi((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'confermata' } : p)))
+    if (r) pushMail('cliente', 'conferma', config.nome, r.email, `Partecipazione confermata ✓ — ${r.eventoNome}`,
+      `Gentile ${r.nome},\nla tua partecipazione a “${r.eventoNome}” del ${gg(r.eventoData)} (${r.persone} persone) è CONFERMATA.\nTi aspettiamo!\n\n${config.nome}`)
+  }, [pushMail])
+
+  const rifiutaEvento = useCallback((id: string) => {
+    const r = evtRef.current.find((p) => p.id === id)
+    setRichiesteEventi((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'rifiutata' } : p)))
+    if (r) pushMail('cliente', 'rifiuto', config.nome, r.email, `Posti esauriti — ${r.eventoNome}`,
+      `Gentile ${r.nome},\nci dispiace, i posti per “${r.eventoNome}” del ${gg(r.eventoData)} sono esauriti.\n\n${config.nome}`)
+  }, [pushMail])
+
   const segnaEmailLetta = useCallback((id: string) => {
     setPostaCliente((p) => p.map((m) => (m.id === id ? { ...m, letto: true } : m)))
     setPostaAdmin((p) => p.map((m) => (m.id === id ? { ...m, letto: true } : m)))
@@ -348,6 +394,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setListinoPubblicato(true)
     setClientiAggiunti([])
     setRichiesteRistorante([])
+    setRichiesteEventi([])
     setPostaCliente([])
     setPostaAdmin([])
     setEventi(clona(seedEventi))
@@ -467,6 +514,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       confermaRistorante,
       rifiutaRistorante,
       inviaRichiestaRistorante,
+      richiesteEventi,
+      confermaEvento,
+      rifiutaEvento,
+      inviaRichiestaEvento,
       pubblicaPagina,
       pubblicaListino,
       postaCliente,
@@ -507,6 +558,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       confermaRistorante,
       rifiutaRistorante,
       inviaRichiestaRistorante,
+      richiesteEventi,
+      confermaEvento,
+      rifiutaEvento,
+      inviaRichiestaEvento,
       pubblicaPagina,
       pubblicaListino,
       postaCliente,
