@@ -23,6 +23,7 @@ export default function Sito() {
     prenotazioniOnline, confermaPrenotazione, rifiutaPrenotazione,
     richiesteRistorante, confermaRistorante, rifiutaRistorante,
     richiesteEventi, confermaEvento, rifiutaEvento,
+    canaliPrenotazione, impostaCanalePrenotazione,
     postaAdmin, segnaEmailLetta, pagine, pubblicaPagina, listinoPubblicato,
   } = useDemoData()
   const [sito, setSito] = useState<StatoSito>()
@@ -128,6 +129,19 @@ export default function Sito() {
 
       {sez === 'prenotazioni' && (
         <div className="space-y-4">
+          {/* Canali attivi sul sito pubblico */}
+          <Card>
+            <CardHeader
+              titolo={<span className="inline-flex items-center gap-2"><Globe className="h-4 w-4 text-cabina" /> Prenotazioni online attive</span>}
+              sottotitolo="Decidi cosa può essere prenotato dal sito pubblico"
+            />
+            <CardBody className="grid gap-2 pt-1 sm:grid-cols-3">
+              <Interruttore icona={Umbrella} etichetta="Ombrelloni" attivo={canaliPrenotazione.ombrelloni} onCambia={(v) => impostaCanalePrenotazione('ombrelloni', v)} />
+              <Interruttore icona={UtensilsCrossed} etichetta="Ristorante" attivo={canaliPrenotazione.ristorante} onCambia={(v) => impostaCanalePrenotazione('ristorante', v)} />
+              <Interruttore icona={Ticket} etichetta="Eventi" attivo={canaliPrenotazione.eventi} onCambia={(v) => impostaCanalePrenotazione('eventi', v)} />
+            </CardBody>
+          </Card>
+
           <p className="text-sm text-profondo/60">
             Le richieste arrivano dal sito. Alla conferma o al rifiuto parte in automatico un’email al cliente (visibile in “La mia posta” sul sito).
           </p>
@@ -326,6 +340,24 @@ export default function Sito() {
 
 function Vuoto({ testo }: { testo: string }) {
   return <p className="py-6 text-center text-sm text-profondo/45">{testo}</p>
+}
+
+function Interruttore({ icona: Icona, etichetta, attivo, onCambia }: { icona: typeof Globe; etichetta: string; attivo: boolean; onCambia: (v: boolean) => void }) {
+  return (
+    <div className={cn('flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 transition-colors', attivo ? 'border-acqua/50 bg-acqua/10' : 'border-calce-200 bg-calce/40')}>
+      <span className="flex items-center gap-2 text-sm font-medium text-profondo"><Icona className={cn('h-4 w-4', attivo ? 'text-cabina' : 'text-profondo/40')} /> {etichetta}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={attivo}
+        aria-label={`Prenotazioni ${etichetta} ${attivo ? 'attive' : 'sospese'}`}
+        onClick={() => onCambia(!attivo)}
+        className={cn('relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:focus-ring', attivo ? 'bg-acqua' : 'bg-calce-300')}
+      >
+        <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform', attivo ? 'translate-x-[22px]' : 'translate-x-0.5')} />
+      </button>
+    </div>
+  )
 }
 
 function AzioniRichiesta({ stato, onConferma, onRifiuta }: { stato: 'da_confermare' | 'confermata' | 'rifiutata'; onConferma: () => void; onRifiuta: () => void }) {

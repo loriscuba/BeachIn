@@ -87,6 +87,9 @@ export interface DatiRichiestaEvento {
   note?: string
 }
 
+export type CanalePrenotazione = 'ombrelloni' | 'ristorante' | 'eventi'
+export type CanaliPrenotazione = Record<CanalePrenotazione, boolean>
+
 export interface DatiPartecipanteEvento {
   nome: string
   eventoId: string
@@ -105,6 +108,8 @@ interface DemoDataValue {
   prenotazioniOnline: PrenotazioneOnline[]
   pagine: PaginaSito[]
   listinoPubblicato: boolean
+  canaliPrenotazione: CanaliPrenotazione
+  impostaCanalePrenotazione: (canale: CanalePrenotazione, attivo: boolean) => void
 
   // Azioni arenile
   assegnaPostazione: (id: string, opz: AssegnaOpzioni) => void
@@ -175,6 +180,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   )
   const [pagine, setPagine] = useState<PaginaSito[]>(() => clona(statoSito.pagine))
   const [listinoPubblicato, setListinoPubblicato] = useState(true)
+  const [canaliPrenotazione, setCanaliPrenotazione] = useState<CanaliPrenotazione>({ ombrelloni: true, ristorante: true, eventi: true })
   const [clientiAggiunti, setClientiAggiunti] = useState<Cliente[]>([])
   const [richiesteRistorante, setRichiesteRistorante] = useState<RichiestaRistorante[]>([])
   const [richiesteEventi, setRichiesteEventi] = useState<RichiestaEvento[]>([])
@@ -408,6 +414,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const pubblicaListino = useCallback(() => setListinoPubblicato(true), [])
 
+  const impostaCanalePrenotazione = useCallback((canale: CanalePrenotazione, attivo: boolean) => {
+    setCanaliPrenotazione((c) => ({ ...c, [canale]: attivo }))
+  }, [])
+
   const reset = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
     setPostazioni(clona(seedPostazioni))
@@ -416,6 +426,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPrenotazioni(clona(statoSito.prenotazioni))
     setPagine(clona(statoSito.pagine))
     setListinoPubblicato(true)
+    setCanaliPrenotazione({ ombrelloni: true, ristorante: true, eventi: true })
     setClientiAggiunti([])
     setRichiesteRistorante([])
     setRichiesteEventi([])
@@ -522,6 +533,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       prenotazioniOnline,
       pagine,
       listinoPubblicato,
+      canaliPrenotazione,
+      impostaCanalePrenotazione,
       assegnaPostazione,
       liberaPostazione,
       spostaPostazione,
@@ -568,6 +581,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       prenotazioniOnline,
       pagine,
       listinoPubblicato,
+      canaliPrenotazione,
+      impostaCanalePrenotazione,
       assegnaPostazione,
       liberaPostazione,
       spostaPostazione,

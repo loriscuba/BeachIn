@@ -31,7 +31,7 @@ const nav = [
 ]
 
 export default function SitoAnteprima() {
-  const { eventi, postaCliente } = useDemoData()
+  const { eventi, postaCliente, canaliPrenotazione } = useDemoData()
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [listino, setListino] = useState<VoceTariffa[]>([])
@@ -172,7 +172,9 @@ export default function SitoAnteprima() {
             </ul>
           </div>
           <div className="lg:pt-14">
-            <FormRistorante onInviato={(nome) => { mostraToast(`Richiesta tavolo inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
+            {canaliPrenotazione.ristorante
+              ? <FormRistorante onInviato={(nome) => { mostraToast(`Richiesta tavolo inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
+              : <Sospese testo="Le prenotazioni del ristorante online sono momentaneamente sospese. Chiamaci per riservare un tavolo." />}
           </div>
         </section>
 
@@ -180,7 +182,9 @@ export default function SitoAnteprima() {
         <section id="prenota" className="grid gap-8 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <Titolo occhiello="Prenota" titolo="Richiedi il tuo ombrellone" />
-            <FormOmbrellone onInviato={(nome) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
+            {canaliPrenotazione.ombrelloni
+              ? <FormOmbrellone onInviato={(nome) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
+              : <Sospese className="mt-5" testo="Le prenotazioni online degli ombrelloni sono momentaneamente sospese. Passa in cassa o chiamaci per la disponibilità." />}
           </div>
           <div className="lg:col-span-2">
             {disp && (
@@ -214,7 +218,7 @@ export default function SitoAnteprima() {
                 <div className="flex flex-1 flex-col p-4">
                   <h3 className="font-bold text-profondo">{e.nome}</h3>
                   <p className="mt-1 flex-1 text-sm text-profondo/60 line-clamp-2">{e.descrizione}</p>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cabina">Scopri e prenota →</span>
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cabina">{canaliPrenotazione.eventi ? 'Scopri e prenota →' : 'Scopri di più →'}</span>
                 </div>
               </button>
             ))}
@@ -285,6 +289,7 @@ export default function SitoAnteprima() {
       {/* Dettaglio evento + prenotazione */}
       <EventoModal
         evento={eventoSel}
+        prenotabile={canaliPrenotazione.eventi}
         onChiudi={() => setEventoSel(undefined)}
         onPrenotato={(nome) => { setEventoSel(undefined); mostraToast(`Richiesta di partecipazione inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }}
       />
@@ -292,7 +297,7 @@ export default function SitoAnteprima() {
   )
 }
 
-function EventoModal({ evento: e, onChiudi, onPrenotato }: { evento?: Evento; onChiudi: () => void; onPrenotato: (nome: string) => void }) {
+function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento?: Evento; prenotabile: boolean; onChiudi: () => void; onPrenotato: (nome: string) => void }) {
   const { inviaRichiestaEvento } = useDemoData()
   const [f, setF] = useState({ nome: '', email: '', telefono: '', persone: '2', note: '' })
   const [inviato, setInviato] = useState(false)
@@ -325,7 +330,9 @@ function EventoModal({ evento: e, onChiudi, onPrenotato }: { evento?: Evento; on
           </div>
           <p className="whitespace-pre-line text-sm text-profondo/75">{e.descrizione}</p>
 
-          {inviato ? (
+          {!prenotabile ? (
+            <Sospese testo="Le prenotazioni online per gli eventi sono momentaneamente sospese. Contattaci per partecipare." />
+          ) : inviato ? (
             <div className="rounded-2xl border border-acqua/40 bg-acqua/10 p-5">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-acqua text-white"><Check className="h-5 w-5" /></span>
@@ -459,6 +466,18 @@ function Successo({ testo, onAltro }: { testo: string; onAltro: () => void }) {
         <div><p className="font-semibold text-profondo">Richiesta inviata!</p><p className="text-sm text-profondo/60">{testo}</p></div>
       </div>
       <button onClick={onAltro} className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline"><Sparkles className="h-4 w-4" /> Invia un’altra richiesta</button>
+    </div>
+  )
+}
+
+function Sospese({ testo, className }: { testo: string; className?: string }) {
+  return (
+    <div className={cn('flex items-start gap-3 rounded-2xl border border-tenda/50 bg-tenda/10 p-5', className)}>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-tenda/30 text-[#7A5A12]"><Clock className="h-5 w-5" /></span>
+      <div>
+        <p className="font-semibold text-profondo">Prenotazioni online sospese</p>
+        <p className="mt-0.5 text-sm text-profondo/65">{testo}</p>
+      </div>
     </div>
   )
 }
