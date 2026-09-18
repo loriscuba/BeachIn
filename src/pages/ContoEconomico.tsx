@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, TrendingUp, Target } from 'lucide-react'
-import type { Evento, GiornoStagione } from '@/data/types'
-import { getEventi, getGiorni } from '@/data/api'
+import type { GiornoStagione } from '@/data/types'
+import { getGiorni } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { contoEconomico } from '@/lib/calcoli'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -14,14 +14,13 @@ import { cn } from '@/lib/cn'
 const mesiLabel: Record<string, string> = { '05': 'Mag', '06': 'Giu', '07': 'Lug', '08': 'Ago', '09': 'Set' }
 
 export default function ContoEconomico() {
-  const { costi } = useDemoData()
+  const { costi, eventi } = useDemoData()
   const [giorni, setGiorni] = useState<GiornoStagione[]>([])
-  const [eventi, setEventi] = useState<Evento[]>([])
   const [caricato, setCaricato] = useState(false)
   const [vista, setVista] = useState<'stagionale' | 'mensile'>('stagionale')
 
   useEffect(() => {
-    Promise.all([getGiorni(), getEventi()]).then(([g, e]) => { setGiorni(g); setEventi(e); setCaricato(true) })
+    getGiorni().then((g) => { setGiorni(g); setCaricato(true) })
   }, [])
 
   const ce = useMemo(

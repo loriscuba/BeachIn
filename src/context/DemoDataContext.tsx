@@ -12,11 +12,16 @@ import type { ReactNode } from 'react'
 import type {
   Cliente,
   ContoOmbrellone,
+  Email,
+  Evento,
   PaginaSito,
   Postazione,
   PrenotazioneOnline,
+  RichiestaRistorante,
   RigaConto,
   StatoPostazione,
+  TipologiaPostazione,
+  Turno,
   VoceCosto,
 } from '@/data/types'
 
@@ -25,6 +30,7 @@ import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
+import { eventi as seedEventi } from '@/data/seed/eventi'
 import { config } from '@/data/config'
 
 const clona = <T,>(v: T): T =>
@@ -43,6 +49,29 @@ export interface AttivitaDemo {
   id: number
   tipo: TipoAttivita
   testo: string
+}
+
+/** Dati per una richiesta ombrellone inviata dal sito pubblico. */
+export interface DatiRichiestaOmbrellone {
+  nome: string
+  email: string
+  telefono: string
+  dal: string
+  al: string
+  tipologiaPostazione: TipologiaPostazione
+  persone: number
+  messaggio?: string
+}
+
+/** Dati per una richiesta tavolo al ristorante inviata dal sito pubblico. */
+export interface DatiRichiestaRistorante {
+  nome: string
+  email: string
+  telefono: string
+  data: string
+  turno: Turno
+  coperti: number
+  note?: string
 }
 
 interface DemoDataValue {
@@ -70,11 +99,28 @@ interface DemoDataValue {
   // Costi
   aggiungiCosto: (voce: VoceCosto) => void
 
-  // Sito
+  // Sito — prenotazioni ombrellone
   confermaPrenotazione: (id: string) => void
   rifiutaPrenotazione: (id: string) => void
+  inviaRichiestaOmbrellone: (dati: DatiRichiestaOmbrellone) => void
+  // Sito — prenotazioni ristorante
+  richiesteRistorante: RichiestaRistorante[]
+  confermaRistorante: (id: string) => void
+  rifiutaRistorante: (id: string) => void
+  inviaRichiestaRistorante: (dati: DatiRichiestaRistorante) => void
   pubblicaPagina: (id: string) => void
   pubblicaListino: () => void
+
+  // Posta (simulazione conferme)
+  postaCliente: Email[]
+  postaAdmin: Email[]
+  segnaEmailLetta: (id: string) => void
+
+  // Eventi (CRUD)
+  eventi: Evento[]
+  aggiungiEvento: (evento: Evento) => void
+  modificaEvento: (evento: Evento) => void
+  eliminaEvento: (id: string) => void
 
   // Demo guidata
   incassoDemo: number
@@ -99,6 +145,12 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [pagine, setPagine] = useState<PaginaSito[]>(() => clona(statoSito.pagine))
   const [listinoPubblicato, setListinoPubblicato] = useState(true)
   const [clientiAggiunti, setClientiAggiunti] = useState<Cliente[]>([])
+  const [richiesteRistorante, setRichiesteRistorante] = useState<RichiestaRistorante[]>([])
+  const [postaCliente, setPostaCliente] = useState<Email[]>([])
+  const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
+  const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
+  const seqRef = useRef(1)
+  const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}`
 
   // — Demo guidata —
   const [incassoDemo, setIncassoDemo] = useState(0)
@@ -196,14 +248,88 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setClientiAggiunti((prev) => [cliente, ...prev])
   }, [])
 
+  // — Posta / prenotazioni dal sito —
+  const prenRef = useRef(prenotazioniOnline)
+  const richRef = useRef(richiesteRistorante)
+  useEffect(() => { prenRef.current = prenotazioniOnline }, [prenotazioniOnline])
+  useEffect(() => { richRef.current = richiesteRistorante }, [richiesteRistorante])
+
+  const gg = (iso?: string) => (iso ? iso.split('-').reverse().join('/') : '')
+  const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'pranzo' : 'cena')
+
+  const pushMail = useCallback(
+    (casella: Email['casella'], tipo: Email['tipo'], da: string, a: string, oggetto: string, corpo: string) => {
+      const mail: Email = { id: nuovoId('MAIL'), casella, tipo, da, a, oggetto, corpo, data: config.stagione.oggi, letto: false }
+      if (casella === 'cliente') setPostaCliente((p) => [mail, ...p])
+      else setPostaAdmin((p) => [mail, ...p])
+    },
+    []
+  )
+
+  const inviaRichiestaOmbrellone = useCallback((d: DatiRichiestaOmbrellone) => {
+    setPrenotazioni((prev) => [
+      { id: nuovoId('PO'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, dal: d.dal, al: d.al, tipologiaPostazione: d.tipologiaPostazione, persone: d.persone, stato: 'da_confermare', messaggio: d.messaggio },
+      ...prev,
+    ])
+    pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — ombrellone',
+      `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di ombrellone per ${d.persone} persone dal ${gg(d.dal)} al ${gg(d.al)}.\nTi confermeremo la disponibilità a breve.\n\n${config.nome}`)
+    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email, 'Nuova richiesta ombrellone dal sito',
+      `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nOmbrellone · ${d.persone} persone · dal ${gg(d.dal)} al ${gg(d.al)}${d.messaggio ? `\nNote: ${d.messaggio}` : ''}\n\nDa confermare in gestionale.`)
+  }, [pushMail])
+
+  const inviaRichiestaRistorante = useCallback((d: DatiRichiestaRistorante) => {
+    setRichiesteRistorante((prev) => [
+      { id: nuovoId('RR'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, coperti: d.coperti, stato: 'da_confermare', note: d.note },
+      ...prev,
+    ])
+    pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — tavolo ristorante',
+      `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di tavolo per ${d.coperti} coperti (${turnoLabel(d.turno)}) del ${gg(d.data)}.\nTi confermeremo a breve.\n\n${config.nome}`)
+    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email, 'Nuova richiesta tavolo dal sito',
+      `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nRistorante · ${d.coperti} coperti · ${turnoLabel(d.turno)} del ${gg(d.data)}${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
+  }, [pushMail])
+
   const confermaPrenotazione = useCallback((id: string) => {
-    setPrenotazioni((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, stato: 'confermata' } : p))
-    )
-  }, [])
+    const r = prenRef.current.find((p) => p.id === id)
+    setPrenotazioni((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'confermata' } : p)))
+    if (r) pushMail('cliente', 'conferma', config.nome, r.email, 'Prenotazione confermata ✓',
+      `Gentile ${r.nome},\nla tua prenotazione ombrellone dal ${gg(r.dal)} al ${gg(r.al)} è CONFERMATA.\nTi aspettiamo a ${config.nome}!`)
+  }, [pushMail])
 
   const rifiutaPrenotazione = useCallback((id: string) => {
+    const r = prenRef.current.find((p) => p.id === id)
     setPrenotazioni((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'rifiutata' } : p)))
+    if (r) pushMail('cliente', 'rifiuto', config.nome, r.email, 'Prenotazione non disponibile',
+      `Gentile ${r.nome},\nci dispiace, per le date richieste (${gg(r.dal)}–${gg(r.al)}) non abbiamo disponibilità.\nContattaci per verificare alternative.\n\n${config.nome}`)
+  }, [pushMail])
+
+  const confermaRistorante = useCallback((id: string) => {
+    const r = richRef.current.find((p) => p.id === id)
+    setRichiesteRistorante((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'confermata' } : p)))
+    if (r) pushMail('cliente', 'conferma', config.nome, r.email, 'Tavolo confermato ✓',
+      `Gentile ${r.nome},\nil tuo tavolo per ${r.coperti} coperti (${turnoLabel(r.turno)}) del ${gg(r.data)} è CONFERMATO.\nA presto!\n\n${config.nome}`)
+  }, [pushMail])
+
+  const rifiutaRistorante = useCallback((id: string) => {
+    const r = richRef.current.find((p) => p.id === id)
+    setRichiesteRistorante((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'rifiutata' } : p)))
+    if (r) pushMail('cliente', 'rifiuto', config.nome, r.email, 'Tavolo non disponibile',
+      `Gentile ${r.nome},\nci dispiace, per ${turnoLabel(r.turno)} del ${gg(r.data)} siamo al completo.\nProva con un altro turno o data.\n\n${config.nome}`)
+  }, [pushMail])
+
+  const segnaEmailLetta = useCallback((id: string) => {
+    setPostaCliente((p) => p.map((m) => (m.id === id ? { ...m, letto: true } : m)))
+    setPostaAdmin((p) => p.map((m) => (m.id === id ? { ...m, letto: true } : m)))
+  }, [])
+
+  // — Eventi (CRUD) —
+  const aggiungiEvento = useCallback((e: Evento) => {
+    setEventi((prev) => [...prev, e].sort((a, b) => a.data.localeCompare(b.data)))
+  }, [])
+  const modificaEvento = useCallback((e: Evento) => {
+    setEventi((prev) => prev.map((x) => (x.id === e.id ? e : x)).sort((a, b) => a.data.localeCompare(b.data)))
+  }, [])
+  const eliminaEvento = useCallback((id: string) => {
+    setEventi((prev) => prev.filter((x) => x.id !== id))
   }, [])
 
   const pubblicaPagina = useCallback((id: string) => {
@@ -221,6 +347,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPagine(clona(statoSito.pagine))
     setListinoPubblicato(true)
     setClientiAggiunti([])
+    setRichiesteRistorante([])
+    setPostaCliente([])
+    setPostaAdmin([])
+    setEventi(clona(seedEventi))
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -332,8 +462,20 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiCosto,
       confermaPrenotazione,
       rifiutaPrenotazione,
+      inviaRichiestaOmbrellone,
+      richiesteRistorante,
+      confermaRistorante,
+      rifiutaRistorante,
+      inviaRichiestaRistorante,
       pubblicaPagina,
       pubblicaListino,
+      postaCliente,
+      postaAdmin,
+      segnaEmailLetta,
+      eventi,
+      aggiungiEvento,
+      modificaEvento,
+      eliminaEvento,
       incassoDemo,
       demoInCorso,
       demoProgresso,
@@ -360,8 +502,20 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiCosto,
       confermaPrenotazione,
       rifiutaPrenotazione,
+      inviaRichiestaOmbrellone,
+      richiesteRistorante,
+      confermaRistorante,
+      rifiutaRistorante,
+      inviaRichiestaRistorante,
       pubblicaPagina,
       pubblicaListino,
+      postaCliente,
+      postaAdmin,
+      segnaEmailLetta,
+      eventi,
+      aggiungiEvento,
+      modificaEvento,
+      eliminaEvento,
       incassoDemo,
       demoInCorso,
       demoProgresso,

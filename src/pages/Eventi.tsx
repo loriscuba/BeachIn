@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  Loader2, Trophy, Music, PartyPopper, UtensilsCrossed, Flower2, Gift, CalendarDays, Users, TrendingUp, Wallet,
+  Trophy, Music, PartyPopper, UtensilsCrossed, Flower2, Gift, CalendarDays, Users, TrendingUp, Wallet,
+  Plus, Pencil, Trash2,
 } from 'lucide-react'
 import type { Evento, TipoEvento } from '@/data/types'
-import { getEventi } from '@/data/api'
+import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import { Drawer } from '@/components/ui/Drawer'
+import { Modal } from '@/components/ui/Modal'
+import { Select } from '@/components/ui/Select'
 import { euro, numero, dataEstesa, giornoMese } from '@/lib/formatters'
 import { etichetteTipoEvento } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
@@ -18,14 +22,11 @@ const iconaTipo: Record<TipoEvento, typeof Trophy> = {
 const mesiLabel: Record<string, string> = { '05': 'Maggio', '06': 'Giugno', '07': 'Luglio', '08': 'Agosto', '09': 'Settembre' }
 
 export default function Eventi() {
-  const [eventi, setEventi] = useState<Evento[]>([])
-  const [caricato, setCaricato] = useState(false)
+  const { eventi, aggiungiEvento, modificaEvento, eliminaEvento } = useDemoData()
   const [sel, setSel] = useState<Evento>()
+  const [form, setForm] = useState<{ open: boolean; evento?: Evento }>({ open: false })
 
-  useEffect(() => {
-    getEventi().then((e) => { setEventi([...e].sort((a, b) => a.data.localeCompare(b.data))); setCaricato(true) })
-  }, [])
-
+  const ordinati = useMemo(() => [...eventi].sort((a, b) => a.data.localeCompare(b.data)), [eventi])
   const sintesi = useMemo(() => {
     const ricavi = eventi.reduce((s, e) => s + e.ricavi, 0)
     const costi = eventi.reduce((s, e) => s + e.costiSostenuti, 0)
@@ -35,15 +36,11 @@ export default function Eventi() {
 
   const perMese = useMemo(() => {
     const g: Record<string, Evento[]> = {}
-    for (const e of eventi) (g[e.data.slice(5, 7)] ??= []).push(e)
+    for (const e of ordinati) (g[e.data.slice(5, 7)] ??= []).push(e)
     return Object.entries(g).sort(([a], [b]) => a.localeCompare(b))
-  }, [eventi])
+  }, [ordinati])
 
   const oggi = config.stagione.oggi
-
-  if (!caricato) {
-    return <div className="grid h-64 place-items-center text-profondo/50"><Loader2 className="h-6 w-6 animate-spin" /></div>
-  }
 
   return (
     <div className="space-y-4">
@@ -57,8 +54,13 @@ export default function Eventi() {
 
       {/* Calendario / timeline */}
       <Card>
-        <CardHeader titolo="Calendario eventi" sottotitolo="Clicca un evento per la scheda" />
+        <CardHeader
+          titolo="Calendario eventi"
+          sottotitolo="Clicca un evento per la scheda"
+          azione={<Button variante="primario" dimensione="sm" onClick={() => setForm({ open: true })}><Plus className="h-4 w-4" /> Nuovo evento</Button>}
+        />
         <CardBody className="space-y-4 pt-2">
+          {perMese.length === 0 && <p className="py-6 text-center text-sm text-profondo/45">Nessun evento. Aggiungine uno con “Nuovo evento”.</p>}
           {perMese.map(([m, list]) => (
             <div key={m}>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-profondo/45">{mesiLabel[m] ?? m}</p>
@@ -69,25 +71,15 @@ export default function Eventi() {
                   const margine = e.ricavi - e.costiSostenuti
                   return (
                     <li key={e.id}>
-                      <button
-                        onClick={() => setSel(e)}
-                        className="flex w-full items-center gap-3 rounded-lg border border-calce-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-calce-300 hover:bg-calce/50"
-                      >
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-profondo/8 text-cabina">
-                          <Icona className="h-5 w-5" />
-                        </span>
+                      <button onClick={() => setSel(e)} className="flex w-full items-center gap-3 rounded-lg border border-calce-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-calce-300 hover:bg-calce/50">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-profondo/8 text-cabina"><Icona className="h-5 w-5" /></span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-profondo">{e.nome}</p>
                           <p className="num text-xs text-profondo/55">{giornoMese(e.data)} · {e.partecipanti > 0 ? `${e.partecipanti} partecipanti` : 'in programma'}</p>
                         </div>
                         <div className="shrink-0 text-right">
-                          {futuro && e.ricavi === 0 ? (
-                            <Badge tono="tenda">In programma</Badge>
-                          ) : (
-                            <>
-                              <p className={cn('num text-sm font-bold', margine >= 0 ? 'text-profondo' : 'text-boa')}>{euro(margine)}</p>
-                              <p className="text-[11px] text-profondo/45">margine</p>
-                            </>
+                          {futuro && e.ricavi === 0 ? <Badge tono="tenda">In programma</Badge> : (
+                            <><p className={cn('num text-sm font-bold', margine >= 0 ? 'text-profondo' : 'text-boa')}>{euro(margine)}</p><p className="text-[11px] text-profondo/45">margine</p></>
                           )}
                         </div>
                       </button>
@@ -100,12 +92,23 @@ export default function Eventi() {
         </CardBody>
       </Card>
 
-      <SchedaEvento evento={sel} onChiudi={() => setSel(undefined)} />
+      <SchedaEvento
+        evento={sel}
+        onChiudi={() => setSel(undefined)}
+        onModifica={(e) => { setSel(undefined); setForm({ open: true, evento: e }) }}
+        onElimina={(e) => { if (confirm(`Eliminare l’evento “${e.nome}”?`)) { eliminaEvento(e.id); setSel(undefined) } }}
+      />
+
+      <FormEvento
+        stato={form}
+        onChiudi={() => setForm({ open: false })}
+        onSalva={(e) => { form.evento ? modificaEvento(e) : aggiungiEvento(e); setForm({ open: false }) }}
+      />
     </div>
   )
 }
 
-function SchedaEvento({ evento: e, onChiudi }: { evento?: Evento; onChiudi: () => void }) {
+function SchedaEvento({ evento: e, onChiudi, onModifica, onElimina }: { evento?: Evento; onChiudi: () => void; onModifica: (e: Evento) => void; onElimina: (e: Evento) => void }) {
   const Icona = e ? iconaTipo[e.tipo] : Trophy
   const margine = e ? e.ricavi - e.costiSostenuti : 0
   const scostamento = e ? e.costiSostenuti - e.budget : 0
@@ -114,52 +117,87 @@ function SchedaEvento({ evento: e, onChiudi }: { evento?: Evento; onChiudi: () =
     <Drawer
       aperto={!!e}
       onChiudi={onChiudi}
-      intestazione={
-        e ? (
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-profondo text-white"><Icona className="h-5 w-5" /></span>
-            <div>
-              <h2 className="text-base font-bold text-profondo">{e.nome}</h2>
-              <div className="mt-0.5 flex items-center gap-2">
-                <Badge tono="stagionale">{etichetteTipoEvento[e.tipo]}</Badge>
-                <span className="num text-xs text-profondo/50 capitalize">{dataEstesa(e.data)}</span>
-              </div>
-            </div>
+      intestazione={e ? (
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-lg bg-profondo text-white"><Icona className="h-5 w-5" /></span>
+          <div>
+            <h2 className="text-base font-bold text-profondo">{e.nome}</h2>
+            <div className="mt-0.5 flex items-center gap-2"><Badge tono="stagionale">{etichetteTipoEvento[e.tipo]}</Badge><span className="num text-xs text-profondo/50 capitalize">{dataEstesa(e.data)}</span></div>
           </div>
-        ) : undefined
-      }
+        </div>
+      ) : undefined}
+      piede={e ? (
+        <div className="flex gap-2">
+          <Button variante="secondario" onClick={() => onModifica(e)} bloccato><Pencil className="h-4 w-4" /> Modifica</Button>
+          <Button variante="pericolo" onClick={() => onElimina(e)}><Trash2 className="h-4 w-4" /> Elimina</Button>
+        </div>
+      ) : undefined}
     >
       {e && (
         <div className="space-y-4">
           <p className="text-sm text-profondo/75">{e.descrizione}</p>
-
           <div className="flex items-center gap-2 rounded-lg border border-calce-200 bg-white px-3 py-2 text-sm">
-            <Users className="h-4 w-4 text-cabina" />
-            <span className="text-profondo/75">{e.partecipanti > 0 ? `${numero(e.partecipanti)} partecipanti` : 'Evento in programma'}</span>
+            <Users className="h-4 w-4 text-cabina" /><span className="text-profondo/75">{e.partecipanti > 0 ? `${numero(e.partecipanti)} partecipanti` : 'Evento in programma'}</span>
           </div>
-
-          {/* Conto economico dell'evento */}
           <div className="rounded-lg border border-calce-200 bg-white">
             <RigaCE label="Budget" valore={euro(e.budget)} muto />
             <RigaCE label="Costi sostenuti" valore={euro(e.costiSostenuti)} />
             <RigaCE label="Ricavi" valore={euro(e.ricavi)} />
-            <div className="flex items-center justify-between px-3 py-2.5">
-              <span className="text-sm font-semibold text-profondo">Margine</span>
-              <span className={cn('num text-lg font-bold', margine >= 0 ? 'text-profondo' : 'text-boa')}>{euro(margine)}</span>
-            </div>
+            <div className="flex items-center justify-between px-3 py-2.5"><span className="text-sm font-semibold text-profondo">Margine</span><span className={cn('num text-lg font-bold', margine >= 0 ? 'text-profondo' : 'text-boa')}>{euro(margine)}</span></div>
           </div>
-
           <div className={cn('rounded-lg px-3 py-2 text-xs', scostamento <= 0 ? 'bg-acqua/20 text-profondo' : 'bg-tenda/20 text-[#7A5A12]')}>
-            {e.budget === 0
-              ? 'Evento privato senza budget di spesa dedicato.'
-              : scostamento <= 0
-                ? `Costi entro budget (${euro(-scostamento)} risparmiati).`
-                : `Costi oltre budget di ${euro(scostamento)}.`}
+            {e.budget === 0 ? 'Evento privato senza budget di spesa dedicato.' : scostamento <= 0 ? `Costi entro budget (${euro(-scostamento)} risparmiati).` : `Costi oltre budget di ${euro(scostamento)}.`}
           </div>
         </div>
       )}
     </Drawer>
   )
+}
+
+function FormEvento({ stato, onChiudi, onSalva }: { stato: { open: boolean; evento?: Evento }; onChiudi: () => void; onSalva: (e: Evento) => void }) {
+  const e = stato.evento
+  const vuoto = { nome: '', tipo: 'musica' as TipoEvento, data: config.stagione.oggi, budget: '0', costiSostenuti: '0', ricavi: '0', partecipanti: '0', descrizione: '' }
+  const iniziale = e
+    ? { nome: e.nome, tipo: e.tipo, data: e.data, budget: String(e.budget), costiSostenuti: String(e.costiSostenuti), ricavi: String(e.ricavi), partecipanti: String(e.partecipanti), descrizione: e.descrizione }
+    : vuoto
+  // chiave per re-inizializzare lo stato del form quando cambia l'evento
+  return <FormEventoInterno key={e?.id ?? 'nuovo'} iniziale={iniziale} open={stato.open} modifica={!!e} idEsistente={e?.id} onChiudi={onChiudi} onSalva={onSalva} />
+}
+
+function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, onSalva }: {
+  iniziale: { nome: string; tipo: TipoEvento; data: string; budget: string; costiSostenuti: string; ricavi: string; partecipanti: string; descrizione: string }
+  open: boolean; modifica: boolean; idEsistente?: string; onChiudi: () => void; onSalva: (e: Evento) => void
+}) {
+  const [f, setF] = useState(iniziale)
+  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
+  const valido = f.nome.trim() !== ''
+  const salva = () => onSalva({
+    id: idEsistente ?? `E-NEW-${Date.now()}`,
+    nome: f.nome.trim(), tipo: f.tipo, data: f.data,
+    budget: Number(f.budget) || 0, costiSostenuti: Number(f.costiSostenuti) || 0,
+    ricavi: Number(f.ricavi) || 0, partecipanti: Number(f.partecipanti) || 0,
+    descrizione: f.descrizione.trim(),
+  })
+  return (
+    <Modal aperto={open} onChiudi={onChiudi} titolo={modifica ? 'Modifica evento' : 'Nuovo evento'}
+      piede={<div className="flex justify-end gap-2"><Button variante="secondario" onClick={onChiudi}>Annulla</Button><Button variante="primario" onClick={salva} disabled={!valido}>{modifica ? 'Salva modifiche' : 'Crea evento'}</Button></div>}>
+      <div className="grid grid-cols-2 gap-3">
+        <CampoE label="Nome" span2><input className={ic} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="es. Aperitivo in musica" /></CampoE>
+        <CampoE label="Tipo"><Select value={f.tipo} onChange={(e) => set('tipo', e.target.value)} opzioni={Object.entries(etichetteTipoEvento).map(([v, l]) => ({ valore: v, etichetta: l }))} /></CampoE>
+        <CampoE label="Data"><input type="date" className={ic} value={f.data} onChange={(e) => set('data', e.target.value)} /></CampoE>
+        <CampoE label="Budget (€)"><input type="number" className={`${ic} num`} value={f.budget} onChange={(e) => set('budget', e.target.value)} /></CampoE>
+        <CampoE label="Costi sostenuti (€)"><input type="number" className={`${ic} num`} value={f.costiSostenuti} onChange={(e) => set('costiSostenuti', e.target.value)} /></CampoE>
+        <CampoE label="Ricavi (€)"><input type="number" className={`${ic} num`} value={f.ricavi} onChange={(e) => set('ricavi', e.target.value)} /></CampoE>
+        <CampoE label="Partecipanti"><input type="number" className={`${ic} num`} value={f.partecipanti} onChange={(e) => set('partecipanti', e.target.value)} /></CampoE>
+        <CampoE label="Descrizione" span2><textarea rows={3} className={`${ic} h-auto py-2`} value={f.descrizione} onChange={(e) => set('descrizione', e.target.value)} /></CampoE>
+      </div>
+    </Modal>
+  )
+}
+
+const ic = 'h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring'
+function CampoE({ label, span2, children }: { label: string; span2?: boolean; children: React.ReactNode }) {
+  return <label className={cn('block', span2 && 'col-span-2')}><span className="mb-1 block text-xs font-medium text-profondo/60">{label}</span>{children}</label>
 }
 
 function RigaCE({ label, valore, muto }: { label: string; valore: string; muto?: boolean }) {
@@ -175,9 +213,7 @@ function Kpi({ icona: Icona, etichetta, valore, sotto }: { icona: typeof Trophy;
   return (
     <Card>
       <CardBody>
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-profondo/50">
-          <Icona className="h-3.5 w-3.5 text-cabina" /> {etichetta}
-        </p>
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-profondo/50"><Icona className="h-3.5 w-3.5 text-cabina" /> {etichetta}</p>
         <p className="num mt-0.5 text-2xl font-bold text-profondo">{valore}</p>
         {sotto && <p className="num text-xs text-profondo/50">{sotto}</p>}
       </CardBody>

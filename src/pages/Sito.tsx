@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Loader2, ExternalLink, CalendarCheck, MessageSquare, Star, BarChart3, Globe, Check, X as XIcon,
-  Image, Newspaper, Tags, Umbrella, Search, FileText,
+  Image, Newspaper, Tags, Umbrella, Search, FileText, UtensilsCrossed, Inbox, Mail,
 } from 'lucide-react'
-import type { StatoSito } from '@/data/types'
+import type { Email, StatoSito, Turno } from '@/data/types'
 import { getDisponibilitaSito, getStatoSito } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -15,10 +15,15 @@ import { numero, percento, data as fmtData } from '@/lib/formatters'
 import { etichetteTipologia } from '@/lib/arenile'
 import { cn } from '@/lib/cn'
 
-type Sezione = 'panoramica' | 'prenotazioni' | 'contenuti' | 'interazioni'
+type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni'
+const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'Pranzo' : 'Cena')
 
 export default function Sito() {
-  const { prenotazioniOnline, confermaPrenotazione, rifiutaPrenotazione, pagine, pubblicaPagina, listinoPubblicato } = useDemoData()
+  const {
+    prenotazioniOnline, confermaPrenotazione, rifiutaPrenotazione,
+    richiesteRistorante, confermaRistorante, rifiutaRistorante,
+    postaAdmin, segnaEmailLetta, pagine, pubblicaPagina, listinoPubblicato,
+  } = useDemoData()
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [sez, setSez] = useState<Sezione>('panoramica')
@@ -31,7 +36,10 @@ export default function Sito() {
     })
   }, [])
 
-  const daConfermare = prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length
+  const daConfermareOmbr = prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length
+  const daConfermareRist = richiesteRistorante.filter((p) => p.stato === 'da_confermare').length
+  const daConfermare = daConfermareOmbr + daConfermareRist
+  const postaNonLetta = postaAdmin.filter((m) => !m.letto).length
   const nonLetti = sito?.messaggi.filter((m) => !m.letto).length ?? 0
   const votoMedio = useMemo(() => {
     if (!sito) return 0
@@ -52,6 +60,7 @@ export default function Sito() {
           opzioni={[
             { valore: 'panoramica', etichetta: 'Panoramica' },
             { valore: 'prenotazioni', etichetta: `Prenotazioni${daConfermare ? ` (${daConfermare})` : ''}` },
+            { valore: 'posta', etichetta: `Posta${postaNonLetta ? ` (${postaNonLetta})` : ''}` },
             { valore: 'contenuti', etichetta: 'Contenuti' },
             { valore: 'interazioni', etichetta: 'Recensioni e messaggi' },
           ]}
@@ -116,32 +125,63 @@ export default function Sito() {
       )}
 
       {sez === 'prenotazioni' && (
+        <div className="space-y-4">
+          <p className="text-sm text-profondo/60">
+            Le richieste arrivano dal sito. Alla conferma o al rifiuto parte in automatico un’email al cliente (visibile in “La mia posta” sul sito).
+          </p>
+
+          {/* Ombrelloni */}
+          <Card>
+            <CardHeader titolo={<span className="inline-flex items-center gap-2"><Umbrella className="h-4 w-4 text-cabina" /> Ombrelloni</span>} sottotitolo={`${prenotazioniOnline.length} richieste`} />
+            <CardBody className="pt-1">
+              {prenotazioniOnline.length === 0 ? <Vuoto testo="Nessuna richiesta ombrellone." /> : (
+                <ul className="divide-y divide-calce-200">
+                  {prenotazioniOnline.map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-profondo">{p.nome} <span className="font-normal text-profondo/50">· {p.persone} pers.</span></p>
+                        <p className="num text-xs text-profondo/55">{fmtData(p.dal)} – {fmtData(p.al)} · {etichetteTipologia[p.tipologiaPostazione]}</p>
+                        {p.messaggio && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.messaggio}”</p>}
+                      </div>
+                      <AzioniRichiesta stato={p.stato} onConferma={() => confermaPrenotazione(p.id)} onRifiuta={() => rifiutaPrenotazione(p.id)} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
+
+          {/* Ristorante */}
+          <Card>
+            <CardHeader titolo={<span className="inline-flex items-center gap-2"><UtensilsCrossed className="h-4 w-4 text-cabina" /> Ristorante</span>} sottotitolo={`${richiesteRistorante.length} richieste`} />
+            <CardBody className="pt-1">
+              {richiesteRistorante.length === 0 ? <Vuoto testo="Nessuna richiesta tavolo. Provane una dal sito → “Prenota un tavolo”." /> : (
+                <ul className="divide-y divide-calce-200">
+                  {richiesteRistorante.map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-profondo">{p.nome} <span className="font-normal text-profondo/50">· {p.coperti} coperti</span></p>
+                        <p className="num text-xs text-profondo/55">{turnoLabel(p.turno)} del {fmtData(p.data)}</p>
+                        {p.note && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.note}”</p>}
+                      </div>
+                      <AzioniRichiesta stato={p.stato} onConferma={() => confermaRistorante(p.id)} onRifiuta={() => rifiutaRistorante(p.id)} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {sez === 'posta' && (
         <Card>
-          <CardHeader titolo="Richieste di prenotazione online" sottotitolo={`${prenotazioniOnline.length} richieste`} />
+          <CardHeader
+            titolo={<span className="inline-flex items-center gap-2"><Inbox className="h-4 w-4 text-cabina" /> Posta amministratore</span>}
+            sottotitolo="Notifiche delle richieste in arrivo dal sito"
+          />
           <CardBody className="pt-1">
-            <ul className="divide-y divide-calce-200">
-              {prenotazioniOnline.map((p) => (
-                <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-profondo">{p.nome} <span className="font-normal text-profondo/50">· {p.persone} pers.</span></p>
-                    <p className="num text-xs text-profondo/55">
-                      {fmtData(p.dal)} – {fmtData(p.al)} · {etichetteTipologia[p.tipologiaPostazione]}
-                    </p>
-                    {p.messaggio && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.messaggio}”</p>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {p.stato === 'da_confermare' ? (
-                      <>
-                        <Button variante="primario" dimensione="sm" onClick={() => confermaPrenotazione(p.id)}><Check className="h-4 w-4" /> Conferma</Button>
-                        <Button variante="secondario" dimensione="sm" onClick={() => rifiutaPrenotazione(p.id)}><XIcon className="h-4 w-4" /> Rifiuta</Button>
-                      </>
-                    ) : (
-                      <Badge tono={p.stato === 'confermata' ? 'acqua' : 'boa'} puntino>{p.stato === 'confermata' ? 'Confermata' : 'Rifiutata'}</Badge>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <CasellaPosta emails={postaAdmin} onLetta={segnaEmailLetta} vuoto="Nessuna notifica. Invia una richiesta dal sito e comparirà qui." />
           </CardBody>
         </Card>
       )}
@@ -258,6 +298,50 @@ export default function Sito() {
         </div>
       )}
     </div>
+  )
+}
+
+function Vuoto({ testo }: { testo: string }) {
+  return <p className="py-6 text-center text-sm text-profondo/45">{testo}</p>
+}
+
+function AzioniRichiesta({ stato, onConferma, onRifiuta }: { stato: 'da_confermare' | 'confermata' | 'rifiutata'; onConferma: () => void; onRifiuta: () => void }) {
+  if (stato !== 'da_confermare') {
+    return <Badge tono={stato === 'confermata' ? 'acqua' : 'boa'} puntino>{stato === 'confermata' ? 'Confermata' : 'Rifiutata'}</Badge>
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <Button variante="primario" dimensione="sm" onClick={onConferma}><Check className="h-4 w-4" /> Conferma</Button>
+      <Button variante="secondario" dimensione="sm" onClick={onRifiuta}><XIcon className="h-4 w-4" /> Rifiuta</Button>
+    </div>
+  )
+}
+
+function CasellaPosta({ emails, onLetta, vuoto }: { emails: Email[]; onLetta: (id: string) => void; vuoto: string }) {
+  const [aperto, setAperto] = useState<string>()
+  if (emails.length === 0) return <Vuoto testo={vuoto} />
+  return (
+    <ul className="space-y-2">
+      {emails.map((m) => {
+        const open = aperto === m.id
+        return (
+          <li key={m.id} className="overflow-hidden rounded-lg border border-calce-200 bg-white">
+            <button onClick={() => { setAperto(open ? undefined : m.id); if (!m.letto) onLetta(m.id) }} className="flex w-full items-start gap-2 px-3 py-2.5 text-left">
+              <Mail className={cn('mt-0.5 h-4 w-4 shrink-0', m.letto ? 'text-profondo/30' : 'text-cabina')} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className={cn('truncate text-sm', m.letto ? 'font-medium text-profondo' : 'font-bold text-profondo')}>{m.oggetto}</span>
+                  <span className="num shrink-0 text-[11px] text-profondo/45">{fmtData(m.data)}</span>
+                </span>
+                <span className="truncate text-xs text-profondo/50">da {m.da}</span>
+              </span>
+              {!m.letto && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-boa" />}
+            </button>
+            {open && <div className="whitespace-pre-line border-t border-calce-200 bg-calce/40 px-3 py-2.5 text-sm text-profondo/80">{m.corpo}</div>}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

@@ -466,6 +466,39 @@ export interface StatoSito {
   visite: { data: string; visite: number; unici: number }[]
 }
 
+/** Richiesta di prenotazione tavolo al ristorante, arrivata dal sito. */
+export interface RichiestaRistorante {
+  id: string
+  ricevutaIl: string
+  nome: string
+  email: string
+  telefono: string
+  data: string
+  turno: Turno
+  coperti: number
+  stato: StatoPrenotazioneOnline
+  note?: string
+}
+
+// ————————————————————————————————————————————————————————————
+// Posta (caselle cliente e amministratore) — simulazione conferme
+// ————————————————————————————————————————————————————————————
+
+export type CasellaPosta = 'cliente' | 'admin'
+export type TipoEmail = 'richiesta' | 'conferma' | 'rifiuto' | 'notifica'
+
+export interface Email {
+  id: string
+  casella: CasellaPosta
+  da: string
+  a: string
+  oggetto: string
+  corpo: string
+  data: string
+  letto: boolean
+  tipo: TipoEmail
+}
+
 // ————————————————————————————————————————————————————————————
 // Viste derivate (calcolate in api.ts / lib/calcoli.ts)
 // ————————————————————————————————————————————————————————————
