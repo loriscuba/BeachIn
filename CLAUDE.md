@@ -8,8 +8,10 @@ riconciliati tra le pagine. BeachIn è l'**aggregatore di moduli**.
 - Branch di sviluppo attuale: **`claude/web-app-voice-restaurant-menu-yk9jm4`** (PR #2, draft su `loriscuba/BeachIn`) —
   app completa consolidata + Assistente vocale. (Storico: `claude/prompt-fase-1-5hlkom`, PR #1.)
 - Anteprima web (Artifact): https://claude.ai/artifact/PqRRUL2ws33iz2m9qn99nV — ripubblicare sullo stesso URL.
-- Deploy pubblico (microfono reale): GitHub Pages via `.github/workflows/pages.yml` (build Vite,
-  `VITE_BASE=/BeachIn/` + HashRouter). Richiede Pages attivo (Source: GitHub Actions).
+- Deploy pubblico (microfono reale), due canali automatici sul push:
+  - **GitHub Pages** — https://loriscuba.github.io/BeachIn/ (workflow `.github/workflows/pages.yml`,
+    build Vite con `VITE_BASE=/BeachIn/` + HashRouter; Pages attivo su Source: GitHub Actions).
+  - **Vercel** — anteprima per branch (BrowserRouter, `vercel.json` con rewrite SPA verso `/index.html`).
 - Per risparmiare token: build/typecheck di norma bastano; screenshot solo se richiesti; evita di rileggere l'artifact pubblicato (è enorme).
 
 ## Stack
