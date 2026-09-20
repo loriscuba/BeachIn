@@ -3,7 +3,8 @@ import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDow
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, ServizioRistoranteGiorno, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
-import { getMenu, getPrenotazioniRistorante, getServiziRistorante, getTavoli } from '@/data/api'
+import { getPrenotazioniRistorante, getServiziRistorante, getTavoli } from '@/data/api'
+import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -26,7 +27,9 @@ const zone = [
 const margine = (p: Piatto) => (p.prezzo - p.foodCost) / p.prezzo
 
 export default function Ristorante() {
-  const [menu, setMenu] = useState<Piatto[]>([])
+  // Il menu è il modulo mutabile del context (modificabile anche dall'Assistente
+  // vocale): questa pagina lo mostra dal vivo, così le modifiche si riflettono qui.
+  const { menu } = useDemoData()
   const [tavoli, setTavoli] = useState<Tavolo[]>([])
   const [servizi, setServizi] = useState<ServizioRistoranteGiorno[]>([])
   const [prenotazioni, setPrenotazioni] = useState<PrenotazioneRistorante[]>([])
@@ -34,8 +37,8 @@ export default function Ristorante() {
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
 
   useEffect(() => {
-    Promise.all([getMenu(), getTavoli(), getServiziRistorante(), getPrenotazioniRistorante()]).then(
-      ([m, t, s, p]) => { setMenu(m); setTavoli(t); setServizi(s); setPrenotazioni(p); setCaricato(true) }
+    Promise.all([getTavoli(), getServiziRistorante(), getPrenotazioniRistorante()]).then(
+      ([t, s, p]) => { setTavoli(t); setServizi(s); setPrenotazioni(p); setCaricato(true) }
     )
   }, [])
 

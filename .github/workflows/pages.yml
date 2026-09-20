@@ -1,0 +1,64 @@
+name: Deploy su GitHub Pages
+
+# Compila l'app Vite e la pubblica su GitHub Pages, così il microfono
+# (Web Speech API) funziona su una pagina HTTPS reale.
+#
+# PREREQUISITO (una tantum, solo il proprietario del repo):
+#   Settings → Pages → Build and deployment → Source: "GitHub Actions".
+# Dopo di che ogni push su questo branch pubblica automaticamente.
+
+on:
+  push:
+    branches:
+      - claude/web-app-voice-restaurant-menu-yk9jm4
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (HashRouter, base /BeachIn/)
+        env:
+          VITE_ROUTER: hash
+          VITE_BASE: /BeachIn/
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -5,9 +5,11 @@ Tutto in italiano. Dati finti ma strutturati come una vera API, numeri
 riconciliati tra le pagine. BeachIn è l'**aggregatore di moduli**.
 
 ## Come riprendere il lavoro (per Claude)
-- Branch di sviluppo: **`claude/prompt-fase-1-5hlkom`** (PR #1, draft su `loriscuba/BeachIn`).
-- Anteprima web (Artifact, unico link stabile): https://claude.ai/code/artifact/c58937ca-89cf-46df-b35e-ff763e14a146
-- Prima di modifiche: `git fetch origin claude/prompt-fase-1-5hlkom && git checkout claude/prompt-fase-1-5hlkom`.
+- Branch di sviluppo attuale: **`claude/web-app-voice-restaurant-menu-yk9jm4`** (PR #2, draft su `loriscuba/BeachIn`) —
+  app completa consolidata + Assistente vocale. (Storico: `claude/prompt-fase-1-5hlkom`, PR #1.)
+- Anteprima web (Artifact): https://claude.ai/artifact/PqRRUL2ws33iz2m9qn99nV — ripubblicare sullo stesso URL.
+- Deploy pubblico (microfono reale): GitHub Pages via `.github/workflows/pages.yml` (build Vite,
+  `VITE_BASE=/BeachIn/` + HashRouter). Richiede Pages attivo (Source: GitHub Actions).
 - Per risparmiare token: build/typecheck di norma bastano; screenshot solo se richiesti; evita di rileggere l'artifact pubblicato (è enorme).
 
 ## Stack
@@ -35,8 +37,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Voce: `src/hooks/useVoce.ts` (Web Speech API, `it-IT`). Parser a regole: `src/lib/comandiMenu.ts`
   → `parseComandoMenu()` restituisce `ComandoMenu` (sostituibile con un LLM senza toccare la pagina).
 - Il menu è mutabile nel context: `menu` + `aggiungiPiatto/rimuoviPiatto/modificaPrezzoPiatto/rinominaPiatto`
-  (seed `menu` da `seed/ristorante.ts`). Incluso nel `reset()`. La pagina Ristorante resta read-only sui seed
-  (integrazione delle due viste = passo successivo).
+  (seed `menu` da `seed/ristorante.ts`). Incluso nel `reset()`. La pagina **Ristorante legge lo stesso `menu`
+  dal context** (non più `getMenu()`): menu unico, le modifiche vocali si riflettono lì.
 
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
 - Sito gestionale: panoramica, **prenotazioni** (Ombrelloni/Ristorante/Eventi con

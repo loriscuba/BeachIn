@@ -84,9 +84,9 @@ gestire il **menu del ristorante parlando** — o scrivendo — con un assistent
 - **Dati**: il menu è un modulo mutabile in `DemoDataContext` (dati statici in
   memoria, stessa forma dell'API). Al collegamento del DB cambieranno solo le
   mutazioni del context. Al refresh / *Ripristina dati demo* torna al menu base.
-- Per ora il menu vocale è **a parte** rispetto alla pagina *Ristorante* (che
-  resta in sola lettura sul menu dei seed): l'integrazione delle due viste è il
-  passo successivo.
+- **Menu unico**: la pagina *Ristorante* legge lo **stesso menu** dal context,
+  quindi le modifiche fatte a voce si vedono subito anche lì (prezzi, nuovi
+  piatti, rimozioni).
 
 ## Percorso di demo consigliato (10 passi)
 

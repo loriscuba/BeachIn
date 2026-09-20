@@ -4,6 +4,9 @@ import path from 'node:path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Base configurabile: '/' in sviluppo e nell'anteprima Artifact, '/BeachIn/'
+  // per GitHub Pages (impostato dal workflow via VITE_BASE).
+  base: process.env.VITE_BASE || '/',
   plugins: [react()],
   resolve: {
     alias: {
