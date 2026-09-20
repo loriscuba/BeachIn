@@ -1,10 +1,13 @@
-import { Building2, Umbrella, CalendarRange, Percent, Users2, ShieldCheck, RotateCcw, FlaskConical } from 'lucide-react'
+import { Building2, Umbrella, CalendarRange, Percent, Users2, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { useDemoData } from '@/context/DemoDataContext'
+import { useModuli } from '@/context/ModuliContext'
+import { MODULI, PIANI, type InfoModulo } from '@/config/moduli'
 import { config, STATI_POSTAZIONE } from '@/data/config'
 import { data, percento } from '@/lib/formatters'
+import { cn } from '@/lib/cn'
 
 function Riga({ etichetta, valore }: { etichetta: string; valore: React.ReactNode }) {
   return (
@@ -24,8 +27,74 @@ const ruoli = [
 
 export default function Impostazioni() {
   const { reset } = useDemoData()
+  const { moduloAttivo, toggle, applicaPiano, pianoCorrente } = useModuli()
+  const moduliVendibili = (Object.values(MODULI) as InfoModulo[]).filter((m) => !m.core)
+
   return (
     <div className="space-y-4">
+      {/* Moduli e piano commerciale */}
+      <Card>
+        <CardHeader
+          titolo={
+            <span className="inline-flex items-center gap-2">
+              <Boxes className="h-4 w-4 text-cabina" /> Moduli e piano
+            </span>
+          }
+          sottotitolo="BeachIn si vende a moduli: attiva ciò che serve al cliente, il resto è upsell."
+        />
+        <CardBody className="space-y-4 pt-1">
+          {/* Piani rapidi */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-profondo/50">Piani</span>
+            {Object.values(PIANI).map((p) => (
+              <Button
+                key={p.id}
+                variante={pianoCorrente === p.id ? 'primario' : 'secondario'}
+                dimensione="sm"
+                onClick={() => applicaPiano(p.id)}
+                title={p.descrizione}
+              >
+                {p.nome}
+              </Button>
+            ))}
+            {pianoCorrente === null && <Badge tono="tenda">Piano personalizzato</Badge>}
+          </div>
+
+          {/* Elenco moduli con attivazione dal vivo */}
+          <ul className="divide-y divide-calce-200">
+            {moduliVendibili.map((m) => {
+              const attivo = moduloAttivo(m.id)
+              return (
+                <li key={m.id} className="flex items-center justify-between gap-4 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-profondo">{m.nome}</p>
+                    <p className="truncate text-xs text-profondo/55">{m.sottotitolo}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggle(m.id)}
+                    className={cn(
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                      attivo
+                        ? 'bg-acqua/25 text-profondo hover:bg-acqua/40'
+                        : 'bg-calce-200 text-profondo/60 hover:bg-calce-300'
+                    )}
+                    aria-pressed={attivo}
+                  >
+                    {attivo ? <Check className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                    {attivo ? 'Attivo' : 'Bloccato'}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="text-xs text-profondo/45">
+            In produzione i moduli attivi arrivano dal piano del cliente (dal database). Qui puoi
+            attivarli/disattivarli dal vivo per la demo.
+          </p>
+        </CardBody>
+      </Card>
+
       <p className="text-sm text-profondo/60">
         I parametri qui sotto sono definiti in{' '}
         <code className="rounded bg-calce-200 px-1.5 py-0.5 text-[13px] text-profondo">

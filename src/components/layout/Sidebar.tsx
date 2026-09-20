@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import { X } from 'lucide-react'
+import { X, Lock } from 'lucide-react'
 import { navigazione, gruppiNav } from '@/config/navigazione'
+import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { Logo } from './Logo'
 import { cn } from '@/lib/cn'
@@ -11,6 +12,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ aperta, onChiudi }: SidebarProps) {
+  const { moduloAttivo } = useModuli()
   return (
     <>
       {/* Backdrop su mobile */}
@@ -52,32 +54,39 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
                   {gruppo}
                 </p>
                 <ul className="space-y-0.5">
-                  {voci.map((v) => (
-                    <li key={v.percorso}>
-                      <NavLink
-                        to={v.percorso}
-                        end={v.percorso === '/'}
-                        onClick={onChiudi}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                            isActive
-                              ? 'bg-white/12 text-white'
-                              : 'text-white/70 hover:bg-white/6 hover:text-white'
-                          )
-                        }
-                      >
-                        {({ isActive }) => (
-                          <>
-                            <v.icona
-                              className={cn('h-[18px] w-[18px] shrink-0', isActive && 'text-tenda')}
-                            />
-                            <span className="truncate">{v.etichetta}</span>
-                          </>
-                        )}
-                      </NavLink>
-                    </li>
-                  ))}
+                  {voci.map((v) => {
+                    const bloccato = !moduloAttivo(v.modulo)
+                    return (
+                      <li key={v.percorso}>
+                        <NavLink
+                          to={v.percorso}
+                          end={v.percorso === '/'}
+                          onClick={onChiudi}
+                          title={bloccato ? 'Modulo non incluso nel piano — attivalo' : undefined}
+                          className={({ isActive }) =>
+                            cn(
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                              isActive
+                                ? 'bg-white/12 text-white'
+                                : bloccato
+                                  ? 'text-white/35 hover:bg-white/6 hover:text-white/60'
+                                  : 'text-white/70 hover:bg-white/6 hover:text-white'
+                            )
+                          }
+                        >
+                          {({ isActive }) => (
+                            <>
+                              <v.icona
+                                className={cn('h-[18px] w-[18px] shrink-0', isActive && 'text-tenda')}
+                              />
+                              <span className="truncate">{v.etichetta}</span>
+                              {bloccato && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 opacity-70" />}
+                            </>
+                          )}
+                        </NavLink>
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
             )

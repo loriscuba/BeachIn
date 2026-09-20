@@ -8,7 +8,9 @@ import { config } from '@/data/config'
 
 /** Sottotitoli per pagina mostrati nella topbar. */
 const sottotitoli: Record<string, string> = {
-  '/': `Stagione ${config.stagione.anno} · panoramica della giornata`,
+  '/': `Stagione ${config.stagione.anno} · panoramica dei moduli attivi`,
+  '/cruscotto': `Stagione ${config.stagione.anno} · KPI di tutta la struttura`,
+  '/assistente-vocale': 'Modifica il menù del ristorante a voce',
   '/arenile': `${config.arenile.postazioniTotali} postazioni · ${config.arenile.file.length} file`,
   '/clienti': 'Anagrafiche, storico e saldi',
   '/tariffe': 'Listini per periodo, fila e tipologia',

@@ -42,6 +42,17 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (seed `menu` da `seed/ristorante.ts`). Incluso nel `reset()`. La pagina **Ristorante legge lo stesso `menu`
   dal context** (non più `getMenu()`): menu unico, le modifiche vocali si riflettono lì.
 
+## Moduli commerciali (vendita a moduli)
+- BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
+  upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`
+  (in memoria + localStorage `beachin.moduli.v1`; domani = campo per-cliente dal DB).
+- Core sempre attivi: `panoramica` (home ridotta, rotta `/`) e `impostazioni`.
+- Gating: ogni voce nav ha `modulo`; `src/components/ModuloGate.tsx` protegge le rotte → se il modulo
+  non è attivo mostra `src/pages/ModuloBloccato.tsx` (pagina di upsell, deep-link non fa 404). La Sidebar
+  mostra i moduli bloccati col lucchetto. Il Cruscotto completo è ora rotta `/cruscotto` (modulo `cruscotto`).
+- Piano di default: `ristorante_web` (Panoramica, Ristorante, Assistente vocale, Sito, Impostazioni).
+- Attivazione dal vivo (demo/vendita) da **Impostazioni → Moduli e piano** (`applicaPiano`, `toggle`).
+
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
 - Sito gestionale: panoramica, **prenotazioni** (Ombrelloni/Ristorante/Eventi con
   Conferma/Rifiuta), **posta** admin, contenuti, recensioni/messaggi.

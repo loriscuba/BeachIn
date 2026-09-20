@@ -68,6 +68,30 @@ src/
                comandiMenu.ts             (parser vocale del menu)
 ```
 
+## Moduli e piani (vendita a moduli)
+
+BeachIn si vende **a moduli**: il cliente entra con un pacchetto ridotto e attiva
+gli altri in seguito (upsell). L'app riflette questo modello:
+
+- **Sorgente unica**: `src/config/moduli.ts` definisce i moduli, i testi di
+  vendita per l'upsell e i **piani** (bundle). Quali moduli sono attivi per il
+  cliente sta in `src/context/ModuliContext.tsx` (in memoria + `localStorage`;
+  in una fase successiva sarà un campo **per-cliente nel database**).
+- **Piano di default**: *Ristorante & Web* — Panoramica, Ristorante, Assistente
+  vocale, Sito internet, Impostazioni. Tutti gli altri moduli (Cruscotto
+  completo, Arenile, Clienti, Tariffe, Bar, Costi, Conto economico, Personale,
+  Eventi) sono **bloccati** e mostrano una **pagina di upsell** invece di
+  sparire (i link diretti non danno 404: propongono l'attivazione).
+- **Home ridotta**: la rotta `/` è la **Panoramica**, con i KPI dei soli moduli
+  attivi (Ristorante + Sito). Il **Cruscotto completo** (KPI di tutta la
+  struttura) è il modulo premium su `/cruscotto`.
+- **Attivazione dal vivo**: in **Impostazioni → Moduli e piano** si applica un
+  piano o si attiva/disattiva un singolo modulo — comodo per mostrare l'upsell
+  al cliente durante una demo.
+
+Per cambiare il pacchetto di un cliente: applica un piano da Impostazioni, oppure
+modifica il piano di default in `src/config/moduli.ts` (`PIANO_DEFAULT`).
+
 ## Assistente vocale (menu a voce)
 
 La pagina **Assistente vocale** (menu laterale → *Gestione*) permette di
