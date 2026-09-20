@@ -143,8 +143,8 @@ export const PIANI: Record<string, Piano> = {
   ristorante_web: {
     id: 'ristorante_web',
     nome: 'Ristorante & Web',
-    descrizione: 'Menù, prenotazioni ristorante e presenza online.',
-    moduli: ['panoramica', 'ristorante', 'assistente-vocale', 'sito', 'impostazioni'],
+    descrizione: 'Menù, prenotazioni ristorante, eventi e presenza online.',
+    moduli: ['panoramica', 'ristorante', 'assistente-vocale', 'eventi', 'sito', 'impostazioni'],
   },
   completo: {
     id: 'completo',

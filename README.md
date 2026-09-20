@@ -78,10 +78,10 @@ gli altri in seguito (upsell). L'app riflette questo modello:
   cliente sta in `src/context/ModuliContext.tsx` (in memoria + `localStorage`;
   in una fase successiva sarà un campo **per-cliente nel database**).
 - **Piano di default**: *Ristorante & Web* — Panoramica, Ristorante, Assistente
-  vocale, Sito internet, Impostazioni. Tutti gli altri moduli (Cruscotto
-  completo, Arenile, Clienti, Tariffe, Bar, Costi, Conto economico, Personale,
-  Eventi) sono **bloccati** e mostrano una **pagina di upsell** invece di
-  sparire (i link diretti non danno 404: propongono l'attivazione).
+  vocale, Eventi, Sito internet, Impostazioni. Tutti gli altri moduli (Cruscotto
+  completo, Arenile, Clienti, Tariffe, Bar, Costi, Conto economico, Personale)
+  sono **bloccati** e mostrano una **pagina di upsell** invece di sparire (i
+  link diretti non danno 404: propongono l'attivazione).
 - **Home ridotta**: la rotta `/` è la **Panoramica**, con i KPI dei soli moduli
   attivi (Ristorante + Sito). Il **Cruscotto completo** (KPI di tutta la
   struttura) è il modulo premium su `/cruscotto`.

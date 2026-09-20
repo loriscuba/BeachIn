@@ -50,7 +50,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Gating: ogni voce nav ha `modulo`; `src/components/ModuloGate.tsx` protegge le rotte → se il modulo
   non è attivo mostra `src/pages/ModuloBloccato.tsx` (pagina di upsell, deep-link non fa 404). La Sidebar
   mostra i moduli bloccati col lucchetto. Il Cruscotto completo è ora rotta `/cruscotto` (modulo `cruscotto`).
-- Piano di default: `ristorante_web` (Panoramica, Ristorante, Assistente vocale, Sito, Impostazioni).
+- Piano di default: `ristorante_web` (Panoramica, Ristorante, Assistente vocale, Eventi, Sito, Impostazioni).
 - Attivazione dal vivo (demo/vendita) da **Impostazioni → Moduli e piano** (`applicaPiano`, `toggle`).
 
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
