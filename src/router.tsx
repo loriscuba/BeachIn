@@ -17,6 +17,7 @@ const Clienti = lazy(() => import('@/pages/Clienti'))
 const Tariffe = lazy(() => import('@/pages/Tariffe'))
 const Bar = lazy(() => import('@/pages/Bar'))
 const Ristorante = lazy(() => import('@/pages/Ristorante'))
+const AssistenteVocale = lazy(() => import('@/pages/AssistenteVocale'))
 const Costi = lazy(() => import('@/pages/Costi'))
 const ContoEconomico = lazy(() => import('@/pages/ContoEconomico'))
 const Personale = lazy(() => import('@/pages/Personale'))
@@ -39,6 +40,7 @@ export const router = creaRouter([
       { path: 'tariffe', element: s(<Tariffe />) },
       { path: 'bar', element: s(<Bar />) },
       { path: 'ristorante', element: s(<Ristorante />) },
+      { path: 'assistente-vocale', element: s(<AssistenteVocale />) },
       { path: 'costi', element: s(<Costi />) },
       { path: 'conto-economico', element: s(<ContoEconomico />) },
       { path: 'personale', element: s(<Personale />) },

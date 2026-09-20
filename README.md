@@ -61,10 +61,32 @@ src/
   context/     DemoDataContext.tsx        (mutazioni in memoria)
   components/  ui/ · layout/ · charts/ · arenile/
   pages/       Cruscotto, Arenile, Clienti, Tariffe, Bar, Ristorante,
-               Costi, ContoEconomico, Personale, Eventi, Sito,
-               SitoAnteprima, Impostazioni
-  lib/         formatters.ts · calcoli.ts · arenile.ts · etichette.ts
+               AssistenteVocale, Costi, ContoEconomico, Personale, Eventi,
+               Sito, SitoAnteprima, Impostazioni
+  hooks/       useVoce.ts                 (Web Speech API: ascolto + sintesi)
+  lib/         formatters.ts · calcoli.ts · arenile.ts · etichette.ts ·
+               comandiMenu.ts             (parser vocale del menu)
 ```
+
+## Assistente vocale (menu a voce)
+
+La pagina **Assistente vocale** (menu laterale → *Gestione*) permette di
+gestire il **menu del ristorante parlando** — o scrivendo — con un assistente:
+«aggiungi spaghetti allo scoglio a 18 euro», «cambia il prezzo della carbonara a
+13», «togli il tiramisù», «leggi il menu». L'assistente risponde a voce.
+
+- **Voce**: Web Speech API del browser (`src/hooks/useVoce.ts`), nessuna chiave
+  API, nessun costo. Funziona al meglio su Chrome/Edge; il microfono richiede
+  HTTPS o `localhost`. Dove non è disponibile, resta la chat testuale.
+- **Comprensione**: parser a regole in italiano (`src/lib/comandiMenu.ts`),
+  deterministico e offline. È isolato: in futuro può essere sostituito da un LLM
+  mantenendo la stessa struttura `ComandoMenu`.
+- **Dati**: il menu è un modulo mutabile in `DemoDataContext` (dati statici in
+  memoria, stessa forma dell'API). Al collegamento del DB cambieranno solo le
+  mutazioni del context. Al refresh / *Ripristina dati demo* torna al menu base.
+- Per ora il menu vocale è **a parte** rispetto alla pagina *Ristorante* (che
+  resta in sola lettura sul menu dei seed): l'integrazione delle due viste è il
+  passo successivo.
 
 ## Percorso di demo consigliato (10 passi)
 

@@ -10,11 +10,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
+  CategoriaPiatto,
   Cliente,
   ContoOmbrellone,
   Email,
   Evento,
   PaginaSito,
+  Piatto,
   Postazione,
   PrenotazioneOnline,
   RichiestaEvento,
@@ -29,6 +31,7 @@ import type {
 import { postazioni as seedPostazioni } from '@/data/seed/spiaggia'
 import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
+import { menu as seedMenu } from '@/data/seed/ristorante'
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
@@ -158,6 +161,14 @@ interface DemoDataValue {
   modificaEvento: (evento: Evento) => void
   eliminaEvento: (id: string) => void
 
+  // Ristorante — menu modificabile (anche a voce). Dati statici in memoria,
+  // stessa forma dell'API: in futuro le mutazioni chiameranno il DB (Supabase).
+  menu: Piatto[]
+  aggiungiPiatto: (nome: string, prezzo: number | null, categoria: CategoriaPiatto) => Piatto
+  rimuoviPiatto: (id: string) => void
+  modificaPrezzoPiatto: (id: string, prezzo: number) => void
+  rinominaPiatto: (id: string, nome: string) => void
+
   // Demo guidata
   incassoDemo: number
   demoInCorso: boolean
@@ -187,6 +198,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [postaCliente, setPostaCliente] = useState<Email[]>([])
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
+  const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
   const seqRef = useRef(1)
   const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}`
 
@@ -408,6 +420,30 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setEventi((prev) => prev.filter((x) => x.id !== id))
   }, [])
 
+  // — Menu ristorante (modificabile a voce) —
+  const aggiungiPiatto = useCallback((nome: string, prezzo: number | null, categoria: CategoriaPiatto): Piatto => {
+    const piatto: Piatto = {
+      id: nuovoId('P'),
+      nome: nome.trim(),
+      categoria,
+      prezzo: prezzo ?? 0,
+      foodCost: 0,
+      allergeni: [],
+      vendutiStagione: 0,
+    }
+    setMenu((prev) => [...prev, piatto])
+    return piatto
+  }, [])
+  const rimuoviPiatto = useCallback((id: string) => {
+    setMenu((prev) => prev.filter((p) => p.id !== id))
+  }, [])
+  const modificaPrezzoPiatto = useCallback((id: string, prezzo: number) => {
+    setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, prezzo } : p)))
+  }, [])
+  const rinominaPiatto = useCallback((id: string, nome: string) => {
+    setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, nome: nome.trim() } : p)))
+  }, [])
+
   const pubblicaPagina = useCallback((id: string) => {
     setPagine((prev) => prev.map((p) => (p.id === id ? { ...p, pubblicata: true } : p)))
   }, [])
@@ -433,6 +469,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPostaCliente([])
     setPostaAdmin([])
     setEventi(clona(seedEventi))
+    setMenu(clona(seedMenu))
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -566,6 +603,11 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiEvento,
       modificaEvento,
       eliminaEvento,
+      menu,
+      aggiungiPiatto,
+      rimuoviPiatto,
+      modificaPrezzoPiatto,
+      rinominaPiatto,
       incassoDemo,
       demoInCorso,
       demoProgresso,
@@ -614,6 +656,11 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiEvento,
       modificaEvento,
       eliminaEvento,
+      menu,
+      aggiungiPiatto,
+      rimuoviPiatto,
+      modificaPrezzoPiatto,
+      rinominaPiatto,
       incassoDemo,
       demoInCorso,
       demoProgresso,

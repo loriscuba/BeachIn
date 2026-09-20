@@ -26,8 +26,17 @@ date-fns (locale it). `noUnusedLocals` ON: rimuovi import/variabili inutilizzati
   BOA `#E4572E`, CALCE `#EDF1F2` (usare le classi `profondo/cabina/acqua/tenda/boa/calce`).
 
 ## Moduli / pagine (`src/pages`)
-Cruscotto, Arenile, Clienti, Tariffe, Bar, Ristorante, Costi, ContoEconomico,
+Cruscotto, Arenile, Clienti, Tariffe, Bar, Ristorante, **AssistenteVocale**, Costi, ContoEconomico,
 Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico), Impostazioni.
+
+## Assistente vocale (menu a voce)
+- Pagina `AssistenteVocale` (rotta `/assistente-vocale`, gruppo Gestione): parla/scrivi per
+  modificare il MENU del ristorante (aggiungi/togli/prezzo/rinomina/leggi/svuota).
+- Voce: `src/hooks/useVoce.ts` (Web Speech API, `it-IT`). Parser a regole: `src/lib/comandiMenu.ts`
+  → `parseComandoMenu()` restituisce `ComandoMenu` (sostituibile con un LLM senza toccare la pagina).
+- Il menu è mutabile nel context: `menu` + `aggiungiPiatto/rimuoviPiatto/modificaPrezzoPiatto/rinominaPiatto`
+  (seed `menu` da `seed/ristorante.ts`). Incluso nel `reset()`. La pagina Ristorante resta read-only sui seed
+  (integrazione delle due viste = passo successivo).
 
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
 - Sito gestionale: panoramica, **prenotazioni** (Ombrelloni/Ristorante/Eventi con
