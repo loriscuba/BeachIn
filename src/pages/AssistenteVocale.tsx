@@ -13,6 +13,7 @@ import type { CategoriaPiatto, Piatto } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useVoce } from '@/hooks/useVoce'
 import { parseComandoMenu } from '@/lib/comandiMenu'
+import { trovaMigliore } from '@/lib/fuzzy'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -29,15 +30,36 @@ interface Messaggio {
 
 const ORDINE_CAT: CategoriaPiatto[] = ['antipasti', 'primi', 'secondi', 'contorni', 'pizze', 'dolci', 'bevande']
 
-const norm = (s: string) =>
-  s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
+// Soglie di somiglianza: sopra OK agiamo, tra FORSE e OK proponiamo, sotto niente.
+const SOGLIA_OK = 0.6
+const SOGLIA_FORSE = 0.42
 
-function trovaPiatto(lista: Piatto[], nome: string): Piatto | null {
-  const n = norm(nome)
-  if (!n) return null
-  const esatto = lista.find((p) => norm(p.nome) === n)
-  if (esatto) return esatto
-  return lista.find((p) => { const pn = norm(p.nome); return pn.includes(n) || n.includes(pn) }) ?? null
+/**
+ * Trova il piatto dal menu partendo dai nomi candidati (uno per ogni alternativa
+ * di trascrizione). Restituisce il piatto se la somiglianza è alta, altrimenti
+ * il miglior "forse intendevi" o niente.
+ */
+function risolviPiatto(menu: Piatto[], nomi: string[]): { piatto: Piatto | null; suggerimento: Piatto | null } {
+  let best: { item: Piatto; score: number } | null = null
+  for (const nome of nomi) {
+    if (!nome) continue
+    const m = trovaMigliore(nome, menu, (p) => p.nome)
+    if (m && (!best || m.score > best.score)) best = m
+  }
+  if (!best) return { piatto: null, suggerimento: null }
+  if (best.score >= SOGLIA_OK) return { piatto: best.item, suggerimento: best.item }
+  if (best.score >= SOGLIA_FORSE) return { piatto: null, suggerimento: best.item }
+  return { piatto: null, suggerimento: null }
+}
+
+/** Raccoglie i possibili nomi di piatto dalle alternative con la stessa azione. */
+function nomiDaAlternative(alts: string[], azione: string, primario: string): string[] {
+  const out = [primario]
+  for (const a of alts.slice(1)) {
+    const c = parseComandoMenu(a)
+    if (c.azione === azione && 'nome' in c && c.nome) out.push(c.nome)
+  }
+  return out
 }
 
 /** Prezzo pronunciato a voce: "12 euro", "6 euro e 50 centesimi". */
@@ -87,17 +109,23 @@ export default function AssistenteVocale() {
     parla(t)
   }
 
-  function gestisci(input: string) {
-    const t = input.trim()
-    if (!t) return
-    aggiungiMessaggio('utente', t)
-    const c = parseComandoMenu(t)
+  const nonTrovato = (nome: string, suggerimento: Piatto | null) =>
+    suggerimento
+      ? rispondi(`Non ho trovato «${nome}». Forse intendevi «${suggerimento.nome}»? Ripeti con il nome esatto.`, 'errore')
+      : rispondi(`Non trovo «${nome}» nel menu.`, 'errore')
+
+  function gestisci(alternative: string[]) {
+    const alts = alternative.map((a) => a.trim()).filter(Boolean)
+    if (!alts.length) return
+    const testo = alts[0]
+    aggiungiMessaggio('utente', testo)
+    const c = parseComandoMenu(testo)
 
     switch (c.azione) {
       case 'aggiungi': {
-        const esistente = trovaPiatto(menu, c.nome)
-        if (esistente) {
-          rispondi(`«${esistente.nome}» è già nel menu. Per cambiare prezzo dì: «cambia il prezzo di ${esistente.nome} a …».`)
+        const simile = trovaMigliore(c.nome, menu, (p) => p.nome)
+        if (simile && simile.score >= 0.85) {
+          rispondi(`«${simile.item.nome}» sembra già nel menu. Per cambiare prezzo dì: «cambia il prezzo di ${simile.item.nome} a …».`)
           break
         }
         const p = aggiungiPiatto(c.nome, c.prezzo, c.categoria)
@@ -109,26 +137,26 @@ export default function AssistenteVocale() {
         break
       }
       case 'rimuovi': {
-        const p = trovaPiatto(menu, c.nome)
-        if (!p) { rispondi(`Non trovo «${c.nome}» nel menu.`, 'errore'); break }
-        rimuoviPiatto(p.id)
-        rispondi(`Ho tolto «${p.nome}» dal menu.`)
+        const { piatto, suggerimento } = risolviPiatto(menu, nomiDaAlternative(alts, 'rimuovi', c.nome))
+        if (!piatto) { nonTrovato(c.nome, suggerimento); break }
+        rimuoviPiatto(piatto.id)
+        rispondi(`Ho tolto «${piatto.nome}» dal menu.`)
         break
       }
       case 'prezzo': {
-        const p = trovaPiatto(menu, c.nome)
-        if (!p) { rispondi(`Non trovo «${c.nome}» nel menu.`, 'errore'); break }
-        modificaPrezzoPiatto(p.id, c.prezzo)
-        setUltimoId(p.id)
-        rispondi(`Prezzo di «${p.nome}» aggiornato a ${prezzoParlato(c.prezzo)}.`)
+        const { piatto, suggerimento } = risolviPiatto(menu, nomiDaAlternative(alts, 'prezzo', c.nome))
+        if (!piatto) { nonTrovato(c.nome, suggerimento); break }
+        modificaPrezzoPiatto(piatto.id, c.prezzo)
+        setUltimoId(piatto.id)
+        rispondi(`Prezzo di «${piatto.nome}» aggiornato a ${prezzoParlato(c.prezzo)}.`)
         break
       }
       case 'rinomina': {
-        const p = trovaPiatto(menu, c.nome)
-        if (!p) { rispondi(`Non trovo «${c.nome}» nel menu.`, 'errore'); break }
-        const vecchio = p.nome
-        rinominaPiatto(p.id, c.nuovoNome)
-        setUltimoId(p.id)
+        const { piatto, suggerimento } = risolviPiatto(menu, nomiDaAlternative(alts, 'rinomina', c.nome))
+        if (!piatto) { nonTrovato(c.nome, suggerimento); break }
+        const vecchio = piatto.nome
+        rinominaPiatto(piatto.id, c.nuovoNome)
+        setUltimoId(piatto.id)
         rispondi(`Rinominato «${vecchio}» in «${c.nuovoNome}».`)
         break
       }
@@ -159,7 +187,7 @@ export default function AssistenteVocale() {
   const ascolta = () => {
     if (inAscolto) { fermaAscolto(); return }
     avviaAscolto(
-      (t) => gestisci(t),
+      (alts) => gestisci(alts),
       (codice) => {
         const msg =
           codice === 'not-allowed' || codice === 'service-not-allowed'
@@ -242,7 +270,7 @@ export default function AssistenteVocale() {
 
           <form
             className="flex gap-2"
-            onSubmit={(e) => { e.preventDefault(); gestisci(testo); setTesto('') }}
+            onSubmit={(e) => { e.preventDefault(); gestisci([testo]); setTesto('') }}
           >
             <input
               id="comando-vocale"

@@ -12,7 +12,8 @@ import { useCallback, useRef, useState } from 'react'
 export interface ControlliVoce {
   supportata: boolean
   inAscolto: boolean
-  avviaAscolto: (onTesto: (testo: string) => void, onErrore?: (codice: string) => void) => void
+  /** onTesto riceve le alternative di trascrizione (la migliore per prima). */
+  avviaAscolto: (onTesto: (alternative: string[]) => void, onErrore?: (codice: string) => void) => void
   fermaAscolto: () => void
   parla: (testo: string) => void
   setParlaAttivo: (attivo: boolean) => void
@@ -47,7 +48,7 @@ export function useVoce(): ControlliVoce {
   }, [])
 
   const avviaAscolto = useCallback(
-    (onTesto: (testo: string) => void, onErrore?: (codice: string) => void) => {
+    (onTesto: (alternative: string[]) => void, onErrore?: (codice: string) => void) => {
       const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition
       if (!Ctor) {
         onErrore?.('non-supportato')
@@ -60,9 +61,15 @@ export function useVoce(): ControlliVoce {
       rec.lang = 'it-IT'
       rec.continuous = false
       rec.interimResults = false
-      rec.maxAlternatives = 1
+      // Chiediamo più ipotesi: sceglieremo quella che combacia meglio col menu.
+      rec.maxAlternatives = 5
       rec.onstart = () => setInAscolto(true)
-      rec.onresult = (e) => onTesto(e.results[0][0].transcript)
+      rec.onresult = (e) => {
+        const risultato = e.results[0]
+        const alternative: string[] = []
+        for (let i = 0; i < risultato.length; i++) alternative.push(risultato[i].transcript)
+        onTesto(alternative)
+      }
       rec.onerror = (e) => onErrore?.(e.error)
       rec.onend = () => {
         setInAscolto(false)
