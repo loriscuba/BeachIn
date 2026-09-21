@@ -56,6 +56,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
 - Sito gestionale: panoramica, **prenotazioni** (Ombrelloni/Ristorante/Eventi con
   Conferma/Rifiuta), **posta** admin, contenuti, recensioni/messaggi.
+- **Galleria foto**: caricamento multiplo dal gestionale (Sito → Galleria, `ridimensionaImmagine`);
+  la galleria è mutabile nel context (`galleria` + `aggiungiFoto/rimuoviFoto`, seed da `statoSito.galleria`,
+  campo `FotoGalleria.immagine` data URI). Sito pubblico (`SitoAnteprima`) mostra le foto caricate.
 - Sito pubblico: navbar, hero, servizi, listino, ristorante, prenota ombrellone,
   **eventi (card con foto → modal con descrizione e form "Prenota")**, galleria,
   recensioni, contatti, "La mia posta" (cliente).

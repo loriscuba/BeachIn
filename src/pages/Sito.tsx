@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Loader2, ExternalLink, CalendarCheck, MessageSquare, Star, BarChart3, Globe, Check, X as XIcon,
-  Image, Newspaper, Tags, Umbrella, Search, FileText, UtensilsCrossed, Inbox, Mail, Ticket,
+  Image, Newspaper, Tags, Umbrella, Search, FileText, UtensilsCrossed, Inbox, Mail, Ticket, Upload,
 } from 'lucide-react'
 import type { Email, StatoSito, Turno } from '@/data/types'
 import { getDisponibilitaSito, getStatoSito } from '@/data/api'
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button'
 import { Tabs } from '@/components/ui/Tabs'
 import { numero, percento, data as fmtData } from '@/lib/formatters'
 import { etichetteTipologia } from '@/lib/arenile'
+import { ridimensionaImmagine } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 
 type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni'
@@ -25,6 +26,7 @@ export default function Sito() {
     richiesteEventi, confermaEvento, rifiutaEvento,
     canaliPrenotazione, impostaCanalePrenotazione,
     postaAdmin, segnaEmailLetta, pagine, pubblicaPagina, listinoPubblicato,
+    galleria, aggiungiFoto, rimuoviFoto,
   } = useDemoData()
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
@@ -51,6 +53,19 @@ export default function Sito() {
 
   if (!sito || !disp) {
     return <div className="grid h-64 place-items-center text-profondo/50"><Loader2 className="h-6 w-6 animate-spin" /></div>
+  }
+
+  const caricaFotoGalleria = async (files: FileList | null) => {
+    if (!files) return
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) continue
+      try {
+        const uri = await ridimensionaImmagine(file)
+        aggiungiFoto(uri, file.name.replace(/\.[^.]+$/, ''))
+      } catch {
+        /* immagine non valida: la saltiamo */
+      }
+    }
   }
 
   return (
@@ -262,15 +277,57 @@ export default function Sito() {
           {/* Galleria + news */}
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
-              <CardHeader titolo={<span className="inline-flex items-center gap-2"><Image className="h-4 w-4 text-cabina" /> Galleria</span>} sottotitolo={`${sito.galleria.length} foto`} />
-              <CardBody className="grid grid-cols-2 gap-2 pt-2 sm:grid-cols-4">
-                {sito.galleria.map((f, i) => (
-                  <div key={f.id} className="aspect-square overflow-hidden rounded-lg" style={{ background: ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}>
-                    <div className="flex h-full items-end bg-gradient-to-t from-profondo-900/40 p-1.5">
-                      <span className="text-[10px] font-medium leading-tight text-white">{f.titolo}</span>
+              <CardHeader
+                titolo={<span className="inline-flex items-center gap-2"><Image className="h-4 w-4 text-cabina" /> Galleria</span>}
+                sottotitolo={`${galleria.length} foto`}
+                azione={
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-calce-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-profondo hover:bg-calce">
+                    <Upload className="h-3.5 w-3.5" /> Carica foto
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => { caricaFotoGalleria(e.target.files); e.target.value = '' }}
+                    />
+                  </label>
+                }
+              />
+              <CardBody className="pt-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {galleria.map((f, i) => (
+                    <div
+                      key={f.id}
+                      className="group relative aspect-square overflow-hidden rounded-lg border border-calce-200"
+                      style={{ background: f.immagine ? undefined : ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}
+                    >
+                      {f.immagine ? (
+                        <img src={f.immagine} alt={f.titolo} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full items-end bg-gradient-to-t from-profondo-900/40 p-1.5">
+                          <span className="text-[10px] font-medium leading-tight text-white">{f.titolo}</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => rimuoviFoto(f.id)}
+                        title={`Rimuovi ${f.titolo}`}
+                        aria-label={`Rimuovi ${f.titolo}`}
+                        className="absolute right-1 top-1 grid h-6 w-6 place-content-center rounded-md bg-profondo-900/60 text-white hover:bg-boa"
+                      >
+                        <XIcon className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                  {galleria.length === 0 && (
+                    <p className="col-span-full py-6 text-center text-sm text-profondo/45">
+                      Nessuna foto. Usa «Carica foto» per aggiungerle (anche più di una alla volta).
+                    </p>
+                  )}
+                </div>
+                <p className="mt-2 text-[11px] text-profondo/45">
+                  Le foto vengono ridimensionate e compaiono sul sito pubblico. In demo restano in memoria.
+                </p>
               </CardBody>
             </Card>
             <Card>

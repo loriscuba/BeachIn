@@ -411,6 +411,8 @@ export interface FotoGalleria {
   id: string
   titolo: string
   ordine: number
+  /** Data URI dell'immagine caricata (opzionale: senza, si mostra un segnaposto). */
+  immagine?: string
 }
 
 export interface NewsSito {

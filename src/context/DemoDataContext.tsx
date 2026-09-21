@@ -15,6 +15,7 @@ import type {
   ContoOmbrellone,
   Email,
   Evento,
+  FotoGalleria,
   PaginaSito,
   Piatto,
   Postazione,
@@ -169,6 +170,11 @@ interface DemoDataValue {
   modificaPrezzoPiatto: (id: string, prezzo: number) => void
   rinominaPiatto: (id: string, nome: string) => void
 
+  // Sito — galleria foto (caricabili). Data URI in memoria, pronta per il DB.
+  galleria: FotoGalleria[]
+  aggiungiFoto: (immagine: string, titolo?: string) => void
+  rimuoviFoto: (id: string) => void
+
   // Demo guidata
   incassoDemo: number
   demoInCorso: boolean
@@ -199,6 +205,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
   const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
+  const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
   const seqRef = useRef(1)
   const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}`
 
@@ -444,6 +451,17 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, nome: nome.trim() } : p)))
   }, [])
 
+  // — Galleria foto del sito —
+  const aggiungiFoto = useCallback((immagine: string, titolo?: string) => {
+    setGalleria((prev) => [
+      ...prev,
+      { id: nuovoId('FG'), titolo: (titolo || 'Foto').trim(), ordine: prev.length + 1, immagine },
+    ])
+  }, [])
+  const rimuoviFoto = useCallback((id: string) => {
+    setGalleria((prev) => prev.filter((f) => f.id !== id))
+  }, [])
+
   const pubblicaPagina = useCallback((id: string) => {
     setPagine((prev) => prev.map((p) => (p.id === id ? { ...p, pubblicata: true } : p)))
   }, [])
@@ -470,6 +488,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPostaAdmin([])
     setEventi(clona(seedEventi))
     setMenu(clona(seedMenu))
+    setGalleria(clona(statoSito.galleria))
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -608,6 +627,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rimuoviPiatto,
       modificaPrezzoPiatto,
       rinominaPiatto,
+      galleria,
+      aggiungiFoto,
+      rimuoviFoto,
       incassoDemo,
       demoInCorso,
       demoProgresso,
@@ -661,6 +683,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rimuoviPiatto,
       modificaPrezzoPiatto,
       rinominaPiatto,
+      galleria,
+      aggiungiFoto,
+      rimuoviFoto,
       incassoDemo,
       demoInCorso,
       demoProgresso,

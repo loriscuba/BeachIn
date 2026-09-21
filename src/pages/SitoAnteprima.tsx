@@ -31,7 +31,7 @@ const nav = [
 ]
 
 export default function SitoAnteprima() {
-  const { eventi, postaCliente, canaliPrenotazione } = useDemoData()
+  const { eventi, postaCliente, canaliPrenotazione, galleria } = useDemoData()
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [listino, setListino] = useState<VoceTariffa[]>([])
@@ -226,13 +226,17 @@ export default function SitoAnteprima() {
         </section>
 
         {/* Galleria */}
-        {sito && (
+        {galleria.length > 0 && (
           <section id="galleria">
             <Titolo occhiello="Galleria" titolo="Il nostro stabilimento" />
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {sito.galleria.map((f, i) => (
-                <div key={f.id} className="aspect-[4/3] overflow-hidden rounded-xl" style={{ background: ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}>
-                  <div className="flex h-full items-end bg-gradient-to-t from-profondo-900/50 p-2"><span className="text-xs font-medium text-white">{f.titolo}</span></div>
+              {galleria.map((f, i) => (
+                <div key={f.id} className="aspect-[4/3] overflow-hidden rounded-xl" style={{ background: f.immagine ? undefined : ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}>
+                  {f.immagine ? (
+                    <img src={f.immagine} alt={f.titolo} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-end bg-gradient-to-t from-profondo-900/50 p-2"><span className="text-xs font-medium text-white">{f.titolo}</span></div>
+                  )}
                 </div>
               ))}
             </div>
