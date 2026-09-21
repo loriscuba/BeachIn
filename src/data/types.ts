@@ -297,6 +297,10 @@ export interface PrenotazioneRistorante {
   tavoloId?: string
   stato: StatoPrenotazione
   note?: string
+  /** Telefono del cliente (prenotazioni prese a voce/telefono). */
+  telefono?: string
+  /** Origine: presa a mano/telefono in loco, oppure arrivata dal sito. */
+  origine?: 'manuale' | 'sito'
 }
 
 export interface ServizioRistoranteGiorno {

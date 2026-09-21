@@ -22,10 +22,13 @@ import type {
   Piatto,
   Postazione,
   PrenotazioneOnline,
+  PrenotazioneRistorante,
   RichiestaEvento,
   RichiestaRistorante,
   RigaConto,
   StatoPostazione,
+  StatoPrenotazione,
+  Tavolo,
   TipologiaPostazione,
   Turno,
   VoceCosto,
@@ -34,7 +37,7 @@ import type {
 import { postazioni as seedPostazioni } from '@/data/seed/spiaggia'
 import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
-import { menu as seedMenu } from '@/data/seed/ristorante'
+import { menu as seedMenu, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist } from '@/data/seed/ristorante'
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
@@ -91,6 +94,17 @@ export interface DatiRichiestaEvento {
   eventoData: string
   persone: number
   note?: string
+}
+
+/** Dati per una prenotazione ristorante presa a mano (telefono / in loco). */
+export interface DatiPrenotazioneRistorante {
+  nome: string
+  coperti: number
+  turno: Turno
+  data?: string
+  telefono?: string
+  note?: string
+  tavoloId?: string
 }
 
 export type CanalePrenotazione = 'ombrelloni' | 'ristorante' | 'eventi'
@@ -181,6 +195,17 @@ interface DemoDataValue {
   modificaPrezzoPiatto: (id: string, prezzo: number) => void
   rinominaPiatto: (id: string, nome: string) => void
 
+  // Ristorante — tavoli e prenotazioni (presa a telefono + assegnazione tavolo).
+  // Dati statici in memoria, pronti per il DB.
+  tavoli: Tavolo[]
+  aggiungiTavolo: (numero: number, posti: number, zona: Tavolo['zona']) => void
+  rimuoviTavolo: (id: string) => void
+  prenotazioniRistorante: PrenotazioneRistorante[]
+  creaPrenotazioneRistorante: (dati: DatiPrenotazioneRistorante) => void
+  assegnaTavolo: (prenotazioneId: string, tavoloId?: string) => void
+  impostaStatoPrenotazione: (id: string, stato: StatoPrenotazione) => void
+  rimuoviPrenotazioneRistorante: (id: string) => void
+
   // Sito — galleria foto (caricabili). Data URI in memoria, pronta per il DB.
   galleria: FotoGalleria[]
   aggiungiFoto: (immagine: string, titolo?: string) => void
@@ -219,6 +244,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
   const [comande, setComande] = useState<Comanda[]>([])
+  const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
+  const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
   const seqRef = useRef(1)
   const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}`
 
@@ -403,8 +430,17 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const confermaRistorante = useCallback((id: string) => {
     const r = richRef.current.find((p) => p.id === id)
     setRichiesteRistorante((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'confermata' } : p)))
-    if (r) pushMail('cliente', 'conferma', config.nome, r.email, 'Tavolo confermato ✓',
-      `Gentile ${r.nome},\nil tuo tavolo per ${r.coperti} coperti (${turnoLabel(r.turno)}) del ${gg(r.data)} è CONFERMATO.\nA presto!\n\n${config.nome}`)
+    // La richiesta confermata entra tra le prenotazioni del ristorante, così può
+    // essere assegnata a un tavolo dalla pagina Ristorante (se non già presente).
+    if (r) {
+      setPrenotazioniRistorante((prev) =>
+        prev.some((p) => p.id === `PR-${r.id}`)
+          ? prev
+          : [{ id: `PR-${r.id}`, data: r.data, turno: r.turno, nome: r.nome, coperti: r.coperti, stato: 'confermata', note: r.note, telefono: r.telefono, origine: 'sito' }, ...prev]
+      )
+      pushMail('cliente', 'conferma', config.nome, r.email, 'Tavolo confermato ✓',
+        `Gentile ${r.nome},\nil tuo tavolo per ${r.coperti} coperti (${turnoLabel(r.turno)}) del ${gg(r.data)} è CONFERMATO.\nA presto!\n\n${config.nome}`)
+    }
   }, [pushMail])
 
   const rifiutaRistorante = useCallback((id: string) => {
@@ -510,6 +546,31 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setGalleria((prev) => prev.map((f) => (f.id === id ? { ...f, titolo } : f)))
   }, [])
 
+  // — Ristorante: tavoli e prenotazioni —
+  const aggiungiTavolo = useCallback((numero: number, posti: number, zona: Tavolo['zona']) => {
+    setTavoli((prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona }])
+  }, [])
+  const rimuoviTavolo = useCallback((id: string) => {
+    setTavoli((prev) => prev.filter((t) => t.id !== id))
+    // il tavolo eliminato non deve restare assegnato a una prenotazione
+    setPrenotazioniRistorante((prev) => prev.map((p) => (p.tavoloId === id ? { ...p, tavoloId: undefined } : p)))
+  }, [])
+  const creaPrenotazioneRistorante = useCallback((d: DatiPrenotazioneRistorante) => {
+    setPrenotazioniRistorante((prev) => [
+      { id: nuovoId('PR'), data: d.data ?? config.stagione.oggi, turno: d.turno, nome: d.nome, coperti: d.coperti, tavoloId: d.tavoloId, stato: 'confermata', note: d.note, telefono: d.telefono, origine: 'manuale' },
+      ...prev,
+    ])
+  }, [])
+  const assegnaTavolo = useCallback((prenotazioneId: string, tavoloId?: string) => {
+    setPrenotazioniRistorante((prev) => prev.map((p) => (p.id === prenotazioneId ? { ...p, tavoloId } : p)))
+  }, [])
+  const impostaStatoPrenotazione = useCallback((id: string, stato: StatoPrenotazione) => {
+    setPrenotazioniRistorante((prev) => prev.map((p) => (p.id === id ? { ...p, stato } : p)))
+  }, [])
+  const rimuoviPrenotazioneRistorante = useCallback((id: string) => {
+    setPrenotazioniRistorante((prev) => prev.filter((p) => p.id !== id))
+  }, [])
+
   const pubblicaPagina = useCallback((id: string) => {
     setPagine((prev) => prev.map((p) => (p.id === id ? { ...p, pubblicata: true } : p)))
   }, [])
@@ -538,6 +599,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setMenu(clona(seedMenu))
     setGalleria(clona(statoSito.galleria))
     setComande([])
+    setTavoli(clona(seedTavoli))
+    setPrenotazioniRistorante(clona(seedPrenotazioniRist))
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -686,6 +749,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiFoto,
       rimuoviFoto,
       rinominaFoto,
+      tavoli,
+      aggiungiTavolo,
+      rimuoviTavolo,
+      prenotazioniRistorante,
+      creaPrenotazioneRistorante,
+      assegnaTavolo,
+      impostaStatoPrenotazione,
+      rimuoviPrenotazioneRistorante,
       incassoDemo,
       demoInCorso,
       demoProgresso,
@@ -749,6 +820,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiFoto,
       rimuoviFoto,
       rinominaFoto,
+      tavoli,
+      aggiungiTavolo,
+      rimuoviTavolo,
+      prenotazioniRistorante,
+      creaPrenotazioneRistorante,
+      assegnaTavolo,
+      impostaStatoPrenotazione,
+      rimuoviPrenotazioneRistorante,
       incassoDemo,
       demoInCorso,
       demoProgresso,
