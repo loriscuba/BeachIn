@@ -14,7 +14,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { euro, numero, dataEstesa, giornoMese } from '@/lib/formatters'
 import { etichetteTipoEvento } from '@/lib/etichette'
-import { ridimensionaImmagine, importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
+import { fileAImmagine, importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
@@ -192,7 +192,7 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina
               <span className="flex items-center gap-2 text-sm font-semibold text-profondo"><ImagePlus className="h-4 w-4 text-cabina" /> Album foto</span>
               <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-calce-200 bg-white px-2.5 py-1 text-xs font-semibold text-profondo hover:bg-calce">
                 <ImagePlus className="h-3.5 w-3.5" /> Carica foto
-                <input type="file" accept="image/*" multiple className="hidden" onChange={(ev) => { caricaAlbum(ev.target.files); ev.target.value = '' }} />
+                <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={(ev) => { caricaAlbum(ev.target.files); ev.target.value = '' }} />
               </label>
             </div>
             <div className="p-2">
@@ -300,7 +300,7 @@ function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, on
   const caricaFoto = async (file?: File) => {
     if (!file) return
     setCaricando(true)
-    try { set('foto', await ridimensionaImmagine(file)) }
+    try { set('foto', await fileAImmagine(file)) }
     catch { alert(messaggioFileFalliti([file.name])) }
     finally { setCaricando(false) }
   }
@@ -327,7 +327,7 @@ function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, on
             <label className="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-calce-300 bg-calce/40 text-profondo/55 transition-colors hover:border-cabina hover:text-cabina">
               <ImagePlus className="h-6 w-6" />
               <span className="text-xs font-medium">{caricando ? 'Caricamento…' : 'Carica una foto'}</span>
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => caricaFoto(e.target.files?.[0])} />
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={(e) => caricaFoto(e.target.files?.[0])} />
             </label>
           )}
         </CampoE>

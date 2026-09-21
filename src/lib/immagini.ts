@@ -39,10 +39,34 @@ export function ridimensionaImmagine(file: File, maxLato = 1280, qualita = 0.82)
   })
 }
 
+/** Vero se il file sembra un HEIC/HEIF (foto iPhone). */
+function isHeic(file: File): boolean {
+  return /image\/(heic|heif)/i.test(file.type) || /\.(heic|heif)$/i.test(file.name)
+}
+
+/**
+ * Converte un HEIC/HEIF in JPEG nel browser (libheif via `heic2any`), caricata
+ * on-demand solo quando serve — così non appesantisce chi carica già JPG/PNG.
+ */
+async function heicAJpeg(file: File): Promise<Blob> {
+  const { default: heic2any } = await import('heic2any')
+  const risultato = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
+  return Array.isArray(risultato) ? risultato[0] : risultato
+}
+
+/**
+ * Da un file scelto dall'utente a data URI pronto per l'app: converte l'HEIC in
+ * JPEG se necessario, poi ridimensiona. Lancia se il file non è utilizzabile.
+ */
+export async function fileAImmagine(file: File): Promise<string> {
+  const sorgente: Blob = isHeic(file) ? await heicAJpeg(file) : file
+  return ridimensionaImmagine(sorgente as File)
+}
+
 /**
  * Importa più immagini da un input file, chiamando `aggiungi` per ognuna
- * caricata con successo. Restituisce i NOMI dei file non caricabili (per
- * avvisare l'utente). I file non-immagine vengono saltati e segnalati.
+ * caricata con successo (HEIC convertiti automaticamente). Restituisce i NOMI
+ * dei file non caricabili, per avvisare l'utente.
  */
 export async function importaImmagini(
   files: FileList | null,
@@ -54,7 +78,7 @@ export async function importaImmagini(
     const sembraImmagine = file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif)$/i.test(file.name)
     if (!sembraImmagine) { falliti.push(file.name); continue }
     try {
-      aggiungi(await ridimensionaImmagine(file), file)
+      aggiungi(await fileAImmagine(file), file)
     } catch {
       falliti.push(file.name)
     }

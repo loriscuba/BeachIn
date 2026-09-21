@@ -277,7 +277,7 @@ export default function Sito() {
                     <Upload className="h-3.5 w-3.5" /> Carica foto
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.heic,.heif"
                       multiple
                       className="hidden"
                       onChange={(e) => { caricaFotoGalleria(e.target.files); e.target.value = '' }}

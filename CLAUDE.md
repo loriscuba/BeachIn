@@ -75,7 +75,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `RichiestaEvento.origine: 'sito' | 'manuale'`).
 
 ## Anteprima single-file (Artifact)
-1. `VITE_ROUTER=hash npm run build`
+1. `VITE_INLINE=1 VITE_ROUTER=hash npm run build` (VITE_INLINE=1 forza un bundle unico;
+   senza, la build fa code-splitting — Pages e Vercel non lo usano)
 2. Inline di CSS+JS in un solo `preview.html` con `<meta charset="utf-8">`
    (senza charset → mojibake "Â·"/"â€¦"). Usare replacement in forma di
    funzione (`.replace(re, () => js)`) perché il bundle contiene `$` che

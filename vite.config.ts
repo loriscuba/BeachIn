@@ -19,11 +19,12 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      // Per l'anteprima statica single-file (VITE_ROUTER=hash) si forza un unico
-      // bundle, così può essere inlinato in un solo file. La build reale invece
-      // fa code-splitting: chunk leggeri per pagina + Recharts a parte.
+      // Solo per l'anteprima single-file (VITE_INLINE=1) si forza un unico
+      // bundle, così può essere inlinato in un solo file. Tutte le altre build
+      // (inclusa GitHub Pages con HashRouter) fanno code-splitting: chunk per
+      // pagina + Recharts e heic2any (libheif) caricati solo quando servono.
       output:
-        process.env.VITE_ROUTER === 'hash'
+        process.env.VITE_INLINE === '1'
           ? { inlineDynamicImports: true }
           : { manualChunks: { charts: ['recharts'] } },
     },
