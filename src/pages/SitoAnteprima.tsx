@@ -231,11 +231,12 @@ export default function SitoAnteprima() {
             <Titolo occhiello="Galleria" titolo="Il nostro stabilimento" />
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {galleria.map((f, i) => (
-                <div key={f.id} className="aspect-[4/3] overflow-hidden rounded-xl" style={{ background: f.immagine ? undefined : ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}>
-                  {f.immagine ? (
-                    <img src={f.immagine} alt={f.titolo} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-end bg-gradient-to-t from-profondo-900/50 p-2"><span className="text-xs font-medium text-white">{f.titolo}</span></div>
+                <div key={f.id} className="relative aspect-[4/3] overflow-hidden rounded-xl" style={{ background: f.immagine ? undefined : ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}>
+                  {f.immagine && <img src={f.immagine} alt={f.titolo} className="h-full w-full object-cover" />}
+                  {f.titolo && (
+                    <div className="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-profondo-900/60 to-transparent p-2">
+                      <span className="text-xs font-medium text-white">{f.titolo}</span>
+                    </div>
                   )}
                 </div>
               ))}
@@ -333,6 +334,17 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
             <span className="inline-flex items-center gap-1.5 rounded-full bg-cabina/10 px-2.5 py-1 text-xs font-semibold text-cabina"><Ticket className="h-3.5 w-3.5" /> {e.prezzo ? `${euro(e.prezzo)} a persona` : 'Ingresso gratuito'}</span>
           </div>
           <p className="whitespace-pre-line text-sm text-profondo/75">{e.descrizione}</p>
+
+          {e.galleria && e.galleria.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-profondo/45">Foto dell’evento</p>
+              <div className="grid grid-cols-3 gap-2">
+                {e.galleria.map((src, i) => (
+                  <img key={i} src={src} alt="" className="aspect-square w-full rounded-lg object-cover" />
+                ))}
+              </div>
+            </div>
+          )}
 
           {!prenotabile ? (
             <Sospese testo="Le prenotazioni online per gli eventi sono momentaneamente sospese. Contattaci per partecipare." />

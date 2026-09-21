@@ -23,7 +23,7 @@ const iconaTipo: Record<TipoEvento, typeof Trophy> = {
 const mesiLabel: Record<string, string> = { '05': 'Maggio', '06': 'Giugno', '07': 'Luglio', '08': 'Agosto', '09': 'Settembre' }
 
 export default function Eventi() {
-  const { eventi, aggiungiEvento, modificaEvento, eliminaEvento, richiesteEventi, aggiungiPartecipanteEvento, rimuoviPartecipanteEvento } = useDemoData()
+  const { eventi, aggiungiEvento, modificaEvento, eliminaEvento, richiesteEventi, aggiungiPartecipanteEvento, rimuoviPartecipanteEvento, aggiungiFotoEvento, rimuoviFotoEvento } = useDemoData()
   const [sel, setSel] = useState<Evento>()
   const [form, setForm] = useState<{ open: boolean; evento?: Evento }>({ open: false })
 
@@ -42,6 +42,8 @@ export default function Eventi() {
   }, [ordinati])
 
   const oggi = config.stagione.oggi
+  // Versione "viva" dell'evento selezionato: si aggiorna quando cambia l'album.
+  const selLive = sel ? eventi.find((x) => x.id === sel.id) ?? sel : undefined
 
   return (
     <div className="space-y-4">
@@ -98,13 +100,15 @@ export default function Eventi() {
       </Card>
 
       <SchedaEvento
-        evento={sel}
-        partecipanti={sel ? richiesteEventi.filter((r) => r.eventoId === sel.id && r.stato === 'confermata') : []}
+        evento={selLive}
+        partecipanti={selLive ? richiesteEventi.filter((r) => r.eventoId === selLive.id && r.stato === 'confermata') : []}
         onChiudi={() => setSel(undefined)}
         onModifica={(e) => { setSel(undefined); setForm({ open: true, evento: e }) }}
         onElimina={(e) => { if (confirm(`Eliminare l’evento “${e.nome}”?`)) { eliminaEvento(e.id); setSel(undefined) } }}
         onAggiungiPartecipante={aggiungiPartecipanteEvento}
         onRimuoviPartecipante={rimuoviPartecipanteEvento}
+        onAggiungiFoto={aggiungiFotoEvento}
+        onRimuoviFoto={rimuoviFotoEvento}
       />
 
       <FormEvento
@@ -116,7 +120,7 @@ export default function Eventi() {
   )
 }
 
-function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina, onAggiungiPartecipante, onRimuoviPartecipante }: {
+function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina, onAggiungiPartecipante, onRimuoviPartecipante, onAggiungiFoto, onRimuoviFoto }: {
   evento?: Evento
   partecipanti: RichiestaEvento[]
   onChiudi: () => void
@@ -124,8 +128,17 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina
   onElimina: (e: Evento) => void
   onAggiungiPartecipante: (d: DatiPartecipanteEvento) => void
   onRimuoviPartecipante: (id: string) => void
+  onAggiungiFoto: (id: string, immagine: string) => void
+  onRimuoviFoto: (id: string, indice: number) => void
 }) {
   const Icona = e ? iconaTipo[e.tipo] : Trophy
+  const caricaAlbum = async (files: FileList | null) => {
+    if (!files || !e) return
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) continue
+      try { onAggiungiFoto(e.id, await ridimensionaImmagine(file)) } catch { /* salta file non validi */ }
+    }
+  }
   const margine = e ? e.ricavi - e.costiSostenuti : 0
   const scostamento = e ? e.costiSostenuti - e.budget : 0
   const totPersone = partecipanti.reduce((s, p) => s + p.persone, 0)
@@ -174,6 +187,31 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina
 
           {/* Partecipanti confermati */}
           <Partecipanti evento={e} lista={partecipanti} totPersone={totPersone} onAggiungi={onAggiungiPartecipante} onRimuovi={onRimuoviPartecipante} />
+
+          {/* Album foto dell'evento (es. foto di un torneo concluso) */}
+          <div className="rounded-lg border border-calce-200 bg-white">
+            <div className="flex items-center justify-between border-b border-calce-200 px-3 py-2.5">
+              <span className="flex items-center gap-2 text-sm font-semibold text-profondo"><ImagePlus className="h-4 w-4 text-cabina" /> Album foto</span>
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-calce-200 bg-white px-2.5 py-1 text-xs font-semibold text-profondo hover:bg-calce">
+                <ImagePlus className="h-3.5 w-3.5" /> Carica foto
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(ev) => { caricaAlbum(ev.target.files); ev.target.value = '' }} />
+              </label>
+            </div>
+            <div className="p-2">
+              {(e.galleria?.length ?? 0) === 0 ? (
+                <p className="px-1 py-3 text-center text-xs text-profondo/45">Nessuna foto. Carica qui le foto dell’evento da mostrare sul sito.</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {e.galleria!.map((src, idx) => (
+                    <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border border-calce-200">
+                      <img src={src} alt="" className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => onRimuoviFoto(e.id, idx)} className="absolute right-1 top-1 grid h-6 w-6 place-content-center rounded-md bg-profondo-900/60 text-white hover:bg-boa" aria-label="Rimuovi foto"><X className="h-3.5 w-3.5" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </Drawer>

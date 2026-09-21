@@ -26,7 +26,7 @@ export default function Sito() {
     richiesteEventi, confermaEvento, rifiutaEvento,
     canaliPrenotazione, impostaCanalePrenotazione,
     postaAdmin, segnaEmailLetta, pagine, pubblicaPagina, listinoPubblicato,
-    galleria, aggiungiFoto, rimuoviFoto,
+    galleria, aggiungiFoto, rimuoviFoto, rinominaFoto,
   } = useDemoData()
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
@@ -296,27 +296,35 @@ export default function Sito() {
               <CardBody className="pt-2">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {galleria.map((f, i) => (
-                    <div
-                      key={f.id}
-                      className="group relative aspect-square overflow-hidden rounded-lg border border-calce-200"
-                      style={{ background: f.immagine ? undefined : ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}
-                    >
-                      {f.immagine ? (
-                        <img src={f.immagine} alt={f.titolo} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-end bg-gradient-to-t from-profondo-900/40 p-1.5">
-                          <span className="text-[10px] font-medium leading-tight text-white">{f.titolo}</span>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => rimuoviFoto(f.id)}
-                        title={`Rimuovi ${f.titolo}`}
-                        aria-label={`Rimuovi ${f.titolo}`}
-                        className="absolute right-1 top-1 grid h-6 w-6 place-content-center rounded-md bg-profondo-900/60 text-white hover:bg-boa"
+                    <div key={f.id} className="space-y-1">
+                      <div
+                        className="group relative aspect-square overflow-hidden rounded-lg border border-calce-200"
+                        style={{ background: f.immagine ? undefined : ['#2E7D9A', '#7FB7A8', '#F2C14E', '#E4572E'][i % 4] }}
                       >
-                        <XIcon className="h-3.5 w-3.5" />
-                      </button>
+                        {f.immagine ? (
+                          <img src={f.immagine} alt={f.titolo} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full items-end bg-gradient-to-t from-profondo-900/40 p-1.5">
+                            <span className="text-[10px] font-medium leading-tight text-white">{f.titolo}</span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => rimuoviFoto(f.id)}
+                          title={`Rimuovi ${f.titolo}`}
+                          aria-label={`Rimuovi ${f.titolo}`}
+                          className="absolute right-1 top-1 grid h-6 w-6 place-content-center rounded-md bg-profondo-900/60 text-white hover:bg-boa"
+                        >
+                          <XIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <input
+                        value={f.titolo}
+                        onChange={(e) => rinominaFoto(f.id, e.target.value)}
+                        placeholder="Didascalia"
+                        aria-label="Didascalia foto"
+                        className="w-full rounded-md border border-calce-200 bg-white px-1.5 py-1 text-[11px] text-profondo focus-visible:focus-ring"
+                      />
                     </div>
                   ))}
                   {galleria.length === 0 && (

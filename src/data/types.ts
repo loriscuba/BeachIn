@@ -384,8 +384,9 @@ export interface Evento {
   ricavi: number
   partecipanti: number
   descrizione: string
-  foto?: string // data URI dell'immagine caricata (opzionale)
+  foto?: string // data URI dell'immagine di copertina (opzionale)
   prezzo?: number // prezzo di partecipazione, se l'evento è prenotabile
+  galleria?: string[] // album foto dell'evento (data URI), es. foto di un torneo concluso
 }
 
 // ————————————————————————————————————————————————————————————

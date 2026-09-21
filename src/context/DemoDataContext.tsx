@@ -161,6 +161,9 @@ interface DemoDataValue {
   aggiungiEvento: (evento: Evento) => void
   modificaEvento: (evento: Evento) => void
   eliminaEvento: (id: string) => void
+  // Album foto di un evento (es. foto di un torneo concluso)
+  aggiungiFotoEvento: (id: string, immagine: string) => void
+  rimuoviFotoEvento: (id: string, indice: number) => void
 
   // Ristorante — menu modificabile (anche a voce). Dati statici in memoria,
   // stessa forma dell'API: in futuro le mutazioni chiameranno il DB (Supabase).
@@ -174,6 +177,7 @@ interface DemoDataValue {
   galleria: FotoGalleria[]
   aggiungiFoto: (immagine: string, titolo?: string) => void
   rimuoviFoto: (id: string) => void
+  rinominaFoto: (id: string, titolo: string) => void
 
   // Demo guidata
   incassoDemo: number
@@ -426,6 +430,12 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const eliminaEvento = useCallback((id: string) => {
     setEventi((prev) => prev.filter((x) => x.id !== id))
   }, [])
+  const aggiungiFotoEvento = useCallback((id: string, immagine: string) => {
+    setEventi((prev) => prev.map((e) => (e.id === id ? { ...e, galleria: [...(e.galleria ?? []), immagine] } : e)))
+  }, [])
+  const rimuoviFotoEvento = useCallback((id: string, indice: number) => {
+    setEventi((prev) => prev.map((e) => (e.id === id ? { ...e, galleria: (e.galleria ?? []).filter((_, i) => i !== indice) } : e)))
+  }, [])
 
   // — Menu ristorante (modificabile a voce) —
   const aggiungiPiatto = useCallback((nome: string, prezzo: number | null, categoria: CategoriaPiatto): Piatto => {
@@ -460,6 +470,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [])
   const rimuoviFoto = useCallback((id: string) => {
     setGalleria((prev) => prev.filter((f) => f.id !== id))
+  }, [])
+  const rinominaFoto = useCallback((id: string, titolo: string) => {
+    setGalleria((prev) => prev.map((f) => (f.id === id ? { ...f, titolo } : f)))
   }, [])
 
   const pubblicaPagina = useCallback((id: string) => {
@@ -622,6 +635,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiEvento,
       modificaEvento,
       eliminaEvento,
+      aggiungiFotoEvento,
+      rimuoviFotoEvento,
       menu,
       aggiungiPiatto,
       rimuoviPiatto,
@@ -630,6 +645,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       galleria,
       aggiungiFoto,
       rimuoviFoto,
+      rinominaFoto,
       incassoDemo,
       demoInCorso,
       demoProgresso,
@@ -678,6 +694,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiEvento,
       modificaEvento,
       eliminaEvento,
+      aggiungiFotoEvento,
+      rimuoviFotoEvento,
       menu,
       aggiungiPiatto,
       rimuoviPiatto,
@@ -686,6 +704,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       galleria,
       aggiungiFoto,
       rimuoviFoto,
+      rinominaFoto,
       incassoDemo,
       demoInCorso,
       demoProgresso,
