@@ -14,7 +14,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { euro, numero, dataEstesa, giornoMese } from '@/lib/formatters'
 import { etichetteTipoEvento } from '@/lib/etichette'
-import { ridimensionaImmagine } from '@/lib/immagini'
+import { ridimensionaImmagine, importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
@@ -133,11 +133,9 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina
 }) {
   const Icona = e ? iconaTipo[e.tipo] : Trophy
   const caricaAlbum = async (files: FileList | null) => {
-    if (!files || !e) return
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue
-      try { onAggiungiFoto(e.id, await ridimensionaImmagine(file)) } catch { /* salta file non validi */ }
-    }
+    if (!e) return
+    const falliti = await importaImmagini(files, (uri) => onAggiungiFoto(e.id, uri))
+    if (falliti.length) alert(messaggioFileFalliti(falliti))
   }
   const margine = e ? e.ricavi - e.costiSostenuti : 0
   const scostamento = e ? e.costiSostenuti - e.budget : 0
@@ -302,7 +300,9 @@ function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, on
   const caricaFoto = async (file?: File) => {
     if (!file) return
     setCaricando(true)
-    try { set('foto', await ridimensionaImmagine(file)) } catch { /* ignora file non validi */ } finally { setCaricando(false) }
+    try { set('foto', await ridimensionaImmagine(file)) }
+    catch { alert(messaggioFileFalliti([file.name])) }
+    finally { setCaricando(false) }
   }
   const salva = () => onSalva({
     id: idEsistente ?? `E-NEW-${Date.now()}`,

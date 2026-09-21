@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button'
 import { Tabs } from '@/components/ui/Tabs'
 import { numero, percento, data as fmtData } from '@/lib/formatters'
 import { etichetteTipologia } from '@/lib/arenile'
-import { ridimensionaImmagine } from '@/lib/immagini'
+import { importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 
 type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni'
@@ -56,16 +56,8 @@ export default function Sito() {
   }
 
   const caricaFotoGalleria = async (files: FileList | null) => {
-    if (!files) return
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue
-      try {
-        const uri = await ridimensionaImmagine(file)
-        aggiungiFoto(uri, file.name.replace(/\.[^.]+$/, ''))
-      } catch {
-        /* immagine non valida: la saltiamo */
-      }
-    }
+    const falliti = await importaImmagini(files, (uri, file) => aggiungiFoto(uri, file.name.replace(/\.[^.]+$/, '')))
+    if (falliti.length) alert(messaggioFileFalliti(falliti))
   }
 
   return (
