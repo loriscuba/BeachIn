@@ -6,7 +6,7 @@
  * (context), pronti per il DB.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Plus, Minus, Send, Check, X, Umbrella, Coffee } from 'lucide-react'
+import { Loader2, Plus, Minus, Send, Check, X, Umbrella, Coffee, Search } from 'lucide-react'
 import type { ArticoloBar, CategoriaBar, Comanda, RigaComanda, StatoComanda } from '@/data/types'
 import { getArticoliBar } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -33,13 +33,17 @@ export default function Comande() {
   const [note, setNote] = useState('')
   const [qta, setQta] = useState<Record<string, number>>({})
   const [filtro, setFiltro] = useState<CategoriaBar | 'tutte'>('tutte')
+  const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
 
   useEffect(() => {
     getArticoliBar().then((a) => { setArticoli(a); setCaricato(true) })
   }, [])
 
-  const mostrati = filtro === 'tutte' ? articoli : articoli.filter((a) => a.categoria === filtro)
+  const q = cerca.trim().toLowerCase()
+  const mostrati = articoli.filter(
+    (a) => (filtro === 'tutte' || a.categoria === filtro) && (q === '' || a.nome.toLowerCase().includes(q))
+  )
 
   const righe: RigaComanda[] = useMemo(
     () =>
@@ -104,7 +108,20 @@ export default function Comande() {
             </div>
           </div>
 
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-profondo/40" />
+            <input
+              value={cerca}
+              onChange={(e) => setCerca(e.target.value)}
+              placeholder="Cerca articolo…"
+              className="h-9 w-full rounded-lg border border-calce-200 bg-white pl-9 pr-3 text-sm text-profondo focus-visible:focus-ring"
+            />
+          </div>
+
           <div className="max-h-72 space-y-1.5 overflow-y-auto rounded-lg border border-calce-200 bg-calce/50 p-2">
+            {mostrati.length === 0 && (
+              <p className="py-6 text-center text-sm text-profondo/45">Nessun articolo trovato.</p>
+            )}
             {mostrati.map((a) => {
               const n = qta[a.id] ?? 0
               return (
