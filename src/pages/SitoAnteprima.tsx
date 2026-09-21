@@ -54,7 +54,11 @@ export default function SitoAnteprima() {
   }, [listino])
 
   const nonLette = postaCliente.filter((m) => !m.letto).length
-  const eventiFuturi = [...eventi].filter((e) => e.data >= config.stagione.oggi).sort((a, b) => a.data.localeCompare(b.data)).slice(0, 4)
+  const oggi = config.stagione.oggi
+  const eventiFuturi = [...eventi].filter((e) => e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data))
+  const eventiPassati = [...eventi].filter((e) => e.data < oggi).sort((a, b) => b.data.localeCompare(a.data))
+  // In vetrina: prima i prossimi eventi, poi quelli appena conclusi (con foto/recap).
+  const eventiVetrina = [...eventiFuturi, ...eventiPassati].slice(0, 8)
 
   const mostraToast = (t: string) => { setToast(t); window.setTimeout(() => setToast(undefined), 6000) }
 
@@ -203,8 +207,11 @@ export default function SitoAnteprima() {
         <section id="eventi">
           <Titolo occhiello="Eventi" titolo="Cosa succede in spiaggia" nota="Aggiornati dal gestionale in tempo reale." />
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {eventiFuturi.length === 0 && <p className="text-sm text-profondo/50">Nessun evento in programma al momento.</p>}
-            {eventiFuturi.map((e) => (
+            {eventiVetrina.length === 0 && <p className="text-sm text-profondo/50">Nessun evento al momento.</p>}
+            {eventiVetrina.map((e) => {
+              const passato = e.data < oggi
+              const nFoto = e.galleria?.length ?? 0
+              return (
               <button
                 key={e.id}
                 onClick={() => setEventoSel(e)}
@@ -213,15 +220,20 @@ export default function SitoAnteprima() {
                 <div className="relative h-32 w-full overflow-hidden bg-gradient-to-br from-cabina to-profondo">
                   {e.foto && <img src={e.foto} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />}
                   <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-profondo backdrop-blur"><CalendarDays className="h-3.5 w-3.5" /> {giornoMese(e.data)}</span>
-                  {!!e.prezzo && <span className="absolute right-2 top-2 rounded-full bg-boa px-2 py-0.5 text-xs font-bold text-white">{euro(e.prezzo)}</span>}
+                  {passato
+                    ? <span className="absolute right-2 top-2 rounded-full bg-profondo/80 px-2 py-0.5 text-xs font-bold text-white backdrop-blur">Concluso</span>
+                    : !!e.prezzo && <span className="absolute right-2 top-2 rounded-full bg-boa px-2 py-0.5 text-xs font-bold text-white">{euro(e.prezzo)}</span>}
                 </div>
                 <div className="flex flex-1 flex-col p-4">
                   <h3 className="font-bold text-profondo">{e.nome}</h3>
                   <p className="mt-1 flex-1 text-sm text-profondo/60 line-clamp-2">{e.descrizione}</p>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cabina">{canaliPrenotazione.eventi ? 'Scopri e prenota →' : 'Scopri di più →'}</span>
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cabina">
+                    {passato ? (nFoto > 0 ? `Rivedi le foto (${nFoto}) →` : 'Rivivi l’evento →') : (canaliPrenotazione.eventi ? 'Scopri e prenota →' : 'Scopri di più →')}
+                  </span>
                 </div>
               </button>
-            ))}
+              )
+            })}
           </div>
         </section>
 
@@ -308,6 +320,7 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
   const [inviato, setInviato] = useState(false)
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
   const valido = f.nome.trim() && f.email.trim()
+  const passato = !!e && e.data < config.stagione.oggi
 
   // reset del form quando cambia l'evento selezionato
   useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '' }); setInviato(false) }, [e?.id])
@@ -346,7 +359,9 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
             </div>
           )}
 
-          {!prenotabile ? (
+          {passato ? (
+            <div className="rounded-2xl border border-calce-200 bg-calce/40 p-4 text-sm text-profondo/70">Evento concluso — grazie a chi ha partecipato! Qui sopra trovi le foto.</div>
+          ) : !prenotabile ? (
             <Sospese testo="Le prenotazioni online per gli eventi sono momentaneamente sospese. Contattaci per partecipare." />
           ) : inviato ? (
             <div className="rounded-2xl border border-acqua/40 bg-acqua/10 p-5">

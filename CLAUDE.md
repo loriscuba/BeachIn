@@ -60,6 +60,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   la galleria è mutabile nel context (`galleria` + `aggiungiFoto/rimuoviFoto/rinominaFoto`, seed da
   `statoSito.galleria`, campo `FotoGalleria.immagine` data URI). **Didascalia** modificabile per foto
   (`rinominaFoto`), mostrata sul sito pubblico (`SitoAnteprima`).
+- **Data "oggi"**: `config.stagione.oggi` è la data REALE del dispositivo, limitata alla stagione
+  (`oggiInStagione()` in `config.ts`), così i numeri (serie giornaliera/KPI) restano validi.
+- **Eventi sul sito pubblico**: `SitoAnteprima` mostra sia i prossimi eventi sia quelli **conclusi**
+  (badge "Concluso" + link "Rivedi le foto"); per un evento passato il modal nasconde il form di
+  prenotazione e mostra l'album. (Prima filtrava solo `data >= oggi`, quindi i conclusi sparivano.)
 - **Album foto evento**: `Evento.galleria?: string[]` (data URI); mutazioni context
   `aggiungiFotoEvento/rimuoviFotoEvento`; upload multiplo nella scheda evento (Drawer di `Eventi`, usa
   l'evento "live" da `eventi`); il sito pubblico mostra l'album nella scheda evento (es. foto di un torneo).
@@ -81,7 +86,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
    (senza charset → mojibake "Â·"/"â€¦"). Usare replacement in forma di
    funzione (`.replace(re, () => js)`) perché il bundle contiene `$` che
    altrimenti viene interpretato come pattern di sostituzione.
-   Config: `vite.config.ts` forza `inlineDynamicImports` quando `VITE_ROUTER=hash`.
+   Config: `vite.config.ts` forza `inlineDynamicImports` quando `VITE_INLINE=1`.
 3. Pubblicare sullo stesso URL dell'Artifact (non crearne uno nuovo).
 
 ## Verifica visiva (Chromium)

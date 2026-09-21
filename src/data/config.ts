@@ -7,6 +7,21 @@
  * costi, occupazione) verranno agganciati ai seed nella Fase 2.
  */
 
+const STAGIONE = { anno: 2026, inizio: '2026-05-01', fine: '2026-09-30' }
+
+/**
+ * "Oggi" della demo = la data REALE del dispositivo, limitata alla stagione.
+ * Così l'app mostra sempre la data odierna, ma resta dentro l'intervallo per cui
+ * esistono i dati (serie giornaliera, KPI): fuori stagione si ferma agli estremi.
+ */
+function oggiInStagione(): string {
+  const d = new Date()
+  const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  if (oggi < STAGIONE.inizio) return STAGIONE.inizio
+  if (oggi > STAGIONE.fine) return STAGIONE.fine
+  return oggi
+}
+
 export const config = {
   // — Anagrafica —
   nome: 'Bagni BeachIn',
@@ -19,11 +34,11 @@ export const config = {
 
   // — Stagione —
   stagione: {
-    anno: 2026,
-    inizio: '2026-05-01',
-    fine: '2026-09-30',
-    // Data "odierna" simulata su cui si posiziona la demo
-    oggi: '2026-07-15',
+    anno: STAGIONE.anno,
+    inizio: STAGIONE.inizio,
+    fine: STAGIONE.fine,
+    // Data "odierna": la data reale del dispositivo, limitata alla stagione.
+    oggi: oggiInStagione(),
   },
 
   // — Orari —
