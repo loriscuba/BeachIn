@@ -12,8 +12,10 @@ import type { ReactNode } from 'react'
 import type {
   CategoriaPiatto,
   Cliente,
+  Comanda,
   ContoOmbrellone,
   Email,
+  RigaComanda,
   Evento,
   FotoGalleria,
   PaginaSito,
@@ -125,6 +127,12 @@ interface DemoDataValue {
   // Bar
   incassaConto: (contoId: string) => void
 
+  // Comande dall'ombrellone (servizio in spiaggia)
+  comande: Comanda[]
+  inviaComanda: (ombrellone: string, righe: RigaComanda[], note?: string) => void
+  avanzaComanda: (id: string) => void
+  annullaComanda: (id: string) => void
+
   // Clienti aggiunti in demo (si affiancano a quelli caricati da api)
   clientiAggiunti: Cliente[]
   aggiungiCliente: (cliente: Cliente) => void
@@ -210,6 +218,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
   const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
+  const [comande, setComande] = useState<Comanda[]>([])
   const seqRef = useRef(1)
   const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}`
 
@@ -299,6 +308,32 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const incassaConto = useCallback((contoId: string) => {
     setConti((prev) => prev.map((c) => (c.id === contoId ? { ...c, aperto: false } : c)))
+  }, [])
+
+  // — Comande dall'ombrellone —
+  const inviaComanda = useCallback((ombrellone: string, righe: RigaComanda[], note?: string) => {
+    const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
+    const ora = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+    const comanda: Comanda = {
+      id: nuovoId('CMD'),
+      ombrellone: ombrellone.trim(),
+      righe,
+      totale,
+      stato: 'in_attesa',
+      ora,
+      note: note?.trim() || undefined,
+    }
+    setComande((prev) => [comanda, ...prev])
+  }, [])
+  const avanzaComanda = useCallback((id: string) => {
+    setComande((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, stato: c.stato === 'in_attesa' ? 'in_preparazione' : 'consegnata' } : c
+      )
+    )
+  }, [])
+  const annullaComanda = useCallback((id: string) => {
+    setComande((prev) => prev.filter((c) => c.id !== id))
   }, [])
 
   const aggiungiCosto = useCallback((voce: VoceCosto) => {
@@ -502,6 +537,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setEventi(clona(seedEventi))
     setMenu(clona(seedMenu))
     setGalleria(clona(statoSito.galleria))
+    setComande([])
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -610,6 +646,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaFuoriServizio,
       cambiaStato,
       incassaConto,
+      comande,
+      inviaComanda,
+      avanzaComanda,
+      annullaComanda,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,
@@ -669,6 +709,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaFuoriServizio,
       cambiaStato,
       incassaConto,
+      comande,
+      inviaComanda,
+      avanzaComanda,
+      annullaComanda,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,

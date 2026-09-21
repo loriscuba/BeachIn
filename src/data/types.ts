@@ -223,6 +223,26 @@ export interface VenditaBarGiorno {
   perFascia: Record<Fascia, number>
 }
 
+// — Comande dall'ombrellone (servizio in spiaggia) —
+export type StatoComanda = 'in_attesa' | 'in_preparazione' | 'consegnata'
+
+export interface RigaComanda {
+  articoloId: string
+  nome: string
+  quantita: number
+  prezzoUnitario: number
+}
+
+export interface Comanda {
+  id: string
+  ombrellone: string // es. "A-12" o numero libero
+  righe: RigaComanda[]
+  totale: number
+  stato: StatoComanda
+  ora: string // HH:mm di invio
+  note?: string
+}
+
 // ————————————————————————————————————————————————————————————
 // Ristorante
 // ————————————————————————————————————————————————————————————

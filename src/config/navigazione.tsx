@@ -5,6 +5,7 @@ import {
   Users,
   Tags,
   Coffee,
+  ConciergeBell,
   UtensilsCrossed,
   Mic,
   Receipt,
@@ -37,6 +38,7 @@ export const navigazione: VoceNav[] = [
   { percorso: '/cruscotto', etichetta: 'Cruscotto completo', icona: LayoutDashboard, modulo: 'cruscotto', fase: 4, gruppo: 'Operatività' },
   { percorso: '/arenile', etichetta: 'Arenile', icona: Umbrella, modulo: 'arenile', fase: 3, gruppo: 'Operatività' },
   { percorso: '/clienti', etichetta: 'Clienti', icona: Users, modulo: 'clienti', fase: 5, gruppo: 'Operatività' },
+  { percorso: '/comande', etichetta: 'Comande', icona: ConciergeBell, modulo: 'comande', fase: 5, gruppo: 'Operatività' },
 
   { percorso: '/tariffe', etichetta: 'Tariffe', icona: Tags, modulo: 'tariffe', fase: 5, gruppo: 'Gestione' },
   { percorso: '/bar', etichetta: 'Bar', icona: Coffee, modulo: 'bar', fase: 5, gruppo: 'Gestione' },

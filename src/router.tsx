@@ -17,6 +17,7 @@ const Panoramica = lazy(() => import('@/pages/Panoramica'))
 const Cruscotto = lazy(() => import('@/pages/Cruscotto'))
 const Arenile = lazy(() => import('@/pages/Arenile'))
 const Clienti = lazy(() => import('@/pages/Clienti'))
+const Comande = lazy(() => import('@/pages/Comande'))
 const Tariffe = lazy(() => import('@/pages/Tariffe'))
 const Bar = lazy(() => import('@/pages/Bar'))
 const Ristorante = lazy(() => import('@/pages/Ristorante'))
@@ -43,6 +44,7 @@ export const router = creaRouter([
       { path: 'cruscotto', element: g('cruscotto', <Cruscotto />) },
       { path: 'arenile', element: g('arenile', <Arenile />) },
       { path: 'clienti', element: g('clienti', <Clienti />) },
+      { path: 'comande', element: g('comande', <Comande />) },
       { path: 'tariffe', element: g('tariffe', <Tariffe />) },
       { path: 'bar', element: g('bar', <Bar />) },
       { path: 'ristorante', element: g('ristorante', <Ristorante />) },

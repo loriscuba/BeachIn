@@ -13,6 +13,7 @@ const sottotitoli: Record<string, string> = {
   '/assistente-vocale': 'Modifica il menù del ristorante a voce',
   '/arenile': `${config.arenile.postazioniTotali} postazioni · ${config.arenile.file.length} file`,
   '/clienti': 'Anagrafiche, storico e saldi',
+  '/comande': 'Ordini al bar dagli ombrelloni',
   '/tariffe': 'Listini per periodo, fila e tipologia',
   '/bar': 'Vendite, listino e conti aperti',
   '/ristorante': 'Prenotazioni, coperti e menù',
