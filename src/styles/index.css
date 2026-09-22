@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Colori di stato postazione — usati anche via var() inline */
+    --stato-libera: #5fa891;
+    --stato-occupata: #e4572e;
+    --stato-prenotata: #f2c14e;
+    --stato-stagionale: #2e7d9a;
+    --stato-fuori_servizio: #9aa7ab;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-calce text-profondo antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Numeri tabellari ovunque compaiano importi/quantità */
+  .num {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* Scrollbar sobria */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-calce-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-profondo-300;
+  }
+}
+
+@layer components {
+  .focus-ring {
+    @apply outline-none ring-2 ring-cabina/40 ring-offset-1 ring-offset-white;
+  }
+}
+
+/* Il movimento serve solo a segnalare un cambiamento */
+@media (prefers-reduced-motion: no-preference) {
+  .anim-pop {
+    animation: pop 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes pop {
+    from {
+      transform: scale(0.96);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
