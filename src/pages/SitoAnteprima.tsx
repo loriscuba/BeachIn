@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowDown, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Waves, Car, Star, Phone, Mail, MapPin,
-  Clock, Check, Inbox, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun,
+  ArrowLeft, ArrowDown, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Star, Phone, Mail, MapPin,
+  Clock, Check, Inbox, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa,
 } from 'lucide-react'
 import type { Evento, FilaId, Periodo, StatoSito, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
 import { getDisponibilitaSito, getListinoPubblicato, getStatoSito } from '@/data/api'
@@ -22,7 +22,15 @@ const nav = [
   ['servizi', 'Servizi'], ['ristorante', 'Ristorante'], ['prenota', 'Prenota'],
   ['listino', 'Listino'], ['eventi', 'Eventi'], ['galleria', 'Galleria'], ['contatti', 'Contatti'],
 ]
-const nastro = ['Ombrelloni fronte mare', 'Ristorante di pesce', 'Bar dall’alba a mezzanotte', 'Beach volley', 'Aperitivi al tramonto', 'Cabine e docce calde', 'SUP e pedalò', 'Eventi tutta l’estate']
+const nastro = ['Ombrelloni fronte mare', 'Pesce fresco dal banco', 'Ristorante aperto tutto l’anno', 'Beach volley', 'Ping pong', 'Cabine e docce calde', 'Area relax', 'Animazione per bambini']
+// Temi ricorrenti delle recensioni Tripadvisor (riassunti, non citazioni).
+const temiRecensioni = [
+  'Pesce freschissimo, da scegliere direttamente al banco',
+  'Fritto misto abbondante e asciutto: meglio dividerlo in due',
+  'Rapporto qualità-prezzo eccellente',
+  'Accoglienza familiare, cortese e sempre disponibile',
+  'Tavoli tra le cabine, con il mare a due passi',
+]
 const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 
 export default function SitoAnteprima() {
@@ -74,8 +82,6 @@ export default function SitoAnteprima() {
     return v.length ? [Math.min(...v), Math.max(...v)] : [0, 1]
   }, [matrice])
 
-  const recensioni = useMemo(() => sito?.recensioni.filter((r) => r.pubblicata) ?? [], [sito])
-  const mediaVoti = recensioni.length ? recensioni.reduce((s, r) => s + r.voto, 0) / recensioni.length : 0
 
   const nonLette = postaCliente.filter((m) => !m.letto).length
   const oggi = config.stagione.oggi
@@ -233,12 +239,12 @@ export default function SitoAnteprima() {
         <div className="reveal">
           <Occhiello>Lo stabilimento</Occhiello>
           <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">Il mare come dovrebbe <em className="text-cabina">essere</em>.</h2>
-          <p className="mt-6 text-lg leading-8 text-profondo/70">{sito?.home.sottotitolo}. Sabbia pettinata ogni mattina, il bagnino sempre presente, il bar a due passi dall’ombrellone e la cucina che profuma di mare. Tu pensa solo a rilassarti.</p>
+          <p className="mt-6 text-lg leading-8 text-profondo/70">A tre chilometri dal centro di Savona, tra hotel, residence e negozi: un lido familiare dove le giornate hanno il ritmo giusto. Ombrellone e lettini, docce calde e fredde, un’area relax con divanetti e un ristorante di pesce aperto tutto l’anno.</p>
           <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-            <Numero valore={config.arenile.postazioniTotali} etichetta="postazioni" />
-            <Numero valore={config.arenile.file.length} etichetta="file sul mare" />
-            <Numero valore={disp?.libere ?? 0} etichetta="liberi oggi" />
-            <Numero valore={mediaVoti} decimali={1} etichetta={`★ su ${recensioni.length} recensioni`} />
+            <Numero valore={config.tripadvisor.voto} decimali={1} etichetta="su 5 · Tripadvisor" />
+            <Numero valore={config.tripadvisor.recensioni} etichetta="recensioni" />
+            <Numero valore={3} etichetta="km dal centro di Savona" />
+            <Numero valore={disp?.libere ?? 0} etichetta="ombrelloni liberi oggi" />
           </div>
         </div>
       </section>
@@ -254,14 +260,14 @@ export default function SitoAnteprima() {
             <p className="max-w-sm text-profondo/60">Tutto quello che ti serve è a portata di infradito: noi pensiamo ai dettagli, tu al mare.</p>
           </div>
           <div className="mt-12 grid auto-rows-[170px] grid-cols-2 gap-3 sm:auto-rows-[210px] lg:grid-cols-4 lg:gap-4">
-            <TesseraFoto classe="col-span-2 row-span-2" foto={fotoSito.ombrelloniCielo} titolo="Ombrelloni e gazebo" testo={`${config.arenile.postazioniTotali} postazioni su ${config.arenile.file.length} file, dalla prima fila al fondo.`} icona={Umbrella} />
-            <TesseraFoto classe="row-span-2" foto={fotoSito.barDistillati} titolo="Bar" testo="Colazioni, aperitivi e servizio all’ombrellone." icona={Coffee} />
-            <TesseraFoto foto={fotoSito.ristorante} titolo="Ristorante" testo="Cucina di mare, pranzo e cena." icona={UtensilsCrossed} />
-            <TesseraFoto foto={fotoSito.beachVolley} titolo="Beach volley" testo="Campo, tornei e partite al tramonto." icona={Sparkles} />
-            <TesseraIcona colore="bg-profondo text-white" icona={Home} titolo="Cabine" testo="40 cabine, spogliatoi e docce calde." />
-            <TesseraIcona colore="bg-acqua text-profondo" icona={Waves} titolo="Noleggi" testo="SUP, pedalò, canoa e kayak." />
-            <TesseraIcona colore="bg-tenda text-profondo" icona={Car} titolo="Parcheggio" testo="Posti riservati per i clienti." />
-            <TesseraFoto foto={fotoSito.famiglia} titolo="Per le famiglie" testo="Spazi ombreggiati e giochi." icona={Sun} />
+            <TesseraFoto classe="col-span-2 row-span-2" foto={fotoSito.ombrelloniCielo} titolo="Ombrelloni e gazebo" testo="Ombrellone e lettini, dalla prima fila sul mare." icona={Umbrella} />
+            <TesseraFoto classe="row-span-2" foto={fotoSito.barDistillati} titolo="Bar" testo="Colazioni, caffè e pause fresche tutto il giorno." icona={Coffee} />
+            <TesseraFoto foto={fotoSito.ristorante} titolo="Ristorante" testo="Pesce fresco a pranzo e cena, tutto l’anno." icona={UtensilsCrossed} />
+            <TesseraFoto foto={fotoSito.beachVolley} titolo="Beach volley" testo="Campo da beach volley, tornei e ping pong." icona={Sparkles} />
+            <TesseraIcona colore="bg-profondo text-white" icona={Home} titolo="Cabine" testo="Per effetti personali, giochi e gonfiabili." />
+            <TesseraIcona colore="bg-acqua text-profondo" icona={ShowerHead} titolo="Docce e servizi" testo="Docce calde e fredde, servizi igienici." />
+            <TesseraIcona colore="bg-tenda text-profondo" icona={Sofa} titolo="Area relax" testo="Divanetti all’ombra tra un bagno e l’altro." />
+            <TesseraFoto foto={fotoSito.famiglia} titolo="Animazione" testo="Per i bambini e intrattenimento per adulti." icona={Sun} />
           </div>
         </div>
       </section>
@@ -284,7 +290,12 @@ export default function SitoAnteprima() {
             <div className="reveal">
               <Occhiello>Il ristorante</Occhiello>
               <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Il sapore delle <em className="text-cabina">vacanze</em>.</h2>
-              <p className="mt-5 text-lg leading-8 text-profondo/70">Pesce fresco, ricette di casa e vini scelti con cura. Dal pranzo in costume alla cena che profuma di mare.</p>
+              <p className="mt-5 text-lg leading-8 text-profondo/70">Il pesce freschissimo lo scegli direttamente dal banco. Piatti di mare e di terra, opzioni vegetariane, vini e birre artigianali: a pranzo in costume tra le cabine o a cena con vista mare, dentro o all’aperto. Aperto tutto l’anno.</p>
+              <div className="mt-6 flex flex-wrap gap-2 text-sm">
+                <span className="rounded-full bg-tenda/25 px-3 py-1.5 font-semibold text-[#7A5A12]">Prezzo medio ~{config.prezzoMedioRistorante} €</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-acqua/20 px-3 py-1.5 font-semibold text-profondo"><Star className="h-3.5 w-3.5 fill-tenda text-tenda" /> {config.tripadvisor.voto.toFixed(1).replace('.', ',')} su Tripadvisor</span>
+                <span className="rounded-full bg-calce px-3 py-1.5 font-semibold text-profondo/70">Opzioni vegetariane</span>
+              </div>
             </div>
             <ul className="reveal mt-8 space-y-4">
               {piatti.map((p) => (
@@ -314,7 +325,7 @@ export default function SitoAnteprima() {
         <div className="relative mx-auto max-w-4xl px-5 text-center">
           <p className="reveal text-xs font-semibold uppercase tracking-[0.3em] text-tenda">Quando il sole scende</p>
           <h2 className="reveal mt-4 font-display text-4xl font-semibold leading-tight sm:text-6xl">La spiaggia cambia ritmo.</h2>
-          {recensioni.length > 0 && <Recensioni recensioni={recensioni} media={mediaVoti} />}
+          <Recensioni temi={temiRecensioni} />
         </div>
       </section>
 
@@ -338,7 +349,7 @@ export default function SitoAnteprima() {
               </div>
             )}
             <ul className="mt-10 space-y-3 text-sm text-white/80">
-              {['Conferma via email dal gestionale', 'Nessun pagamento anticipato', 'Modifiche e disdette semplici'].map((t) => (
+              {['Richiesta in un minuto', 'Conferma via email', `Oppure chiamaci al ${config.telefono}`].map((t) => (
                 <li key={t} className="flex items-center gap-3"><span className="grid h-6 w-6 place-items-center rounded-full bg-acqua/20 text-acqua"><Check className="h-3.5 w-3.5" /></span>{t}</li>
               ))}
             </ul>
@@ -358,6 +369,7 @@ export default function SitoAnteprima() {
             <Occhiello centrato>Listino {config.stagione.anno}</Occhiello>
             <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Ombrellone + 2 lettini</h2>
             <p className="mt-3 text-profondo/60">Tariffa giornaliera per fila e periodo · prezzi sincronizzati col gestionale.</p>
+            <p className="mt-1 text-xs text-profondo/40">Tariffe dimostrative: si aggiornano dal gestionale (Tariffe).</p>
           </div>
           <div className="reveal mt-10 overflow-x-auto rounded-3xl bg-white p-2 shadow-xl shadow-profondo/5 ring-1 ring-calce-200">
             <table className="w-full min-w-[560px] text-sm">
@@ -468,17 +480,22 @@ export default function SitoAnteprima() {
             <h2 className="mt-4 font-display text-4xl font-semibold leading-tight">Ci vediamo <em className="text-tenda">al mare</em>.</h2>
             <ul className="mt-8 space-y-5">
               {[
-                { i: MapPin, t: 'Dove siamo', v: `${config.indirizzo}, ${config.localita}` },
-                { i: Phone, t: 'Telefono', v: config.telefono },
-                { i: Mail, t: 'Email', v: config.email },
-                { i: Clock, t: 'Orari', v: `Spiaggia ${config.orari.apertura}–${config.orari.chiusura} · Bar fino alle ${config.orari.barChiusura}` },
-              ].map(({ i: Icona, t, v }) => (
+                { i: MapPin, t: 'Dove siamo', v: `${config.indirizzo} ${config.localita} · a 3 km dal centro`, href: config.mappa },
+                { i: Phone, t: 'Telefono', v: config.telefono, href: `tel:${config.telefono.replace(/\s/g, '')}` },
+                ...(config.email ? [{ i: Mail, t: 'Email', v: config.email, href: `mailto:${config.email}` }] : []),
+                { i: Clock, t: 'Orari', v: `Spiaggia ${config.orari.stagioneSpiaggia} · Ristorante tutto l’anno, ${config.orari.ristorantePranzo} e ${config.orari.ristoranteCena}` },
+              ].map(({ i: Icona, t, v, href }) => (
                 <li key={t} className="flex items-start gap-4">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 text-tenda"><Icona className="h-5 w-5" /></span>
-                  <div><p className="text-xs uppercase tracking-widest text-white/50">{t}</p><p className="mt-0.5 font-medium">{v}</p></div>
+                  <div><p className="text-xs uppercase tracking-widest text-white/50">{t}</p>{href ? <a href={href} target="_blank" rel="noreferrer" className="mt-0.5 block font-medium hover:text-tenda">{v}</a> : <p className="mt-0.5 font-medium">{v}</p>}</div>
                 </li>
               ))}
             </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href={config.mappa} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-tenda px-5 py-2.5 text-sm font-semibold text-profondo hover:bg-tenda/90"><MapPin className="h-4 w-4" /> Indicazioni</a>
+              <a href={config.facebook} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Facebook</a>
+              <a href={config.tripadvisor.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Tripadvisor</a>
+            </div>
           </div>
           <div className="relative min-h-[320px]">
             <img src={fotoSito.bagnino} alt="La spiaggia" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
@@ -491,7 +508,7 @@ export default function SitoAnteprima() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-5 text-center sm:flex-row sm:text-left lg:px-8">
           <div>
             <p className="font-display text-2xl font-semibold">{config.nome}</p>
-            <p className="mt-1 text-sm text-white/50">{config.localita} · P.IVA {config.partitaIva}</p>
+            <p className="mt-1 text-sm text-white/50">{config.indirizzo} {config.localita}{config.partitaIva && ` · P.IVA ${config.partitaIva}`}</p>
           </div>
           <p className="text-xs text-white/40">Sito dimostrativo generato dal gestionale <span className="font-semibold text-white/70">Beach<span className="text-tenda">In</span></span></p>
         </div>
@@ -622,26 +639,26 @@ function TesseraIcona({ icona: Icona, titolo, testo, colore }: { icona: typeof U
   )
 }
 
-function Recensioni({ recensioni, media }: { recensioni: { id: string; testo: string; autore: string; voto: number }[]; media: number }) {
+function Recensioni({ temi }: { temi: string[] }) {
   const [i, setI] = useState(0)
   useEffect(() => {
-    const t = window.setInterval(() => setI((x) => (x + 1) % recensioni.length), 6000)
+    const t = window.setInterval(() => setI((x) => (x + 1) % temi.length), 5000)
     return () => window.clearInterval(t)
-  }, [recensioni.length])
-  const r = recensioni[i % recensioni.length]
+  }, [temi.length])
+  const ta = config.tripadvisor
   return (
     <div className="reveal mt-12">
       <Quote className="mx-auto h-10 w-10 text-tenda/80" />
-      <blockquote key={r.id} className="dissolvi mx-auto mt-4 min-h-[7rem] max-w-3xl font-display text-2xl italic leading-snug text-white/95 sm:text-3xl">“{r.testo}”</blockquote>
-      <p key={`${r.id}-a`} className="dissolvi mt-4 text-sm font-semibold uppercase tracking-widest text-white/60">— {r.autore}</p>
-      <div className="mt-8 flex items-center justify-center gap-4">
-        <button onClick={() => setI((x) => (x - 1 + recensioni.length) % recensioni.length)} aria-label="Precedente" className="rounded-full border border-white/30 p-2 hover:bg-white/10"><ChevronLeft className="h-4 w-4" /></button>
-        <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 backdrop-blur">
-          <div className="flex gap-0.5">{Array.from({ length: 5 }).map((_, k) => <Star key={k} className={cn('h-4 w-4', k < Math.round(media) ? 'fill-tenda text-tenda' : 'text-white/30')} />)}</div>
-          <span className="num text-sm font-semibold">{media.toFixed(1).replace('.', ',')}</span>
-          <span className="text-xs text-white/60">· {recensioni.length} recensioni</span>
-        </div>
-        <button onClick={() => setI((x) => (x + 1) % recensioni.length)} aria-label="Successiva" className="rounded-full border border-white/30 p-2 hover:bg-white/10"><ChevronRight className="h-4 w-4" /></button>
+      <p key={i} className="dissolvi mx-auto mt-4 min-h-[6rem] max-w-3xl font-display text-2xl italic leading-snug text-white/95 sm:text-4xl">{temi[i]}</p>
+      <p className="mt-2 text-xs uppercase tracking-widest text-white/50">Cosa dicono i clienti · in sintesi dalle recensioni</p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+        <button onClick={() => setI((x) => (x - 1 + temi.length) % temi.length)} aria-label="Precedente" className="rounded-full border border-white/30 p-2 hover:bg-white/10"><ChevronLeft className="h-4 w-4" /></button>
+        <a href={ta.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-2.5 backdrop-blur transition-colors hover:bg-white/20">
+          <span className="flex gap-1">{Array.from({ length: 5 }).map((_, k) => <span key={k} className={cn('h-3.5 w-3.5 rounded-full border-2 border-[#34E0A1]', k < Math.round(ta.voto) && 'bg-[#34E0A1]')} />)}</span>
+          <span className="num text-sm font-semibold">{ta.voto.toFixed(1).replace('.', ',')}</span>
+          <span className="text-xs text-white/70">· {ta.recensioni} recensioni Tripadvisor · {ta.classifica}</span>
+        </a>
+        <button onClick={() => setI((x) => (x + 1) % temi.length)} aria-label="Successivo" className="rounded-full border border-white/30 p-2 hover:bg-white/10"><ChevronRight className="h-4 w-4" /></button>
       </div>
     </div>
   )

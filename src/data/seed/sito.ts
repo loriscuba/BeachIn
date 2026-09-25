@@ -142,11 +142,11 @@ const rng = creaRng(5151)
 export const statoSito: StatoSito = {
   pagine,
   home: {
-    titolo: 'Bagni BeachIn — la tua estate sul mare',
-    sottotitolo: 'Ombrelloni, ristorante e servizi a Marina di BeachIn',
+    titolo: 'Lido dei Pini — il tuo angolo di Riviera',
+    sottotitolo: 'Spiaggia, bar e ristorante di pesce in Via Nizza, a Savona',
     testo:
-      'Da tre generazioni ti accogliamo su una delle spiagge più belle della costa. ' +
-      'Prenota il tuo ombrellone, scopri il ristorante di pesce e vivi i nostri eventi.',
+      'A tre chilometri dal centro di Savona, in riva al mare: ombrellone e lettini, docce calde, ' +
+      'beach volley e un ristorante dove il pesce freschissimo lo scegli direttamente dal banco.',
     immagine: 'hero-spiaggia-alba',
   },
   galleria,
@@ -155,10 +155,10 @@ export const statoSito: StatoSito = {
   messaggi: costruisciMessaggi(rng),
   recensioni: costruisciRecensioni(rng),
   seo: {
-    titolo: 'Bagni BeachIn | Stabilimento balneare a Marina di BeachIn',
+    titolo: 'Lido dei Pini | Stabilimento balneare e ristorante di pesce a Savona',
     descrizione:
-      'Stabilimento balneare con ombrelloni, cabine, bar e ristorante di pesce. Prenota online la tua postazione.',
-    keyword: ['stabilimento balneare', 'spiaggia', 'ombrelloni', 'ristorante di mare', 'marina di beachin'],
+      'Bagni Lido dei Pini, Via Nizza 85/R a Savona: ombrelloni, cabine, bar e ristorante di pesce fresco aperto tutto l’anno.',
+    keyword: ['stabilimento balneare', 'spiaggia', 'ombrelloni', 'ristorante di mare', 'savona', 'via nizza'],
   },
   visite: costruisciVisite(rng),
 }

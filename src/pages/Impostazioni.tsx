@@ -136,8 +136,8 @@ export default function Impostazioni() {
             <Riga etichetta="Località" valore={config.localita} />
             <Riga etichetta="Indirizzo" valore={config.indirizzo} />
             <Riga etichetta="Telefono" valore={config.telefono} />
-            <Riga etichetta="Email" valore={config.email} />
-            <Riga etichetta="Partita IVA" valore={config.partitaIva} />
+            <Riga etichetta="Email" valore={config.email || 'da comunicare'} />
+            <Riga etichetta="Partita IVA" valore={config.partitaIva || 'da comunicare'} />
           </CardBody>
         </Card>
 

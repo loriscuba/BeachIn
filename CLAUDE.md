@@ -113,6 +113,17 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   galleria a mosaico con lightbox, contatti. Font display **Fraunces** (`font-display`), classi animazione in
   `styles/index.css` (`.reveal/.visibile`, `kenburns`, `onda`, `scorri`, `dissolvi`, rispettano reduced-motion).
 - `vite.config.ts`: con `VITE_INLINE=1` anche le immagini sono inlinate (`assetsInlineLimit`).
+- Video hero opzionale: `src/assets/sito/hero.mp4|webm` (via `import.meta.glob`, export `videoHero`); se manca → foto.
+
+## Cliente reale: Lido dei Pini (Savona)
+- `config.ts` ha i dati reali da fonti pubbliche (Tripadvisor/spiagge.it/TheFork): Via Nizza 85/R Savona,
+  tel +39 349 574 5156 (online compare anche +39 340 159 9851), ristorante 12:00–14:30 / 19:00–22:00 tutto l'anno,
+  spiaggia maggio–settembre, Tripadvisor 4,4 su 234 recensioni (#34/303), prezzo medio ~32 €, Facebook.
+  `email`/`sito`/`partitaIva` vuoti = da comunicare (il sito li nasconde). Chiusura spiaggia 19:30 da confermare.
+- Servizi reali: ombrellone/lettini, cabine, bar, ristorante, animazione bimbi, area relax, docce calde/fredde,
+  beach volley, ping pong (niente noleggi/parcheggio). Recensioni sul sito = temi riassunti + badge Tripadvisor
+  (non citazioni). Restano dimostrativi: listino, menu (prezzi), eventi, recensioni del gestionale, numeri arenile.
+- Tripadvisor e gli altri siti sono bloccati dalla rete dell'ambiente: dati presi via WebSearch.
 
 ## Anteprima single-file (Artifact)
 1. `VITE_INLINE=1 VITE_ROUTER=hash npm run build` (VITE_INLINE=1 forza un bundle unico;
