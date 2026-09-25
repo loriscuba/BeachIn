@@ -8,7 +8,7 @@ import type { Evento, FilaId, Periodo, StatoSito, Turno, TipologiaPostazione, Vo
 import { getDisponibilitaSito, getListinoPubblicato, getStatoSito } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
-import { fotoSito } from '@/assets/sito'
+import { fotoSito, videoHero } from '@/assets/sito'
 import { Logo } from '@/components/layout/Logo'
 import { Drawer } from '@/components/ui/Drawer'
 import { Modal } from '@/components/ui/Modal'
@@ -38,6 +38,7 @@ export default function SitoAnteprima() {
   const [oltreHero, setOltreHero] = useState(false)
   const [foto, setFoto] = useState<number>()
   const heroImg = useRef<HTMLDivElement>(null)
+  const [movimentoRidotto] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 
   useEffect(() => {
     Promise.all([getStatoSito(), getDisponibilitaSito(), getListinoPubblicato()]).then(
@@ -145,7 +146,9 @@ export default function SitoAnteprima() {
       {/* Hero a tutto schermo */}
       <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-profondo-900 text-white">
         <div ref={heroImg} className="absolute inset-0 will-change-transform">
-          <img src={fotoSito.spiaggiaDrone} alt="Lo stabilimento visto dal drone" className="kenburns h-full w-full object-cover object-[center_70%]" fetchPriority="high" />
+          {videoHero && !movimentoRidotto
+            ? <video src={videoHero} poster={fotoSito.spiaggiaDrone} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full scale-105 object-cover" />
+            : <img src={fotoSito.spiaggiaDrone} alt="Lo stabilimento visto dal drone" className="kenburns h-full w-full object-cover object-[center_70%]" fetchPriority="high" />}
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-profondo-900 via-profondo-900/35 to-profondo-900/20" />
         <div className="absolute inset-0 bg-gradient-to-r from-profondo-900/60 via-transparent to-transparent" />
