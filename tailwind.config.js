@@ -35,6 +35,7 @@ export default {
         },
       },
       fontFamily: {
+        display: ['Fraunces', 'Georgia', 'serif'],
         sans: [
           'Inter',
           'system-ui',

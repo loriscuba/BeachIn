@@ -102,6 +102,18 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   **inserimento manuale in loco** (`aggiungiPartecipanteEvento`/`rimuoviPartecipanteEvento`;
   `RichiestaEvento.origine: 'sito' | 'manuale'`).
 
+## Grafica sito pubblico (SitoAnteprima) — restyling "wow"
+- Foto in `src/assets/sito/` (JPEG ottimizzati, export `fotoSito` da `index.ts`): reali dello stabilimento
+  (drone, ombrelloni, bagnino, beach volley, torneo, bar) + concept del mockup Lovable (ristorante, famiglia,
+  pineta, mare-pini, tramonto) da sostituire con scatti reali. Sorgente: Drive, cartella "BeachIN".
+- Le foto alimentano anche i seed: galleria (`seed/sito.ts`, campo `immagine`) ed eventi (`foto`/`galleria`).
+- Layout: hero a tutto schermo (Ken Burns + parallasse + onde SVG animate), nastro scorrevole, "Lo stabilimento"
+  con contatori animati, servizi a bento con foto, ristorante stile menu (legge `menu` dal context), fascia tramonto
+  con recensioni a rotazione, prenota con anello di occupazione, listino a heatmap, eventi a card verticali,
+  galleria a mosaico con lightbox, contatti. Font display **Fraunces** (`font-display`), classi animazione in
+  `styles/index.css` (`.reveal/.visibile`, `kenburns`, `onda`, `scorri`, `dissolvi`, rispettano reduced-motion).
+- `vite.config.ts`: con `VITE_INLINE=1` anche le immagini sono inlinate (`assetsInlineLimit`).
+
 ## Anteprima single-file (Artifact)
 1. `VITE_INLINE=1 VITE_ROUTER=hash npm run build` (VITE_INLINE=1 forza un bundle unico;
    senza, la build fa code-splitting — Pages e Vercel non lo usano)
