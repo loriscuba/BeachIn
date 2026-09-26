@@ -12,6 +12,8 @@ riconciliati tra le pagine. BeachIn è l'**aggregatore di moduli**.
   - **GitHub Pages** — https://loriscuba.github.io/BeachIn/ (workflow `.github/workflows/pages.yml`,
     build Vite con `VITE_BASE=/BeachIn/` + HashRouter; Pages attivo su Source: GitHub Actions).
   - **Vercel** — anteprima per branch (BrowserRouter, `vercel.json` con rewrite SPA verso `/index.html`).
+- **Appunti del progetto**: `APPUNTI.md` (in radice). Quando l'utente chiede di "appuntare"/"segnare" qualcosa,
+  aggiungerlo lì nella sezione giusta (checklist `[ ]`, spuntare `[x]` quando fatto). Leggerlo a inizio sessione.
 - Per risparmiare token: build/typecheck di norma bastano; screenshot solo se richiesti; evita di rileggere l'artifact pubblicato (è enorme).
 
 ## Stack
