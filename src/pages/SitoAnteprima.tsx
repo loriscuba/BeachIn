@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowLeft, ArrowDown, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Star, Phone, Mail, MapPin,
-  Clock, Check, Inbox, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa,
+  Clock, Check, Inbox, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa, Waves,
 } from 'lucide-react'
 import type { Evento, FilaId, Periodo, StatoSito, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
 import { getDisponibilitaSito, getListinoPubblicato, getStatoSito } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
-import { fotoSito, videoHero } from '@/assets/sito'
-import { Logo } from '@/components/layout/Logo'
+import { fotoSito, logoLido, videoHero } from '@/assets/sito'
+import { useModuli } from '@/context/ModuliContext'
 import { Drawer } from '@/components/ui/Drawer'
 import { Modal } from '@/components/ui/Modal'
 import { euro, dataEstesa, data as fmtData } from '@/lib/formatters'
@@ -18,6 +18,7 @@ import { cn } from '@/lib/cn'
 
 const file: FilaId[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
 const periodi: Periodo[] = ['bassa', 'media', 'alta', 'altissima']
+// Le voci 'prenota' e 'listino' riguardano gli ombrelloni: spariscono se il modulo Arenile è spento.
 const nav = [
   ['servizi', 'Servizi'], ['ristorante', 'Ristorante'], ['prenota', 'Prenota'],
   ['listino', 'Listino'], ['eventi', 'Eventi'], ['galleria', 'Galleria'], ['contatti', 'Contatti'],
@@ -35,6 +36,11 @@ const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ot
 
 export default function SitoAnteprima() {
   const { eventi, postaCliente, canaliPrenotazione, galleria, menu } = useDemoData()
+  // Gestione ombrelloni (modulo Arenile): se spento, dal sito spariscono prenotazione, listino e disponibilità.
+  const ombrelloni = useModuli().moduloAttivo('arenile')
+  const voci = nav.filter(([id]) => ombrelloni || (id !== 'prenota' && id !== 'listino'))
+  const voceNastro = nastro.filter((t) => ombrelloni || !/ombrell/i.test(t))
+  const idPrenota = ombrelloni ? 'prenota' : 'ristorante'
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [listino, setListino] = useState<VoceTariffa[]>([])
@@ -111,9 +117,9 @@ export default function SitoAnteprima() {
         scrollato || menuMobile ? 'bg-profondo/90 shadow-[0_8px_30px_rgba(11,44,57,0.25)] backdrop-blur-md' : 'bg-gradient-to-b from-profondo-900/60 to-transparent',
       )}>
         <div className={cn('mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 transition-all duration-500 lg:px-8', scrollato ? 'py-2.5' : 'py-4')}>
-          <button onClick={() => scrollTo('top')} className="shrink-0"><Logo /></button>
+          <button onClick={() => scrollTo('top')} className="shrink-0" aria-label={config.nome}><img src={logoLido} alt={config.nome} className={cn('w-auto brightness-0 invert drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] transition-all duration-500', scrollato ? 'h-12' : 'h-20 sm:h-24')} /></button>
           <nav className="hidden items-center gap-6 lg:flex">
-            {nav.map(([id, label]) => (
+            {voci.map(([id, label]) => (
               <button key={id} onClick={() => scrollTo(id)} className="group relative text-sm font-medium text-white/80 transition-colors hover:text-white">
                 {label}
                 <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-tenda transition-transform duration-300 group-hover:scale-x-100" />
@@ -131,7 +137,7 @@ export default function SitoAnteprima() {
             <Link to="/sito" className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20 sm:inline-flex">
               <ArrowLeft className="h-4 w-4" /> Gestionale
             </Link>
-            <button onClick={() => scrollTo('prenota')} className="hidden rounded-full bg-boa px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-boa/30 transition-transform hover:scale-105 xl:inline-flex">Prenota</button>
+            <button onClick={() => scrollTo(idPrenota)} className="hidden rounded-full bg-boa px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-boa/30 transition-transform hover:scale-105 xl:inline-flex">Prenota</button>
             <button onClick={() => setMenuMobile((v) => !v)} className="rounded-full p-2 text-white lg:hidden" aria-label="Menu">
               {menuMobile ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
             </button>
@@ -139,7 +145,7 @@ export default function SitoAnteprima() {
         </div>
         {menuMobile && (
           <div className="border-t border-white/10 px-5 pb-5 pt-2 lg:hidden">
-            {nav.map(([id, label]) => (
+            {voci.map(([id, label]) => (
               <button key={id} onClick={() => scrollTo(id)} className="block w-full border-b border-white/10 py-3 text-left font-display text-2xl text-white">{label}</button>
             ))}
             <Link to="/sito" className="mt-3 block py-2 text-sm text-tenda">Vai al gestionale →</Link>
@@ -153,8 +159,8 @@ export default function SitoAnteprima() {
       <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-profondo-900 text-white">
         <div ref={heroImg} className="absolute inset-0 will-change-transform">
           {videoHero && !movimentoRidotto
-            ? <video src={videoHero} poster={fotoSito.spiaggiaDrone} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full scale-105 object-cover" />
-            : <img src={fotoSito.spiaggiaDrone} alt="Lo stabilimento visto dal drone" className="kenburns h-full w-full object-cover object-[center_70%]" fetchPriority="high" />}
+            ? <video src={videoHero} poster={fotoSito.spiaggiaAlto} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full scale-105 object-cover" />
+            : <img src={fotoSito.spiaggiaAlto} alt="La spiaggia del Lido dei Pini vista dall’alto" className="kenburns h-full w-full object-cover object-[center_55%]" fetchPriority="high" />}
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-profondo-900 via-profondo-900/35 to-profondo-900/20" />
         <div className="absolute inset-0 bg-gradient-to-r from-profondo-900/60 via-transparent to-transparent" />
@@ -170,14 +176,27 @@ export default function SitoAnteprima() {
             {sottoHero && <p className="mt-3 font-display text-3xl italic text-white/90 sm:text-4xl lg:text-5xl">{sottoHero}</p>}
             <p className="mt-6 max-w-xl text-base leading-7 text-white/80 sm:text-lg">{sito?.home.testo}</p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
-              <button onClick={() => scrollTo('prenota')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
-                <Umbrella className="h-5 w-5" /> Prenota l’ombrellone <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-              <button onClick={() => scrollTo('ristorante')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
-                <UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo
-              </button>
+              {ombrelloni ? (
+                <>
+                  <button onClick={() => scrollTo('prenota')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
+                    <Umbrella className="h-5 w-5" /> Prenota l’ombrellone <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                  <button onClick={() => scrollTo('ristorante')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
+                    <UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => scrollTo('ristorante')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
+                    <UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                  <button onClick={() => scrollTo('eventi')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
+                    <CalendarDays className="h-5 w-5" /> Scopri gli eventi
+                  </button>
+                </>
+              )}
             </div>
-            {disp && (
+            {ombrelloni && disp && (
               <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm backdrop-blur-md md:hidden">
                 <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-acqua opacity-75" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-acqua" /></span>
                 <span><span className="num font-bold">{disp.libere}</span> ombrelloni liberi oggi</span>
@@ -187,7 +206,7 @@ export default function SitoAnteprima() {
         </div>
 
         {/* Disponibilità in tempo reale */}
-        {disp && (
+        {ombrelloni && disp && (
           <div className="absolute bottom-28 right-5 hidden rounded-3xl border border-white/20 bg-white/10 p-5 text-white shadow-2xl backdrop-blur-xl dissolvi md:block lg:right-8 lg:bottom-36">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/70">
               <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-acqua opacity-75" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-acqua" /></span>
@@ -214,7 +233,7 @@ export default function SitoAnteprima() {
       {/* Nastro scorrevole */}
       <div className="relative -mt-px overflow-hidden bg-[#FBF8F2] py-5">
         <div className="scorri flex w-max gap-10 whitespace-nowrap">
-          {[...nastro, ...nastro].map((t, i) => (
+          {[...voceNastro, ...voceNastro].map((t, i) => (
             <span key={i} className="flex items-center gap-10 font-display text-2xl italic text-profondo/70 sm:text-3xl">
               {t} <Sun className="h-5 w-5 text-tenda" />
             </span>
@@ -226,7 +245,7 @@ export default function SitoAnteprima() {
       <section className="mx-auto grid max-w-7xl items-center gap-14 px-5 py-20 lg:grid-cols-2 lg:gap-20 lg:px-8 lg:py-28">
         <div className="reveal relative mx-auto w-full max-w-lg lg:order-2">
           <div className="aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl shadow-profondo/20">
-            <img src={fotoSito.ombrelloniCielo} alt="File di ombrelloni sotto il cielo" loading="lazy" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
+            <img src={fotoSito.ombrelloniCielo} alt="Il lido sotto il cielo di Savona" loading="lazy" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
           </div>
           <div className="absolute -bottom-10 -left-6 w-40 rotate-[-6deg] overflow-hidden rounded-2xl border-[6px] border-white shadow-2xl sm:-left-12 sm:w-52">
             <img src={fotoSito.bagnino} alt="La postazione del bagnino" loading="lazy" className="aspect-[3/4] w-full object-cover" />
@@ -239,12 +258,14 @@ export default function SitoAnteprima() {
         <div className="reveal">
           <Occhiello>Lo stabilimento</Occhiello>
           <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">Il mare come dovrebbe <em className="text-cabina">essere</em>.</h2>
-          <p className="mt-6 text-lg leading-8 text-profondo/70">A tre chilometri dal centro di Savona, tra hotel, residence e negozi: un lido familiare dove le giornate hanno il ritmo giusto. Ombrellone e lettini, docce calde e fredde, un’area relax con divanetti e un ristorante di pesce aperto tutto l’anno.</p>
+          <p className="mt-6 text-lg leading-8 text-profondo/70">A tre chilometri dal centro di Savona, tra hotel, residence e negozi: un lido familiare dove le giornate hanno il ritmo giusto. {ombrelloni && 'Ombrellone e lettini, '}Docce calde e fredde, un’area relax con divanetti e un ristorante di pesce aperto tutto l’anno.</p>
           <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
             <Numero valore={config.tripadvisor.voto} decimali={1} etichetta="su 5 · Tripadvisor" />
             <Numero valore={config.tripadvisor.recensioni} etichetta="recensioni" />
             <Numero valore={3} etichetta="km dal centro di Savona" />
-            <Numero valore={disp?.libere ?? 0} etichetta="ombrelloni liberi oggi" />
+            {ombrelloni
+              ? <Numero valore={disp?.libere ?? 0} etichetta="ombrelloni liberi oggi" />
+              : <Numero valore={config.prezzoMedioRistorante} etichetta="€ prezzo medio al ristorante" />}
           </div>
         </div>
       </section>
@@ -260,7 +281,9 @@ export default function SitoAnteprima() {
             <p className="max-w-sm text-profondo/60">Tutto quello che ti serve è a portata di infradito: noi pensiamo ai dettagli, tu al mare.</p>
           </div>
           <div className="mt-12 grid auto-rows-[170px] grid-cols-2 gap-3 sm:auto-rows-[210px] lg:grid-cols-4 lg:gap-4">
-            <TesseraFoto classe="col-span-2 row-span-2" foto={fotoSito.ombrelloniCielo} titolo="Ombrelloni e gazebo" testo="Ombrellone e lettini, dalla prima fila sul mare." icona={Umbrella} />
+            {ombrelloni
+              ? <TesseraFoto classe="col-span-2 row-span-2" foto={fotoSito.ombrelloniCielo} titolo="Ombrelloni e gazebo" testo="Ombrellone e lettini, dalla prima fila sul mare." icona={Umbrella} />
+              : <TesseraFoto classe="col-span-2 row-span-2" foto={fotoSito.spiaggiaDrone} titolo="La spiaggia" testo="Sabbia, mare e relax a 3 km dal centro di Savona." icona={Waves} />}
             <TesseraFoto classe="row-span-2" foto={fotoSito.barDistillati} titolo="Bar" testo="Colazioni, caffè e pause fresche tutto il giorno." icona={Coffee} />
             <TesseraFoto foto={fotoSito.ristorante} titolo="Ristorante" testo="Pesce fresco a pranzo e cena, tutto l’anno." icona={UtensilsCrossed} />
             <TesseraFoto foto={fotoSito.beachVolley} titolo="Beach volley" testo="Campo da beach volley, tornei e ping pong." icona={Sparkles} />
@@ -278,7 +301,7 @@ export default function SitoAnteprima() {
           <div className="reveal lg:sticky lg:top-24 lg:self-start">
             <div className="relative">
               <div className="aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl shadow-profondo/20 sm:aspect-[4/3] lg:aspect-[4/5]">
-                <img src={fotoSito.ristorante} alt="Piatti di mare del ristorante" loading="lazy" className="h-full w-full object-cover" />
+                <img src={fotoSito.ristorante} alt="La sala del ristorante sulla spiaggia, con vista mare" loading="lazy" className="h-full w-full object-cover" />
               </div>
               <div className="absolute -bottom-6 left-6 right-6 grid grid-cols-2 divide-x divide-white/15 rounded-2xl bg-profondo p-5 text-white shadow-2xl sm:left-auto sm:right-8 sm:w-80">
                 <div className="pr-4"><p className="text-xs uppercase tracking-widest text-tenda">Pranzo</p><p className="mt-1 font-display text-lg">{config.orari.ristorantePranzo}</p></div>
@@ -329,6 +352,7 @@ export default function SitoAnteprima() {
         </div>
       </section>
 
+      {ombrelloni && (<>
       {/* Prenota ombrellone */}
       <section id="prenota" className="relative scroll-mt-16 overflow-hidden bg-profondo py-20 text-white lg:py-28">
         <img src={fotoSito.spiaggiaDrone} alt="" className="absolute inset-0 h-full w-full object-cover opacity-15" loading="lazy" />
@@ -402,6 +426,8 @@ export default function SitoAnteprima() {
           </div>
         </div>
       </section>
+
+      </>)}
 
       {/* Eventi */}
       <section id="eventi" className="scroll-mt-20 bg-white py-20 lg:py-28">
@@ -507,7 +533,7 @@ export default function SitoAnteprima() {
       <footer className="bg-profondo-900 py-12 text-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-5 text-center sm:flex-row sm:text-left lg:px-8">
           <div>
-            <p className="font-display text-2xl font-semibold">{config.nome}</p>
+            <img src={logoLido} alt={config.nome} className="mx-auto h-20 w-auto brightness-0 invert sm:mx-0" />
             <p className="mt-1 text-sm text-white/50">{config.indirizzo} {config.localita}{config.partitaIva && ` · P.IVA ${config.partitaIva}`}</p>
           </div>
           <p className="text-xs text-white/40">Sito dimostrativo generato dal gestionale <span className="font-semibold text-white/70">Beach<span className="text-tenda">In</span></span></p>
@@ -516,10 +542,10 @@ export default function SitoAnteprima() {
 
       {/* Pulsante flottante "Prenota" su mobile, dopo l'hero */}
       <button
-        onClick={() => scrollTo('prenota')}
+        onClick={() => scrollTo(idPrenota)}
         className={cn('fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-boa px-5 py-3.5 font-semibold text-white shadow-2xl shadow-boa/40 transition-all duration-500 lg:hidden', oltreHero ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-6 opacity-0')}
       >
-        <Umbrella className="h-5 w-5" /> Prenota
+        {ombrelloni ? <><Umbrella className="h-5 w-5" /> Prenota</> : <><UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo</>}
       </button>
 
       {/* Toast */}
