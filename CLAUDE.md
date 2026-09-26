@@ -74,7 +74,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   **Assistente vocale incorporato** (tolto dalla sidebar; `/assistente-vocale` → redirect a `/ristorante?tab=menu`).
   `aggiungiPiatto/rinominaPiatto` ritraducono da soli (`traduzioni: {}` = in corso).
 - **Menu pubblico**: rotta `/menu?tavolo=N&lang=xx` (`MenuPubblico.tsx`, fuori dallo shell), `urlMenu()` per i QR.
-- **Tavoli** (`Planimetria`): drag&drop su pianta (`Tavolo.x/y` in %, `forma`), `spostaTavolo` aggiorna la zona da y,
+- **Tavoli** (`Planimetria`): pianta del Lido (`src/lib/zoneTavoli.ts`: Veranda + Interno a sx, Ciringuito a dx; zone `veranda|interno|ciringuito`), drag&drop (`Tavolo.x/y` in %, `spostaTavolo` → `zonaDaPos`), selettore pranzo/cena, pannello tavolo: modifica numero/posti/zona (`modificaTavolo`), ospiti, "Assegna" prenotazioni confermate senza tavolo,
   QR per tavolo e stampa di tutti. **Magazzino**: `magazzino` + `movimentaArticolo/aggiungiArticolo/rimuoviArticolo`.
 
 ## Moduli commerciali (vendita a moduli)
