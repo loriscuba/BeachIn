@@ -34,13 +34,14 @@ const pagine: PaginaSito[] = [
 
 // Galleria iniziale con le foto dello stabilimento (modificabile dal gestionale).
 const galleria = ([
+  ['La spiaggia vista dall’alto', fotoSito.spiaggiaAlto],
   ['La spiaggia vista dal drone', fotoSito.spiaggiaDrone],
-  ['File di ombrelloni', fotoSito.ombrelloniCielo],
+  ['Il lido sotto il cielo di Savona', fotoSito.ombrelloniCielo],
   ['La postazione del bagnino', fotoSito.bagnino],
   ['Beach volley', fotoSito.beachVolley],
   ['Il torneo dell’estate', fotoSito.torneo],
   ['Il bar: la nostra selezione', fotoSito.barDistillati],
-  ['Piatti del ristorante', fotoSito.ristorante],
+  ['La sala del ristorante sul mare', fotoSito.ristorante],
   ['Aperitivo al tramonto', fotoSito.tramonto],
 ] as const).map(([titolo, immagine], i) => ({ id: `FT-${i + 1}`, titolo, ordine: i + 1, immagine: immagine as string }))
 
@@ -145,8 +146,8 @@ export const statoSito: StatoSito = {
     titolo: 'Lido dei Pini — il tuo angolo di Riviera',
     sottotitolo: 'Spiaggia, bar e ristorante di pesce in Via Nizza, a Savona',
     testo:
-      'A tre chilometri dal centro di Savona, in riva al mare: ombrellone e lettini, docce calde, ' +
-      'beach volley e un ristorante dove il pesce freschissimo lo scegli direttamente dal banco.',
+      'A tre chilometri dal centro di Savona, in riva al mare: docce calde, beach volley, area relax ' +
+      'e un ristorante dove il pesce freschissimo lo scegli direttamente dal banco.',
     immagine: 'hero-spiaggia-alba',
   },
   galleria,

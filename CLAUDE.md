@@ -12,6 +12,8 @@ riconciliati tra le pagine. BeachIn è l'**aggregatore di moduli**.
   - **GitHub Pages** — https://loriscuba.github.io/BeachIn/ (workflow `.github/workflows/pages.yml`,
     build Vite con `VITE_BASE=/BeachIn/` + HashRouter; Pages attivo su Source: GitHub Actions).
   - **Vercel** — anteprima per branch (BrowserRouter, `vercel.json` con rewrite SPA verso `/index.html`).
+- **Appunti del progetto**: `APPUNTI.md` (in radice). Quando l'utente chiede di "appuntare"/"segnare" qualcosa,
+  aggiungerlo lì nella sezione giusta (checklist `[ ]`, spuntare `[x]` quando fatto). Leggerlo a inizio sessione.
 - Per risparmiare token: build/typecheck di norma bastano; screenshot solo se richiesti; evita di rileggere l'artifact pubblicato (è enorme).
 
 ## Stack
@@ -65,6 +67,16 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   crea una `PrenotazioneRistorante` (`origine:'sito'`, id `PR-<idRichiesta>` idempotente) così la prenotazione
   online entra tra quelle del ristorante e le si può assegnare un tavolo.
 
+## Ristorante a sottosezioni (tab `?tab=`)
+- `Ristorante.tsx`: KPI + Tabs **Menu | Tavoli | Magazzino | Prenotazioni** (componenti in `src/pages/ristorante/`).
+- **Menu** (`PannelloMenu`): traduzioni 5 lingue (it/en/fr/de/es, `src/lib/menuLingue.ts`: seed curato, poi MyMemory
+  + glossario), correzione manuale (`impostaTraduzione`), QR (`src/components/QrCodice.tsx`, lib `qrcode`, `stampaQr`),
+  **Assistente vocale incorporato** (tolto dalla sidebar; `/assistente-vocale` → redirect a `/ristorante?tab=menu`).
+  `aggiungiPiatto/rinominaPiatto` ritraducono da soli (`traduzioni: {}` = in corso).
+- **Menu pubblico**: rotta `/menu?tavolo=N&lang=xx` (`MenuPubblico.tsx`, fuori dallo shell), `urlMenu()` per i QR.
+- **Tavoli** (`Planimetria`): drag&drop su pianta (`Tavolo.x/y` in %, `forma`), `spostaTavolo` aggiorna la zona da y,
+  QR per tavolo e stampa di tutti. **Magazzino**: `magazzino` + `movimentaArticolo/aggiungiArticolo/rimuoviArticolo`.
+
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
   upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`
@@ -113,6 +125,14 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   galleria a mosaico con lightbox, contatti. Font display **Fraunces** (`font-display`), classi animazione in
   `styles/index.css` (`.reveal/.visibile`, `kenburns`, `onda`, `scorri`, `dissolvi`, rispettano reduced-motion).
 - `vite.config.ts`: con `VITE_INLINE=1` anche le immagini sono inlinate (`assetsInlineLimit`).
+- Foto reali dal cliente (chat): **hero** = `spiaggia-alto.jpg` (vista dall'alto), **ristorante** = `ristorante.jpg`
+  (sala sotto il canniccio, sostituisce il concept). **Logo** = `logo-lido.png` (tratto estratto dalla grafica
+  ufficiale, trasparente; sul sito reso bianco con `brightness-0 invert`) al posto del logo BeachIn in navbar e footer.
+- **Ombrelloni ↔ modulo `arenile`**: se spento (default del piano ristorante_web) il sito pubblico nasconde ogni
+  riferimento agli ombrelloni: voci nav Prenota/Listino, CTA hero (diventa "Prenota un tavolo" + "Scopri gli eventi"),
+  disponibilità, nastro, testo e numeri, tessera servizi (→ "La spiaggia"), sezioni prenota+listino, bottone flottante.
+  Verificato in Chromium (0 occorrenze di "ombrell" nel testo e negli alt). Il canale Sito→Ombrelloni resta il
+  "sospendi prenotazioni" (mostra l'avviso) quando il modulo è attivo.
 - Video hero opzionale: `src/assets/sito/hero.mp4|webm` (via `import.meta.glob`, export `videoHero`); se manca → foto.
 
 ## Cliente reale: Lido dei Pini (Savona)

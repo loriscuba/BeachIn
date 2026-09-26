@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import type { ReactNode } from 'react'
-import { createBrowserRouter, createHashRouter } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Caricamento } from '@/components/ui/Caricamento'
 import { ModuloGate } from '@/components/ModuloGate'
@@ -21,7 +21,7 @@ const Comande = lazy(() => import('@/pages/Comande'))
 const Tariffe = lazy(() => import('@/pages/Tariffe'))
 const Bar = lazy(() => import('@/pages/Bar'))
 const Ristorante = lazy(() => import('@/pages/Ristorante'))
-const AssistenteVocale = lazy(() => import('@/pages/AssistenteVocale'))
+const MenuPubblico = lazy(() => import('@/pages/MenuPubblico'))
 const Costi = lazy(() => import('@/pages/Costi'))
 const ContoEconomico = lazy(() => import('@/pages/ContoEconomico'))
 const Personale = lazy(() => import('@/pages/Personale'))
@@ -48,7 +48,8 @@ export const router = creaRouter([
       { path: 'tariffe', element: g('tariffe', <Tariffe />) },
       { path: 'bar', element: g('bar', <Bar />) },
       { path: 'ristorante', element: g('ristorante', <Ristorante />) },
-      { path: 'assistente-vocale', element: g('assistente-vocale', <AssistenteVocale />) },
+      // L'assistente vocale ora vive dentro Ristorante → Menu
+      { path: 'assistente-vocale', element: <Navigate to="/ristorante?tab=menu" replace /> },
       { path: 'costi', element: g('costi', <Costi />) },
       { path: 'conto-economico', element: g('conto-economico', <ContoEconomico />) },
       { path: 'personale', element: g('personale', <Personale />) },
@@ -60,4 +61,6 @@ export const router = creaRouter([
   },
   // Vetrina pubblica, fuori dallo shell gestionale
   { path: '/sito/anteprima', element: s(<SitoAnteprima />) },
+  // Menu pubblico multilingua (QR sui tavoli)
+  { path: '/menu', element: s(<MenuPubblico />) },
 ])
