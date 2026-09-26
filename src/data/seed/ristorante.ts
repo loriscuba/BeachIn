@@ -6,6 +6,7 @@
 import { addDays, format, parseISO } from 'date-fns'
 import { config } from '../config'
 import type {
+  ArticoloMagazzino,
   Allergene,
   CategoriaPiatto,
   Piatto,
@@ -15,6 +16,7 @@ import type {
   Tavolo,
   Turno,
 } from '../types'
+import { traduzioniSeed } from '@/lib/menuLingue'
 import { creaRng, intero, scegli, scegliPesato, forse, type Rng } from './_rng'
 import { giorni } from './giornaliero'
 
@@ -30,15 +32,15 @@ const menuDef: DefP[] = [
   { nome: 'Antipasto di mare', categoria: 'antipasti', prezzo: 16, fc: 6.4, all: ['pesce', 'molluschi', 'crostacei'] },
   { nome: 'Cozze alla marinara', categoria: 'antipasti', prezzo: 12, fc: 4.2, all: ['molluschi'] },
   { nome: 'Insalata di polpo', categoria: 'antipasti', prezzo: 14, fc: 5.6, all: ['molluschi', 'sedano'] },
-  { nome: 'Tartare di tonno', categoria: 'antipasti', prezzo: 15, fc: 6.8, all: ['pesce'] },
+  { nome: 'Tartare di pescato del giorno con fragole e crema balsamica', categoria: 'antipasti', prezzo: 10, fc: 4.2, all: ['pesce'] },
   { nome: 'Bruschette miste', categoria: 'antipasti', prezzo: 8, fc: 2.1, all: ['glutine'] },
   // Primi
   { nome: 'Spaghetti alle vongole', categoria: 'primi', prezzo: 15, fc: 5.2, all: ['glutine', 'molluschi'] },
   { nome: 'Risotto alla pescatora', categoria: 'primi', prezzo: 16, fc: 6.0, all: ['molluschi', 'crostacei'] },
-  { nome: 'Paccheri astice', categoria: 'primi', prezzo: 22, fc: 9.5, all: ['glutine', 'crostacei'] },
+  { nome: 'Fusilli con scampi, ricotta fresca e olive taggiasche', categoria: 'primi', prezzo: 16, fc: 6.5, all: ['glutine', 'crostacei', 'latte'] },
   { nome: 'Trofie al pesto', categoria: 'primi', prezzo: 12, fc: 3.0, all: ['glutine', 'latte', 'frutta_guscio'] },
   { nome: 'Gnocchi pomodoro e basilico', categoria: 'primi', prezzo: 11, fc: 2.6, all: ['glutine'] },
-  { nome: 'Spaghetti allo scoglio', categoria: 'primi', prezzo: 18, fc: 7.2, all: ['glutine', 'molluschi', 'crostacei'] },
+  { nome: 'Spaghetti con gamberoni, asparagi di mare e lime', categoria: 'primi', prezzo: 15, fc: 6.0, all: ['glutine', 'crostacei'] },
   // Secondi
   { nome: 'Fritto misto di mare', categoria: 'secondi', prezzo: 18, fc: 7.0, all: ['pesce', 'glutine'] },
   { nome: 'Grigliata di pesce', categoria: 'secondi', prezzo: 24, fc: 10.5, all: ['pesce', 'crostacei'] },
@@ -83,20 +85,50 @@ function costruisciMenu(rng: Rng): Piatto[] {
     foodCost: d.fc,
     allergeni: d.all,
     vendutiStagione: Math.round(intero(rng, 60, 900) * (popolarita[d.categoria] / 5)),
+    traduzioni: traduzioniSeed(d.nome),
   }))
 }
 
 export const menu: Piatto[] = costruisciMenu(creaRng(3636))
 
+// Planimetria iniziale: veranda (fronte mare, in alto), sala e terrazza. Posizioni in %.
 export const tavoli: Tavolo[] = Array.from({ length: 18 }, (_, i) => {
   const zona = i < 8 ? 'veranda' : i < 13 ? 'sala' : 'terrazza'
+  const [col, riga, x0, y0] = zona === 'veranda' ? [i, 0, 8, 14] : zona === 'sala' ? [i - 8, 0, 8, 52] : [i - 13, 0, 8, 82]
   return {
     id: `TAV-${String(i + 1).padStart(2, '0')}`,
     numero: i + 1,
     posti: i % 4 === 0 ? 6 : i % 2 === 0 ? 4 : 2,
     zona,
+    x: x0 + col * 11.5,
+    y: y0 + riga,
+    forma: i % 4 === 0 ? 'quadrato' : 'tondo',
   } as Tavolo
 })
+
+/** Magazzino cucina (quantità dimostrative). */
+export const magazzino: ArticoloMagazzino[] = ([
+  ['Pescato del giorno', 'pesce', 'kg', 8, 5, 18, 'Mercato ittico Savona'],
+  ['Gamberoni', 'pesce', 'kg', 3, 4, 32, 'Mercato ittico Savona'],
+  ['Scampi', 'pesce', 'kg', 2.5, 2, 38, 'Mercato ittico Savona'],
+  ['Calamari', 'pesce', 'kg', 6, 4, 16, 'Mercato ittico Savona'],
+  ['Cozze', 'pesce', 'kg', 10, 6, 4.5, 'Mercato ittico Savona'],
+  ['Vongole', 'pesce', 'kg', 4, 3, 12, 'Mercato ittico Savona'],
+  ['Manzo (controfiletto)', 'carne', 'kg', 5, 3, 28, 'Macelleria Rossi'],
+  ['Pomodorini', 'verdura', 'kg', 7, 4, 3.2, 'Ortofrutta Riviera'],
+  ['Limoni', 'verdura', 'kg', 2, 3, 2.5, 'Ortofrutta Riviera'],
+  ['Basilico', 'verdura', 'pz', 12, 10, 0.8, 'Ortofrutta Riviera'],
+  ['Ricotta fresca', 'latticini', 'kg', 2, 2, 7, 'Caseificio Val Bormida'],
+  ['Mozzarella', 'latticini', 'kg', 9, 6, 8.5, 'Caseificio Val Bormida'],
+  ['Pasta secca', 'secco', 'kg', 25, 15, 2.2, 'Pastificio ligure'],
+  ['Farina 00', 'secco', 'kg', 40, 20, 0.9, 'Molino'],
+  ['Olio extravergine', 'secco', 'l', 12, 8, 9, 'Frantoio Taggiasco'],
+  ['Olive taggiasche', 'secco', 'kg', 1.5, 2, 14, 'Frantoio Taggiasco'],
+  ['Vino della casa', 'bevande', 'l', 60, 30, 3.5, 'Cantina locale'],
+  ['Birra artigianale', 'bevande', 'pz', 48, 36, 1.8, 'Birrificio ligure'],
+] as const).map(([nome, categoria, unita, quantita, scortaMinima, costoUnitario, fornitore], i) => ({
+  id: `MAG-${String(i + 1).padStart(2, '0')}`, nome, categoria, unita, quantita, scortaMinima, costoUnitario, fornitore,
+}))
 
 // — Servizi giornalieri (coperti e incasso dalla serie giornaliera) —
 export const serviziRistorante: ServizioRistoranteGiorno[] = giorni.flatMap((g) => {

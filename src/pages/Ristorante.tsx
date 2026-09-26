@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDown, Plus, X, Phone, Check } from 'lucide-react'
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, ServizioRistoranteGiorno, StatoPrenotazione, Tavolo, Turno,
@@ -11,6 +12,10 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Tabella, type Colonna } from '@/components/ui/Tabella'
+import { Tabs } from '@/components/ui/Tabs'
+import { PannelloMenu } from '@/pages/ristorante/PannelloMenu'
+import { Planimetria } from '@/pages/ristorante/Planimetria'
+import { Magazzino } from '@/pages/ristorante/Magazzino'
 import { euro, euroCent, numero, percento } from '@/lib/formatters'
 import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
@@ -26,6 +31,12 @@ const zone = [
 ] as const
 const etichettaZona: Record<Tavolo['zona'], string> = { veranda: 'Veranda', sala: 'Sala', terrazza: 'Terrazza' }
 
+type Sezione = 'menu' | 'tavoli' | 'magazzino' | 'prenotazioni'
+const sezioni: { valore: Sezione; etichetta: string }[] = [
+  { valore: 'menu', etichetta: 'Menu' }, { valore: 'tavoli', etichetta: 'Tavoli' },
+  { valore: 'magazzino', etichetta: 'Magazzino' }, { valore: 'prenotazioni', etichetta: 'Prenotazioni' },
+]
+
 const margine = (p: Piatto) => (p.prezzo - p.foodCost) / p.prezzo
 
 export default function Ristorante() {
@@ -35,12 +46,14 @@ export default function Ristorante() {
   // assegna il tavolo dal vivo.
   const {
     menu, tavoli, prenotazioniRistorante,
-    aggiungiTavolo, rimuoviTavolo,
+    aggiungiTavolo,
     creaPrenotazioneRistorante, assegnaTavolo, impostaStatoPrenotazione, rimuoviPrenotazioneRistorante,
   } = useDemoData()
   const [servizi, setServizi] = useState<ServizioRistoranteGiorno[]>([])
   const [caricato, setCaricato] = useState(false)
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
+  const [q, setQ] = useSearchParams()
+  const tab = (sezioni.find((x) => x.valore === q.get('tab'))?.valore ?? 'menu') as Sezione
 
   useEffect(() => {
     getServiziRistorante().then((s) => { setServizi(s); setCaricato(true) })
@@ -91,9 +104,68 @@ export default function Ristorante() {
         <Kpi icona={TrendingDown} etichetta="Incidenza food cost" valore={percento(kpi.incidenzaFc)} />
       </div>
 
-      {/* Prenotazioni + mappa tavoli */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <Tabs opzioni={sezioni} valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />
+
+      {tab === 'menu' && (
+        <>
+          <PannelloMenu />
+      {/* Highlights */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader titolo={<span className="inline-flex items-center gap-2"><Star className="h-4 w-4 text-tenda" /> Piatti più venduti</span>} />
+            <CardBody className="pt-1">
+              <ul className="divide-y divide-calce-200">
+                {piuVenduti.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between py-2 text-sm">
+                    <span className="font-medium text-profondo">{p.nome}</span>
+                    <span className="num text-profondo/70">{numero(p.vendutiStagione)} venduti</span>
+                  </li>
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardHeader titolo={<span className="inline-flex items-center gap-2"><ThumbsDown className="h-4 w-4 text-boa" /> Piatti meno redditizi</span>} sottotitolo="Margine più basso" />
+            <CardBody className="pt-1">
+              <ul className="divide-y divide-calce-200">
+                {menoRedditizi.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between py-2 text-sm">
+                    <span className="font-medium text-profondo">{p.nome}</span>
+                    <span className="num text-boa">{percento(margine(p))} margine</span>
+                  </li>
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
+        </div>
+      {/* Menù */}
+        <Card>
+          <CardHeader
+            titolo="Menù"
+            sottotitolo={`${menu.length} piatti · food cost e margine`}
+            azione={
+              <div className="w-44">
+                <Select
+                  value={filtroCat}
+                  onChange={(e) => setFiltroCat(e.target.value as CategoriaPiatto | 'tutte')}
+                  opzioni={[{ valore: 'tutte', etichetta: 'Tutte le categorie' }, ...Object.entries(etichetteCategoriaPiatto).map(([v, l]) => ({ valore: v, etichetta: l }))]}
+                />
+              </div>
+            }
+          />
+          <CardBody className="px-1 py-1 sm:px-2">
+            <MenuTabella piatti={menuFiltrato} />
+          </CardBody>
+        </Card>
+        </>
+      )}
+
+      {tab === 'tavoli' && <Planimetria occupati={occupatiOggi} nuovoTavolo={<NuovoTavolo tavoli={tavoli} onCrea={aggiungiTavolo} />} />}
+
+      {tab === 'magazzino' && <Magazzino />}
+
+      {tab === 'prenotazioni' && (
+        <Card>
           <CardHeader titolo="Prenotazioni di oggi" sottotitolo={`${prenOggi.length} prenotazioni`} />
           <CardBody className="space-y-4 pt-2">
             <NuovaPrenotazione
@@ -132,100 +204,7 @@ export default function Ristorante() {
             </div>
           </CardBody>
         </Card>
-
-        <Card>
-          <CardHeader titolo="Mappa tavoli" sottotitolo={`${tavoli.length} tavoli · ${occupatiOggi.size} occupati oggi`} />
-          <CardBody className="space-y-3 pt-2">
-            {zone.map((z) => {
-              const tz = tavoli.filter((t) => t.zona === z.chiave)
-              return (
-                <div key={z.chiave}>
-                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-profondo/45">{z.label}</p>
-                  {tz.length === 0 && <p className="text-xs text-profondo/40">Nessun tavolo.</p>}
-                  <div className="flex flex-wrap gap-1.5">
-                    {tz.map((t) => {
-                      const occ = occupatiOggi.has(t.id)
-                      return (
-                        <span
-                          key={t.id}
-                          className={cn(
-                            'group relative grid h-11 w-11 place-content-center rounded-lg border text-center',
-                            occ ? 'border-cabina bg-cabina/10' : 'border-calce-200 bg-white'
-                          )}
-                          title={`Tavolo ${t.numero} · ${t.posti} posti${occ ? ' · occupato oggi' : ''}`}
-                        >
-                          <span className="num text-sm font-bold leading-none text-profondo">{t.numero}</span>
-                          <span className="num text-[10px] text-profondo/50">{t.posti}p</span>
-                          <button
-                            type="button"
-                            onClick={() => rimuoviTavolo(t.id)}
-                            className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 place-content-center rounded-full bg-boa text-white group-hover:grid"
-                            aria-label={`Elimina tavolo ${t.numero}`}
-                            title="Elimina tavolo"
-                          >
-                            <X className="h-2.5 w-2.5" />
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-            <NuovoTavolo tavoli={tavoli} onCrea={aggiungiTavolo} />
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Highlights */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader titolo={<span className="inline-flex items-center gap-2"><Star className="h-4 w-4 text-tenda" /> Piatti più venduti</span>} />
-          <CardBody className="pt-1">
-            <ul className="divide-y divide-calce-200">
-              {piuVenduti.map((p) => (
-                <li key={p.id} className="flex items-center justify-between py-2 text-sm">
-                  <span className="font-medium text-profondo">{p.nome}</span>
-                  <span className="num text-profondo/70">{numero(p.vendutiStagione)} venduti</span>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader titolo={<span className="inline-flex items-center gap-2"><ThumbsDown className="h-4 w-4 text-boa" /> Piatti meno redditizi</span>} sottotitolo="Margine più basso" />
-          <CardBody className="pt-1">
-            <ul className="divide-y divide-calce-200">
-              {menoRedditizi.map((p) => (
-                <li key={p.id} className="flex items-center justify-between py-2 text-sm">
-                  <span className="font-medium text-profondo">{p.nome}</span>
-                  <span className="num text-boa">{percento(margine(p))} margine</span>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Menù */}
-      <Card>
-        <CardHeader
-          titolo="Menù"
-          sottotitolo={`${menu.length} piatti · food cost e margine`}
-          azione={
-            <div className="w-44">
-              <Select
-                value={filtroCat}
-                onChange={(e) => setFiltroCat(e.target.value as CategoriaPiatto | 'tutte')}
-                opzioni={[{ valore: 'tutte', etichetta: 'Tutte le categorie' }, ...Object.entries(etichetteCategoriaPiatto).map(([v, l]) => ({ valore: v, etichetta: l }))]}
-              />
-            </div>
-          }
-        />
-        <CardBody className="px-1 py-1 sm:px-2">
-          <MenuTabella piatti={menuFiltrato} />
-        </CardBody>
-      </Card>
+      )}
     </div>
   )
 }

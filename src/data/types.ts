@@ -276,7 +276,11 @@ export interface Piatto {
   foodCost: number // € costo materia prima
   allergeni: Allergene[]
   vendutiStagione: number
+  /** Nome tradotto per il menu pubblico (it = `nome`). Si aggiorna da solo a ogni modifica. */
+  traduzioni?: Partial<Record<LinguaMenu, string>>
 }
+
+export type LinguaMenu = 'it' | 'en' | 'fr' | 'de' | 'es'
 
 export type Turno = 'pranzo' | 'cena'
 export type StatoPrenotazione = 'confermata' | 'in_attesa' | 'annullata'
@@ -286,6 +290,24 @@ export interface Tavolo {
   numero: number
   posti: number
   zona: 'veranda' | 'sala' | 'terrazza'
+  /** Posizione sulla planimetria, in % (0–100). */
+  x?: number
+  y?: number
+  forma?: 'tondo' | 'quadrato'
+}
+
+export type CategoriaMagazzino = 'pesce' | 'carne' | 'verdura' | 'latticini' | 'secco' | 'bevande' | 'altro'
+
+/** Articolo del magazzino cucina. */
+export interface ArticoloMagazzino {
+  id: string
+  nome: string
+  categoria: CategoriaMagazzino
+  unita: 'kg' | 'l' | 'pz'
+  quantita: number
+  scortaMinima: number
+  costoUnitario: number
+  fornitore?: string
 }
 
 export interface PrenotazioneRistorante {

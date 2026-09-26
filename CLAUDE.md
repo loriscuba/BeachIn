@@ -67,6 +67,16 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   crea una `PrenotazioneRistorante` (`origine:'sito'`, id `PR-<idRichiesta>` idempotente) così la prenotazione
   online entra tra quelle del ristorante e le si può assegnare un tavolo.
 
+## Ristorante a sottosezioni (tab `?tab=`)
+- `Ristorante.tsx`: KPI + Tabs **Menu | Tavoli | Magazzino | Prenotazioni** (componenti in `src/pages/ristorante/`).
+- **Menu** (`PannelloMenu`): traduzioni 5 lingue (it/en/fr/de/es, `src/lib/menuLingue.ts`: seed curato, poi MyMemory
+  + glossario), correzione manuale (`impostaTraduzione`), QR (`src/components/QrCodice.tsx`, lib `qrcode`, `stampaQr`),
+  **Assistente vocale incorporato** (tolto dalla sidebar; `/assistente-vocale` → redirect a `/ristorante?tab=menu`).
+  `aggiungiPiatto/rinominaPiatto` ritraducono da soli (`traduzioni: {}` = in corso).
+- **Menu pubblico**: rotta `/menu?tavolo=N&lang=xx` (`MenuPubblico.tsx`, fuori dallo shell), `urlMenu()` per i QR.
+- **Tavoli** (`Planimetria`): drag&drop su pianta (`Tavolo.x/y` in %, `forma`), `spostaTavolo` aggiorna la zona da y,
+  QR per tavolo e stampa di tutti. **Magazzino**: `magazzino` + `movimentaArticolo/aggiungiArticolo/rimuoviArticolo`.
+
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
   upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`

@@ -10,7 +10,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
+  ArticoloMagazzino,
   CategoriaPiatto,
+  LinguaMenu,
   Cliente,
   Comanda,
   ContoOmbrellone,
@@ -37,7 +39,8 @@ import type {
 import { postazioni as seedPostazioni } from '@/data/seed/spiaggia'
 import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
-import { menu as seedMenu, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist } from '@/data/seed/ristorante'
+import { menu as seedMenu, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
+import { traduciNome } from '@/lib/menuLingue'
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
@@ -194,12 +197,20 @@ interface DemoDataValue {
   rimuoviPiatto: (id: string) => void
   modificaPrezzoPiatto: (id: string, prezzo: number) => void
   rinominaPiatto: (id: string, nome: string) => void
+  /** Correzione manuale di una traduzione del menu pubblico. */
+  impostaTraduzione: (id: string, lingua: LinguaMenu, testo: string) => void
 
   // Ristorante — tavoli e prenotazioni (presa a telefono + assegnazione tavolo).
   // Dati statici in memoria, pronti per il DB.
   tavoli: Tavolo[]
   aggiungiTavolo: (numero: number, posti: number, zona: Tavolo['zona']) => void
   rimuoviTavolo: (id: string) => void
+  spostaTavolo: (id: string, x: number, y: number) => void
+  // Ristorante — magazzino cucina
+  magazzino: ArticoloMagazzino[]
+  movimentaArticolo: (id: string, delta: number) => void
+  aggiungiArticolo: (a: Omit<ArticoloMagazzino, 'id'>) => void
+  rimuoviArticolo: (id: string) => void
   prenotazioniRistorante: PrenotazioneRistorante[]
   creaPrenotazioneRistorante: (dati: DatiPrenotazioneRistorante) => void
   assegnaTavolo: (prenotazioneId: string, tavoloId?: string) => void
@@ -245,6 +256,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
   const [comande, setComande] = useState<Comanda[]>([])
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
+  const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
   const seqRef = useRef(1)
   const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}`
@@ -509,6 +521,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // — Menu ristorante (modificabile a voce) —
+  // Ogni nome nuovo/rinominato viene tradotto in tutte le lingue del menu pubblico.
+  // `traduzioni: {}` = traduzione in corso; si applica solo se il nome non è cambiato nel frattempo.
+  const traduci = useCallback((id: string, nome: string) => {
+    traduciNome(nome).then((t) => setMenu((prev) => prev.map((p) => (p.id === id && p.nome === nome ? { ...p, traduzioni: t } : p))))
+  }, [])
+  const impostaTraduzione = useCallback((id: string, lingua: LinguaMenu, testo: string) => {
+    setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, traduzioni: { ...p.traduzioni, [lingua]: testo } } : p)))
+  }, [])
   const aggiungiPiatto = useCallback((nome: string, prezzo: number | null, categoria: CategoriaPiatto): Piatto => {
     const piatto: Piatto = {
       id: nuovoId('P'),
@@ -518,10 +538,12 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       foodCost: 0,
       allergeni: [],
       vendutiStagione: 0,
+      traduzioni: {},
     }
     setMenu((prev) => [...prev, piatto])
+    traduci(piatto.id, piatto.nome)
     return piatto
-  }, [])
+  }, [traduci])
   const rimuoviPiatto = useCallback((id: string) => {
     setMenu((prev) => prev.filter((p) => p.id !== id))
   }, [])
@@ -529,8 +551,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, prezzo } : p)))
   }, [])
   const rinominaPiatto = useCallback((id: string, nome: string) => {
-    setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, nome: nome.trim() } : p)))
-  }, [])
+    setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, nome: nome.trim(), traduzioni: {} } : p)))
+    traduci(id, nome.trim())
+  }, [traduci])
 
   // — Galleria foto del sito —
   const aggiungiFoto = useCallback((immagine: string, titolo?: string) => {
@@ -548,7 +571,21 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   // — Ristorante: tavoli e prenotazioni —
   const aggiungiTavolo = useCallback((numero: number, posti: number, zona: Tavolo['zona']) => {
-    setTavoli((prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona }])
+    setTavoli((prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona, x: 46 + (prev.length % 5) * 2, y: 40 + (prev.length % 5) * 2, forma: posti > 4 ? 'quadrato' : 'tondo' }])
+  }, [])
+  const spostaTavolo = useCallback((id: string, x: number, y: number) => {
+    // la zona segue la posizione: veranda in alto (fronte mare), poi sala, poi terrazza
+    setTavoli((prev) => prev.map((t) => (t.id === id ? { ...t, x, y, zona: y < 36 ? 'veranda' : y < 70 ? 'sala' : 'terrazza' } : t)))
+  }, [])
+  // — Ristorante: magazzino cucina —
+  const movimentaArticolo = useCallback((id: string, delta: number) => {
+    setMagazzino((prev) => prev.map((a) => (a.id === id ? { ...a, quantita: Math.max(0, Math.round((a.quantita + delta) * 100) / 100) } : a)))
+  }, [])
+  const aggiungiArticolo = useCallback((a: Omit<ArticoloMagazzino, 'id'>) => {
+    setMagazzino((prev) => [...prev, { ...a, id: nuovoId('MAG') }])
+  }, [])
+  const rimuoviArticolo = useCallback((id: string) => {
+    setMagazzino((prev) => prev.filter((a) => a.id !== id))
   }, [])
   const rimuoviTavolo = useCallback((id: string) => {
     setTavoli((prev) => prev.filter((t) => t.id !== id))
@@ -600,6 +637,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setGalleria(clona(statoSito.galleria))
     setComande([])
     setTavoli(clona(seedTavoli))
+    setMagazzino(clona(seedMagazzino))
     setPrenotazioniRistorante(clona(seedPrenotazioniRist))
     setDemoInCorso(false)
     setIncassoDemo(0)
@@ -745,6 +783,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rimuoviPiatto,
       modificaPrezzoPiatto,
       rinominaPiatto,
+      impostaTraduzione,
       galleria,
       aggiungiFoto,
       rimuoviFoto,
@@ -752,6 +791,11 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       tavoli,
       aggiungiTavolo,
       rimuoviTavolo,
+      spostaTavolo,
+      magazzino,
+      movimentaArticolo,
+      aggiungiArticolo,
+      rimuoviArticolo,
       prenotazioniRistorante,
       creaPrenotazioneRistorante,
       assegnaTavolo,
@@ -816,6 +860,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rimuoviPiatto,
       modificaPrezzoPiatto,
       rinominaPiatto,
+      impostaTraduzione,
       galleria,
       aggiungiFoto,
       rimuoviFoto,
@@ -823,6 +868,11 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       tavoli,
       aggiungiTavolo,
       rimuoviTavolo,
+      spostaTavolo,
+      magazzino,
+      movimentaArticolo,
+      aggiungiArticolo,
+      rimuoviArticolo,
       prenotazioniRistorante,
       creaPrenotazioneRistorante,
       assegnaTavolo,

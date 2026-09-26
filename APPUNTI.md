@@ -39,6 +39,9 @@ gestire chiavi e costi.
 ---
 
 ## 2. Dati del cliente da confermare
+- [ ] **Menu completo reale**: Tripadvisor/TheFork bloccano il download automatico. Inseriti solo 3 piatti veri
+  (tartare di pescato con fragole 10 €, spaghetti gamberoni/asparagi di mare/lime 15 €, fusilli scampi/ricotta/taggiasche,
+  prezzo da confermare) + fritto misto. Il resto è dimostrativo: farsi dare il menu (foto o PDF) e sostituirlo.
 - [ ] Telefono: online compaiono **+39 349 574 5156** (usato ora) e **+39 340 159 9851** — quale è giusto?
 - [ ] Email, sito web, Partita IVA (ora vuoti: sul sito non compaiono)
 - [ ] Orario di chiusura della spiaggia (ora 19:30, da confermare)
@@ -62,6 +65,10 @@ gestire chiavi e costi.
 ---
 
 ## 4. Produzione / infrastruttura
+- [ ] **Menu QR condiviso tra dispositivi**: oggi il menu vive nel browser del gestore; chi scansiona il QR vede il
+  menu iniziale. In produzione serve un database (es. Supabase) da cui leggono gestionale e `/menu`.
+- [ ] **Traduzioni**: oggi servizio gratuito MyMemory (limite ~5.000 caratteri/giorno) + glossario di riserva.
+  In produzione: DeepL/Google o un LLM lato server (stessa funzione `traduciNome` in `src/lib/menuLingue.ts`).
 - Deploy: GitHub Pages parte a ogni merge su `main` → https://loriscuba.github.io/BeachIn/
 - [ ] Dominio del cliente (es. lidodeipini.it?) da collegare a Pages o Vercel
 - [ ] Oggi i dati sono in memoria (demo): per l'uso reale servono database e login per il gestionale
