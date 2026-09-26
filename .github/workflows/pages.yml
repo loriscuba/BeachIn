@@ -5,12 +5,12 @@ name: Deploy su GitHub Pages
 #
 # PREREQUISITO (una tantum, solo il proprietario del repo):
 #   Settings → Pages → Build and deployment → Source: "GitHub Actions".
-# Dopo di che ogni push su questo branch pubblica automaticamente.
+# Dopo di che ogni push su main pubblica automaticamente (anche il merge di una PR).
 
 on:
   push:
     branches:
-      - claude/web-app-voice-restaurant-menu-yk9jm4
+      - main
   workflow_dispatch:
 
 permissions:
