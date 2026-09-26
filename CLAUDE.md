@@ -59,7 +59,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `rimuoviPrenotazioneRistorante(id)`. `PrenotazioneRistorante` ha ora `telefono?` e `origine?:'manuale'|'sito'`.
 - Pagina **Ristorante**: form "Nuova prenotazione (telefono)", assegnazione tavolo per prenotazione (Select con
   i tavoli **liberi per quel turno** + quello già assegnato, evita doppie assegnazioni), annulla/elimina;
-  **Mappa tavoli** a **pianta** (`components/ristorante/PiantaTavoli.tsx`: Veranda + Interno a sx, Ciringuito a dx; zone `veranda|interno|ciringuito`), turno pranzo/cena, click tavolo → ospiti o prenotazioni confermate da assegnare, "+ Tavolo" per zona
+  **Mappa tavoli** con tavoli occupati oggi evidenziati, "+ Aggiungi tavolo" (numero = nome numerico, posti, zona)
   ed eliminazione tavolo.
 - **Dal sito**: `confermaRistorante(id)` ora, oltre a segnare la richiesta confermata e mandare la mail,
   crea una `PrenotazioneRistorante` (`origine:'sito'`, id `PR-<idRichiesta>` idempotente) così la prenotazione

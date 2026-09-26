@@ -285,7 +285,7 @@ export interface Tavolo {
   id: string
   numero: number
   posti: number
-  zona: 'veranda' | 'interno' | 'ciringuito'
+  zona: 'veranda' | 'sala' | 'terrazza'
 }
 
 export interface PrenotazioneRistorante {
