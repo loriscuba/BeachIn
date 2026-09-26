@@ -5,8 +5,8 @@ Tutto in italiano. Dati finti ma strutturati come una vera API, numeri
 riconciliati tra le pagine. BeachIn è l'**aggregatore di moduli**.
 
 ## Come riprendere il lavoro (per Claude)
-- Branch di sviluppo attuale: **`claude/web-app-voice-restaurant-menu-yk9jm4`** (PR #2, draft su `loriscuba/BeachIn`) —
-  app completa consolidata + Assistente vocale. (Storico: `claude/prompt-fase-1-5hlkom`, PR #1.)
+- Branch principale: **`main`** (il deploy GitHub Pages parte a ogni push/merge su main). Ultimo lavoro: PR #3
+  (restyling sito + dati Lido dei Pini). Prima: PR #2 — app completa consolidata + Assistente vocale. (Storico: `claude/prompt-fase-1-5hlkom`, PR #1.)
 - Anteprima web (Artifact): https://claude.ai/artifact/PqRRUL2ws33iz2m9qn99nV — ripubblicare sullo stesso URL.
 - Deploy pubblico (microfono reale), due canali automatici sul push:
   - **GitHub Pages** — https://loriscuba.github.io/BeachIn/ (workflow `.github/workflows/pages.yml`,
