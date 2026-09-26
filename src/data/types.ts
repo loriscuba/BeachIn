@@ -289,7 +289,7 @@ export interface Tavolo {
   id: string
   numero: number
   posti: number
-  zona: 'veranda' | 'sala' | 'terrazza'
+  zona: 'veranda' | 'interno' | 'ciringuito'
   /** Posizione sulla planimetria, in % (0–100). */
   x?: number
   y?: number

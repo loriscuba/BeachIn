@@ -91,17 +91,19 @@ function costruisciMenu(rng: Rng): Piatto[] {
 
 export const menu: Piatto[] = costruisciMenu(creaRng(3636))
 
-// Planimetria iniziale: veranda (fronte mare, in alto), sala e terrazza. Posizioni in %.
+// Planimetria iniziale (in %): Veranda (sx in alto, 2 file da 4), Interno (sx in basso), Ciringuito (dx, 3 file da 2).
 export const tavoli: Tavolo[] = Array.from({ length: 18 }, (_, i) => {
-  const zona = i < 8 ? 'veranda' : i < 13 ? 'sala' : 'terrazza'
-  const [col, riga, x0, y0] = zona === 'veranda' ? [i, 0, 8, 14] : zona === 'sala' ? [i - 8, 0, 8, 52] : [i - 13, 0, 8, 82]
+  const zona = i < 8 ? 'veranda' : i < 12 ? 'interno' : 'ciringuito'
+  const [x, y] = zona === 'veranda' ? [9 + (i % 4) * 11, 22 + Math.floor(i / 4) * 26]
+    : zona === 'interno' ? [9 + (i - 8) * 11, 86]
+    : [64 + ((i - 12) % 2) * 22, 22 + Math.floor((i - 12) / 2) * 28]
   return {
     id: `TAV-${String(i + 1).padStart(2, '0')}`,
     numero: i + 1,
     posti: i % 4 === 0 ? 6 : i % 2 === 0 ? 4 : 2,
     zona,
-    x: x0 + col * 11.5,
-    y: y0 + riga,
+    x,
+    y,
     forma: i % 4 === 0 ? 'quadrato' : 'tondo',
   } as Tavolo
 })

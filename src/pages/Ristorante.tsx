@@ -15,6 +15,7 @@ import { Tabella, type Colonna } from '@/components/ui/Tabella'
 import { Tabs } from '@/components/ui/Tabs'
 import { PannelloMenu } from '@/pages/ristorante/PannelloMenu'
 import { Planimetria } from '@/pages/ristorante/Planimetria'
+import { ZONE, nomeZona } from '@/lib/zoneTavoli'
 import { Magazzino } from '@/pages/ristorante/Magazzino'
 import { euro, euroCent, numero, percento } from '@/lib/formatters'
 import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
@@ -26,10 +27,8 @@ const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro'> = {
 const etichettaStato: Record<StatoPrenotazione, string> = {
   confermata: 'Confermata', in_attesa: 'In attesa', annullata: 'Annullata',
 }
-const zone = [
-  { chiave: 'veranda', label: 'Veranda' }, { chiave: 'sala', label: 'Sala' }, { chiave: 'terrazza', label: 'Terrazza' },
-] as const
-const etichettaZona: Record<Tavolo['zona'], string> = { veranda: 'Veranda', sala: 'Sala', terrazza: 'Terrazza' }
+const zone = ZONE.map((z) => ({ chiave: z.zona, label: z.nome }))
+const etichettaZona = nomeZona
 
 type Sezione = 'menu' | 'tavoli' | 'magazzino' | 'prenotazioni'
 const sezioni: { valore: Sezione; etichetta: string }[] = [
@@ -79,11 +78,6 @@ export default function Ristorante() {
       if (p.tavoloId && p.stato !== 'annullata') m[p.turno].add(p.tavoloId)
     }
     return m
-  }, [prenOggi])
-  const occupatiOggi = useMemo(() => {
-    const s = new Set<string>()
-    prenOggi.forEach((p) => { if (p.tavoloId && p.stato !== 'annullata') s.add(p.tavoloId) })
-    return s
   }, [prenOggi])
 
   const menuFiltrato = filtroCat === 'tutte' ? menu : menu.filter((p) => p.categoria === filtroCat)
@@ -160,7 +154,7 @@ export default function Ristorante() {
         </>
       )}
 
-      {tab === 'tavoli' && <Planimetria occupati={occupatiOggi} nuovoTavolo={<NuovoTavolo tavoli={tavoli} onCrea={aggiungiTavolo} />} />}
+      {tab === 'tavoli' && <Planimetria prenOggi={prenOggi} nuovoTavolo={<NuovoTavolo tavoli={tavoli} onCrea={aggiungiTavolo} />} />}
 
       {tab === 'magazzino' && <Magazzino />}
 
@@ -213,7 +207,7 @@ export default function Ristorante() {
 function opzioniTavoli(tavoli: Tavolo[], occupati: Set<string>, correnteId?: string) {
   return tavoli
     .filter((t) => !occupati.has(t.id) || t.id === correnteId)
-    .map((t) => ({ valore: t.id, etichetta: `Tav ${t.numero} · ${t.posti}p · ${etichettaZona[t.zona]}` }))
+    .map((t) => ({ valore: t.id, etichetta: `Tav ${t.numero} · ${t.posti}p · ${etichettaZona(t.zona)}` }))
 }
 
 /** Riga di una prenotazione: nome, coperti, stato, assegnazione tavolo. */

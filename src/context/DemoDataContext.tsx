@@ -45,6 +45,7 @@ import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
 import { config } from '@/data/config'
+import { posInZona, zonaDaPos } from '@/lib/zoneTavoli'
 
 const clona = <T,>(v: T): T =>
   typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v))
@@ -206,6 +207,7 @@ interface DemoDataValue {
   aggiungiTavolo: (numero: number, posti: number, zona: Tavolo['zona']) => void
   rimuoviTavolo: (id: string) => void
   spostaTavolo: (id: string, x: number, y: number) => void
+  modificaTavolo: (id: string, dati: { numero?: number; posti?: number; zona?: Tavolo['zona'] }) => void
   // Ristorante — magazzino cucina
   magazzino: ArticoloMagazzino[]
   movimentaArticolo: (id: string, delta: number) => void
@@ -571,11 +573,20 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   // — Ristorante: tavoli e prenotazioni —
   const aggiungiTavolo = useCallback((numero: number, posti: number, zona: Tavolo['zona']) => {
-    setTavoli((prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona, x: 46 + (prev.length % 5) * 2, y: 40 + (prev.length % 5) * 2, forma: posti > 4 ? 'quadrato' : 'tondo' }])
+    setTavoli((prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona, ...posInZona(zona, prev.length), forma: posti > 4 ? 'quadrato' : 'tondo' }])
   }, [])
   const spostaTavolo = useCallback((id: string, x: number, y: number) => {
-    // la zona segue la posizione: veranda in alto (fronte mare), poi sala, poi terrazza
-    setTavoli((prev) => prev.map((t) => (t.id === id ? { ...t, x, y, zona: y < 36 ? 'veranda' : y < 70 ? 'sala' : 'terrazza' } : t)))
+    // la zona segue la posizione sulla pianta (Veranda/Interno a sx, Ciringuito a dx)
+    setTavoli((prev) => prev.map((t) => (t.id === id ? { ...t, x, y, zona: zonaDaPos(x, y) } : t)))
+  }, [])
+  const modificaTavolo = useCallback((id: string, dati: { numero?: number; posti?: number; zona?: Tavolo['zona'] }) => {
+    setTavoli((prev) => prev.map((t, i) => {
+      if (t.id !== id) return t
+      const nuovo = { ...t, ...dati }
+      if (dati.posti) nuovo.forma = dati.posti > 4 ? 'quadrato' : 'tondo'
+      // cambio zona dal pannello → il tavolo si sposta dentro la nuova zona
+      return dati.zona && dati.zona !== t.zona ? { ...nuovo, ...posInZona(dati.zona, i) } : nuovo
+    }))
   }, [])
   // — Ristorante: magazzino cucina —
   const movimentaArticolo = useCallback((id: string, delta: number) => {
@@ -792,6 +803,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiTavolo,
       rimuoviTavolo,
       spostaTavolo,
+      modificaTavolo,
       magazzino,
       movimentaArticolo,
       aggiungiArticolo,
@@ -869,6 +881,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiTavolo,
       rimuoviTavolo,
       spostaTavolo,
+      modificaTavolo,
       magazzino,
       movimentaArticolo,
       aggiungiArticolo,
