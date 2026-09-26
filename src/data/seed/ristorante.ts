@@ -40,7 +40,7 @@ const menuDef: DefP[] = [
   { nome: 'Gnocchi pomodoro e basilico', categoria: 'primi', prezzo: 11, fc: 2.6, all: ['glutine'] },
   { nome: 'Spaghetti allo scoglio', categoria: 'primi', prezzo: 18, fc: 7.2, all: ['glutine', 'molluschi', 'crostacei'] },
   // Secondi
-  { nome: 'Frittura di paranza', categoria: 'secondi', prezzo: 18, fc: 7.0, all: ['pesce', 'glutine'] },
+  { nome: 'Fritto misto di mare', categoria: 'secondi', prezzo: 18, fc: 7.0, all: ['pesce', 'glutine'] },
   { nome: 'Grigliata di pesce', categoria: 'secondi', prezzo: 24, fc: 10.5, all: ['pesce', 'crostacei'] },
   { nome: 'Branzino al forno', categoria: 'secondi', prezzo: 20, fc: 8.4, all: ['pesce'] },
   { nome: 'Tagliata di manzo', categoria: 'secondi', prezzo: 19, fc: 8.0, all: [] },
@@ -65,7 +65,7 @@ const menuDef: DefP[] = [
   { nome: 'Acqua minerale 1L', categoria: 'bevande', prezzo: 3, fc: 0.5, all: [] },
   { nome: 'Vino della casa (calice)', categoria: 'bevande', prezzo: 5, fc: 1.2, all: [] },
   { nome: 'Vino della casa (bottiglia)', categoria: 'bevande', prezzo: 16, fc: 5.0, all: [] },
-  { nome: 'Birra media', categoria: 'bevande', prezzo: 5, fc: 1.6, all: ['glutine'] },
+  { nome: 'Birra artigianale', categoria: 'bevande', prezzo: 5, fc: 1.6, all: ['glutine'] },
   { nome: 'Caffè', categoria: 'bevande', prezzo: 1.5, fc: 0.3, all: [] },
   { nome: 'Limoncello', categoria: 'bevande', prezzo: 4, fc: 0.9, all: [] },
 ]

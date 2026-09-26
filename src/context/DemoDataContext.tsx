@@ -398,7 +398,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — ombrellone',
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di ombrellone per ${d.persone} persone dal ${gg(d.dal)} al ${gg(d.al)}.\nTi confermeremo la disponibilità a breve.\n\n${config.nome}`)
-    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email, 'Nuova richiesta ombrellone dal sito',
+    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email || 'gestione', 'Nuova richiesta ombrellone dal sito',
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nOmbrellone · ${d.persone} persone · dal ${gg(d.dal)} al ${gg(d.al)}${d.messaggio ? `\nNote: ${d.messaggio}` : ''}\n\nDa confermare in gestionale.`)
   }, [pushMail])
 
@@ -409,7 +409,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — tavolo ristorante',
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di tavolo per ${d.coperti} coperti (${turnoLabel(d.turno)}) del ${gg(d.data)}.\nTi confermeremo a breve.\n\n${config.nome}`)
-    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email, 'Nuova richiesta tavolo dal sito',
+    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email || 'gestione', 'Nuova richiesta tavolo dal sito',
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nRistorante · ${d.coperti} coperti · ${turnoLabel(d.turno)} del ${gg(d.data)}${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
   }, [pushMail])
 
@@ -457,7 +457,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, `Richiesta ricevuta — ${d.eventoNome}`,
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di partecipazione a “${d.eventoNome}” del ${gg(d.eventoData)} per ${d.persone} persone.\nTi confermeremo a breve.\n\n${config.nome}`)
-    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email, `Nuova richiesta evento: ${d.eventoNome}`,
+    pushMail('admin', 'notifica', `${d.nome} <${d.email}>`, config.email || 'gestione', `Nuova richiesta evento: ${d.eventoNome}`,
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nEvento: ${d.eventoNome} del ${gg(d.eventoData)} · ${d.persone} persone${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
   }, [pushMail])
 

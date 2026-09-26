@@ -3,6 +3,7 @@
  * La somma dei ricavi è nell'ordine del target eventi (config.scala).
  */
 import type { Evento, TipoEvento } from '../types'
+import { fotoSito } from '@/assets/sito'
 
 interface DefE {
   nome: string
@@ -13,17 +14,19 @@ interface DefE {
   ricavi: number
   partecipanti: number
   descrizione: string
+  foto?: string
+  galleria?: string[]
 }
 
 const def: DefE[] = [
-  { nome: 'Torneo di beach volley', tipo: 'sport', data: '2026-06-20', budget: 1500, costi: 1320, ricavi: 2100, partecipanti: 64, descrizione: 'Torneo a coppie con premiazione e aperitivo finale.' },
-  { nome: 'Aperitivo in musica', tipo: 'musica', data: '2026-06-28', budget: 1800, costi: 1650, ricavi: 2450, partecipanti: 140, descrizione: 'DJ set al tramonto con drink e finger food.' },
-  { nome: 'Compleanno privato Bianchi', tipo: 'privato', data: '2026-07-12', budget: 0, costi: 900, ricavi: 1800, partecipanti: 40, descrizione: 'Festa privata su prenotazione, catering interno.' },
-  { nome: 'Cena sotto le stelle', tipo: 'gastronomia', data: '2026-07-19', budget: 2200, costi: 2050, ricavi: 3200, partecipanti: 90, descrizione: 'Cena a tema con menù di mare e musica dal vivo.' },
-  { nome: 'Corso di yoga all’alba', tipo: 'benessere', data: '2026-07-26', budget: 400, costi: 360, ricavi: 620, partecipanti: 28, descrizione: 'Quattro appuntamenti mattutini con istruttrice.' },
-  { nome: 'Festa di Ferragosto', tipo: 'festa', data: '2026-08-15', budget: 3500, costi: 3300, ricavi: 4200, partecipanti: 220, descrizione: 'Cena, musica e spettacolo pirotecnico sulla spiaggia.' },
-  { nome: 'Aperitivo in musica', tipo: 'musica', data: '2026-08-22', budget: 1800, costi: 1500, ricavi: 0, partecipanti: 0, descrizione: 'Secondo appuntamento con DJ set (in programma).' },
-  { nome: 'Torneo di racchettoni', tipo: 'sport', data: '2026-09-05', budget: 900, costi: 0, ricavi: 0, partecipanti: 0, descrizione: 'Chiusura di stagione con torneo e merenda (in programma).' },
+  { nome: 'Torneo di beach volley', tipo: 'sport', data: '2026-06-20', budget: 1500, costi: 1320, ricavi: 2100, partecipanti: 64, descrizione: 'Torneo a coppie con premiazione e aperitivo finale.', foto: fotoSito.beachVolley, galleria: [fotoSito.torneo, fotoSito.beachVolley] },
+  { nome: 'Aperitivo in musica', tipo: 'musica', data: '2026-06-28', budget: 1800, costi: 1650, ricavi: 2450, partecipanti: 140, descrizione: 'DJ set al tramonto con drink e finger food.', foto: fotoSito.tramonto },
+  { nome: 'Compleanno privato Bianchi', tipo: 'privato', data: '2026-07-12', budget: 0, costi: 900, ricavi: 1800, partecipanti: 40, descrizione: 'Festa privata su prenotazione, catering interno.', foto: fotoSito.famiglia },
+  { nome: 'Cena sotto le stelle', tipo: 'gastronomia', data: '2026-07-19', budget: 2200, costi: 2050, ricavi: 3200, partecipanti: 90, descrizione: 'Cena a tema con menù di mare e musica dal vivo.', foto: fotoSito.ristorante },
+  { nome: 'Corso di yoga all’alba', tipo: 'benessere', data: '2026-07-26', budget: 400, costi: 360, ricavi: 620, partecipanti: 28, descrizione: 'Quattro appuntamenti mattutini con istruttrice.', foto: fotoSito.marePini },
+  { nome: 'Festa di Ferragosto', tipo: 'festa', data: '2026-08-15', budget: 3500, costi: 3300, ricavi: 4200, partecipanti: 220, descrizione: 'Cena, musica e spettacolo pirotecnico sulla spiaggia.', foto: fotoSito.pineta },
+  { nome: 'Aperitivo in musica', tipo: 'musica', data: '2026-08-22', budget: 1800, costi: 1500, ricavi: 0, partecipanti: 0, descrizione: 'Secondo appuntamento con DJ set (in programma).', foto: fotoSito.barDistillati },
+  { nome: 'Torneo di racchettoni', tipo: 'sport', data: '2026-09-05', budget: 900, costi: 0, ricavi: 0, partecipanti: 0, descrizione: 'Chiusura di stagione con torneo e merenda (in programma).', foto: fotoSito.ombrelloniCielo },
 ]
 
 export const eventi: Evento[] = def.map((d, i) => ({
@@ -36,6 +39,8 @@ export const eventi: Evento[] = def.map((d, i) => ({
   ricavi: d.ricavi,
   partecipanti: d.partecipanti,
   descrizione: d.descrizione,
+  ...(d.foto ? { foto: d.foto } : {}),
+  ...(d.galleria ? { galleria: d.galleria } : {}),
 }))
 
 /** Ricavi eventi realizzati (eventi passati). */

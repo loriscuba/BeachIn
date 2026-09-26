@@ -23,14 +23,25 @@ function oggiInStagione(): string {
 }
 
 export const config = {
-  // — Anagrafica —
-  nome: 'Bagni BeachIn',
-  localita: 'Marina di BeachIn (LU)',
-  indirizzo: 'Lungomare delle Boe, 12',
-  telefono: '+39 0584 000000',
-  email: 'info@bagnibeachin.it',
-  sito: 'www.bagnibeachin.it',
-  partitaIva: '0123456789 0',
+  // — Anagrafica — (dati reali del cliente da fonti pubbliche: Tripadvisor, spiagge.it, TheFork)
+  nome: 'Lido dei Pini',
+  localita: 'Savona (SV)',
+  indirizzo: 'Via Nizza, 85/R — 17100',
+  telefono: '+39 349 574 5156',
+  // Da farsi comunicare dal cliente (non pubblicati online): se vuoti non compaiono sul sito.
+  email: '',
+  sito: '',
+  partitaIva: '',
+  facebook: 'https://www.facebook.com/lidodeipinisavona/',
+  mappa: 'https://www.google.com/maps/search/?api=1&query=Lido+dei+Pini+Via+Nizza+85R+Savona',
+  // Reputazione online (Tripadvisor)
+  tripadvisor: {
+    voto: 4.4,
+    recensioni: 234,
+    classifica: '#34 su 303 ristoranti a Savona',
+    url: 'https://www.tripadvisor.it/Restaurant_Review-g194908-d2464057-Reviews-Lido_Dei_Pini-Savona_Italian_Riviera_Liguria.html',
+  },
+  prezzoMedioRistorante: 32,
 
   // — Stagione —
   stagione: {
@@ -44,11 +55,13 @@ export const config = {
   // — Orari —
   orari: {
     apertura: '08:00',
-    chiusura: '19:30',
-    barApertura: '08:30',
-    barChiusura: '24:00',
-    ristorantePranzo: '12:30 – 15:00',
-    ristoranteCena: '19:30 – 23:00',
+    chiusura: '19:30', // spiaggia: da confermare col cliente
+    barApertura: '08:00',
+    barChiusura: '23:00',
+    ristorantePranzo: '12:00 – 14:30',
+    ristoranteCena: '19:00 – 22:00',
+    // Spiaggia da maggio a settembre, ristorante aperto tutto l'anno.
+    stagioneSpiaggia: 'maggio – settembre',
   },
 
   // — Arenile —

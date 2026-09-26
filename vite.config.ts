@@ -18,6 +18,8 @@ export default defineConfig({
     port: 5173,
   },
   build: {
+    // Anteprima single-file: anche le foto del sito vanno inlinate (data URI).
+    assetsInlineLimit: process.env.VITE_INLINE === '1' ? 100_000_000 : 4096,
     rollupOptions: {
       // Solo per l'anteprima single-file (VITE_INLINE=1) si forza un unico
       // bundle, così può essere inlinato in un solo file. Tutte le altre build

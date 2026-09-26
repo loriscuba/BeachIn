@@ -7,6 +7,7 @@
  */
 import { addDays, format, parseISO } from 'date-fns'
 import { config } from '../config'
+import { fotoSito } from '@/assets/sito'
 import type {
   MessaggioContatto,
   NewsSito,
@@ -31,16 +32,17 @@ const pagine: PaginaSito[] = [
   { id: 'PG-7', slug: 'eventi', titolo: 'Eventi', pubblicata: false, aggiornata: '2026-07-12' },
 ]
 
-const galleria = [
-  'La spiaggia all’alba',
-  'File di ombrelloni',
-  'Il bar sulla terrazza',
-  'Piatti del ristorante',
-  'Tramonto dal pontile',
-  'Cabine colorate',
-  'Beach volley',
-  'Aperitivo in musica',
-].map((titolo, i) => ({ id: `FT-${i + 1}`, titolo, ordine: i + 1 }))
+// Galleria iniziale con le foto dello stabilimento (modificabile dal gestionale).
+const galleria = ([
+  ['La spiaggia vista dal drone', fotoSito.spiaggiaDrone],
+  ['File di ombrelloni', fotoSito.ombrelloniCielo],
+  ['La postazione del bagnino', fotoSito.bagnino],
+  ['Beach volley', fotoSito.beachVolley],
+  ['Il torneo dell’estate', fotoSito.torneo],
+  ['Il bar: la nostra selezione', fotoSito.barDistillati],
+  ['Piatti del ristorante', fotoSito.ristorante],
+  ['Aperitivo al tramonto', fotoSito.tramonto],
+] as const).map(([titolo, immagine], i) => ({ id: `FT-${i + 1}`, titolo, ordine: i + 1, immagine: immagine as string }))
 
 const news: NewsSito[] = [
   { id: 'N-1', titolo: 'Aperta la stagione 2026!', data: '2026-05-01', testo: 'Vi aspettiamo con tante novità e i servizi di sempre.', pubblicata: true },
@@ -140,11 +142,11 @@ const rng = creaRng(5151)
 export const statoSito: StatoSito = {
   pagine,
   home: {
-    titolo: 'Bagni BeachIn — la tua estate sul mare',
-    sottotitolo: 'Ombrelloni, ristorante e servizi a Marina di BeachIn',
+    titolo: 'Lido dei Pini — il tuo angolo di Riviera',
+    sottotitolo: 'Spiaggia, bar e ristorante di pesce in Via Nizza, a Savona',
     testo:
-      'Da tre generazioni ti accogliamo su una delle spiagge più belle della costa. ' +
-      'Prenota il tuo ombrellone, scopri il ristorante di pesce e vivi i nostri eventi.',
+      'A tre chilometri dal centro di Savona, in riva al mare: ombrellone e lettini, docce calde, ' +
+      'beach volley e un ristorante dove il pesce freschissimo lo scegli direttamente dal banco.',
     immagine: 'hero-spiaggia-alba',
   },
   galleria,
@@ -153,10 +155,10 @@ export const statoSito: StatoSito = {
   messaggi: costruisciMessaggi(rng),
   recensioni: costruisciRecensioni(rng),
   seo: {
-    titolo: 'Bagni BeachIn | Stabilimento balneare a Marina di BeachIn',
+    titolo: 'Lido dei Pini | Stabilimento balneare e ristorante di pesce a Savona',
     descrizione:
-      'Stabilimento balneare con ombrelloni, cabine, bar e ristorante di pesce. Prenota online la tua postazione.',
-    keyword: ['stabilimento balneare', 'spiaggia', 'ombrelloni', 'ristorante di mare', 'marina di beachin'],
+      'Bagni Lido dei Pini, Via Nizza 85/R a Savona: ombrelloni, cabine, bar e ristorante di pesce fresco aperto tutto l’anno.',
+    keyword: ['stabilimento balneare', 'spiaggia', 'ombrelloni', 'ristorante di mare', 'savona', 'via nizza'],
   },
   visite: costruisciVisite(rng),
 }
