@@ -89,7 +89,7 @@ function costruisciMenu(rng: Rng): Piatto[] {
 export const menu: Piatto[] = costruisciMenu(creaRng(3636))
 
 export const tavoli: Tavolo[] = Array.from({ length: 18 }, (_, i) => {
-  const zona = i < 8 ? 'veranda' : i < 13 ? 'sala' : 'terrazza'
+  const zona = i < 8 ? 'veranda' : i < 12 ? 'interno' : 'ciringuito'
   return {
     id: `TAV-${String(i + 1).padStart(2, '0')}`,
     numero: i + 1,
