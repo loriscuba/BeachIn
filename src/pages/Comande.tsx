@@ -18,6 +18,7 @@ import { euroCent, numero } from '@/lib/formatters'
 import { etichetteCategoriaBar } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
 import { QrCodice } from '@/components/QrCodice'
+import { supabaseAttivo } from '@/lib/supabase'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { etichettaStatoComanda as etichettaStato, urlComandApp, UTENTI_COMANDAPP } from '@/lib/comandapp'
 
@@ -101,6 +102,7 @@ export default function Comande() {
           <div className="min-w-0 flex-1">
             <p className="inline-flex items-center gap-2 font-semibold text-profondo"><Smartphone className="h-4 w-4 text-cabina" /> ComandApp — l'app del bagnante</p>
             <p className="break-all text-xs text-profondo/55">{link}</p>
+            <p className={cn('mt-1 text-xs font-medium', supabaseAttivo ? 'text-acqua' : 'text-tenda')}>{supabaseAttivo ? '● Supabase: ordini condivisi tra tutti i dispositivi' : '● Modalità demo: ordini condivisi solo tra schede di questo browser'}</p>
             <p className="mt-1 text-xs text-profondo/55">Accesso demo: {UTENTI_COMANDAPP.map((u) => `${u.utente} / ${u.password}`).join(' · ')}</p>
           </div>
           <div className="flex flex-wrap gap-2">

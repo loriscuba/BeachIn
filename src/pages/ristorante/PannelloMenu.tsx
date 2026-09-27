@@ -10,6 +10,7 @@ import { QrCodice, stampaQr } from '@/components/QrCodice'
 import { LINGUE, LINGUE_ESTERE, urlMenu } from '@/lib/menuLingue'
 import AssistenteVocale from '@/pages/AssistenteVocale'
 import { EditorMenu } from './EditorMenu'
+import { supabaseAttivo } from '@/lib/supabase'
 import { config } from '@/data/config'
 
 const inTraduzione = (p: Piatto) => !!p.traduzioni && LINGUE_ESTERE.some((l) => !p.traduzioni?.[l])
@@ -28,7 +29,7 @@ export function PannelloMenu() {
         <Card className="lg:col-span-2">
           <CardHeader
             titolo={<span className="inline-flex items-center gap-2"><Languages className="h-4 w-4 text-cabina" /> Menu</span>}
-            sottotitolo={`${menu.length} piatti · ${pendenti ? `traduzione in corso di ${pendenti}…` : 'tradotto in 5 lingue'} · clicca su nomi, prezzi e traduzioni per modificarli`}
+            sottotitolo={`${menu.length} piatti · ${pendenti ? `traduzione in corso di ${pendenti}…` : 'tradotto in 5 lingue'} · clicca su nomi, prezzi e traduzioni per modificarli${supabaseAttivo ? ' · salvato su Supabase' : ''}`}
             azione={
               <div className="flex gap-1">
                 {LINGUE.filter((l) => l.id !== 'it').map((l) => (

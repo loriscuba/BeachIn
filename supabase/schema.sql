@@ -1,0 +1,68 @@
+-- BeachIn · tabelle Supabase per ComandApp (comande) e menu del ristorante (assistente vocale / editor menu).
+-- Tutto nello schema dedicato `beachin` (progetto Supabase condiviso tra più demo).
+-- 1) Eseguire una volta in Supabase → SQL Editor (idempotente).
+-- 2) Esporre lo schema all'API: Project Settings → Data API (API settings) → "Exposed schemas" → aggiungere `beachin`.
+-- ATTENZIONE: policy aperte al ruolo anon = chiunque abbia la chiave pubblica può leggere/scrivere.
+-- Va bene per la demo; in produzione servono Supabase Auth e policy per ruolo (bagnante/bar/gestore).
+
+create schema if not exists beachin;
+grant usage on schema beachin to anon, authenticated, service_role;
+alter default privileges in schema beachin grant select, insert, update, delete on tables to anon, authenticated, service_role;
+
+create table if not exists beachin.comande (
+  id text primary key,
+  ombrellone text not null,
+  righe jsonb not null default '[]',
+  totale numeric(10,2) not null default 0,
+  stato text not null default 'in_attesa' check (stato in ('in_attesa','presa_in_carico','in_preparazione','pronta')),
+  ora text not null,
+  note text,
+  origine text check (origine in ('app','bar')),
+  cliente text,
+  ts bigint not null default (extract(epoch from now()) * 1000)::bigint,
+  creata_il timestamptz not null default now()
+);
+
+create table if not exists beachin.menu_sezioni (
+  id text primary key,
+  nome text not null,
+  traduzioni jsonb,
+  ordine int not null default 0
+);
+
+create table if not exists beachin.menu_piatti (
+  id text primary key,
+  nome text not null,
+  categoria text not null,
+  prezzo numeric(10,2) not null default 0,
+  food_cost numeric(10,2) not null default 0,
+  allergeni jsonb not null default '[]',
+  venduti_stagione int not null default 0,
+  traduzioni jsonb,
+  foto text,
+  ordine int not null default 0
+);
+
+grant select, insert, update, delete on all tables in schema beachin to anon, authenticated, service_role;
+
+-- RLS: accesso demo per anon
+alter table beachin.comande enable row level security;
+alter table beachin.menu_sezioni enable row level security;
+alter table beachin.menu_piatti enable row level security;
+drop policy if exists "demo anon" on beachin.comande;
+drop policy if exists "demo anon" on beachin.menu_sezioni;
+drop policy if exists "demo anon" on beachin.menu_piatti;
+create policy "demo anon" on beachin.comande for all to anon using (true) with check (true);
+create policy "demo anon" on beachin.menu_sezioni for all to anon using (true) with check (true);
+create policy "demo anon" on beachin.menu_piatti for all to anon using (true) with check (true);
+
+-- Realtime (aggiornamenti dal vivo tra bagnante, bar e gestionale)
+do $$
+declare t text;
+begin
+  foreach t in array array['comande','menu_sezioni','menu_piatti'] loop
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'beachin' and tablename = t) then
+      execute format('alter publication supabase_realtime add table beachin.%I', t);
+    end if;
+  end loop;
+end $$;
