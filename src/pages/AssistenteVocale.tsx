@@ -78,7 +78,8 @@ const ESEMPI = [
   'Leggi il menu',
 ]
 
-export default function AssistenteVocale() {
+/** `compatto`: solo il riquadro dell'assistente (chat bassa), senza la lista del menu — usato dentro Ristorante → Menu. */
+export default function AssistenteVocale({ compatto = false }: { compatto?: boolean }) {
   const { menu, aggiungiPiatto, rimuoviPiatto, modificaPrezzoPiatto, rinominaPiatto } = useDemoData()
   const { supportata, inAscolto, avviaAscolto, fermaAscolto, parla, setParlaAttivo } = useVoce()
 
@@ -214,7 +215,7 @@ export default function AssistenteVocale() {
   }, [menu])
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={compatto ? '' : 'grid gap-4 lg:grid-cols-2'}>
       {/* Assistente */}
       <Card className="flex flex-col">
         <CardHeader
@@ -229,7 +230,7 @@ export default function AssistenteVocale() {
         <CardBody className="flex flex-1 flex-col gap-3 pt-2">
           <div
             ref={chatRef}
-            className="flex h-72 flex-col gap-2 overflow-y-auto rounded-lg border border-calce-200 bg-calce/60 p-3"
+            className={cn('flex flex-col gap-2 overflow-y-auto rounded-lg border border-calce-200 bg-calce/60 p-3', compatto ? 'h-32' : 'h-72')}
             aria-live="polite"
           >
             {messaggi.map((m) => (
@@ -300,7 +301,7 @@ export default function AssistenteVocale() {
       </Card>
 
       {/* Menu */}
-      <Card>
+      {!compatto && <Card>
         <CardHeader
           titolo={<span className="inline-flex items-center gap-2"><UtensilsCrossed className="h-4 w-4 text-cabina" /> Menu ristorante</span>}
           sottotitolo="Modificabile a voce · dati dimostrativi"
@@ -356,7 +357,7 @@ export default function AssistenteVocale() {
             ))}
           </div>
         </CardBody>
-      </Card>
+      </Card>}
     </div>
   )
 }

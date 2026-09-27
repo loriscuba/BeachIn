@@ -1,5 +1,5 @@
 /**
- * Ristorante: menù (~35 piatti con food cost, margine e allergeni), tavoli,
+ * Ristorante: menù reale del Lido (25 piatti + bevande con food cost, margine e allergeni), tavoli,
  * prenotazioni per turno e servizi giornalieri. I coperti e gli incassi dei
  * servizi derivano dalla serie giornaliera, così tornano col Conto economico.
  */
@@ -27,49 +27,44 @@ interface DefP {
   fc: number // food cost €
   all: Allergene[]
 }
+// Menu reale del Lido dei Pini (Menù del proprietario, restaurantguru). Food cost e allergeni stimati.
 const menuDef: DefP[] = [
   // Antipasti
-  { nome: 'Antipasto di mare', categoria: 'antipasti', prezzo: 16, fc: 6.4, all: ['pesce', 'molluschi', 'crostacei'] },
-  { nome: 'Cozze alla marinara', categoria: 'antipasti', prezzo: 12, fc: 4.2, all: ['molluschi'] },
-  { nome: 'Insalata di polpo', categoria: 'antipasti', prezzo: 14, fc: 5.6, all: ['molluschi', 'sedano'] },
-  { nome: 'Tartare di pescato del giorno con fragole e crema balsamica', categoria: 'antipasti', prezzo: 10, fc: 4.2, all: ['pesce'] },
-  { nome: 'Bruschette miste', categoria: 'antipasti', prezzo: 8, fc: 2.1, all: ['glutine'] },
+  { nome: 'Flan di zucchine, fiore croccante e crema al grana', categoria: 'antipasti', prezzo: 14, fc: 4.2, all: ['latte', 'uova', 'glutine'] },
+  { nome: 'Tartare di fassona con stracciatella affumicata e pesto', categoria: 'antipasti', prezzo: 18, fc: 6.8, all: ['latte', 'frutta_guscio'] },
+  { nome: 'Guazzetto di mare', categoria: 'antipasti', prezzo: 18, fc: 6.9, all: ['pesce', 'molluschi', 'crostacei'] },
+  { nome: 'Frittino del contadino', categoria: 'antipasti', prezzo: 16, fc: 4.8, all: ['glutine', 'uova'] },
+  { nome: 'Tartare di tonno al naturale', categoria: 'antipasti', prezzo: 18, fc: 7.2, all: ['pesce'] },
+  { nome: 'Duetto di acciughe e verdurine', categoria: 'antipasti', prezzo: 16, fc: 5.0, all: ['pesce', 'glutine'] },
   // Primi
-  { nome: 'Spaghetti alle vongole', categoria: 'primi', prezzo: 15, fc: 5.2, all: ['glutine', 'molluschi'] },
-  { nome: 'Risotto alla pescatora', categoria: 'primi', prezzo: 16, fc: 6.0, all: ['molluschi', 'crostacei'] },
-  { nome: 'Fusilli con scampi, ricotta fresca e olive taggiasche', categoria: 'primi', prezzo: 16, fc: 6.5, all: ['glutine', 'crostacei', 'latte'] },
-  { nome: 'Trofie al pesto', categoria: 'primi', prezzo: 12, fc: 3.0, all: ['glutine', 'latte', 'frutta_guscio'] },
-  { nome: 'Gnocchi pomodoro e basilico', categoria: 'primi', prezzo: 11, fc: 2.6, all: ['glutine'] },
-  { nome: 'Spaghetti con gamberoni, asparagi di mare e lime', categoria: 'primi', prezzo: 15, fc: 6.0, all: ['glutine', 'crostacei'] },
+  { nome: 'Penne con porri e salsiccia', categoria: 'primi', prezzo: 14, fc: 3.6, all: ['glutine'] },
+  { nome: 'Gnocchi di patate con crema di gorgonzola e gherigli di noci', categoria: 'primi', prezzo: 16, fc: 4.3, all: ['glutine', 'latte', 'frutta_guscio'] },
+  { nome: 'Spaghetto Lido', categoria: 'primi', prezzo: 20, fc: 7.4, all: ['glutine', 'molluschi', 'crostacei'] },
+  { nome: 'Tagliatelle al ragù di fassona piemontese', categoria: 'primi', prezzo: 16, fc: 5.0, all: ['glutine', 'uova', 'sedano'] },
+  { nome: 'Cappellacci bianchi e neri al profumo di mare', categoria: 'primi', prezzo: 20, fc: 7.0, all: ['glutine', 'uova', 'pesce', 'molluschi'] },
+  { nome: 'Tagliatelle al nero di seppia, tartare di gambero e stracciatella affumicata', categoria: 'primi', prezzo: 20, fc: 7.6, all: ['glutine', 'uova', 'molluschi', 'crostacei', 'latte'] },
   // Secondi
-  { nome: 'Fritto misto di mare', categoria: 'secondi', prezzo: 18, fc: 7.0, all: ['pesce', 'glutine'] },
-  { nome: 'Grigliata di pesce', categoria: 'secondi', prezzo: 24, fc: 10.5, all: ['pesce', 'crostacei'] },
-  { nome: 'Branzino al forno', categoria: 'secondi', prezzo: 20, fc: 8.4, all: ['pesce'] },
-  { nome: 'Tagliata di manzo', categoria: 'secondi', prezzo: 19, fc: 8.0, all: [] },
-  { nome: 'Calamari fritti', categoria: 'secondi', prezzo: 16, fc: 6.2, all: ['molluschi', 'glutine'] },
-  { nome: 'Pollo alla griglia', categoria: 'secondi', prezzo: 13, fc: 4.1, all: [] },
-  // Contorni
-  { nome: 'Insalata mista', categoria: 'contorni', prezzo: 5, fc: 1.2, all: [] },
-  { nome: 'Patatine fritte', categoria: 'contorni', prezzo: 5, fc: 1.0, all: [] },
-  { nome: 'Verdure grigliate', categoria: 'contorni', prezzo: 6, fc: 1.6, all: [] },
-  // Pizze
-  { nome: 'Pizza Margherita', categoria: 'pizze', prezzo: 8, fc: 2.0, all: ['glutine', 'latte'] },
-  { nome: 'Pizza Marinara', categoria: 'pizze', prezzo: 7, fc: 1.6, all: ['glutine'] },
-  { nome: 'Pizza Diavola', categoria: 'pizze', prezzo: 10, fc: 2.8, all: ['glutine', 'latte'] },
-  { nome: 'Pizza Frutti di mare', categoria: 'pizze', prezzo: 12, fc: 4.2, all: ['glutine', 'molluschi', 'crostacei'] },
-  { nome: 'Pizza Capricciosa', categoria: 'pizze', prezzo: 11, fc: 3.2, all: ['glutine', 'latte', 'uova'] },
-  // Dolci
-  { nome: 'Tiramisù', categoria: 'dolci', prezzo: 6, fc: 1.5, all: ['glutine', 'uova', 'latte'] },
-  { nome: 'Panna cotta', categoria: 'dolci', prezzo: 5, fc: 1.1, all: ['latte'] },
-  { nome: 'Macedonia', categoria: 'dolci', prezzo: 5, fc: 1.4, all: [] },
-  { nome: 'Semifreddo al pistacchio', categoria: 'dolci', prezzo: 6, fc: 1.8, all: ['latte', 'frutta_guscio', 'uova'] },
-  // Bevande
+  { nome: 'Orata alla griglia', categoria: 'secondi', prezzo: 22, fc: 8.4, all: ['pesce'] },
+  { nome: 'Fritto royale', categoria: 'secondi', prezzo: 45, fc: 17.5, all: ['pesce', 'molluschi', 'crostacei', 'glutine'] },
+  { nome: 'Trancio di spada alla griglia con aromi di Provenza', categoria: 'secondi', prezzo: 20, fc: 7.8, all: ['pesce'] },
+  { nome: 'Filetto di fassona con burro aromatizzato alle erbe liguri', categoria: 'secondi', prezzo: 24, fc: 10.2, all: ['latte'] },
+  // Grigliata di carne del lido
+  { nome: "Tagliata di fassona spadellata con burro aromatizzato e salsa di soia (all'etto)", categoria: 'secondi', prezzo: 7, fc: 2.9, all: ['latte', 'soia'] },
+  { nome: 'Costine di maiale, coppa di vitello, pollo e arrosticini', categoria: 'secondi', prezzo: 22, fc: 8.6, all: [] },
+  // I nostri dolci
+  { nome: "Colomba pasquale con crema al latte all'arancia", categoria: 'dolci', prezzo: 8, fc: 2.2, all: ['glutine', 'uova', 'latte'] },
+  { nome: 'Pavlova con frutti di bosco freschi', categoria: 'dolci', prezzo: 8, fc: 2.4, all: ['uova'] },
+  { nome: 'Bunetto al cioccolato e amaretto di Saronno', categoria: 'dolci', prezzo: 8, fc: 1.9, all: ['uova', 'latte', 'frutta_guscio'] },
+  { nome: 'Pastiera napoletana al cioccolato', categoria: 'dolci', prezzo: 8, fc: 2.1, all: ['glutine', 'uova', 'latte'] },
+  { nome: 'Panna cotta ai frutti di bosco con meringa alla mandorla', categoria: 'dolci', prezzo: 8, fc: 2.0, all: ['latte', 'uova', 'frutta_guscio'] },
+  { nome: 'Crostatina con panna cotta ai mirtilli', categoria: 'dolci', prezzo: 8, fc: 2.0, all: ['glutine', 'uova', 'latte'] },
+  { nome: 'Gelato al fior di latte con Chartreuse francese', categoria: 'dolci', prezzo: 8, fc: 1.8, all: ['latte'] },
+  // Bevande (dimostrative)
   { nome: 'Acqua minerale 1L', categoria: 'bevande', prezzo: 3, fc: 0.5, all: [] },
   { nome: 'Vino della casa (calice)', categoria: 'bevande', prezzo: 5, fc: 1.2, all: [] },
   { nome: 'Vino della casa (bottiglia)', categoria: 'bevande', prezzo: 16, fc: 5.0, all: [] },
   { nome: 'Birra artigianale', categoria: 'bevande', prezzo: 5, fc: 1.6, all: ['glutine'] },
   { nome: 'Caffè', categoria: 'bevande', prezzo: 1.5, fc: 0.3, all: [] },
-  { nome: 'Limoncello', categoria: 'bevande', prezzo: 4, fc: 0.9, all: [] },
 ]
 
 const popolarita: Record<CategoriaPiatto, number> = {
