@@ -18,6 +18,7 @@ import type {
   ContoOmbrellone,
   Email,
   RigaComanda,
+  StatoComanda,
   Evento,
   FotoGalleria,
   PaginaSito,
@@ -42,6 +43,11 @@ import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
 import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
 import { traduciNome } from '@/lib/menuLingue'
+
+const CHIAVE_COMANDE = 'beachin.comande.v1'
+const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
+  in_attesa: 'presa_in_carico', presa_in_carico: 'in_preparazione', in_preparazione: 'pronta', pronta: 'pronta',
+}
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
@@ -148,7 +154,7 @@ interface DemoDataValue {
 
   // Comande dall'ombrellone (servizio in spiaggia)
   comande: Comanda[]
-  inviaComanda: (ombrellone: string, righe: RigaComanda[], note?: string) => void
+  inviaComanda: (ombrellone: string, righe: RigaComanda[], note?: string, extra?: Pick<Comanda, 'origine' | 'cliente'>) => Comanda
   avanzaComanda: (id: string) => void
   annullaComanda: (id: string) => void
 
@@ -266,7 +272,21 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
   const [sezioniMenu, setSezioniMenu] = useState<SezioneMenu[]>(() => clona(seedSezioni))
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
-  const [comande, setComande] = useState<Comanda[]>([])
+  // Comande condivise tra le schede dello stesso browser (ComandApp ↔ cruscotto bar) via localStorage.
+  const [comande, setComande] = useState<Comanda[]>(() => {
+    try { return JSON.parse(localStorage.getItem(CHIAVE_COMANDE) ?? '[]') as Comanda[] } catch { return [] }
+  })
+  useEffect(() => {
+    try { localStorage.setItem(CHIAVE_COMANDE, JSON.stringify(comande)) } catch { /* storage non disponibile */ }
+  }, [comande])
+  useEffect(() => {
+    const suCambio = (e: StorageEvent) => {
+      if (e.key !== CHIAVE_COMANDE) return
+      try { setComande(JSON.parse(e.newValue ?? '[]') as Comanda[]) } catch { /* ignora */ }
+    }
+    window.addEventListener('storage', suCambio)
+    return () => window.removeEventListener('storage', suCambio)
+  }, [])
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
   const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
@@ -362,7 +382,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // — Comande dall'ombrellone —
-  const inviaComanda = useCallback((ombrellone: string, righe: RigaComanda[], note?: string) => {
+  const inviaComanda = useCallback((ombrellone: string, righe: RigaComanda[], note?: string, extra?: Pick<Comanda, 'origine' | 'cliente'>) => {
     const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
     const ora = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
     const comanda: Comanda = {
@@ -373,13 +393,16 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       stato: 'in_attesa',
       ora,
       note: note?.trim() || undefined,
+      origine: extra?.origine ?? 'bar',
+      cliente: extra?.cliente,
     }
     setComande((prev) => [comanda, ...prev])
+    return comanda
   }, [])
   const avanzaComanda = useCallback((id: string) => {
     setComande((prev) =>
       prev.map((c) =>
-        c.id === id ? { ...c, stato: c.stato === 'in_attesa' ? 'in_preparazione' : 'consegnata' } : c
+        c.id === id ? { ...c, stato: SUCCESSIVO[c.stato] } : c
       )
     )
   }, [])

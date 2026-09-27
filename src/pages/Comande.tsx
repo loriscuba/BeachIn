@@ -2,11 +2,11 @@
  * Comande dall'ombrellone — servizio in spiaggia.
  * A sinistra si compone l'ordine (numero ombrellone + articoli del bar) e si
  * invia; a destra, al bar, arriva la coda delle comande con lo stato
- * (in attesa → in preparazione → consegnata). Dati statici in memoria
- * (context), pronti per il DB.
+ * (nuova → presa in carico → in preparazione → pronta). Le comande arrivano anche
+ * da ComandApp (`/comandapp`, app del bagnante): all'arrivo suona il campanello.
  */
-import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Plus, Minus, Send, Check, X, Umbrella, Coffee, Search } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Loader2, Plus, Minus, Send, Check, X, Umbrella, Coffee, Search, Bell, BellOff, Smartphone, ExternalLink, Copy } from 'lucide-react'
 import type { ArticoloBar, CategoriaBar, Comanda, RigaComanda, StatoComanda } from '@/data/types'
 import { getArticoliBar } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -17,12 +17,15 @@ import { Select } from '@/components/ui/Select'
 import { euroCent, numero } from '@/lib/formatters'
 import { etichetteCategoriaBar } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
+import { QrCodice } from '@/components/QrCodice'
+import { campanello, sbloccaAudio } from '@/lib/suoni'
+import { etichettaStatoComanda as etichettaStato, urlComandApp, UTENTI_COMANDAPP } from '@/lib/comandapp'
 
-const tonoStato: Record<StatoComanda, 'tenda' | 'stagionale' | 'acqua'> = {
-  in_attesa: 'tenda', in_preparazione: 'stagionale', consegnata: 'acqua',
+const tonoStato: Record<StatoComanda, 'boa' | 'tenda' | 'stagionale' | 'acqua'> = {
+  in_attesa: 'boa', presa_in_carico: 'tenda', in_preparazione: 'stagionale', pronta: 'acqua',
 }
-const etichettaStato: Record<StatoComanda, string> = {
-  in_attesa: 'In attesa', in_preparazione: 'In preparazione', consegnata: 'Consegnata',
+const azione: Partial<Record<StatoComanda, string>> = {
+  in_attesa: 'Prendi in carico', presa_in_carico: 'Inizia preparazione', in_preparazione: 'Pronta',
 }
 
 export default function Comande() {
@@ -35,6 +38,17 @@ export default function Comande() {
   const [filtro, setFiltro] = useState<CategoriaBar | 'tutte'>('tutte')
   const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
+  const [suoni, setSuoni] = useState(false)
+  const [copiato, setCopiato] = useState(false)
+  const link = urlComandApp()
+
+  // Campanello quando arriva una comanda nuova (es. da ComandApp in un'altra scheda).
+  const visti = useRef(new Set(comande.map((c) => c.id)))
+  useEffect(() => {
+    const nuove = comande.filter((c) => !visti.current.has(c.id))
+    nuove.forEach((c) => visti.current.add(c.id))
+    if (suoni && nuove.some((c) => c.stato === 'in_attesa')) campanello()
+  }, [comande, suoni])
 
   useEffect(() => {
     getArticoliBar().then((a) => { setArticoli(a); setCaricato(true) })
@@ -73,13 +87,31 @@ export default function Comande() {
     window.setTimeout(() => setInviata(false), 3000)
   }
 
-  const aperte = comande.filter((c) => c.stato !== 'consegnata').length
+  const aperte = comande.filter((c) => c.stato !== 'pronta').length
 
   if (!caricato) {
     return <div className="grid h-64 place-items-center text-profondo/50"><Loader2 className="h-6 w-6 animate-spin" /></div>
   }
 
   return (
+    <div className="space-y-4">
+      <Card>
+        <CardBody className="flex flex-wrap items-center gap-4">
+          <QrCodice url={link} className="w-20 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="inline-flex items-center gap-2 font-semibold text-profondo"><Smartphone className="h-4 w-4 text-cabina" /> ComandApp — l'app del bagnante</p>
+            <p className="break-all text-xs text-profondo/55">{link}</p>
+            <p className="mt-1 text-xs text-profondo/55">Accesso demo: {UTENTI_COMANDAPP.map((u) => `${u.utente} / ${u.password}`).join(' · ')}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button dimensione="sm" onClick={() => { navigator.clipboard?.writeText(link); setCopiato(true); window.setTimeout(() => setCopiato(false), 2000) }}><Copy className="h-4 w-4" /> {copiato ? 'Copiato!' : 'Copia link'}</Button>
+            <a href={link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50"><ExternalLink className="h-4 w-4" /> Apri</a>
+            <Button dimensione="sm" variante={suoni ? 'primario' : 'secondario'} onClick={() => { if (!suoni) { sbloccaAudio(); campanello() } setSuoni(!suoni) }}>
+              {suoni ? <><Bell className="h-4 w-4" /> Suoni attivi</> : <><BellOff className="h-4 w-4" /> Attiva suoni</>}
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
     <div className="grid gap-4 lg:grid-cols-2">
       {/* Nuovo ordine dall'ombrellone */}
       <Card className="flex flex-col">
@@ -178,15 +210,16 @@ export default function Comande() {
         </CardBody>
       </Card>
     </div>
+    </div>
   )
 }
 
 function ComandaCard({ comanda: c, onAvanza, onAnnulla }: { comanda: Comanda; onAvanza: () => void; onAnnulla: () => void }) {
-  const consegnata = c.stato === 'consegnata'
+  const consegnata = c.stato === 'pronta'
   return (
     <div className={cn('rounded-xl border p-3', consegnata ? 'border-calce-200 bg-calce/40 opacity-70' : 'border-calce-200 bg-white')}>
       <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 font-bold text-profondo"><Umbrella className="h-4 w-4 text-cabina" /> {c.ombrellone || '—'}</span>
+        <span className="inline-flex items-center gap-1.5 font-bold text-profondo"><Umbrella className="h-4 w-4 text-cabina" /> {c.ombrellone || '—'}{c.origine === 'app' && <Badge tono="mare">App</Badge>}{c.cliente && <span className="text-xs font-normal text-profondo/50">{c.cliente}</span>}</span>
         <div className="flex items-center gap-2">
           <span className="num text-xs text-profondo/45">{c.ora}</span>
           <Badge tono={tonoStato[c.stato]} puntino>{etichettaStato[c.stato]}</Badge>
@@ -207,9 +240,8 @@ function ComandaCard({ comanda: c, onAvanza, onAnnulla }: { comanda: Comanda; on
           {!consegnata && (
             <button type="button" onClick={onAnnulla} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/45 hover:bg-boa/10 hover:text-boa" title="Annulla comanda" aria-label="Annulla comanda"><X className="h-4 w-4" /></button>
           )}
-          {c.stato === 'in_attesa' && <Button variante="secondario" dimensione="sm" onClick={onAvanza}>Prendi in carico</Button>}
-          {c.stato === 'in_preparazione' && <Button variante="primario" dimensione="sm" onClick={onAvanza}><Check className="h-4 w-4" /> Consegnata</Button>}
-          {consegnata && <span className="inline-flex items-center gap-1 text-sm font-medium text-acqua"><Check className="h-4 w-4" /> Consegnata</span>}
+          {azione[c.stato] && <Button variante={c.stato === 'in_preparazione' ? 'primario' : 'secondario'} dimensione="sm" onClick={onAvanza}>{c.stato === 'in_preparazione' && <Check className="h-4 w-4" />} {azione[c.stato]}</Button>}
+          {consegnata && <span className="inline-flex items-center gap-1 text-sm font-medium text-acqua"><Check className="h-4 w-4" /> Pronta</span>}
         </div>
       </div>
     </div>
