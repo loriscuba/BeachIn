@@ -23,6 +23,7 @@ const Bar = lazy(() => import('@/pages/Bar'))
 const Ristorante = lazy(() => import('@/pages/Ristorante'))
 const MenuPubblico = lazy(() => import('@/pages/MenuPubblico'))
 const ComandApp = lazy(() => import('@/pages/ComandApp'))
+const AdminApp = lazy(() => import('@/pages/AdminApp'))
 const Costi = lazy(() => import('@/pages/Costi'))
 const ContoEconomico = lazy(() => import('@/pages/ContoEconomico'))
 const Personale = lazy(() => import('@/pages/Personale'))
@@ -66,4 +67,6 @@ export const router = creaRouter([
   { path: '/menu', element: s(<MenuPubblico />) },
   // ComandApp: app del bagnante per ordinare dall'ombrellone
   { path: '/comandapp', element: s(<ComandApp />) },
+  // App del gestore: prenotazioni ristorante da confermare + menu a voce
+  { path: '/adminapp', element: s(<AdminApp />) },
 ])

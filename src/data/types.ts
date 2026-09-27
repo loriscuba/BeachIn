@@ -539,6 +539,8 @@ export interface RichiestaRistorante {
   coperti: number
   stato: StatoPrenotazioneOnline
   note?: string
+  /** Istante di arrivo (ms), per l'ordinamento tra dispositivi. */
+  ts?: number
 }
 
 /** Richiesta di partecipazione a un evento, arrivata dal sito. */

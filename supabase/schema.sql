@@ -66,3 +66,27 @@ begin
     end if;
   end loop;
 end $$;
+
+-- Richieste tavolo dal sito (confermate/rifiutate dall'app admin `/adminapp`)
+create table if not exists beachin.richieste_ristorante (
+  id text primary key,
+  ricevuta_il text not null,
+  nome text not null,
+  email text not null default '',
+  telefono text not null default '',
+  data text not null,
+  turno text not null check (turno in ('pranzo','cena')),
+  coperti int not null default 2,
+  stato text not null default 'da_confermare' check (stato in ('da_confermare','confermata','rifiutata')),
+  note text,
+  ts bigint not null default (extract(epoch from now()) * 1000)::bigint
+);
+grant select, insert, update, delete on beachin.richieste_ristorante to anon, authenticated, service_role;
+alter table beachin.richieste_ristorante enable row level security;
+drop policy if exists "demo anon" on beachin.richieste_ristorante;
+create policy "demo anon" on beachin.richieste_ristorante for all to anon using (true) with check (true);
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='beachin' and tablename='richieste_ristorante') then
+    alter publication supabase_realtime add table beachin.richieste_ristorante;
+  end if;
+end $$;
