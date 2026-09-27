@@ -142,7 +142,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `email`/`sito`/`partitaIva` vuoti = da comunicare (il sito li nasconde). Chiusura spiaggia 19:30 da confermare.
 - Servizi reali: ombrellone/lettini, cabine, bar, ristorante, animazione bimbi, area relax, docce calde/fredde,
   beach volley, ping pong (niente noleggi/parcheggio). Recensioni sul sito = temi riassunti + badge Tripadvisor
-  (non citazioni). Restano dimostrativi: listino, menu (prezzi), eventi, recensioni del gestionale, numeri arenile.
+  (non citazioni). Menu ristorante = REALE (Menù del proprietario da restaurantguru: 25 piatti con prezzi, `seed/ristorante.ts`; food cost/allergeni stimati, bevande dimostrative). Restano dimostrativi: listino, eventi, recensioni del gestionale, numeri arenile.
 - Tripadvisor e gli altri siti sono bloccati dalla rete dell'ambiente: dati presi via WebSearch.
 
 ## Anteprima single-file (Artifact)
