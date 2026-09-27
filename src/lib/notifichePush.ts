@@ -14,7 +14,7 @@ const base64ToBytes = (b64: string) => {
   const s = atob((b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'))
   return Uint8Array.from(s, (c) => c.charCodeAt(0))
 }
-const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
+export const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
 export const isInstallata = () => window.matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true
 
 async function registrazione() {
