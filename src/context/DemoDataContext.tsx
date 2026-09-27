@@ -22,6 +22,7 @@ import type {
   FotoGalleria,
   PaginaSito,
   Piatto,
+  SezioneMenu,
   Postazione,
   PrenotazioneOnline,
   PrenotazioneRistorante,
@@ -39,7 +40,7 @@ import type {
 import { postazioni as seedPostazioni } from '@/data/seed/spiaggia'
 import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
-import { menu as seedMenu, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
+import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
 import { traduciNome } from '@/lib/menuLingue'
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
@@ -198,6 +199,14 @@ interface DemoDataValue {
   rimuoviPiatto: (id: string) => void
   modificaPrezzoPiatto: (id: string, prezzo: number) => void
   rinominaPiatto: (id: string, nome: string) => void
+  /** Modifica libera di un piatto (sezione, foto…); per il nome usare `rinominaPiatto` (ritraduce). */
+  modificaPiatto: (id: string, dati: Partial<Pick<Piatto, 'categoria' | 'foto' | 'prezzo'>>) => void
+  sezioniMenu: SezioneMenu[]
+  aggiungiSezione: (nome: string) => void
+  rinominaSezione: (id: string, nome: string) => void
+  /** Elimina la sezione e i suoi piatti. */
+  rimuoviSezione: (id: string) => void
+  spostaSezione: (id: string, direzione: -1 | 1) => void
   /** Correzione manuale di una traduzione del menu pubblico. */
   impostaTraduzione: (id: string, lingua: LinguaMenu, testo: string) => void
 
@@ -255,6 +264,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
   const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
+  const [sezioniMenu, setSezioniMenu] = useState<SezioneMenu[]>(() => clona(seedSezioni))
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
   const [comande, setComande] = useState<Comanda[]>([])
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
@@ -556,6 +566,34 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, nome: nome.trim(), traduzioni: {} } : p)))
     traduci(id, nome.trim())
   }, [traduci])
+  const modificaPiatto = useCallback((id: string, dati: Partial<Pick<Piatto, 'categoria' | 'foto' | 'prezzo'>>) => {
+    setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, ...dati } : p)))
+  }, [])
+  // — Sezioni del menu —
+  const traduciSezione = useCallback((id: string, nome: string) => {
+    traduciNome(nome).then((t) => setSezioniMenu((prev) => prev.map((s) => (s.id === id && s.nome === nome ? { ...s, traduzioni: t } : s))))
+  }, [])
+  const aggiungiSezione = useCallback((nome: string) => {
+    const id = nuovoId('SEZ')
+    setSezioniMenu((prev) => [...prev, { id, nome: nome.trim(), traduzioni: {} }])
+    traduciSezione(id, nome.trim())
+  }, [traduciSezione])
+  const rinominaSezione = useCallback((id: string, nome: string) => {
+    setSezioniMenu((prev) => prev.map((s) => (s.id === id ? { ...s, nome: nome.trim(), traduzioni: {} } : s)))
+    traduciSezione(id, nome.trim())
+  }, [traduciSezione])
+  const rimuoviSezione = useCallback((id: string) => {
+    setSezioniMenu((prev) => prev.filter((s) => s.id !== id))
+    setMenu((prev) => prev.filter((p) => p.categoria !== id))
+  }, [])
+  const spostaSezione = useCallback((id: string, direzione: -1 | 1) => {
+    setSezioniMenu((prev) => {
+      const i = prev.findIndex((s) => s.id === id), j = i + direzione
+      if (i < 0 || j < 0 || j >= prev.length) return prev
+      const a = [...prev]; [a[i], a[j]] = [a[j], a[i]]
+      return a
+    })
+  }, [])
 
   // — Galleria foto del sito —
   const aggiungiFoto = useCallback((immagine: string, titolo?: string) => {
@@ -645,6 +683,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPostaAdmin([])
     setEventi(clona(seedEventi))
     setMenu(clona(seedMenu))
+    setSezioniMenu(clona(seedSezioni))
     setGalleria(clona(statoSito.galleria))
     setComande([])
     setTavoli(clona(seedTavoli))
@@ -792,6 +831,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       menu,
       aggiungiPiatto,
       rimuoviPiatto,
+      modificaPiatto, sezioniMenu, aggiungiSezione, rinominaSezione, rimuoviSezione, spostaSezione,
       modificaPrezzoPiatto,
       rinominaPiatto,
       impostaTraduzione,
@@ -870,6 +910,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       menu,
       aggiungiPiatto,
       rimuoviPiatto,
+      modificaPiatto, sezioniMenu, aggiungiSezione, rinominaSezione, rimuoviSezione, spostaSezione,
       modificaPrezzoPiatto,
       rinominaPiatto,
       impostaTraduzione,

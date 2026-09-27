@@ -10,13 +10,14 @@ import type {
   Allergene,
   CategoriaPiatto,
   Piatto,
+  SezioneMenu,
   PrenotazioneRistorante,
   ServizioRistoranteGiorno,
   StatoPrenotazione,
   Tavolo,
   Turno,
 } from '../types'
-import { traduzioniSeed } from '@/lib/menuLingue'
+import { traduzioniSeed, traduzioniSezioneSeed } from '@/lib/menuLingue'
 import { creaRng, intero, scegli, scegliPesato, forse, type Rng } from './_rng'
 import { giorni } from './giornaliero'
 
@@ -49,8 +50,8 @@ const menuDef: DefP[] = [
   { nome: 'Trancio di spada alla griglia con aromi di Provenza', categoria: 'secondi', prezzo: 20, fc: 7.8, all: ['pesce'] },
   { nome: 'Filetto di fassona con burro aromatizzato alle erbe liguri', categoria: 'secondi', prezzo: 24, fc: 10.2, all: ['latte'] },
   // Grigliata di carne del lido
-  { nome: "Tagliata di fassona spadellata con burro aromatizzato e salsa di soia (all'etto)", categoria: 'secondi', prezzo: 7, fc: 2.9, all: ['latte', 'soia'] },
-  { nome: 'Costine di maiale, coppa di vitello, pollo e arrosticini', categoria: 'secondi', prezzo: 22, fc: 8.6, all: [] },
+  { nome: "Tagliata di fassona spadellata con burro aromatizzato e salsa di soia (all'etto)", categoria: 'grigliata', prezzo: 7, fc: 2.9, all: ['latte', 'soia'] },
+  { nome: 'Costine di maiale, coppa di vitello, pollo e arrosticini', categoria: 'grigliata', prezzo: 22, fc: 8.6, all: [] },
   // I nostri dolci
   { nome: "Colomba pasquale con crema al latte all'arancia", categoria: 'dolci', prezzo: 8, fc: 2.2, all: ['glutine', 'uova', 'latte'] },
   { nome: 'Pavlova con frutti di bosco freschi', categoria: 'dolci', prezzo: 8, fc: 2.4, all: ['uova'] },
@@ -67,9 +68,19 @@ const menuDef: DefP[] = [
   { nome: 'Caffè', categoria: 'bevande', prezzo: 1.5, fc: 0.3, all: [] },
 ]
 
-const popolarita: Record<CategoriaPiatto, number> = {
-  antipasti: 3, primi: 5, secondi: 4, contorni: 3, pizze: 5, dolci: 3, bevande: 6,
+const popolarita: Record<string, number> = {
+  antipasti: 3, primi: 5, secondi: 4, grigliata: 4, dolci: 3, bevande: 6,
 }
+
+/** Sezioni iniziali del menu (modificabili: rinomina, ordina, aggiungi, elimina). */
+export const sezioniMenu: SezioneMenu[] = [
+  { id: 'antipasti', nome: 'Antipasti' },
+  { id: 'primi', nome: 'Primi' },
+  { id: 'secondi', nome: 'Secondi' },
+  { id: 'grigliata', nome: 'Grigliata di carne del lido' },
+  { id: 'dolci', nome: 'I nostri dolci' },
+  { id: 'bevande', nome: 'Bevande' },
+].map((s) => ({ ...s, traduzioni: traduzioniSezioneSeed(s.id) }))
 
 function costruisciMenu(rng: Rng): Piatto[] {
   return menuDef.map((d, i) => ({
@@ -79,7 +90,7 @@ function costruisciMenu(rng: Rng): Piatto[] {
     prezzo: d.prezzo,
     foodCost: d.fc,
     allergeni: d.all,
-    vendutiStagione: Math.round(intero(rng, 60, 900) * (popolarita[d.categoria] / 5)),
+    vendutiStagione: Math.round(intero(rng, 60, 900) * ((popolarita[d.categoria] ?? 3) / 5)),
     traduzioni: traduzioniSeed(d.nome),
   }))
 }

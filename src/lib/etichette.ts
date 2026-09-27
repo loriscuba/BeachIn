@@ -50,6 +50,7 @@ export const etichetteCategoriaPiatto: Record<CategoriaPiatto, string> = {
   pizze: 'Pizze',
   dolci: 'Dolci',
   bevande: 'Bevande',
+  grigliata: 'Grigliata',
 }
 
 export const etichetteStatoPagamento: Record<string, string> = {

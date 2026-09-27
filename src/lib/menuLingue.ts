@@ -19,7 +19,7 @@ export const LINGUE_ESTERE = LINGUE.filter((l) => l.id !== 'it').map((l) => l.id
 type Testi = Record<LinguaMenu, string>
 const T = (it: string, en: string, fr: string, de: string, es: string): Testi => ({ it, en, fr, de, es })
 
-export const categorieLingue: Record<CategoriaPiatto, Testi> = {
+const categorieLingue: Record<CategoriaPiatto, Testi> = {
   antipasti: T('Antipasti', 'Starters', 'Entrées', 'Vorspeisen', 'Entrantes'),
   primi: T('Primi', 'First courses', 'Premiers plats', 'Erste Gänge', 'Primeros'),
   secondi: T('Secondi', 'Main courses', 'Plats principaux', 'Hauptgerichte', 'Segundos'),
@@ -27,6 +27,11 @@ export const categorieLingue: Record<CategoriaPiatto, Testi> = {
   pizze: T('Pizze', 'Pizzas', 'Pizzas', 'Pizzen', 'Pizzas'),
   dolci: T('Dolci', 'Desserts', 'Desserts', 'Desserts', 'Postres'),
   bevande: T('Bevande', 'Drinks', 'Boissons', 'Getränke', 'Bebidas'),
+  grigliata: T('Grigliata di carne del lido', 'Lido meat grill', 'Grillades de viande du Lido', 'Fleischgrill vom Lido', 'Parrillada de carne del Lido'),
+}
+export function traduzioniSezioneSeed(id: string): TraduzioniPiatto | undefined {
+  const t = categorieLingue[id]
+  return t && { en: t.en, fr: t.fr, de: t.de, es: t.es }
 }
 
 export const uiLingue = {
@@ -102,6 +107,9 @@ const SEED: Record<string, [string, string, string, string]> = {
 }
 
 export type TraduzioniPiatto = Partial<Record<LinguaMenu, string>>
+
+/** Nome della sezione nella lingua richiesta (fallback: italiano). */
+export const nomeSezioneIn = (s: { nome: string; traduzioni?: TraduzioniPiatto }, l: LinguaMenu) => (l === 'it' ? s.nome : s.traduzioni?.[l] || s.nome)
 
 export function traduzioniSeed(nome: string): TraduzioniPiatto | undefined {
   const t = SEED[nome]

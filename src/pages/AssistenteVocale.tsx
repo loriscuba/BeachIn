@@ -28,7 +28,6 @@ interface Messaggio {
   testo: string
 }
 
-const ORDINE_CAT: CategoriaPiatto[] = ['antipasti', 'primi', 'secondi', 'contorni', 'pizze', 'dolci', 'bevande']
 
 // Soglie di somiglianza: sopra OK agiamo, tra FORSE e OK proponiamo, sotto niente.
 const SOGLIA_OK = 0.6
@@ -80,7 +79,8 @@ const ESEMPI = [
 
 /** `compatto`: solo il riquadro dell'assistente (chat bassa), senza la lista del menu — usato dentro Ristorante → Menu. */
 export default function AssistenteVocale({ compatto = false }: { compatto?: boolean }) {
-  const { menu, aggiungiPiatto, rimuoviPiatto, modificaPrezzoPiatto, rinominaPiatto } = useDemoData()
+  const { menu, sezioniMenu, aggiungiPiatto, rimuoviPiatto, modificaPrezzoPiatto, rinominaPiatto } = useDemoData()
+  const nomeSez = (id: string) => sezioniMenu.find((s) => s.id === id)?.nome ?? etichetteCategoriaPiatto[id] ?? id
   const { supportata, inAscolto, avviaAscolto, fermaAscolto, parla, setParlaAttivo } = useVoce()
 
   const [messaggi, setMessaggi] = useState<Messaggio[]>([
@@ -129,10 +129,12 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
           rispondi(`«${simile.item.nome}» sembra già nel menu. Per cambiare prezzo dì: «cambia il prezzo di ${simile.item.nome} a …».`)
           break
         }
-        const p = aggiungiPiatto(c.nome, c.prezzo, c.categoria)
+        // la sezione riconosciuta dal parser potrebbe non esistere più (sezioni modificabili)
+        const cat: CategoriaPiatto = sezioniMenu.some((s) => s.id === c.categoria) ? c.categoria : sezioniMenu.find((s) => s.id === 'primi')?.id ?? sezioniMenu[0]?.id ?? c.categoria
+        const p = aggiungiPiatto(c.nome, c.prezzo, cat)
         setUltimoId(p.id)
         rispondi(
-          `Aggiunto «${p.nome}» in ${etichetteCategoriaPiatto[p.categoria]}` +
+          `Aggiunto «${p.nome}» in ${nomeSez(p.categoria)}` +
             (c.prezzo !== null ? ` a ${prezzoParlato(c.prezzo)}.` : ' (senza prezzo).')
         )
         break
@@ -209,10 +211,10 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
   }
 
   const perCategoria = useMemo(() => {
-    return ORDINE_CAT.map((cat) => ({ cat, piatti: menu.filter((p) => p.categoria === cat) })).filter(
+    return sezioniMenu.map((s) => ({ cat: s.id, piatti: menu.filter((p) => p.categoria === s.id) })).filter(
       (g) => g.piatti.length > 0
     )
-  }, [menu])
+  }, [menu, sezioniMenu])
 
   return (
     <div className={compatto ? '' : 'grid gap-4 lg:grid-cols-2'}>
@@ -317,7 +319,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
             {perCategoria.map(({ cat, piatti }) => (
               <div key={cat}>
                 <h3 className="mb-1.5 border-b border-calce-200 pb-1 text-[11px] font-semibold uppercase tracking-wide text-cabina">
-                  {etichetteCategoriaPiatto[cat]}
+                  {nomeSez(cat)}
                 </h3>
                 <ul className="space-y-1.5">
                   {piatti.map((p) => (
