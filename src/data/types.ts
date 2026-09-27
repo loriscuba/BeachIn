@@ -245,6 +245,8 @@ export interface Comanda {
   /** 'app' = inviata dal bagnante con ComandApp; 'bar' = presa al banco. */
   origine?: 'app' | 'bar'
   cliente?: string
+  /** Istante di invio (ms), per l'ordinamento tra dispositivi. */
+  ts?: number
 }
 
 // ————————————————————————————————————————————————————————————

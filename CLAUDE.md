@@ -47,6 +47,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Sync tra schede dello stesso browser: `comande` in localStorage `beachin.comande.v1` + evento `storage` (niente backend:
   tra dispositivi diversi serve un server). Suoni Web Audio in `src/lib/suoni.ts` (`campanello`/`ding`, sblocco al primo gesto);
   la pagina Comande ha link+QR ComandApp, "Attiva suoni" e suona il campanello a ogni comanda nuova.
+- **Supabase** (solo comande + menu/sezioni): `src/lib/supabase.ts` (env `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`,
+  vedi `.env.example`; Pages li legge da GitHub Actions *Variables*), schema in `supabase/schema.sql` (tabelle `comande`,
+  `menu_sezioni`, `menu_piatti`, RLS aperta ad anon = solo demo, Realtime). Hook generico `src/hooks/useSyncSupabase.ts`:
+  lettura iniziale (semina i seed se tabella vuota), upsert/delete delle differenze a ogni cambio di stato, ricarica su
+  evento Realtime. Senza env → tutto come prima (localStorage per le comande). Con Supabase il `reset()` non tocca menu/comande.
 
 ## Assistente vocale (menu a voce)
 - Pagina `AssistenteVocale` (rotta `/assistente-vocale`, gruppo Gestione): parla/scrivi per

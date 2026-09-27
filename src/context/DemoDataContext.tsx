@@ -43,6 +43,8 @@ import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
 import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
 import { traduciNome } from '@/lib/menuLingue'
+import { supabaseAttivo } from '@/lib/supabase'
+import { useSyncSupabase } from '@/hooks/useSyncSupabase'
 
 const CHIAVE_COMANDE = 'beachin.comande.v1'
 const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
@@ -271,15 +273,39 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
   const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
   const [sezioniMenu, setSezioniMenu] = useState<SezioneMenu[]>(() => clona(seedSezioni))
+  // Sync Supabase (se configurato): menu + sezioni (editor/assistente vocale) e comande (ComandApp ↔ bar)
+  useSyncSupabase({
+    tabella: 'menu_sezioni', righe: sezioniMenu, setRighe: setSezioniMenu, semina: true,
+    aRiga: (s, i) => ({ id: s.id, nome: s.nome, traduzioni: s.traduzioni ?? null, ordine: i }),
+    daRiga: (r) => ({ id: r.id, nome: r.nome as string, traduzioni: (r.traduzioni as SezioneMenu['traduzioni']) ?? undefined }),
+    ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
+  })
+  useSyncSupabase({
+    tabella: 'menu_piatti', righe: menu, setRighe: setMenu, semina: true,
+    aRiga: (p, i) => ({
+      id: p.id, nome: p.nome, categoria: p.categoria, prezzo: p.prezzo, food_cost: p.foodCost, allergeni: p.allergeni,
+      venduti_stagione: p.vendutiStagione, traduzioni: p.traduzioni ?? null, foto: p.foto ?? null, ordine: i,
+    }),
+    daRiga: (r) => ({
+      id: r.id, nome: r.nome as string, categoria: r.categoria as string, prezzo: Number(r.prezzo), foodCost: Number(r.food_cost),
+      allergeni: (r.allergeni as Piatto['allergeni']) ?? [], vendutiStagione: Number(r.venduti_stagione),
+      traduzioni: (r.traduzioni as Piatto['traduzioni']) ?? undefined, foto: (r.foto as string) ?? undefined,
+    }),
+    ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
+  })
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
   // Comande condivise tra le schede dello stesso browser (ComandApp ↔ cruscotto bar) via localStorage.
+  // Con Supabase configurato le comande vivono nel DB (condivise tra dispositivi, vedi useSyncSupabase più sotto).
   const [comande, setComande] = useState<Comanda[]>(() => {
+    if (supabaseAttivo) return []
     try { return JSON.parse(localStorage.getItem(CHIAVE_COMANDE) ?? '[]') as Comanda[] } catch { return [] }
   })
   useEffect(() => {
+    if (supabaseAttivo) return
     try { localStorage.setItem(CHIAVE_COMANDE, JSON.stringify(comande)) } catch { /* storage non disponibile */ }
   }, [comande])
   useEffect(() => {
+    if (supabaseAttivo) return
     const suCambio = (e: StorageEvent) => {
       if (e.key !== CHIAVE_COMANDE) return
       try { setComande(JSON.parse(e.newValue ?? '[]') as Comanda[]) } catch { /* ignora */ }
@@ -287,11 +313,24 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     window.addEventListener('storage', suCambio)
     return () => window.removeEventListener('storage', suCambio)
   }, [])
+  useSyncSupabase({
+    tabella: 'comande', righe: comande, setRighe: setComande,
+    aRiga: (c) => ({
+      id: c.id, ombrellone: c.ombrellone, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora,
+      note: c.note ?? null, origine: c.origine ?? null, cliente: c.cliente ?? null, ts: c.ts ?? 0,
+    }),
+    daRiga: (r) => ({
+      id: r.id, ombrellone: r.ombrellone as string, righe: r.righe as Comanda['righe'], totale: Number(r.totale),
+      stato: r.stato as StatoComanda, ora: r.ora as string, note: (r.note as string) ?? undefined,
+      origine: (r.origine as Comanda['origine']) ?? undefined, cliente: (r.cliente as string) ?? undefined, ts: Number(r.ts),
+    }),
+    ordina: (a, b) => Number(b.ts) - Number(a.ts),
+  })
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
   const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
   const seqRef = useRef(1)
-  const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}`
+  const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}${Math.random().toString(36).slice(2, 6)}`
 
   // — Demo guidata —
   const [incassoDemo, setIncassoDemo] = useState(0)
@@ -395,6 +434,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       note: note?.trim() || undefined,
       origine: extra?.origine ?? 'bar',
       cliente: extra?.cliente,
+      ts: Date.now(),
     }
     setComande((prev) => [comanda, ...prev])
     return comanda
@@ -705,10 +745,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPostaCliente([])
     setPostaAdmin([])
     setEventi(clona(seedEventi))
-    setMenu(clona(seedMenu))
-    setSezioniMenu(clona(seedSezioni))
+    // con Supabase menu e sezioni sono dati reali condivisi: il reset demo non li tocca
+    if (!supabaseAttivo) { setMenu(clona(seedMenu)); setSezioniMenu(clona(seedSezioni)) }
     setGalleria(clona(statoSito.galleria))
-    setComande([])
+    if (!supabaseAttivo) setComande([])
     setTavoli(clona(seedTavoli))
     setMagazzino(clona(seedMagazzino))
     setPrenotazioniRistorante(clona(seedPrenotazioniRist))
