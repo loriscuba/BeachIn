@@ -35,7 +35,7 @@ const temiRecensioni = [
 const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 
 export default function SitoAnteprima() {
-  const { eventi, postaCliente, canaliPrenotazione, galleria, menu } = useDemoData()
+  const { eventi, postaCliente, canaliPrenotazione, galleria, menu, sezioniMenu } = useDemoData()
   // Gestione ombrelloni (modulo Arenile): se spento, dal sito spariscono prenotazione, listino e disponibilità.
   const ombrelloni = useModuli().moduloAttivo('arenile')
   const voci = nav.filter(([id]) => ombrelloni || (id !== 'prenota' && id !== 'listino'))
@@ -328,7 +328,7 @@ export default function SitoAnteprima() {
                     <span className="mb-1 flex-1 border-b border-dotted border-profondo/25" />
                     <span className="num font-semibold text-profondo">{euro(p.prezzo)}</span>
                   </div>
-                  <p className="text-xs uppercase tracking-widest text-profondo/40">{etichetteCategoriaPiatto[p.categoria]}</p>
+                  <p className="text-xs uppercase tracking-widest text-profondo/40">{sezioniMenu.find((s) => s.id === p.categoria)?.nome ?? etichetteCategoriaPiatto[p.categoria]}</p>
                 </li>
               ))}
             </ul>

@@ -44,7 +44,7 @@ export default function Ristorante() {
   // Tavoli e prenotazioni sono anch'essi mutabili: si prenota a telefono e si
   // assegna il tavolo dal vivo.
   const {
-    menu, tavoli, prenotazioniRistorante,
+    menu, sezioniMenu, tavoli, prenotazioniRistorante,
     aggiungiTavolo,
     creaPrenotazioneRistorante, assegnaTavolo, impostaStatoPrenotazione, rimuoviPrenotazioneRistorante,
   } = useDemoData()
@@ -142,13 +142,13 @@ export default function Ristorante() {
                 <Select
                   value={filtroCat}
                   onChange={(e) => setFiltroCat(e.target.value as CategoriaPiatto | 'tutte')}
-                  opzioni={[{ valore: 'tutte', etichetta: 'Tutte le categorie' }, ...Object.entries(etichetteCategoriaPiatto).map(([v, l]) => ({ valore: v, etichetta: l }))]}
+                  opzioni={[{ valore: 'tutte', etichetta: 'Tutte le categorie' }, ...sezioniMenu.map((s) => ({ valore: s.id, etichetta: s.nome }))]}
                 />
               </div>
             }
           />
           <CardBody className="px-1 py-1 sm:px-2">
-            <MenuTabella piatti={menuFiltrato} />
+            <MenuTabella piatti={menuFiltrato} nomeSez={(id) => sezioniMenu.find((s) => s.id === id)?.nome ?? etichetteCategoriaPiatto[id] ?? id} />
           </CardBody>
         </Card>
         </>
@@ -390,7 +390,7 @@ function NuovoTavolo({ tavoli, onCrea }: { tavoli: Tavolo[]; onCrea: (numero: nu
   )
 }
 
-function MenuTabella({ piatti }: { piatti: Piatto[] }) {
+function MenuTabella({ piatti, nomeSez }: { piatti: Piatto[]; nomeSez: (id: string) => string }) {
   const colonne: Colonna<Piatto>[] = [
     {
       chiave: 'nome', intestazione: 'Piatto',
@@ -403,7 +403,7 @@ function MenuTabella({ piatti }: { piatti: Piatto[] }) {
         </div>
       ),
     },
-    { chiave: 'cat', intestazione: 'Categoria', nascondiMobile: true, cella: (p) => <span className="text-profondo/60">{etichetteCategoriaPiatto[p.categoria]}</span> },
+    { chiave: 'cat', intestazione: 'Categoria', nascondiMobile: true, cella: (p) => <span className="text-profondo/60">{nomeSez(p.categoria)}</span> },
     { chiave: 'prezzo', intestazione: 'Prezzo', allineaDx: true, cella: (p) => <span className="num">{euroCent(p.prezzo)}</span> },
     { chiave: 'fc', intestazione: 'Food cost', allineaDx: true, nascondiMobile: true, cella: (p) => <span className="num text-profondo/60">{euroCent(p.foodCost)}</span> },
     {

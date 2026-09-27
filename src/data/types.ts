@@ -247,14 +247,16 @@ export interface Comanda {
 // Ristorante
 // ————————————————————————————————————————————————————————————
 
-export type CategoriaPiatto =
-  | 'antipasti'
-  | 'primi'
-  | 'secondi'
-  | 'contorni'
-  | 'pizze'
-  | 'dolci'
-  | 'bevande'
+/** Id della sezione del menu (`SezioneMenu.id`): le sezioni sono modificabili dall'interfaccia. */
+export type CategoriaPiatto = string
+
+/** Sezione del menu (Antipasti, Primi…): ordine = ordine dell'array. */
+export interface SezioneMenu {
+  id: string
+  nome: string
+  /** Nome tradotto per il menu pubblico (it = `nome`). */
+  traduzioni?: Partial<Record<LinguaMenu, string>>
+}
 
 export type Allergene =
   | 'glutine'
@@ -278,6 +280,8 @@ export interface Piatto {
   vendutiStagione: number
   /** Nome tradotto per il menu pubblico (it = `nome`). Si aggiorna da solo a ogni modifica. */
   traduzioni?: Partial<Record<LinguaMenu, string>>
+  /** Foto del piatto (data URI ridimensionato). */
+  foto?: string
 }
 
 export type LinguaMenu = 'it' | 'en' | 'fr' | 'de' | 'es'

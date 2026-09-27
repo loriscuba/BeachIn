@@ -4,15 +4,14 @@
  */
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import type { CategoriaPiatto, LinguaMenu } from '@/data/types'
+import type { LinguaMenu } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
-import { LINGUE, categorieLingue, nomeIn, uiLingue } from '@/lib/menuLingue'
+import { LINGUE, nomeSezioneIn, nomeIn, uiLingue } from '@/lib/menuLingue'
 import { logoLido } from '@/assets/sito'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 
-const ORDINE: CategoriaPiatto[] = ['antipasti', 'primi', 'secondi', 'contorni', 'pizze', 'dolci', 'bevande']
 
 function linguaIniziale(param: string | null): LinguaMenu {
   const ok = (l?: string | null): l is LinguaMenu => !!l && LINGUE.some((x) => x.id === l)
@@ -22,7 +21,7 @@ function linguaIniziale(param: string | null): LinguaMenu {
 }
 
 export default function MenuPubblico() {
-  const { menu } = useDemoData()
+  const { menu, sezioniMenu } = useDemoData()
   const [q, setQ] = useSearchParams()
   const [lingua, setLingua] = useState<LinguaMenu>(() => linguaIniziale(q.get('lang')))
   const tavolo = q.get('tavolo')
@@ -43,15 +42,17 @@ export default function MenuPubblico() {
       </header>
 
       <main className="mx-auto max-w-2xl px-5 py-6">
-        {ORDINE.map((c) => {
+        {sezioniMenu.map((sez) => {
+          const c = sez.id
           const piatti = menu.filter((p) => p.categoria === c)
           if (!piatti.length) return null
           return (
             <section key={c} className="mb-8">
-              <h2 className="mb-3 border-b-2 border-tenda pb-1 font-display text-2xl font-semibold">{categorieLingue[c][lingua]}</h2>
+              <h2 className="mb-3 border-b-2 border-tenda pb-1 font-display text-2xl font-semibold">{nomeSezioneIn(sez, lingua)}</h2>
               <ul className="space-y-3">
                 {piatti.map((p) => (
-                  <li key={p.id} className="flex items-baseline gap-3">
+                  <li key={p.id} className="flex items-center gap-3">
+                    {p.foto && <img src={p.foto} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />}
                     <span className="text-[15px] leading-snug">{nomeIn(p, lingua)}</span>
                     <span className="mb-1 flex-1 border-b border-dotted border-profondo/25" />
                     <span className="num shrink-0 font-semibold">{p.prezzo ? euroCent(p.prezzo) : '—'}</span>
