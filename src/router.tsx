@@ -22,6 +22,7 @@ const Tariffe = lazy(() => import('@/pages/Tariffe'))
 const Bar = lazy(() => import('@/pages/Bar'))
 const Ristorante = lazy(() => import('@/pages/Ristorante'))
 const MenuPubblico = lazy(() => import('@/pages/MenuPubblico'))
+const ComandApp = lazy(() => import('@/pages/ComandApp'))
 const Costi = lazy(() => import('@/pages/Costi'))
 const ContoEconomico = lazy(() => import('@/pages/ContoEconomico'))
 const Personale = lazy(() => import('@/pages/Personale'))
@@ -63,4 +64,6 @@ export const router = creaRouter([
   { path: '/sito/anteprima', element: s(<SitoAnteprima />) },
   // Menu pubblico multilingua (QR sui tavoli)
   { path: '/menu', element: s(<MenuPubblico />) },
+  // ComandApp: app del bagnante per ordinare dall'ombrellone
+  { path: '/comandapp', element: s(<ComandApp />) },
 ])

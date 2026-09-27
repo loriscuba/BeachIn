@@ -69,7 +69,7 @@ export const MODULI: Record<ModuloId, InfoModulo> = {
     id: 'comande',
     nome: 'Comande ombrellone',
     sottotitolo: 'Ordini al bar direttamente dall’ombrellone.',
-    vantaggi: ['Ordini bar per numero di ombrellone', 'Coda comande al bar con stato (in attesa → consegnata)', 'Servizio in spiaggia più rapido'],
+    vantaggi: ['Ordini bar per numero di ombrellone', 'Coda comande al bar con stato (nuova → presa in carico → pronta), ComandApp per il bagnante con campanello', 'Servizio in spiaggia più rapido'],
   },
   sito: {
     id: 'sito',

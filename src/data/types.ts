@@ -224,7 +224,8 @@ export interface VenditaBarGiorno {
 }
 
 // — Comande dall'ombrellone (servizio in spiaggia) —
-export type StatoComanda = 'in_attesa' | 'in_preparazione' | 'consegnata'
+/** Flusso al bar: nuova → presa in carico → in preparazione → pronta. */
+export type StatoComanda = 'in_attesa' | 'presa_in_carico' | 'in_preparazione' | 'pronta'
 
 export interface RigaComanda {
   articoloId: string
@@ -241,6 +242,9 @@ export interface Comanda {
   stato: StatoComanda
   ora: string // HH:mm di invio
   note?: string
+  /** 'app' = inviata dal bagnante con ComandApp; 'bar' = presa al banco. */
+  origine?: 'app' | 'bar'
+  cliente?: string
 }
 
 // ————————————————————————————————————————————————————————————

@@ -41,6 +41,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Context: `comande` + `inviaComanda(ombrellone, righe, note?)` / `avanzaComanda(id)` (in_attesa→in_preparazione→consegnata)
   / `annullaComanda(id)`. Incluso nel `reset()`. Tipi: `Comanda/RigaComanda/StatoComanda` in `types.ts`.
 - Nel piano `ristorante_web` di default.
+- **ComandApp** (rotta pubblica `/comandapp`, `src/pages/ComandApp.tsx`, fuori dallo shell): app del bagnante, login con
+  credenziali demo `UTENTI_COMANDAPP` (`src/lib/comandapp.ts`, es. ombrellone12/lido → ombrellone 12), ordina dal bar,
+  vede solo lo stato dei propri ordini. Stati: `in_attesa → presa_in_carico → in_preparazione → pronta` (`SUCCESSIVO` nel context).
+  Sync tra schede dello stesso browser: `comande` in localStorage `beachin.comande.v1` + evento `storage` (niente backend:
+  tra dispositivi diversi serve un server). Suoni Web Audio in `src/lib/suoni.ts` (`campanello`/`ding`, sblocco al primo gesto);
+  la pagina Comande ha link+QR ComandApp, "Attiva suoni" e suona il campanello a ogni comanda nuova.
 
 ## Assistente vocale (menu a voce)
 - Pagina `AssistenteVocale` (rotta `/assistente-vocale`, gruppo Gestione): parla/scrivi per
