@@ -20,6 +20,11 @@ import { Button } from '@/components/ui/Button'
 import { euroCent } from '@/lib/formatters'
 import { etichetteCategoriaPiatto, etichetteAllergene } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
+import { isInstallata, isIos } from '@/lib/notifichePush'
+
+/** App aggiunta alla Home su iPhone: Apple non abilita lì il riconoscimento vocale del browser (Web Speech). */
+const appIphone = typeof window !== 'undefined' && isIos() && isInstallata()
+const MSG_APP_IPHONE = 'Nell’app installata su iPhone Apple non permette il riconoscimento vocale del browser. Tocca il campo qui sotto e usa il 🎤 della tastiera (dettatura), poi Invia. In Safari il pulsante microfono funziona.'
 
 type Ruolo = 'utente' | 'assistente' | 'errore'
 interface Messaggio {
@@ -193,7 +198,9 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
       (alts) => gestisci(alts),
       (codice) => {
         const msg =
-          codice === 'not-allowed' || codice === 'service-not-allowed'
+          appIphone
+            ? MSG_APP_IPHONE
+            : codice === 'not-allowed' || codice === 'service-not-allowed'
             ? 'Microfono bloccato dal browser. Consenti l’accesso al microfono, oppure scrivi il comando qui sotto.'
             : codice === 'no-speech'
               ? 'Non ho sentito nulla. Riprova.'
@@ -289,6 +296,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
             </Button>
           </form>
 
+          {appIphone && <p className="rounded-lg bg-tenda/20 px-3 py-2 text-xs text-profondo/80">🎤 Su iPhone (app dalla Home): tocca il campo qui sopra e usa il microfono della <b>tastiera</b> per dettare il comando, poi Invia.</p>}
           <details className="text-xs text-profondo/55">
             <summary className="cursor-pointer font-medium text-profondo/70">Cosa posso dire?</summary>
             <ul className="mt-2 space-y-1">

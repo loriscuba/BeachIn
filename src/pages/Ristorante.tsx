@@ -15,6 +15,9 @@ import { Tabella, type Colonna } from '@/components/ui/Tabella'
 import { Tabs } from '@/components/ui/Tabs'
 import { PannelloMenu } from '@/pages/ristorante/PannelloMenu'
 import { Planimetria } from '@/pages/ristorante/Planimetria'
+import { CalendarioPrenotazioni } from '@/pages/ristorante/CalendarioPrenotazioni'
+import { format, parseISO } from 'date-fns'
+import { it as itLocale } from 'date-fns/locale'
 import { ZONE, nomeZona } from '@/lib/zoneTavoli'
 import { Magazzino } from '@/pages/ristorante/Magazzino'
 import { euro, euroCent, numero, percento } from '@/lib/formatters'
@@ -45,7 +48,7 @@ export default function Ristorante() {
   // Tavoli e prenotazioni sono anch'essi mutabili: si prenota a telefono e si
   // assegna il tavolo dal vivo.
   const {
-    menu, sezioniMenu, tavoli, prenotazioniRistorante,
+    menu, sezioniMenu, tavoli, prenotazioniRistorante, richiesteRistorante, confermaRistorante, rifiutaRistorante,
     aggiungiTavolo,
     creaPrenotazioneRistorante, assegnaTavolo, impostaStatoPrenotazione, rimuoviPrenotazioneRistorante,
   } = useDemoData()
@@ -73,13 +76,17 @@ export default function Ristorante() {
   const tavoliPerId = useMemo(() => new Map(tavoli.map((t) => [t.id, t])), [tavoli])
 
   // Tavoli occupati per turno (da prenotazioni attive di oggi) → per non assegnare due volte.
+  // Prenotazioni: giorno scelto nel calendario (di default oggi)
+  const [giorno, setGiorno] = useState(oggi)
+  const prenGiorno = useMemo(() => prenotazioniRistorante.filter((p) => p.data === giorno), [prenotazioniRistorante, giorno])
+  const richiesteGiorno = richiesteRistorante.filter((r) => r.stato === 'da_confermare' && r.data === giorno)
   const occupatiPerTurno = useMemo(() => {
     const m: Record<Turno, Set<string>> = { pranzo: new Set(), cena: new Set() }
-    for (const p of prenOggi) {
+    for (const p of prenGiorno) {
       if (p.tavoloId && p.stato !== 'annullata') m[p.turno].add(p.tavoloId)
     }
     return m
-  }, [prenOggi])
+  }, [prenGiorno])
 
   const menuFiltrato = filtroCat === 'tutte' ? menu : menu.filter((p) => p.categoria === filtroCat)
   const piuVenduti = [...menu].sort((a, b) => b.vendutiStagione - a.vendutiStagione).slice(0, 4)
@@ -161,41 +168,69 @@ export default function Ristorante() {
 
       {tab === 'prenotazioni' && (
         <Card>
-          <CardHeader titolo="Prenotazioni di oggi" sottotitolo={`${prenOggi.length} prenotazioni`} azione={<a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50" title="App del gestore: conferma le richieste dal sito e modifica il menu a voce"><Smartphone className="h-4 w-4" /> App admin</a>} />
+          <CardHeader titolo="Prenotazioni" sottotitolo="Calendario settimanale · clicca un giorno per gestirlo" azione={<a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50" title="App del gestore: conferma le richieste dal sito e modifica il menu a voce"><Smartphone className="h-4 w-4" /> App admin</a>} />
           <CardBody className="space-y-4 pt-2">
-            <NuovaPrenotazione
-              tavoli={tavoli}
-              occupatiPerTurno={occupatiPerTurno}
-              onCrea={creaPrenotazioneRistorante}
+            <CalendarioPrenotazioni
+              giorno={giorno}
+              oggi={oggi}
+              onGiorno={setGiorno}
+              prenotazioni={prenotazioniRistorante}
+              richieste={richiesteRistorante.filter((r) => r.stato === 'da_confermare')}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              {(['pranzo', 'cena'] as Turno[]).map((turno) => {
-                const list = prenOggi.filter((p) => p.turno === turno)
-                const coperti = list.filter((p) => p.stato !== 'annullata').reduce((s, p) => s + p.coperti, 0)
-                return (
-                  <div key={turno}>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold capitalize text-profondo">{turno}</span>
-                      <span className="num text-xs text-profondo/55">{list.length} tavoli · {coperti} coperti</span>
+            <div className="border-t border-calce-200 pt-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-display text-xl font-semibold capitalize text-profondo">{format(parseISO(giorno), 'EEEE d MMMM', { locale: itLocale })}{giorno === oggi && <span className="ml-2 align-middle text-xs font-sans font-semibold uppercase text-boa">oggi</span>}</h3>
+                <NuovaPrenotazione
+                  tavoli={tavoli}
+                  occupatiPerTurno={occupatiPerTurno}
+                  onCrea={(d) => creaPrenotazioneRistorante({ ...d, data: giorno })}
+                />
+              </div>
+              {richiesteGiorno.length > 0 && (
+                <div className="mb-4 rounded-xl border border-dashed border-boa/50 bg-boa/5 p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-boa">Dal sito · da confermare</p>
+                  <ul className="space-y-1.5">
+                    {richiesteGiorno.map((r) => (
+                      <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
+                        <span className="text-profondo"><b>{r.nome}</b> · <span className="capitalize">{r.turno}</span> · {r.coperti} coperti{r.telefono && <> · {r.telefono}</>}{r.note && <span className="text-profondo/55"> · {r.note}</span>}</span>
+                        <span className="flex gap-1.5">
+                          <Button dimensione="sm" onClick={() => rifiutaRistorante(r.id)}><X className="h-4 w-4 text-boa" /> Rifiuta</Button>
+                          <Button dimensione="sm" variante="primario" onClick={() => confermaRistorante(r.id)}><Check className="h-4 w-4" /> Conferma</Button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(['pranzo', 'cena'] as Turno[]).map((turno) => {
+                  const list = prenGiorno.filter((p) => p.turno === turno)
+                  const coperti = list.filter((p) => p.stato !== 'annullata').reduce((s, p) => s + p.coperti, 0)
+                  return (
+                    <div key={turno}>
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold capitalize text-profondo">{turno}</span>
+                        <span className="num text-xs text-profondo/55">{list.length} tavoli · {coperti} coperti</span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {list.length === 0 && <li className="text-sm text-profondo/45">Nessuna prenotazione.</li>}
+                        {list.map((p) => (
+                          <RigaPrenotazione
+                            key={p.id}
+                            pren={p}
+                            tavoli={tavoli}
+                            tavoloAssegnato={p.tavoloId ? tavoliPerId.get(p.tavoloId) : undefined}
+                            occupati={occupatiPerTurno[turno]}
+                            onAssegna={(tavoloId) => assegnaTavolo(p.id, tavoloId)}
+                            onStato={(stato) => impostaStatoPrenotazione(p.id, stato)}
+                            onRimuovi={() => rimuoviPrenotazioneRistorante(p.id)}
+                          />
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-1.5">
-                      {list.length === 0 && <li className="text-sm text-profondo/45">Nessuna prenotazione.</li>}
-                      {list.map((p) => (
-                        <RigaPrenotazione
-                          key={p.id}
-                          pren={p}
-                          tavoli={tavoli}
-                          tavoloAssegnato={p.tavoloId ? tavoliPerId.get(p.tavoloId) : undefined}
-                          occupati={occupatiPerTurno[turno]}
-                          onAssegna={(tavoloId) => assegnaTavolo(p.id, tavoloId)}
-                          onStato={(stato) => impostaStatoPrenotazione(p.id, stato)}
-                          onRimuovi={() => rimuoviPrenotazioneRistorante(p.id)}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </CardBody>
         </Card>
