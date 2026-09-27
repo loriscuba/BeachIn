@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import type { ReactNode } from 'react'
 import { createBrowserRouter, createHashRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Caricamento } from '@/components/ui/Caricamento'
 import { ModuloGate } from '@/components/ModuloGate'
+import { lazyRiprova } from '@/lib/lazyRiprova'
 import type { ModuloId } from '@/config/moduli'
 
 // Su hosting statico (es. anteprima pubblicata) si usa il routing via hash,
@@ -13,25 +14,25 @@ const creaRouter =
 
 // Pagine caricate on-demand: la home resta leggera, i grafici (Recharts)
 // arrivano solo quando servono.
-const Panoramica = lazy(() => import('@/pages/Panoramica'))
-const Cruscotto = lazy(() => import('@/pages/Cruscotto'))
-const Arenile = lazy(() => import('@/pages/Arenile'))
-const Clienti = lazy(() => import('@/pages/Clienti'))
-const Comande = lazy(() => import('@/pages/Comande'))
-const Tariffe = lazy(() => import('@/pages/Tariffe'))
-const Bar = lazy(() => import('@/pages/Bar'))
-const Ristorante = lazy(() => import('@/pages/Ristorante'))
-const MenuPubblico = lazy(() => import('@/pages/MenuPubblico'))
-const ComandApp = lazy(() => import('@/pages/ComandApp'))
-const AdminApp = lazy(() => import('@/pages/AdminApp'))
-const Costi = lazy(() => import('@/pages/Costi'))
-const ContoEconomico = lazy(() => import('@/pages/ContoEconomico'))
-const Personale = lazy(() => import('@/pages/Personale'))
-const Eventi = lazy(() => import('@/pages/Eventi'))
-const Sito = lazy(() => import('@/pages/Sito'))
-const SitoAnteprima = lazy(() => import('@/pages/SitoAnteprima'))
-const Impostazioni = lazy(() => import('@/pages/Impostazioni'))
-const NonTrovata = lazy(() => import('@/pages/NonTrovata'))
+const Panoramica = lazyRiprova(() => import('@/pages/Panoramica'))
+const Cruscotto = lazyRiprova(() => import('@/pages/Cruscotto'))
+const Arenile = lazyRiprova(() => import('@/pages/Arenile'))
+const Clienti = lazyRiprova(() => import('@/pages/Clienti'))
+const Comande = lazyRiprova(() => import('@/pages/Comande'))
+const Tariffe = lazyRiprova(() => import('@/pages/Tariffe'))
+const Bar = lazyRiprova(() => import('@/pages/Bar'))
+const Ristorante = lazyRiprova(() => import('@/pages/Ristorante'))
+const MenuPubblico = lazyRiprova(() => import('@/pages/MenuPubblico'))
+const ComandApp = lazyRiprova(() => import('@/pages/ComandApp'))
+const AdminApp = lazyRiprova(() => import('@/pages/AdminApp'))
+const Costi = lazyRiprova(() => import('@/pages/Costi'))
+const ContoEconomico = lazyRiprova(() => import('@/pages/ContoEconomico'))
+const Personale = lazyRiprova(() => import('@/pages/Personale'))
+const Eventi = lazyRiprova(() => import('@/pages/Eventi'))
+const Sito = lazyRiprova(() => import('@/pages/Sito'))
+const SitoAnteprima = lazyRiprova(() => import('@/pages/SitoAnteprima'))
+const Impostazioni = lazyRiprova(() => import('@/pages/Impostazioni'))
+const NonTrovata = lazyRiprova(() => import('@/pages/NonTrovata'))
 
 const s = (el: ReactNode): ReactNode => <Suspense fallback={<Caricamento />}>{el}</Suspense>
 // Rotta protetta da modulo: se non attivo mostra l'upsell.
