@@ -10,15 +10,17 @@ import { QrCodice, stampaQr } from '@/components/QrCodice'
 import { LINGUE, LINGUE_ESTERE, urlMenu } from '@/lib/menuLingue'
 import AssistenteVocale from '@/pages/AssistenteVocale'
 import { config } from '@/data/config'
+import { euroCent } from '@/lib/formatters'
 
 const inTraduzione = (p: Piatto) => !!p.traduzioni && LINGUE_ESTERE.some((l) => !p.traduzioni?.[l])
 
 /** Sottosezione Menu: assistente vocale, menu pubblico in 5 lingue e QR da tavolo. */
 export function PannelloMenu() {
-  const { menu, impostaTraduzione } = useDemoData()
+  const { menu, impostaTraduzione, modificaPrezzoPiatto } = useDemoData()
   const vocale = useModuli().moduloAttivo('assistente-vocale')
   const [lingua, setLingua] = useState<Exclude<LinguaMenu, 'it'>>('en')
   const [modifica, setModifica] = useState<{ id: string; testo: string }>()
+  const [prezzo, setPrezzo] = useState<{ id: string; testo: string }>()
   const pendenti = menu.filter(inTraduzione).length
   const url = urlMenu()
 
@@ -27,8 +29,8 @@ export function PannelloMenu() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader
-            titolo={<span className="inline-flex items-center gap-2"><Languages className="h-4 w-4 text-cabina" /> Menu pubblico in 5 lingue</span>}
-            sottotitolo={pendenti ? `Traduzione in corso di ${pendenti} piatti…` : 'Ogni modifica (a mano o a voce) viene tradotta automaticamente'}
+            titolo={<span className="inline-flex items-center gap-2"><Languages className="h-4 w-4 text-cabina" /> Menu</span>}
+            sottotitolo={`${menu.length} piatti · ${pendenti ? `traduzione in corso di ${pendenti}…` : 'tradotto in 5 lingue'} · clicca prezzo o traduzione per modificarli`}
             azione={
               <div className="flex gap-1">
                 {LINGUE.filter((l) => l.id !== 'it').map((l) => (
@@ -38,11 +40,18 @@ export function PannelloMenu() {
               </div>
             }
           />
-          <CardBody className="max-h-80 overflow-y-auto pt-1">
+          <CardBody className="max-h-[32rem] overflow-y-auto pt-1">
             <ul className="divide-y divide-calce-200 text-sm">
               {menu.map((p) => (
                 <li key={p.id} className="flex items-center gap-3 py-1.5">
                   <span className="w-2/5 truncate font-medium text-profondo" title={p.nome}>{p.nome}</span>
+                  {prezzo?.id === p.id ? (
+                    <form className="flex w-24 gap-1" onSubmit={(e) => { e.preventDefault(); const v = Number(prezzo.testo.replace(',', '.')); if (v > 0) modificaPrezzoPiatto(p.id, Math.round(v * 100) / 100); setPrezzo(undefined) }}>
+                      <input autoFocus inputMode="decimal" value={prezzo.testo} onChange={(e) => setPrezzo({ id: p.id, testo: e.target.value })} onBlur={() => setPrezzo(undefined)} className="num h-8 w-full rounded-md border border-calce-200 px-2 text-right" />
+                    </form>
+                  ) : (
+                    <button onClick={() => setPrezzo({ id: p.id, testo: String(p.prezzo) })} className="num w-24 text-right font-semibold text-profondo hover:text-cabina" title="Modifica prezzo">{euroCent(p.prezzo)}</button>
+                  )}
                   {modifica?.id === p.id ? (
                     <form className="flex flex-1 gap-1" onSubmit={(e) => { e.preventDefault(); impostaTraduzione(p.id, lingua, modifica.testo.trim()); setModifica(undefined) }}>
                       <input autoFocus value={modifica.testo} onChange={(e) => setModifica({ id: p.id, testo: e.target.value })} className="h-8 flex-1 rounded-md border border-calce-200 px-2" />
@@ -62,6 +71,7 @@ export function PannelloMenu() {
           </CardBody>
         </Card>
 
+        <div className="space-y-4">
         <Card>
           <CardHeader titolo="QR code del menu" sottotitolo="Da stampare e mettere sui tavoli" />
           <CardBody className="space-y-3 pt-1 text-center">
@@ -74,11 +84,12 @@ export function PannelloMenu() {
             <p className="text-xs text-profondo/50">QR per ogni tavolo: sottosezione <b>Tavoli</b>.</p>
           </CardBody>
         </Card>
+          {vocale
+            ? <AssistenteVocale compatto />
+            : <p className="rounded-lg border border-dashed border-calce-300 p-4 text-sm text-profondo/60">Assistente vocale non attivo: attivalo da Impostazioni → Moduli per modificare il menu a voce.</p>}
+        </div>
       </div>
 
-      {vocale
-        ? <AssistenteVocale />
-        : <p className="rounded-lg border border-dashed border-calce-300 p-4 text-sm text-profondo/60">Assistente vocale non attivo: attivalo da Impostazioni → Moduli per modificare il menu a voce.</p>}
     </div>
   )
 }
