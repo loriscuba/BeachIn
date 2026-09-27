@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDown, Plus, X, Phone, Check } from 'lucide-react'
+import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDown, Plus, X, Phone, Check , Smartphone } from 'lucide-react'
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, ServizioRistoranteGiorno, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
@@ -20,6 +20,7 @@ import { Magazzino } from '@/pages/ristorante/Magazzino'
 import { euro, euroCent, numero, percento } from '@/lib/formatters'
 import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
+import { urlAdminApp } from '@/lib/adminapp'
 
 const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro'> = {
   confermata: 'acqua', in_attesa: 'tenda', annullata: 'neutro',
@@ -160,7 +161,7 @@ export default function Ristorante() {
 
       {tab === 'prenotazioni' && (
         <Card>
-          <CardHeader titolo="Prenotazioni di oggi" sottotitolo={`${prenOggi.length} prenotazioni`} />
+          <CardHeader titolo="Prenotazioni di oggi" sottotitolo={`${prenOggi.length} prenotazioni`} azione={<a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50" title="App del gestore: conferma le richieste dal sito e modifica il menu a voce"><Smartphone className="h-4 w-4" /> App admin</a>} />
           <CardBody className="space-y-4 pt-2">
             <NuovaPrenotazione
               tavoli={tavoli}

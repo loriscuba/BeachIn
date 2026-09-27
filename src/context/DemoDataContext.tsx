@@ -329,6 +329,31 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
   const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
+  // Richieste tavolo dal sito: su Supabase (arrivano dal telefono del cliente, si confermano dall'app admin).
+  useSyncSupabase({
+    tabella: 'richieste_ristorante', righe: richiesteRistorante, setRighe: setRichiesteRistorante,
+    aRiga: (r) => ({
+      id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, data: r.data,
+      turno: r.turno, coperti: r.coperti, stato: r.stato, note: r.note ?? null, ts: r.ts ?? 0,
+    }),
+    daRiga: (r) => ({
+      id: r.id, ricevutaIl: r.ricevuta_il as string, nome: r.nome as string, email: r.email as string, telefono: r.telefono as string,
+      data: r.data as string, turno: r.turno as Turno, coperti: Number(r.coperti), stato: r.stato as RichiestaRistorante['stato'],
+      note: (r.note as string) ?? undefined, ts: Number(r.ts),
+    }),
+    ordina: (a, b) => Number(b.ts) - Number(a.ts),
+  })
+  // Ogni richiesta confermata (anche da un altro dispositivo) entra tra le prenotazioni del ristorante.
+  useEffect(() => {
+    const conf = richiesteRistorante.filter((r) => r.stato === 'confermata')
+    if (!conf.length) return
+    setPrenotazioniRistorante((prev) => {
+      const nuove = conf.filter((r) => !prev.some((p) => p.id === `PR-${r.id}`))
+      return nuove.length
+        ? [...nuove.map((r): PrenotazioneRistorante => ({ id: `PR-${r.id}`, data: r.data, turno: r.turno, nome: r.nome, coperti: r.coperti, stato: 'confermata', note: r.note, telefono: r.telefono, origine: 'sito' })), ...prev]
+        : prev
+    })
+  }, [richiesteRistorante])
   const seqRef = useRef(1)
   const nuovoId = (p: string) => `${p}-${Date.now().toString(36)}-${seqRef.current++}${Math.random().toString(36).slice(2, 6)}`
 
@@ -491,7 +516,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const inviaRichiestaRistorante = useCallback((d: DatiRichiestaRistorante) => {
     setRichiesteRistorante((prev) => [
-      { id: nuovoId('RR'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, coperti: d.coperti, stato: 'da_confermare', note: d.note },
+      { id: nuovoId('RR'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, coperti: d.coperti, stato: 'da_confermare', note: d.note, ts: Date.now() },
       ...prev,
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — tavolo ristorante',
@@ -740,7 +765,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setListinoPubblicato(true)
     setCanaliPrenotazione({ ombrelloni: true, ristorante: true, eventi: true })
     setClientiAggiunti([])
-    setRichiesteRistorante([])
+    if (!supabaseAttivo) setRichiesteRistorante([])
     setRichiesteEventi([])
     setPostaCliente([])
     setPostaAdmin([])
