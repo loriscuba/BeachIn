@@ -21,9 +21,12 @@ import { euroCent } from '@/lib/formatters'
 import { etichetteCategoriaPiatto, etichetteAllergene } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
 import { isInstallata, isIos } from '@/lib/notifichePush'
+import { trascrizioneDisponibile, useRegistrazione } from '@/lib/trascrizione'
 
 /** App aggiunta alla Home su iPhone: Apple non abilita lì il riconoscimento vocale del browser (Web Speech). */
 const appIphone = typeof window !== 'undefined' && isIos() && isInstallata()
+/** Dove il riconoscimento del browser non c'è (app iPhone, Firefox…) si registra e si trascrive con Whisper (Groq). */
+const usaWhisper = typeof window !== 'undefined' && trascrizioneDisponibile() && (appIphone || !(window.SpeechRecognition || window.webkitSpeechRecognition))
 const MSG_APP_IPHONE = 'Nell’app installata su iPhone Apple non permette il riconoscimento vocale del browser. Tocca il campo qui sotto e usa il 🎤 della tastiera (dettatura), poi Invia. In Safari il pulsante microfono funziona.'
 
 type Ruolo = 'utente' | 'assistente' | 'errore'
@@ -192,7 +195,15 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
     }
   }
 
+  const registrazione = useRegistrazione()
   const ascolta = () => {
+    if (usaWhisper) {
+      if (registrazione.stato === 'registro') { registrazione.ferma(); return }
+      if (registrazione.stato === 'trascrivo') return
+      // i nomi dei piatti aiutano Whisper a scriverli giusti
+      void registrazione.avvia((t) => gestisci([t]), (msg) => rispondi(msg, 'errore'), `Menu: ${menu.map((p) => p.nome).join(', ')}`.slice(0, 700))
+      return
+    }
     if (inAscolto) { fermaAscolto(); return }
     avviaAscolto(
       (alts) => gestisci(alts),
@@ -231,8 +242,8 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
           titolo={<span className="inline-flex items-center gap-2"><Mic className="h-4 w-4 text-cabina" /> Assistente vocale</span>}
           sottotitolo="Parla o scrivi per modificare il menu"
           azione={
-            <Badge tono={inAscolto ? 'boa' : supportata ? 'acqua' : 'spento'} puntino>
-              {inAscolto ? 'In ascolto' : supportata ? 'Pronto' : 'Solo testo'}
+            <Badge tono={inAscolto || registrazione.stato === 'registro' ? 'boa' : supportata || usaWhisper ? 'acqua' : 'spento'} puntino>
+              {inAscolto || registrazione.stato === 'registro' ? 'In ascolto' : registrazione.stato === 'trascrivo' ? 'Trascrivo' : supportata || usaWhisper ? 'Pronto' : 'Solo testo'}
             </Badge>
           }
         />
@@ -259,13 +270,15 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
 
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              variante={inAscolto ? 'pericolo' : 'primario'}
+              variante={inAscolto || registrazione.stato === 'registro' ? 'pericolo' : 'primario'}
               onClick={ascolta}
-              disabled={!supportata}
+              disabled={usaWhisper ? registrazione.stato === 'trascrivo' : !supportata}
               className="gap-2"
             >
               <Mic className="h-4 w-4" />
-              {inAscolto ? 'Sto ascoltando…' : 'Parla'}
+              {usaWhisper
+                ? registrazione.stato === 'registro' ? 'Registro… tocca per inviare' : registrazione.stato === 'trascrivo' ? 'Trascrivo…' : 'Parla'
+                : inAscolto ? 'Sto ascoltando…' : 'Parla'}
             </Button>
             <label className="inline-flex cursor-pointer select-none items-center gap-2 text-sm text-profondo/70">
               <input
@@ -296,7 +309,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
             </Button>
           </form>
 
-          {appIphone && <p className="rounded-lg bg-tenda/20 px-3 py-2 text-xs text-profondo/80">🎤 Su iPhone (app dalla Home): tocca il campo qui sopra e usa il microfono della <b>tastiera</b> per dettare il comando, poi Invia.</p>}
+          {appIphone && !usaWhisper && <p className="rounded-lg bg-tenda/20 px-3 py-2 text-xs text-profondo/80">🎤 Su iPhone (app dalla Home): tocca il campo qui sopra e usa il microfono della <b>tastiera</b> per dettare il comando, poi Invia.</p>}
           <details className="text-xs text-profondo/55">
             <summary className="cursor-pointer font-medium text-profondo/70">Cosa posso dire?</summary>
             <ul className="mt-2 space-y-1">
