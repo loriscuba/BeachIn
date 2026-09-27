@@ -1,5 +1,5 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, SCHEMA } from '@/lib/supabase'
 
 type Riga = Record<string, unknown> & { id: string }
 
@@ -56,7 +56,7 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
     })()
     const canale = db
       .channel(`sync-${tabella}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: tabella }, async () => {
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: tabella }, async () => {
         // ricarica la tabella: semplice e sempre coerente (tabelle piccole)
         const { data } = await db.from(tabella).select('*')
         if (attivo && data) applica(data as Riga[])
