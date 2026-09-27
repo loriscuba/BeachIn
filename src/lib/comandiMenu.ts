@@ -75,6 +75,18 @@ function pulisciNome(t: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
+const VERBI = 'aggiungi|aggiungere|inserisci|inserire|togli|rimuovi|rimuovere|elimina|eliminare|cancella|leva|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+
+/**
+ * Divide una frase con più comandi: «togli la pasta allo scoglio e aggiungi il filetto a 14 €»
+ * → ["togli la pasta allo scoglio", "aggiungi il filetto a 14 €"]. Si taglia solo davanti a un verbo di comando
+ * preceduto da "e", "poi", "anche", virgola o punto, così "spaghetti aglio e olio" resta intero.
+ */
+export function dividiComandi(testo: string): string[] {
+  const re = new RegExp(`\\s*(?:[,;.]\\s*(?:e\\s+|poi\\s+|e poi\\s+)?|\\s(?:e poi|poi|e anche|anche|e|ed)\\s+)(?=(?:${VERBI})\\b)`, 'gi')
+  return testo.split(re).map((p) => p.trim()).filter(Boolean)
+}
+
 export function parseComandoMenu(raw: string): ComandoMenu {
   const testo = (raw || '').trim()
   if (!testo) return { azione: 'sconosciuto' }

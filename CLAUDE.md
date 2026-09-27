@@ -72,6 +72,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (`useRegistrazione`: MediaRecorder, tap per iniziare/inviare, max 12 s) → Edge Function `beachin-trascrivi`
   (`supabase/functions/beachin-trascrivi`, modello `whisper-large-v3-turbo`, lingua it, prompt = nomi dei piatti) con segreto
   `GROQ_API_KEY` (Supabase → Edge Functions → Secrets, messo dall'utente). Senza chiave risponde 503. Altrove resta Web Speech.
+- **Più comandi in una frase**: `dividiComandi()` (`comandiMenu.ts`) taglia davanti a un verbo di comando preceduto da e/poi/virgola
+  ("togli X e aggiungi Y a 14 €"); `gestisci` → `esegui` per ogni parte. Layout mobile: griglia `grid-cols-1 [&>*]:min-w-0`.
 - Pagina `AssistenteVocale` (rotta `/assistente-vocale`, gruppo Gestione): parla/scrivi per
   modificare il MENU del ristorante (aggiungi/togli/prezzo/rinomina/leggi/svuota).
 - Voce: `src/hooks/useVoce.ts` (Web Speech API, `it-IT`). Parser a regole: `src/lib/comandiMenu.ts`
