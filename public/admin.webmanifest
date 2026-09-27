@@ -1,0 +1,14 @@
+{
+  "name": "BeachIn Admin — Lido dei Pini",
+  "short_name": "BeachIn Admin",
+  "description": "Prenotazioni del ristorante e menu a voce",
+  "start_url": "./#/adminapp",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EDF1F2",
+  "theme_color": "#0F3B4C",
+  "icons": [
+    { "src": "admin-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "admin-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
