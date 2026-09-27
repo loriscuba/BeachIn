@@ -12,7 +12,7 @@ import { Mic, Send, Trash2, Volume2, UtensilsCrossed } from 'lucide-react'
 import type { CategoriaPiatto, Piatto } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useVoce } from '@/hooks/useVoce'
-import { parseComandoMenu } from '@/lib/comandiMenu'
+import { dividiComandi, parseComandoMenu } from '@/lib/comandiMenu'
 import { trovaMigliore } from '@/lib/fuzzy'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -77,6 +77,7 @@ function prezzoParlato(p: number): string {
 }
 
 const ESEMPI = [
+  'togli il guazzetto di mare e aggiungi il filetto a 14 €',
   'Aggiungi spaghetti allo scoglio a 18 euro',
   'Aggiungi tiramisù categoria dolci a 6,50',
   'Cambia il prezzo della carbonara a 13 euro',
@@ -124,10 +125,21 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
       : rispondi(`Non trovo «${nome}» nel menu.`, 'errore')
 
   function gestisci(alternative: string[]) {
-    const alts = alternative.map((a) => a.trim()).filter(Boolean)
-    if (!alts.length) return
+    const pulite = alternative.map((a) => a.trim()).filter(Boolean)
+    if (!pulite.length) return
+    // più comandi nella stessa frase ("togli X e aggiungi Y a 14 €"): li eseguo in ordine
+    const parti = dividiComandi(pulite[0])
+    if (parti.length > 1) {
+      aggiungiMessaggio('utente', pulite[0])
+      parti.forEach((p) => esegui([p], false))
+      return
+    }
+    esegui(pulite, true)
+  }
+
+  function esegui(alts: string[], mostraFrase: boolean) {
     const testo = alts[0]
-    aggiungiMessaggio('utente', testo)
+    if (mostraFrase) aggiungiMessaggio('utente', testo)
     const c = parseComandoMenu(testo)
 
     switch (c.azione) {
@@ -235,7 +247,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
   }, [menu, sezioniMenu])
 
   return (
-    <div className={compatto ? '' : 'grid gap-4 lg:grid-cols-2'}>
+    <div className={compatto ? '' : 'grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0'}>
       {/* Assistente */}
       <Card className="flex flex-col">
         <CardHeader
@@ -250,7 +262,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
         <CardBody className="flex flex-1 flex-col gap-3 pt-2">
           <div
             ref={chatRef}
-            className={cn('flex flex-col gap-2 overflow-y-auto rounded-lg border border-calce-200 bg-calce/60 p-3', compatto ? 'h-32' : 'h-72')}
+            className={cn('flex flex-col gap-2 overflow-y-auto rounded-lg border border-calce-200 bg-calce/60 p-3', compatto ? 'h-32' : 'h-52 sm:h-72')}
             aria-live="polite"
           >
             {messaggi.map((m) => (
@@ -352,9 +364,9 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
                       )}
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-profondo">{p.nome}</p>
+                        <p className="break-words text-sm font-medium text-profondo">{p.nome}</p>
                         {p.allergeni.length > 0 && (
-                          <p className="truncate text-[11px] text-profondo/45">
+                          <p className="text-[11px] text-profondo/45">
                             {p.allergeni.map((a) => etichetteAllergene[a]).join(', ')}
                           </p>
                         )}
