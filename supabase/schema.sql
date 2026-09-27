@@ -90,3 +90,33 @@ do $$ begin
     alter publication supabase_realtime add table beachin.richieste_ristorante;
   end if;
 end $$;
+
+-- Notifiche push app admin (vedi supabase/functions/beachin-push). La chiave privata VAPID va nel Vault:
+--   select vault.create_secret('<chiave privata VAPID>', 'beachin_vapid_private');
+create extension if not exists pg_net with schema extensions;
+create table if not exists beachin.push_iscrizioni (
+  endpoint text primary key, p256dh text not null, auth text not null, url text,
+  creata_il timestamptz not null default now()
+);
+alter table beachin.push_iscrizioni enable row level security;
+revoke all on beachin.push_iscrizioni from anon, authenticated;
+create or replace function beachin.registra_push(p_endpoint text, p_p256dh text, p_auth text, p_url text)
+returns void language sql security definer set search_path = '' as $$
+  insert into beachin.push_iscrizioni (endpoint, p256dh, auth, url) values (p_endpoint, p_p256dh, p_auth, p_url)
+  on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth, url = excluded.url;
+$$;
+revoke all on function beachin.registra_push(text, text, text, text) from public;
+grant execute on function beachin.registra_push(text, text, text, text) to anon, authenticated;
+create or replace function beachin.notifica_nuova_richiesta()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  perform net.http_post(
+    url := 'https://exchjppslwhbnbzuhfqs.supabase.co/functions/v1/beachin-push',
+    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer <chiave anon>'),
+    body := jsonb_build_object('record', to_jsonb(new))
+  );
+  return new;
+end $$;
+drop trigger if exists notifica_nuova_richiesta on beachin.richieste_ristorante;
+create trigger notifica_nuova_richiesta after insert on beachin.richieste_ristorante
+  for each row when (new.stato = 'da_confermare') execute function beachin.notifica_nuova_richiesta();
