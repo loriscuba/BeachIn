@@ -68,7 +68,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `main.tsx` converte `#/percorso` in path con BrowserRouter.
 
 ## Assistente vocale (menu a voce)
-- iPhone con app aggiunta alla Home: Web Speech non disponibile (limite Apple) → messaggio + suggerimento dettatura da tastiera (`appIphone`).
+- iPhone con app aggiunta alla Home (e browser senza Web Speech): **Whisper su Groq** (piano free). `src/lib/trascrizione.ts`
+  (`useRegistrazione`: MediaRecorder, tap per iniziare/inviare, max 12 s) → Edge Function `beachin-trascrivi`
+  (`supabase/functions/beachin-trascrivi`, modello `whisper-large-v3-turbo`, lingua it, prompt = nomi dei piatti) con segreto
+  `GROQ_API_KEY` (Supabase → Edge Functions → Secrets, messo dall'utente). Senza chiave risponde 503. Altrove resta Web Speech.
 - Pagina `AssistenteVocale` (rotta `/assistente-vocale`, gruppo Gestione): parla/scrivi per
   modificare il MENU del ristorante (aggiungi/togli/prezzo/rinomina/leggi/svuota).
 - Voce: `src/hooks/useVoce.ts` (Web Speech API, `it-IT`). Parser a regole: `src/lib/comandiMenu.ts`
