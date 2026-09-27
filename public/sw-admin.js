@@ -23,7 +23,8 @@ self.addEventListener('notificationclick', (e) => {
   e.waitUntil((async () => {
     const finestre = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     for (const f of finestre) {
-      if (f.url.includes('adminapp')) { await f.focus(); return }
+      // app già aperta (magari sospesa): la porto in primo piano e le chiedo di aggiornarsi
+      if (f.url.includes('adminapp')) { await f.focus(); f.postMessage({ tipo: 'aggiorna' }); return }
     }
     await self.clients.openWindow(url)
   })())

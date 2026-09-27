@@ -54,15 +54,30 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
       }
       pronto.current = true
     })()
+    // ricarica la tabella: semplice e sempre coerente (tabelle piccole)
+    const ricarica = async () => {
+      if (!pronto.current) return
+      const { data } = await db.from(tabella).select('*')
+      if (attivo && data) applica(data as Riga[])
+    }
     const canale = db
       .channel(`sync-${tabella}`)
-      .on('postgres_changes', { event: '*', schema: SCHEMA, table: tabella }, async () => {
-        // ricarica la tabella: semplice e sempre coerente (tabelle piccole)
-        const { data } = await db.from(tabella).select('*')
-        if (attivo && data) applica(data as Riga[])
-      })
-      .subscribe()
-    return () => { attivo = false; void db.removeChannel(canale) }
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: tabella }, () => void ricarica())
+      // (ri)connessione del canale live: recupera quanto perso mentre era giù
+      .subscribe((stato) => { if (stato === 'SUBSCRIBED') void ricarica() })
+    // Su telefono l'app in background viene sospesa e il canale live cade:
+    // quando torna in primo piano (es. tocco su una notifica) o torna la rete, rileggo i dati.
+    const suVisibile = () => { if (document.visibilityState === 'visible') void ricarica() }
+    document.addEventListener('visibilitychange', suVisibile)
+    window.addEventListener('online', suVisibile)
+    window.addEventListener('pageshow', suVisibile)
+    return () => {
+      attivo = false
+      void db.removeChannel(canale)
+      document.removeEventListener('visibilitychange', suVisibile)
+      window.removeEventListener('online', suVisibile)
+      window.removeEventListener('pageshow', suVisibile)
+    }
   }, [tabella, semina, setRighe])
 
   // Scrittura delle differenze locali
