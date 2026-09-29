@@ -220,11 +220,22 @@ interface DemoDataValue {
 
   // Ristorante — tavoli e prenotazioni (presa a telefono + assegnazione tavolo).
   // Dati statici in memoria, pronti per il DB.
+  /** Disposizione standard (modello) della sala. */
   tavoli: Tavolo[]
-  aggiungiTavolo: (numero: number, posti: number, zona: Tavolo['zona']) => void
-  rimuoviTavolo: (id: string) => void
-  spostaTavolo: (id: string, x: number, y: number) => void
-  modificaTavolo: (id: string, dati: { numero?: number; posti?: number; zona?: Tavolo['zona'] }) => void
+  /** Disposizioni personalizzate per giorno (ISO): se manca, il giorno usa lo standard. */
+  tavoliGiorno: Record<string, Tavolo[]>
+  /** Tavoli di un giorno: la sua disposizione personalizzata oppure lo standard. */
+  tavoliDelGiorno: (giorno: string) => Tavolo[]
+  // Senza `giorno` le azioni modificano lo standard; con `giorno` solo quel giorno
+  // (alla prima modifica il giorno riceve una copia dello standard).
+  aggiungiTavolo: (numero: number, posti: number, zona: Tavolo['zona'], giorno?: string) => void
+  rimuoviTavolo: (id: string, giorno?: string) => void
+  spostaTavolo: (id: string, x: number, y: number, giorno?: string) => void
+  modificaTavolo: (id: string, dati: { numero?: number; posti?: number; zona?: Tavolo['zona'] }, giorno?: string) => void
+  /** Il giorno torna alla disposizione standard (le prenotazioni su tavoli non più presenti restano da assegnare). */
+  ripristinaDisposizione: (giorno: string) => void
+  /** La disposizione del giorno diventa il nuovo standard. */
+  salvaComeStandard: (giorno: string) => void
   // Ristorante — magazzino cucina
   magazzino: ArticoloMagazzino[]
   movimentaArticolo: (id: string, delta: number) => void
@@ -327,6 +338,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
+  const [tavoliGiorno, setTavoliGiorno] = useState<Record<string, Tavolo[]>>({})
   const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
   // Richieste tavolo dal sito: su Supabase (arrivano dal telefono del cliente, si confermano dall'app admin).
@@ -698,21 +710,49 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // — Ristorante: tavoli e prenotazioni —
-  const aggiungiTavolo = useCallback((numero: number, posti: number, zona: Tavolo['zona']) => {
-    setTavoli((prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona, ...posInZona(zona, prev.length), forma: posti > 4 ? 'quadrato' : 'tondo' }])
+  // Standard = `tavoli`; un giorno modificato ha la sua copia in `tavoliGiorno` (stessi id,
+  // così le prenotazioni restano sui loro tavoli).
+  const tavoliRef = useRef(tavoli)
+  const tavoliGiornoRef = useRef(tavoliGiorno)
+  useEffect(() => { tavoliRef.current = tavoli }, [tavoli])
+  useEffect(() => { tavoliGiornoRef.current = tavoliGiorno }, [tavoliGiorno])
+  const tavoliDelGiorno = useCallback((giorno: string) => tavoliGiorno[giorno] ?? tavoli, [tavoli, tavoliGiorno])
+  const cambiaTavoli = useCallback((giorno: string | undefined, fn: (prev: Tavolo[]) => Tavolo[]) => {
+    if (!giorno) { setTavoli(fn); return }
+    const base = tavoliGiornoRef.current[giorno] ?? tavoliRef.current
+    setTavoliGiorno((prev) => ({ ...prev, [giorno]: fn(prev[giorno] ?? base) }))
   }, [])
-  const spostaTavolo = useCallback((id: string, x: number, y: number) => {
+  const aggiungiTavolo = useCallback((numero: number, posti: number, zona: Tavolo['zona'], giorno?: string) => {
+    cambiaTavoli(giorno, (prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona, ...posInZona(zona, prev.length), forma: posti > 4 ? 'quadrato' : 'tondo' }])
+  }, [cambiaTavoli])
+  const spostaTavolo = useCallback((id: string, x: number, y: number, giorno?: string) => {
     // la zona segue la posizione sulla pianta (Veranda/Interno a sx, Ciringuito a dx)
-    setTavoli((prev) => prev.map((t) => (t.id === id ? { ...t, x, y, zona: zonaDaPos(x, y) } : t)))
-  }, [])
-  const modificaTavolo = useCallback((id: string, dati: { numero?: number; posti?: number; zona?: Tavolo['zona'] }) => {
-    setTavoli((prev) => prev.map((t, i) => {
+    cambiaTavoli(giorno, (prev) => prev.map((t) => (t.id === id ? { ...t, x, y, zona: zonaDaPos(x, y) } : t)))
+  }, [cambiaTavoli])
+  const modificaTavolo = useCallback((id: string, dati: { numero?: number; posti?: number; zona?: Tavolo['zona'] }, giorno?: string) => {
+    cambiaTavoli(giorno, (prev) => prev.map((t, i) => {
       if (t.id !== id) return t
       const nuovo = { ...t, ...dati }
       if (dati.posti) nuovo.forma = dati.posti > 4 ? 'quadrato' : 'tondo'
       // cambio zona dal pannello → il tavolo si sposta dentro la nuova zona
       return dati.zona && dati.zona !== t.zona ? { ...nuovo, ...posInZona(dati.zona, i) } : nuovo
     }))
+  }, [cambiaTavoli])
+  const ripristinaDisposizione = useCallback((giorno: string) => {
+    const standard = new Set(tavoliRef.current.map((t) => t.id))
+    setTavoliGiorno((prev) => { const { [giorno]: _tolto, ...resto } = prev; return resto })
+    // i tavoli aggiunti solo per quel giorno spariscono: le loro prenotazioni tornano da assegnare
+    setPrenotazioniRistorante((prev) => prev.map((p) => (p.data === giorno && p.tavoloId && !standard.has(p.tavoloId) ? { ...p, tavoloId: undefined } : p)))
+  }, [])
+  const salvaComeStandard = useCallback((giorno: string) => {
+    const del = tavoliGiornoRef.current[giorno]
+    if (!del) return
+    const nuovi = new Set(del.map((t) => t.id))
+    setTavoli(clona(del))
+    setTavoliGiorno((prev) => { const { [giorno]: _tolto, ...resto } = prev; return resto })
+    // gli altri giorni senza disposizione propria seguono il nuovo standard
+    const personalizzati = tavoliGiornoRef.current
+    setPrenotazioniRistorante((prev) => prev.map((p) => (p.tavoloId && !personalizzati[p.data] && !nuovi.has(p.tavoloId) ? { ...p, tavoloId: undefined } : p)))
   }, [])
   // — Ristorante: magazzino cucina —
   const movimentaArticolo = useCallback((id: string, delta: number) => {
@@ -724,11 +764,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const rimuoviArticolo = useCallback((id: string) => {
     setMagazzino((prev) => prev.filter((a) => a.id !== id))
   }, [])
-  const rimuoviTavolo = useCallback((id: string) => {
-    setTavoli((prev) => prev.filter((t) => t.id !== id))
-    // il tavolo eliminato non deve restare assegnato a una prenotazione
-    setPrenotazioniRistorante((prev) => prev.map((p) => (p.tavoloId === id ? { ...p, tavoloId: undefined } : p)))
-  }, [])
+  const rimuoviTavolo = useCallback((id: string, giorno?: string) => {
+    cambiaTavoli(giorno, (prev) => prev.filter((t) => t.id !== id))
+    // il tavolo eliminato non deve restare assegnato a una prenotazione: solo quel giorno,
+    // oppure (standard) nei giorni che seguono lo standard
+    const personalizzati = tavoliGiornoRef.current
+    const tocca = (data: string) => (giorno ? data === giorno : !personalizzati[data])
+    setPrenotazioniRistorante((prev) => prev.map((p) => (p.tavoloId === id && tocca(p.data) ? { ...p, tavoloId: undefined } : p)))
+  }, [cambiaTavoli])
   const creaPrenotazioneRistorante = useCallback((d: DatiPrenotazioneRistorante) => {
     setPrenotazioniRistorante((prev) => [
       { id: nuovoId('PR'), data: d.data ?? config.stagione.oggi, turno: d.turno, nome: d.nome, coperti: d.coperti, tavoloId: d.tavoloId, stato: 'confermata', note: d.note, telefono: d.telefono, origine: 'manuale' },
@@ -775,6 +818,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setGalleria(clona(statoSito.galleria))
     if (!supabaseAttivo) setComande([])
     setTavoli(clona(seedTavoli))
+    setTavoliGiorno({})
     setMagazzino(clona(seedMagazzino))
     setPrenotazioniRistorante(clona(seedPrenotazioniRist))
     setDemoInCorso(false)
@@ -928,10 +972,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rimuoviFoto,
       rinominaFoto,
       tavoli,
+      tavoliGiorno,
+      tavoliDelGiorno,
       aggiungiTavolo,
       rimuoviTavolo,
       spostaTavolo,
       modificaTavolo,
+      ripristinaDisposizione,
+      salvaComeStandard,
       magazzino,
       movimentaArticolo,
       aggiungiArticolo,
@@ -1007,10 +1055,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rimuoviFoto,
       rinominaFoto,
       tavoli,
+      tavoliGiorno,
+      tavoliDelGiorno,
       aggiungiTavolo,
       rimuoviTavolo,
       spostaTavolo,
       modificaTavolo,
+      ripristinaDisposizione,
+      salvaComeStandard,
       magazzino,
       movimentaArticolo,
       aggiungiArticolo,

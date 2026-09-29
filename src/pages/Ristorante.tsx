@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDown, Plus, X, Phone, Check , Smartphone } from 'lucide-react'
+import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDown, X, Phone, Check , Smartphone } from 'lucide-react'
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, ServizioRistoranteGiorno, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
@@ -18,7 +18,7 @@ import { Planimetria } from '@/pages/ristorante/Planimetria'
 import { CalendarioPrenotazioni } from '@/pages/ristorante/CalendarioPrenotazioni'
 import { format, parseISO } from 'date-fns'
 import { it as itLocale } from 'date-fns/locale'
-import { ZONE, nomeZona } from '@/lib/zoneTavoli'
+import { nomeZona } from '@/lib/zoneTavoli'
 import { Magazzino } from '@/pages/ristorante/Magazzino'
 import { euro, euroCent, numero, percento } from '@/lib/formatters'
 import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
@@ -31,7 +31,6 @@ const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro'> = {
 const etichettaStato: Record<StatoPrenotazione, string> = {
   confermata: 'Confermata', in_attesa: 'In attesa', annullata: 'Annullata',
 }
-const zone = ZONE.map((z) => ({ chiave: z.zona, label: z.nome }))
 const etichettaZona = nomeZona
 
 type Sezione = 'prenotazioni' | 'menu' | 'magazzino'
@@ -48,8 +47,7 @@ export default function Ristorante() {
   // Tavoli e prenotazioni sono anch'essi mutabili: si prenota a telefono e si
   // assegna il tavolo dal vivo.
   const {
-    menu, sezioniMenu, tavoli, prenotazioniRistorante, richiesteRistorante, confermaRistorante, rifiutaRistorante,
-    aggiungiTavolo,
+    menu, sezioniMenu, tavoliDelGiorno, prenotazioniRistorante, richiesteRistorante, confermaRistorante, rifiutaRistorante,
     creaPrenotazioneRistorante, assegnaTavolo, impostaStatoPrenotazione, rimuoviPrenotazioneRistorante,
   } = useDemoData()
   const [servizi, setServizi] = useState<ServizioRistoranteGiorno[]>([])
@@ -73,11 +71,13 @@ export default function Ristorante() {
     return { coperti, incasso, scontrino: coperti ? incasso / coperti : 0, incidenzaFc: ricNum ? fcNum / ricNum : 0 }
   }, [servizi, menu, oggi])
 
-  const tavoliPerId = useMemo(() => new Map(tavoli.map((t) => [t.id, t])), [tavoli])
 
   // Prenotazioni: giorno scelto nel calendario (di default oggi). Tavoli occupati per
   // turno di quel giorno → per non assegnare due volte; ogni giorno ha la sua disposizione.
   const [giorno, setGiorno] = useState(oggi)
+  // ogni giorno ha la sua disposizione (o quella standard)
+  const tavoli = tavoliDelGiorno(giorno)
+  const tavoliPerId = useMemo(() => new Map(tavoli.map((t) => [t.id, t])), [tavoli])
   const prenGiorno = useMemo(() => prenotazioniRistorante.filter((p) => p.data === giorno), [prenotazioniRistorante, giorno])
   const richiesteGiorno = richiesteRistorante.filter((r) => r.stato === 'da_confermare' && r.data === giorno)
   const occupatiPerTurno = useMemo(() => {
@@ -205,7 +205,7 @@ export default function Ristorante() {
                   </ul>
                 </div>
               )}
-              <Planimetria key={giorno} prenGiorno={prenGiorno} giorno={giorno} oggi={oggi} nuovoTavolo={<NuovoTavolo tavoli={tavoli} onCrea={aggiungiTavolo} />} />
+              <Planimetria key={giorno} prenGiorno={prenGiorno} giorno={giorno} oggi={oggi} />
               <Card>
                 <CardHeader titolo="Lista prenotazioni" sottotitolo={`${prenGiorno.filter((p) => p.stato !== 'annullata').length} attive · assegna o cambia il tavolo`} />
                 <CardBody className="pt-1">
@@ -375,59 +375,6 @@ function NuovaPrenotazione({
         <Button variante="primario" dimensione="sm" onClick={salva} disabled={nome.trim() === ''}>
           <Check className="h-4 w-4" /> Salva prenotazione
         </Button>
-      </div>
-    </div>
-  )
-}
-
-/** Form per creare un tavolo (nome = numero). */
-function NuovoTavolo({ tavoli, onCrea }: { tavoli: Tavolo[]; onCrea: (numero: number, posti: number, zona: Tavolo['zona']) => void }) {
-  const prossimo = (tavoli.reduce((max, t) => Math.max(max, t.numero), 0) || 0) + 1
-  const [aperto, setAperto] = useState(false)
-  const [numero, setNumero] = useState(prossimo)
-  const [posti, setPosti] = useState(4)
-  const [zona, setZona] = useState<Tavolo['zona']>('veranda')
-
-  const salva = () => {
-    if (!Number.isFinite(numero) || numero <= 0) return
-    onCrea(Math.round(numero), Math.max(1, Math.round(posti)), zona)
-    setAperto(false); setNumero(numero + 1); setPosti(4); setZona('veranda')
-  }
-
-  if (!aperto) {
-    return (
-      <button
-        type="button"
-        onClick={() => { setNumero((tavoli.reduce((m, t) => Math.max(m, t.numero), 0) || 0) + 1); setAperto(true) }}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-calce-300 py-2 text-sm text-profondo/60 hover:border-cabina hover:text-cabina"
-      >
-        <Plus className="h-4 w-4" /> Aggiungi tavolo
-      </button>
-    )
-  }
-
-  return (
-    <div className="rounded-xl border border-calce-200 bg-calce/50 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-profondo">Nuovo tavolo</span>
-        <button type="button" onClick={() => setAperto(false)} className="grid h-7 w-7 place-content-center rounded-md text-profondo/45 hover:bg-white" aria-label="Chiudi"><X className="h-4 w-4" /></button>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-profondo/60">Numero</span>
-          <input type="number" min={1} value={numero} onChange={(e) => setNumero(Number(e.target.value))} className="num h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-profondo/60">Posti</span>
-          <input type="number" min={1} value={posti} onChange={(e) => setPosti(Number(e.target.value))} className="num h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-profondo/60">Zona</span>
-          <Select value={zona} onChange={(e) => setZona(e.target.value as Tavolo['zona'])} opzioni={zone.map((z) => ({ valore: z.chiave, etichetta: z.label }))} />
-        </label>
-      </div>
-      <div className="mt-3 flex justify-end">
-        <Button variante="primario" dimensione="sm" onClick={salva}><Check className="h-4 w-4" /> Aggiungi</Button>
       </div>
     </div>
   )

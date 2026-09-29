@@ -1,10 +1,12 @@
-import { useRef, useState, type ReactNode } from 'react'
-import { Printer, Trash2, Move, Users, Phone, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Printer, Trash2, Move, Users, Phone, X, Plus, Check, RotateCcw, Save, LayoutGrid } from 'lucide-react'
 import type { PrenotazioneRistorante, Tavolo, Turno } from '@/data/types'
 import { ZONE, nomeZona } from '@/lib/zoneTavoli'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Select } from '@/components/ui/Select'
 import { QrCodice, stampaQr } from '@/components/QrCodice'
 import { urlMenu } from '@/lib/menuLingue'
 import { config } from '@/data/config'
@@ -12,12 +14,21 @@ import { cn } from '@/lib/cn'
 import { format, parseISO } from 'date-fns'
 import { it as itLocale } from 'date-fns/locale'
 
-/** Tavoli del giorno scelto: planimetria trascinabile, occupazione per turno e QR per tavolo. */
-export function Planimetria({ prenGiorno, giorno, oggi, nuovoTavolo }: { prenGiorno: PrenotazioneRistorante[]; giorno: string; oggi: string; nuovoTavolo: ReactNode }) {
-  const { tavoli, spostaTavolo, rimuoviTavolo, modificaTavolo, assegnaTavolo } = useDemoData()
+/**
+ * Tavoli del giorno scelto: planimetria trascinabile, occupazione per turno e QR per tavolo.
+ * Ogni giorno parte dalla disposizione standard; modificandolo diventa "personalizzato" e
+ * con "Disposizione standard" torna al modello. In modalità Standard si modifica il modello.
+ */
+export function Planimetria({ prenGiorno, giorno, oggi }: { prenGiorno: PrenotazioneRistorante[]; giorno: string; oggi: string }) {
+  const { tavoliGiorno, tavoliDelGiorno, aggiungiTavolo, spostaTavolo, rimuoviTavolo, modificaTavolo, assegnaTavolo, ripristinaDisposizione, salvaComeStandard } = useDemoData()
+  const [standard, setStandard] = useState(false)
+  // azioni sul giorno oppure (modalità Standard) sul modello
+  const g = standard ? undefined : giorno
+  const tavoli = tavoliDelGiorno(standard ? '' : giorno)
+  const personalizzato = !!tavoliGiorno[giorno]
   // Oggi parte dal turno in corso; gli altri giorni dal pranzo.
   const [turno, setTurno] = useState<Turno>(giorno === oggi && new Date().getHours() >= 16 ? 'cena' : 'pranzo')
-  const attive = prenGiorno.filter((p) => p.turno === turno && p.stato !== 'annullata')
+  const attive = standard ? [] : prenGiorno.filter((p) => p.turno === turno && p.stato !== 'annullata')
   const occupati = new Set(attive.flatMap((p) => (p.tavoloId ? [p.tavoloId] : [])))
   const area = useRef<HTMLDivElement>(null)
   const [trascina, setTrascina] = useState<{ id: string; x: number; y: number }>()
@@ -34,14 +45,27 @@ export function Planimetria({ prenGiorno, giorno, oggi, nuovoTavolo }: { prenGio
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="lg:col-span-2">
         <CardHeader
-          titolo={`Tavoli · ${giorno === oggi ? 'oggi' : format(parseISO(giorno), 'EEE d MMM', { locale: itLocale })}`}
-          sottotitolo={`${tavoli.length} tavoli · ${tavoli.reduce((s, t) => s + t.posti, 0)} posti · ${occupati.size} occupati a ${turno} — trascina per spostare`}
+          titolo={<span className="inline-flex flex-wrap items-center gap-2">
+            {standard ? 'Disposizione standard' : `Tavoli · ${giorno === oggi ? 'oggi' : format(parseISO(giorno), 'EEE d MMM', { locale: itLocale })}`}
+            {!standard && (personalizzato ? <Badge tono="tenda">Personalizzata</Badge> : <Badge tono="neutro">Standard</Badge>)}
+          </span>}
+          sottotitolo={standard
+            ? `${tavoli.length} tavoli · ${tavoli.reduce((s, t) => s + t.posti, 0)} posti — il modello da cui parte ogni giorno`
+            : `${tavoli.length} tavoli · ${tavoli.reduce((s, t) => s + t.posti, 0)} posti · ${occupati.size} occupati a ${turno} — trascina per spostare (solo questo giorno)`}
           azione={<div className="flex flex-wrap gap-2">
             <div className="flex rounded-lg border border-calce-200 p-0.5 text-sm">
+              <button type="button" onClick={() => setStandard(false)} className={cn('rounded-md px-3 py-1', !standard ? 'bg-profondo text-white' : 'text-profondo/60')}>Questo giorno</button>
+              <button type="button" onClick={() => { setStandard(true); setSelId(undefined) }} className={cn('inline-flex items-center gap-1 rounded-md px-3 py-1', standard ? 'bg-profondo text-white' : 'text-profondo/60')}><LayoutGrid className="h-3.5 w-3.5" /> Standard</button>
+            </div>
+            {!standard && <div className="flex rounded-lg border border-calce-200 p-0.5 text-sm">
               {(['pranzo', 'cena'] as Turno[]).map((x) => (
                 <button key={x} type="button" onClick={() => setTurno(x)} className={cn('rounded-md px-3 py-1 capitalize', turno === x ? 'bg-profondo text-white' : 'text-profondo/60')}>{x}</button>
               ))}
-            </div>
+            </div>}
+            {!standard && personalizzato && <>
+              <Button onClick={() => ripristinaDisposizione(giorno)} title="Il giorno torna alla disposizione standard"><RotateCcw className="h-4 w-4" /> Disposizione standard</Button>
+              <Button onClick={() => salvaComeStandard(giorno)} title="Usa questa disposizione come nuovo standard"><Save className="h-4 w-4" /> Salva come standard</Button>
+            </>}
             <Button onClick={() => stampaQr([...tavoli].sort((a, b) => a.numero - b.numero).map((t) => ({ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) })), config.nome)}><Printer className="h-4 w-4" /> QR di tutti i tavoli</Button>
           </div>}
         />
@@ -50,7 +74,7 @@ export function Planimetria({ prenGiorno, giorno, oggi, nuovoTavolo }: { prenGio
             ref={area}
             className="relative aspect-[16/10] w-full touch-none select-none overflow-hidden rounded-xl border border-calce-200 bg-white"
             onPointerMove={(e) => trascina && setTrascina({ id: trascina.id, ...pos(e) })}
-            onPointerUp={() => { if (trascina) spostaTavolo(trascina.id, trascina.x, trascina.y); setTrascina(undefined) }}
+            onPointerUp={() => { if (trascina) spostaTavolo(trascina.id, trascina.x, trascina.y, g); setTrascina(undefined) }}
             onPointerLeave={() => setTrascina(undefined)}
           >
             {ZONE.map((z) => (
@@ -80,7 +104,7 @@ export function Planimetria({ prenGiorno, giorno, oggi, nuovoTavolo }: { prenGio
               )
             })}
           </div>
-          <p className="mt-2 flex items-center gap-3 text-xs text-profondo/55">
+          <p className="mt-2 flex flex-wrap items-center gap-3 text-xs text-profondo/55">
             <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-full bg-cabina" /> occupato ({turno})</span>
             <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-full border-2 border-profondo/25" /> libero</span>
             <span className="inline-flex items-center gap-1"><Move className="h-3 w-3" /> la zona si aggiorna in base a dove lo lasci</span>
@@ -90,18 +114,19 @@ export function Planimetria({ prenGiorno, giorno, oggi, nuovoTavolo }: { prenGio
 
       <div className="space-y-4">
         <Card>
-          <CardHeader titolo={sel ? `Tavolo ${sel.numero}` : 'Seleziona un tavolo'} sottotitolo={sel ? `${nomeZona(sel.zona)} · ${turno}` : 'Clicca un tavolo sulla pianta'} />
+          <CardHeader titolo={sel ? `Tavolo ${sel.numero}` : 'Seleziona un tavolo'} sottotitolo={sel ? `${nomeZona(sel.zona)} · ${standard ? 'standard' : turno}` : 'Clicca un tavolo sulla pianta'} />
           {sel && <PannelloTavolo
             key={sel.id}
             tavolo={sel}
             turno={turno}
+            standard={standard}
             attive={attive}
-            onModifica={(d) => modificaTavolo(sel.id, d)}
+            onModifica={(d) => modificaTavolo(sel.id, d, g)}
             onAssegna={assegnaTavolo}
-            onElimina={() => { rimuoviTavolo(sel.id); setSelId(undefined) }}
+            onElimina={() => { rimuoviTavolo(sel.id, g); setSelId(undefined) }}
           />}
         </Card>
-        <Card><CardBody>{nuovoTavolo}</CardBody></Card>
+        <Card><CardBody><NuovoTavolo key={standard ? 'std' : giorno} tavoli={tavoli} onCrea={(n, p, z) => aggiungiTavolo(n, p, z, g)} /></CardBody></Card>
       </div>
     </div>
   )
@@ -111,8 +136,8 @@ export function Planimetria({ prenGiorno, giorno, oggi, nuovoTavolo }: { prenGio
 const campo = 'num h-9 w-full rounded-lg border border-calce-200 bg-white px-2 text-sm text-profondo focus-visible:focus-ring'
 
 /** Dettaglio tavolo: modifica (numero/posti/zona), ospiti del turno, prenotazioni confermate da assegnare, QR. */
-function PannelloTavolo({ tavolo: t, turno, attive, onModifica, onAssegna, onElimina }: {
-  tavolo: Tavolo; turno: Turno; attive: PrenotazioneRistorante[]
+function PannelloTavolo({ tavolo: t, turno, standard, attive, onModifica, onAssegna, onElimina }: {
+  tavolo: Tavolo; turno: Turno; standard: boolean; attive: PrenotazioneRistorante[]
   onModifica: (d: { numero?: number; posti?: number; zona?: Tavolo['zona'] }) => void
   onAssegna: (prenId: string, tavoloId?: string) => void
   onElimina: () => void
@@ -133,6 +158,7 @@ function PannelloTavolo({ tavolo: t, turno, attive, onModifica, onAssegna, onEli
           </select></label>
       </div>
 
+      {!standard && <>
       <div>
         <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-profondo/50">Ospiti a {turno}</p>
         {ospiti.length === 0 && <p className="text-sm text-profondo/45">Nessuno: il tavolo è libero.</p>}
@@ -161,6 +187,7 @@ function PannelloTavolo({ tavolo: t, turno, attive, onModifica, onAssegna, onEli
           ))}
         </ul>
       </div>
+      </>}
 
       <div className="flex items-center justify-between gap-2 border-t border-calce-200 pt-3">
         <QrCodice url={urlMenu(t.numero)} className="w-16" />
@@ -170,5 +197,60 @@ function PannelloTavolo({ tavolo: t, turno, attive, onModifica, onAssegna, onEli
         </div>
       </div>
     </CardBody>
+  )
+}
+
+const zone = ZONE.map((z) => ({ chiave: z.zona, label: z.nome }))
+
+/** Form per creare un tavolo (nome = numero). */
+function NuovoTavolo({ tavoli, onCrea }: { tavoli: Tavolo[]; onCrea: (numero: number, posti: number, zona: Tavolo['zona']) => void }) {
+  const prossimo = (tavoli.reduce((max, t) => Math.max(max, t.numero), 0) || 0) + 1
+  const [aperto, setAperto] = useState(false)
+  const [numero, setNumero] = useState(prossimo)
+  const [posti, setPosti] = useState(4)
+  const [zona, setZona] = useState<Tavolo['zona']>('veranda')
+
+  const salva = () => {
+    if (!Number.isFinite(numero) || numero <= 0) return
+    onCrea(Math.round(numero), Math.max(1, Math.round(posti)), zona)
+    setAperto(false); setNumero(numero + 1); setPosti(4); setZona('veranda')
+  }
+
+  if (!aperto) {
+    return (
+      <button
+        type="button"
+        onClick={() => { setNumero((tavoli.reduce((m, t) => Math.max(m, t.numero), 0) || 0) + 1); setAperto(true) }}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-calce-300 py-2 text-sm text-profondo/60 hover:border-cabina hover:text-cabina"
+      >
+        <Plus className="h-4 w-4" /> Aggiungi tavolo
+      </button>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-calce-200 bg-calce/50 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-semibold text-profondo">Nuovo tavolo</span>
+        <button type="button" onClick={() => setAperto(false)} className="grid h-7 w-7 place-content-center rounded-md text-profondo/45 hover:bg-white" aria-label="Chiudi"><X className="h-4 w-4" /></button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-profondo/60">Numero</span>
+          <input type="number" min={1} value={numero} onChange={(e) => setNumero(Number(e.target.value))} className="num h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-profondo/60">Posti</span>
+          <input type="number" min={1} value={posti} onChange={(e) => setPosti(Number(e.target.value))} className="num h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-profondo/60">Zona</span>
+          <Select value={zona} onChange={(e) => setZona(e.target.value as Tavolo['zona'])} opzioni={zone.map((z) => ({ valore: z.chiave, etichetta: z.label }))} />
+        </label>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button variante="primario" dimensione="sm" onClick={salva}><Check className="h-4 w-4" /> Aggiungi</Button>
+      </div>
+    </div>
   )
 }
