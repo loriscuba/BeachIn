@@ -127,8 +127,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (Ristorante → Prenotazioni → "Giorni chiusi", bottone "Segna giorno chiuso" sul giorno; app admin → sezione "Giorni chiusi").
 - **App admin**: sotto ogni richiesta `Disponibilita` (chiuso / pieno / tavolo adatto / serve unire tavoli + tavoli e posti liberi).
 - **Sito** (`FormRistorante`): calendario del mese `src/components/sito/CalendarioDisponibilita.tsx`, giorni pieni o chiusi rossi e
-  non selezionabili, un turno pieno = giallo (turno disabilitato nel select). Limite: prenotazioni e tavoli non sono su Supabase,
-  quindi il "pieno" è calcolato sui dati del dispositivo (seed + richieste confermate); i giorni chiusi invece sono condivisi.
+  non selezionabili, un turno pieno = giallo (turno disabilitato nel select).
+- **Sala su Supabase** (migration `beachin_sala_ristorante`): `beachin.tavoli` (standard, `ordine`), `beachin.tavoli_giorno`
+  (id = data, `tavoli` jsonb; nel context lo stato è la lista `disposizioni`, `tavoliGiorno` è derivato),
+  `beachin.prenotazioni_ristorante`. Seed già caricati nel DB. Con Supabase il `reset()` non tocca la sala e l'effect
+  "richiesta confermata → PR-<id>" è spento (la crea `confermaRistorante`; le vecchie sono state riportate nel DB via SQL).
 
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di

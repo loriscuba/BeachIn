@@ -136,3 +136,43 @@ do $$ begin
     alter publication supabase_realtime add table beachin.giorni_chiusi;
   end if;
 end $$;
+
+-- Sala del ristorante: disposizione standard, disposizioni per giorno e prenotazioni (condivise tra gestionale, app admin e sito)
+create table if not exists beachin.tavoli (
+  id text primary key,
+  numero int not null,
+  posti int not null default 2,
+  zona text not null,
+  x numeric, y numeric,
+  forma text,
+  ordine int not null default 0
+);
+create table if not exists beachin.tavoli_giorno (
+  id text primary key,          -- = data ISO
+  tavoli jsonb not null default '[]'
+);
+create table if not exists beachin.prenotazioni_ristorante (
+  id text primary key,
+  data text not null,
+  turno text not null check (turno in ('pranzo','cena')),
+  nome text not null,
+  coperti int not null default 2,
+  tavolo_id text,
+  stato text not null default 'confermata' check (stato in ('confermata','in_attesa','annullata')),
+  note text,
+  telefono text,
+  origine text check (origine in ('manuale','sito'))
+);
+do $$
+declare t text;
+begin
+  foreach t in array array['tavoli','tavoli_giorno','prenotazioni_ristorante'] loop
+    execute format('grant select, insert, update, delete on beachin.%I to anon, authenticated, service_role', t);
+    execute format('alter table beachin.%I enable row level security', t);
+    execute format('drop policy if exists "demo anon" on beachin.%I', t);
+    execute format('create policy "demo anon" on beachin.%I for all to anon using (true) with check (true)', t);
+    if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='beachin' and tablename=t) then
+      execute format('alter publication supabase_realtime add table beachin.%I', t);
+    end if;
+  end loop;
+end $$;
