@@ -1,19 +1,21 @@
 import { addDays, format, parseISO, startOfWeek } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Globe } from 'lucide-react'
-import type { PrenotazioneRistorante, RichiestaRistorante, Turno } from '@/data/types'
+import { ChevronLeft, ChevronRight, Globe, CalendarX2 } from 'lucide-react'
+import type { GiornoChiuso, PrenotazioneRistorante, RichiestaRistorante, Turno } from '@/data/types'
 import { cn } from '@/lib/cn'
 
 const MAX_CHIP = 4
 
 /** Vista settimanale delle prenotazioni (pranzo/cena per giorno): click su un giorno = dettaglio sotto. */
-export function CalendarioPrenotazioni({ giorno, oggi, onGiorno, prenotazioni, richieste }: {
+export function CalendarioPrenotazioni({ giorno, oggi, onGiorno, prenotazioni, richieste, chiusi = [] }: {
   giorno: string
   oggi: string
   onGiorno: (g: string) => void
   prenotazioni: PrenotazioneRistorante[]
   /** Richieste dal sito ancora da confermare. */
   richieste: RichiestaRistorante[]
+  /** Giorni di chiusura: evidenziati in rosso. */
+  chiusi?: GiornoChiuso[]
 }) {
   const inizio = startOfWeek(parseISO(giorno), { weekStartsOn: 1 })
   const giorni = Array.from({ length: 7 }, (_, i) => format(addDays(inizio, i), 'yyyy-MM-dd'))
@@ -39,6 +41,7 @@ export function CalendarioPrenotazioni({ giorno, oggi, onGiorno, prenotazioni, r
             const coperti = delGiorno.reduce((s, p) => s + p.coperti, 0)
             const daConf = richieste.filter((r) => r.data === g)
             const d = parseISO(g)
+            const chiuso = chiusi.find((c) => c.data === g)
             return (
               <button
                 key={g}
@@ -46,6 +49,7 @@ export function CalendarioPrenotazioni({ giorno, oggi, onGiorno, prenotazioni, r
                 className={cn(
                   'flex min-h-[220px] flex-col rounded-xl border p-1.5 text-left transition',
                   g === giorno ? 'border-cabina bg-cabina/5 ring-2 ring-cabina/30' : 'border-calce-200 bg-white hover:border-cabina/50',
+                  chiuso && 'border-boa/50 bg-boa/10',
                   g < oggi && 'opacity-60',
                 )}
               >
@@ -53,6 +57,7 @@ export function CalendarioPrenotazioni({ giorno, oggi, onGiorno, prenotazioni, r
                   <span className="text-[11px] font-semibold uppercase text-profondo/50">{format(d, 'EEE', { locale: it })}</span>
                   <span className={cn('num grid h-6 min-w-6 place-content-center rounded-full px-1 text-sm font-bold', g === oggi ? 'bg-boa text-white' : 'text-profondo')}>{format(d, 'd')}</span>
                 </div>
+                {chiuso && <p className="mb-1 flex items-center gap-1 rounded bg-boa px-1 py-0.5 text-[10px] font-semibold uppercase text-white" title={chiuso.nota}><CalendarX2 className="h-3 w-3" /> Chiuso</p>}
                 <p className="mb-1 px-0.5 text-[10px] text-profondo/50">{coperti} coperti{daConf.length > 0 && <span className="ml-1 font-semibold text-boa">· {daConf.length} da conf.</span>}</p>
                 {(['pranzo', 'cena'] as Turno[]).map((t) => {
                   const lista = delGiorno.filter((p) => p.turno === t)
@@ -86,6 +91,7 @@ export function CalendarioPrenotazioni({ giorno, oggi, onGiorno, prenotazioni, r
         <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded bg-white ring-1 ring-cabina/40" /> senza tavolo</span>
         <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded bg-tenda/50" /> in attesa</span>
         <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded border border-dashed border-boa" /> dal sito, da confermare</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded bg-boa" /> chiuso</span>
       </p>
     </div>
   )

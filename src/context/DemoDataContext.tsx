@@ -11,6 +11,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react'
 import type {
   ArticoloMagazzino,
+  GiornoChiuso,
   CategoriaPiatto,
   LinguaMenu,
   Cliente,
@@ -173,6 +174,11 @@ interface DemoDataValue {
   inviaRichiestaOmbrellone: (dati: DatiRichiestaOmbrellone) => void
   // Sito — prenotazioni ristorante
   richiesteRistorante: RichiestaRistorante[]
+  /** Giorni di chiusura del ristorante (condivisi via Supabase): il sito non accetta richieste. */
+  giorniChiusi: GiornoChiuso[]
+  /** Chiude uno o più giorni consecutivi (dal–al inclusi). */
+  chiudiGiorni: (dal: string, al: string, nota?: string) => void
+  riapriGiorno: (data: string) => void
   confermaRistorante: (id: string) => void
   rifiutaRistorante: (id: string) => void
   inviaRichiestaRistorante: (dati: DatiRichiestaRistorante) => void
@@ -278,6 +284,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [canaliPrenotazione, setCanaliPrenotazione] = useState<CanaliPrenotazione>({ ombrelloni: true, ristorante: true, eventi: true })
   const [clientiAggiunti, setClientiAggiunti] = useState<Cliente[]>([])
   const [richiesteRistorante, setRichiesteRistorante] = useState<RichiestaRistorante[]>([])
+  const [giorniChiusi, setGiorniChiusi] = useState<GiornoChiuso[]>([])
   const [richiesteEventi, setRichiesteEventi] = useState<RichiestaEvento[]>([])
   const [postaCliente, setPostaCliente] = useState<Email[]>([])
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
@@ -338,9 +345,40 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
-  const [tavoliGiorno, setTavoliGiorno] = useState<Record<string, Tavolo[]>>({})
+  // Disposizioni per giorno: lista { id = data, tavoli } (così si sincronizza come le altre tabelle)
+  const [disposizioni, setDisposizioni] = useState<{ id: string; tavoli: Tavolo[] }[]>([])
+  const tavoliGiorno = useMemo(() => Object.fromEntries(disposizioni.map((d) => [d.id, d.tavoli])) as Record<string, Tavolo[]>, [disposizioni])
+  // Con Supabase la sala (tavoli, disposizioni per giorno, prenotazioni) è condivisa tra gestionale, app admin e sito.
+  useSyncSupabase({
+    tabella: 'tavoli', righe: tavoli, setRighe: setTavoli, semina: true,
+    aRiga: (t, i) => ({ id: t.id, numero: t.numero, posti: t.posti, zona: t.zona, x: t.x ?? null, y: t.y ?? null, forma: t.forma ?? null, ordine: i }),
+    daRiga: (r) => ({
+      id: r.id, numero: Number(r.numero), posti: Number(r.posti), zona: r.zona as Tavolo['zona'],
+      x: r.x == null ? undefined : Number(r.x), y: r.y == null ? undefined : Number(r.y), forma: (r.forma as Tavolo['forma']) ?? undefined,
+    }),
+    ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
+  })
+  useSyncSupabase({
+    tabella: 'tavoli_giorno', righe: disposizioni, setRighe: setDisposizioni,
+    aRiga: (d) => ({ id: d.id, tavoli: d.tavoli }),
+    daRiga: (r) => ({ id: r.id, tavoli: (r.tavoli as Tavolo[]) ?? [] }),
+    ordina: (a, b) => String(a.id).localeCompare(String(b.id)),
+  })
   const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
+  useSyncSupabase({
+    tabella: 'prenotazioni_ristorante', righe: prenotazioniRistorante, setRighe: setPrenotazioniRistorante, semina: true,
+    aRiga: (p) => ({
+      id: p.id, data: p.data, turno: p.turno, nome: p.nome, coperti: p.coperti, tavolo_id: p.tavoloId ?? null, stato: p.stato,
+      note: p.note ?? null, telefono: p.telefono ?? null, origine: p.origine ?? null,
+    }),
+    daRiga: (r) => ({
+      id: r.id, data: r.data as string, turno: r.turno as Turno, nome: r.nome as string, coperti: Number(r.coperti),
+      tavoloId: (r.tavolo_id as string) ?? undefined, stato: r.stato as StatoPrenotazione, note: (r.note as string) ?? undefined,
+      telefono: (r.telefono as string) ?? undefined, origine: (r.origine as PrenotazioneRistorante['origine']) ?? undefined,
+    }),
+    ordina: (a, b) => String(a.data).localeCompare(String(b.data)) || String(a.id).localeCompare(String(b.id)),
+  })
   // Richieste tavolo dal sito: su Supabase (arrivano dal telefono del cliente, si confermano dall'app admin).
   useSyncSupabase({
     tabella: 'richieste_ristorante', righe: richiesteRistorante, setRighe: setRichiesteRistorante,
@@ -355,8 +393,33 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
+  useSyncSupabase({
+    tabella: 'giorni_chiusi', righe: giorniChiusi, setRighe: setGiorniChiusi,
+    aRiga: (g) => ({ id: g.id, data: g.data, nota: g.nota ?? null }),
+    daRiga: (r) => ({ id: r.id, data: r.data as string, nota: (r.nota as string) ?? undefined }),
+    ordina: (a, b) => String(a.data).localeCompare(String(b.data)),
+  })
+  const chiudiGiorni = useCallback((dal: string, al: string, nota?: string) => {
+    const [da, a] = dal <= al ? [dal, al] : [al, dal]
+    const nuovi: GiornoChiuso[] = []
+    for (let d = new Date(`${da}T12:00:00`); ; d.setDate(d.getDate() + 1)) {
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      if (iso > a || nuovi.length > 366) break
+      nuovi.push({ id: iso, data: iso, nota })
+    }
+    setGiorniChiusi((prev) => {
+      const date = new Set(nuovi.map((g) => g.data))
+      return [...prev.filter((g) => !date.has(g.data)), ...nuovi].sort((x, y) => x.data.localeCompare(y.data))
+    })
+  }, [])
+  const riapriGiorno = useCallback((data: string) => {
+    setGiorniChiusi((prev) => prev.filter((g) => g.data !== data))
+  }, [])
   // Ogni richiesta confermata (anche da un altro dispositivo) entra tra le prenotazioni del ristorante.
+  // Con Supabase le prenotazioni sono già condivise: le crea `confermaRistorante` sul dispositivo che
+  // conferma. Ricrearle qui le farebbe riapparire dopo un'eliminazione (o perdere al caricamento dal DB).
   useEffect(() => {
+    if (supabaseAttivo) return
     const conf = richiesteRistorante.filter((r) => r.stato === 'confermata')
     if (!conf.length) return
     setPrenotazioniRistorante((prev) => {
@@ -720,7 +783,12 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const cambiaTavoli = useCallback((giorno: string | undefined, fn: (prev: Tavolo[]) => Tavolo[]) => {
     if (!giorno) { setTavoli(fn); return }
     const base = tavoliGiornoRef.current[giorno] ?? tavoliRef.current
-    setTavoliGiorno((prev) => ({ ...prev, [giorno]: fn(prev[giorno] ?? base) }))
+    setDisposizioni((prev) => {
+      const esistente = prev.find((d) => d.id === giorno)
+      return esistente
+        ? prev.map((d) => (d.id === giorno ? { ...d, tavoli: fn(d.tavoli) } : d))
+        : [...prev, { id: giorno, tavoli: fn(base) }]
+    })
   }, [])
   const aggiungiTavolo = useCallback((numero: number, posti: number, zona: Tavolo['zona'], giorno?: string) => {
     cambiaTavoli(giorno, (prev) => [...prev, { id: nuovoId('TAV'), numero, posti, zona, ...posInZona(zona, prev.length), forma: posti > 4 ? 'quadrato' : 'tondo' }])
@@ -740,7 +808,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [cambiaTavoli])
   const ripristinaDisposizione = useCallback((giorno: string) => {
     const standard = new Set(tavoliRef.current.map((t) => t.id))
-    setTavoliGiorno((prev) => { const { [giorno]: _tolto, ...resto } = prev; return resto })
+    setDisposizioni((prev) => prev.filter((d) => d.id !== giorno))
     // i tavoli aggiunti solo per quel giorno spariscono: le loro prenotazioni tornano da assegnare
     setPrenotazioniRistorante((prev) => prev.map((p) => (p.data === giorno && p.tavoloId && !standard.has(p.tavoloId) ? { ...p, tavoloId: undefined } : p)))
   }, [])
@@ -749,7 +817,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     if (!del) return
     const nuovi = new Set(del.map((t) => t.id))
     setTavoli(clona(del))
-    setTavoliGiorno((prev) => { const { [giorno]: _tolto, ...resto } = prev; return resto })
+    setDisposizioni((prev) => prev.filter((d) => d.id !== giorno))
     // gli altri giorni senza disposizione propria seguono il nuovo standard
     const personalizzati = tavoliGiornoRef.current
     setPrenotazioniRistorante((prev) => prev.map((p) => (p.tavoloId && !personalizzati[p.data] && !nuovi.has(p.tavoloId) ? { ...p, tavoloId: undefined } : p)))
@@ -817,10 +885,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     if (!supabaseAttivo) { setMenu(clona(seedMenu)); setSezioniMenu(clona(seedSezioni)) }
     setGalleria(clona(statoSito.galleria))
     if (!supabaseAttivo) setComande([])
-    setTavoli(clona(seedTavoli))
-    setTavoliGiorno({})
+    // con Supabase la sala è un dato reale condiviso: il reset demo non la tocca
+    if (!supabaseAttivo) {
+      setTavoli(clona(seedTavoli))
+      setDisposizioni([])
+    }
     setMagazzino(clona(seedMagazzino))
-    setPrenotazioniRistorante(clona(seedPrenotazioniRist))
+    if (!supabaseAttivo) setPrenotazioniRistorante(clona(seedPrenotazioniRist))
+    if (!supabaseAttivo) setGiorniChiusi([])
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -940,6 +1012,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rifiutaPrenotazione,
       inviaRichiestaOmbrellone,
       richiesteRistorante,
+      giorniChiusi,
+      chiudiGiorni,
+      riapriGiorno,
       confermaRistorante,
       rifiutaRistorante,
       inviaRichiestaRistorante,
@@ -1023,6 +1098,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rifiutaPrenotazione,
       inviaRichiestaOmbrellone,
       richiesteRistorante,
+      giorniChiusi,
+      chiudiGiorni,
+      riapriGiorno,
       confermaRistorante,
       rifiutaRistorante,
       inviaRichiestaRistorante,

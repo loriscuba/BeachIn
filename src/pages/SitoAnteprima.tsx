@@ -15,6 +15,8 @@ import { Modal } from '@/components/ui/Modal'
 import { euro, dataEstesa, data as fmtData } from '@/lib/formatters'
 import { etichettePeriodo, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
+import { statoGiorno } from '@/lib/disponibilita'
+import { CalendarioDisponibilita } from '@/components/sito/CalendarioDisponibilita'
 
 const file: FilaId[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
 const periodi: Periodo[] = ['bassa', 'media', 'alta', 'altissima']
@@ -885,12 +887,21 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
 }
 
 function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
-  const { inviaRichiestaRistorante } = useDemoData()
+  const { inviaRichiestaRistorante, tavoliDelGiorno, prenotazioniRistorante, giorniChiusi } = useDemoData()
   const oggi = config.stagione.oggi
+  // disponibilità dal vivo: giorni chiusi (dall'app admin/gestionale) e turni al completo
+  const statoDi = (d: string) => statoGiorno(tavoliDelGiorno(d), prenotazioniRistorante, giorniChiusi, d)
   const [f, setF] = useState({ nome: '', email: '', telefono: '', data: oggi, turno: 'cena' as Turno, coperti: '2', note: '' })
   const [inviato, setInviato] = useState(false)
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
-  const valido = f.nome.trim() && f.email.trim()
+  const sel = statoDi(f.data)
+  const turnoPieno = sel.pieno[f.turno]
+  const valido = f.nome.trim() && f.email.trim() && !turnoPieno
+  const scegliData = (d: string) => {
+    const st = statoDi(d)
+    // se il turno scelto è al completo quel giorno, passa all'altro
+    setF((p) => ({ ...p, data: d, turno: st.pieno[p.turno] ? (p.turno === 'cena' ? 'pranzo' : 'cena') : p.turno }))
+  }
 
   if (inviato) return <Successo testo="La tua richiesta di tavolo è partita. Trovi la ricevuta ne “La mia posta”; ti confermiamo il tavolo dal gestionale." onAltro={() => setInviato(false)} />
 
@@ -901,11 +912,22 @@ function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
       <Campo label="Email"><input type="email" required className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
       <Campo label="Telefono"><input className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
-      <Campo label="Data"><input type="date" className={pc} value={f.data} onChange={(e) => set('data', e.target.value)} /></Campo>
+      <div className="col-span-2">
+        <span className="mb-1 block text-xs font-medium text-profondo/60">Data</span>
+        <CalendarioDisponibilita valore={f.data} minimo={oggi} onScegli={scegliData} stato={(d) => statoDi(d).stato} />
+      </div>
       <Campo label="Turno">
-        <select className={pc} value={f.turno} onChange={(e) => set('turno', e.target.value)}><option value="pranzo">Pranzo</option><option value="cena">Cena</option></select>
+        <select className={pc} value={f.turno} onChange={(e) => set('turno', e.target.value)}>
+          <option value="pranzo" disabled={sel.pieno.pranzo}>Pranzo{sel.pieno.pranzo ? ' — al completo' : ''}</option>
+          <option value="cena" disabled={sel.pieno.cena}>Cena{sel.pieno.cena ? ' — al completo' : ''}</option>
+        </select>
       </Campo>
-      <Campo label="Coperti" span2><input type="number" min={1} className={pc} value={f.coperti} onChange={(e) => set('coperti', e.target.value)} /></Campo>
+      <Campo label="Coperti"><input type="number" min={1} className={pc} value={f.coperti} onChange={(e) => set('coperti', e.target.value)} /></Campo>
+      {(sel.stato === 'chiuso' || turnoPieno) && (
+        <p className="col-span-2 rounded-xl bg-boa/10 px-3 py-2 text-sm font-medium text-boa">
+          {sel.stato === 'chiuso' ? `Il ristorante è chiuso questo giorno${sel.nota ? ` (${sel.nota})` : ''}: scegli un’altra data.` : 'Questo turno è al completo: scegli un altro giorno o turno.'}
+        </p>
+      )}
       <button type="submit" disabled={!valido} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">Invia richiesta</button>
     </form>
   )

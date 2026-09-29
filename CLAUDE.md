@@ -119,6 +119,20 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   chip per prenotazione + richieste dal sito da confermare tratteggiate) → click giorno = dettaglio sotto (richieste, planimetria tavoli di quel giorno, lista prenotazioni con gestione tavoli, conferma/rifiuta
   richieste, nuova prenotazione con la data scelta). **Magazzino**: `magazzino` + `movimentaArticolo/aggiungiArticolo/rimuoviArticolo`.
 
+## Disponibilità tavoli + giorni chiusi
+- `src/lib/disponibilita.ts`: `disponibilitaTurno(tavoli, pren, data, turno, coperti?)` (tavoli/posti liberi, prenotazioni senza
+  tavolo, `pieno`, `tavoloAdatto`) e `statoGiorno(...)` → `chiuso|pieno|parziale|libero`.
+- **Giorni chiusi**: context `giorniChiusi` + `chiudiGiorni(dal, al, nota?)` / `riapriGiorno(data)`, sincronizzati su Supabase
+  `beachin.giorni_chiusi` (id = data; migration `beachin_giorni_chiusi`). Componente condiviso `src/components/GiorniChiusi.tsx`
+  (Ristorante → Prenotazioni → "Giorni chiusi", bottone "Segna giorno chiuso" sul giorno; app admin → sezione "Giorni chiusi").
+- **App admin**: sotto ogni richiesta `Disponibilita` (chiuso / pieno / tavolo adatto / serve unire tavoli + tavoli e posti liberi).
+- **Sito** (`FormRistorante`): calendario del mese `src/components/sito/CalendarioDisponibilita.tsx`, giorni pieni o chiusi rossi e
+  non selezionabili, un turno pieno = giallo (turno disabilitato nel select).
+- **Sala su Supabase** (migration `beachin_sala_ristorante`): `beachin.tavoli` (standard, `ordine`), `beachin.tavoli_giorno`
+  (id = data, `tavoli` jsonb; nel context lo stato è la lista `disposizioni`, `tavoliGiorno` è derivato),
+  `beachin.prenotazioni_ristorante`. Seed già caricati nel DB. Con Supabase il `reset()` non tocca la sala e l'effect
+  "richiesta confermata → PR-<id>" è spento (la crea `confermaRistorante`; le vecchie sono state riportate nel DB via SQL).
+
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
   upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`
