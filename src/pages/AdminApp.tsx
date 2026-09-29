@@ -3,7 +3,10 @@
  * di tavolo arrivate dal sito e modifica il menu a voce. Con Supabase i dati sono condivisi dal vivo.
  */
 import { useEffect, useRef, useState } from 'react'
-import { LogOut, Check, X, Users, Phone, CalendarDays, Mic, Inbox, Bell, BellOff, BellRing, Share } from 'lucide-react'
+import { LogOut, Check, X, Users, Phone, CalendarDays, Mic, Inbox, Bell, BellOff, BellRing, Share, CalendarX2, ChevronDown, CircleCheck, TriangleAlert, OctagonX } from 'lucide-react'
+import type { RichiestaRistorante } from '@/data/types'
+import { disponibilitaTurno } from '@/lib/disponibilita'
+import { GiorniChiusi } from '@/components/GiorniChiusi'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { UTENTI_ADMIN } from '@/lib/adminapp'
@@ -59,7 +62,9 @@ function Login({ onEntra }: { onEntra: () => void }) {
 }
 
 function Area() {
-  const { richiesteRistorante, confermaRistorante, rifiutaRistorante } = useDemoData()
+  const { richiesteRistorante, confermaRistorante, rifiutaRistorante, giorniChiusi } = useDemoData()
+  const [chiusureAperte, setChiusureAperte] = useState(false)
+  const chiusureFuture = giorniChiusi.filter((g) => g.data >= config.stagione.oggi).length
   const [tab, setTab] = useState<'prenotazioni' | 'menu'>('prenotazioni')
   const [suoni, setSuoni] = useState(true)
   const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
@@ -102,12 +107,21 @@ function Area() {
                 {r.telefono && <a href={`tel:${r.telefono}`} className="inline-flex items-center gap-1 text-cabina"><Phone className="h-4 w-4" /> {r.telefono}</a>}
               </p>
               {r.note && <p className="mt-1 text-sm italic text-profondo/55">«{r.note}»</p>}
+              <Disponibilita r={r} />
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button onClick={() => rifiutaRistorante(r.id)} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-boa/40 font-semibold text-boa"><X className="h-4 w-4" /> Rifiuta</button>
                 <button onClick={() => confermaRistorante(r.id)} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-acqua font-semibold text-white"><Check className="h-4 w-4" /> Conferma</button>
               </div>
             </div>
           ))}
+          <div className="rounded-2xl bg-white shadow-sm">
+            <button onClick={() => setChiusureAperte(!chiusureAperte)} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left">
+              <span className="inline-flex items-center gap-2 font-semibold"><CalendarX2 className="h-5 w-5 text-boa" /> Giorni chiusi
+                {chiusureFuture > 0 && <span className="rounded-full bg-boa px-1.5 text-xs text-white">{chiusureFuture}</span>}</span>
+              <ChevronDown className={cn('h-5 w-5 text-profondo/50 transition-transform', chiusureAperte && 'rotate-180')} />
+            </button>
+            {chiusureAperte && <div className="border-t border-calce-200 p-4"><GiorniChiusi grande /></div>}
+          </div>
           {gestite.length > 0 && (
             <>
               <h2 className="pt-2 text-sm font-semibold uppercase tracking-wide text-profondo/50">Gestite di recente</h2>
@@ -125,6 +139,34 @@ function Area() {
       )}
 
       {tab === 'menu' && <AssistenteVocale />}
+    </div>
+  )
+}
+
+/** Controllo immediato sotto la richiesta: il giorno è aperto? quanti tavoli liberi ci sono? ce n'è uno adatto? */
+function Disponibilita({ r }: { r: RichiestaRistorante }) {
+  const { tavoliDelGiorno, prenotazioniRistorante, giorniChiusi } = useDemoData()
+  const chiuso = giorniChiusi.find((g) => g.data === r.data)
+  if (chiuso) {
+    return (
+      <p className="mt-3 flex items-start gap-2 rounded-xl bg-boa/10 px-3 py-2.5 text-sm font-medium text-boa">
+        <OctagonX className="mt-0.5 h-4 w-4 shrink-0" /> Quel giorno il ristorante è segnato come chiuso{chiuso.nota ? ` (${chiuso.nota})` : ''}.
+      </p>
+    )
+  }
+  const d = disponibilitaTurno(tavoliDelGiorno(r.data), prenotazioniRistorante, r.data, r.turno, r.coperti)
+  const esito = d.pieno
+    ? { tono: 'bg-boa/10 text-boa', Icona: OctagonX, testo: `Tutto pieno a ${r.turno}` }
+    : d.tavoloAdatto
+      ? { tono: 'bg-acqua/15 text-profondo', Icona: CircleCheck, testo: `C'è posto: tavolo ${d.tavoloAdatto.numero} da ${d.tavoloAdatto.posti} posti libero` }
+      : { tono: 'bg-tenda/20 text-[#7A5A12]', Icona: TriangleAlert, testo: `Nessun tavolo libero da ${r.coperti} posti: serve unire tavoli` }
+  return (
+    <div className={cn('mt-3 rounded-xl px-3 py-2.5 text-sm', esito.tono)}>
+      <p className="flex items-start gap-2 font-semibold"><esito.Icona className="mt-0.5 h-4 w-4 shrink-0" /> {esito.testo}</p>
+      <p className="mt-1 pl-6 text-xs text-profondo/65">
+        <span className="capitalize">{r.turno}</span> {dataIt(r.data)}: <b className="num">{d.tavoliLiberi}</b> tavoli liberi su {d.tavoliTotali} · <b className="num">{d.postiLiberi}</b> posti liberi su {d.postiTotali}
+        {d.senzaTavolo > 0 && <> · {d.senzaTavolo} {d.senzaTavolo === 1 ? 'prenotazione' : 'prenotazioni'} ancora senza tavolo</>}
+      </p>
     </div>
   )
 }

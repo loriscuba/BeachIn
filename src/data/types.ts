@@ -528,6 +528,13 @@ export interface StatoSito {
 }
 
 /** Richiesta di prenotazione tavolo al ristorante, arrivata dal sito. */
+/** Giorno di chiusura del ristorante (id = data ISO). */
+export interface GiornoChiuso {
+  id: string
+  data: string
+  nota?: string
+}
+
 export interface RichiestaRistorante {
   id: string
   ricevutaIl: string

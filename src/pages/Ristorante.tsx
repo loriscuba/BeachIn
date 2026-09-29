@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDown, X, Phone, Check , Smartphone } from 'lucide-react'
+import { Loader2, UtensilsCrossed, Users, Receipt, TrendingDown, Star, ThumbsDown, X, Phone, Check , Smartphone, CalendarX2, Undo2 } from 'lucide-react'
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, ServizioRistoranteGiorno, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
@@ -24,6 +24,8 @@ import { euro, euroCent, numero, percento } from '@/lib/formatters'
 import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
 import { urlAdminApp } from '@/lib/adminapp'
+import { GiorniChiusi } from '@/components/GiorniChiusi'
+import { disponibilitaTurno } from '@/lib/disponibilita'
 
 const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro'> = {
   confermata: 'acqua', in_attesa: 'tenda', annullata: 'neutro',
@@ -49,7 +51,9 @@ export default function Ristorante() {
   const {
     menu, sezioniMenu, tavoliDelGiorno, prenotazioniRistorante, richiesteRistorante, confermaRistorante, rifiutaRistorante,
     creaPrenotazioneRistorante, assegnaTavolo, impostaStatoPrenotazione, rimuoviPrenotazioneRistorante,
+    giorniChiusi, chiudiGiorni, riapriGiorno,
   } = useDemoData()
+  const [pannelloChiusure, setPannelloChiusure] = useState(false)
   const [servizi, setServizi] = useState<ServizioRistoranteGiorno[]>([])
   const [caricato, setCaricato] = useState(false)
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
@@ -80,6 +84,7 @@ export default function Ristorante() {
   const tavoliPerId = useMemo(() => new Map(tavoli.map((t) => [t.id, t])), [tavoli])
   const prenGiorno = useMemo(() => prenotazioniRistorante.filter((p) => p.data === giorno), [prenotazioniRistorante, giorno])
   const richiesteGiorno = richiesteRistorante.filter((r) => r.stato === 'da_confermare' && r.data === giorno)
+  const chiusoGiorno = giorniChiusi.find((g) => g.data === giorno)
   const occupatiPerTurno = useMemo(() => {
     const m: Record<Turno, Set<string>> = { pranzo: new Set(), cena: new Set() }
     for (const p of prenGiorno) {
@@ -166,14 +171,21 @@ export default function Ristorante() {
 
       {tab === 'prenotazioni' && (
         <Card>
-          <CardHeader titolo="Prenotazioni" sottotitolo="Calendario settimanale · clicca un giorno per gestire tavoli e prenotazioni" azione={<a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50" title="App del gestore: conferma le richieste dal sito e modifica il menu a voce"><Smartphone className="h-4 w-4" /> App admin</a>} />
+          <CardHeader titolo="Prenotazioni" sottotitolo="Calendario settimanale · clicca un giorno per gestire tavoli e prenotazioni" azione={<div className="flex flex-wrap justify-end gap-2"><Button onClick={() => setPannelloChiusure(!pannelloChiusure)}><CalendarX2 className="h-4 w-4 text-boa" /> Giorni chiusi{giorniChiusi.filter((g) => g.data >= oggi).length > 0 && <span className="num rounded-full bg-boa px-1.5 text-xs text-white">{giorniChiusi.filter((g) => g.data >= oggi).length}</span>}</Button><a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50" title="App del gestore: conferma le richieste dal sito e modifica il menu a voce"><Smartphone className="h-4 w-4" /> App admin</a></div>} />
           <CardBody className="space-y-4 pt-2">
+            {pannelloChiusure && (
+              <div className="rounded-xl border border-boa/30 bg-white p-3 sm:max-w-md">
+                <p className="mb-2 text-sm font-semibold text-profondo">Giorni di chiusura <span className="font-normal text-profondo/55">· sul sito compaiono in rosso e non si prenota</span></p>
+                <GiorniChiusi />
+              </div>
+            )}
             <CalendarioPrenotazioni
               giorno={giorno}
               oggi={oggi}
               onGiorno={setGiorno}
               prenotazioni={prenotazioniRistorante}
               richieste={richiesteRistorante.filter((r) => r.stato === 'da_confermare')}
+              chiusi={giorniChiusi}
             />
           </CardBody>
         </Card>
@@ -183,12 +195,21 @@ export default function Ristorante() {
         <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-display text-xl font-semibold capitalize text-profondo">{format(parseISO(giorno), 'EEEE d MMMM', { locale: itLocale })}{giorno === oggi && <span className="ml-2 align-middle text-xs font-sans font-semibold uppercase text-boa">oggi</span>}</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                {!chiusoGiorno && <Button dimensione="sm" onClick={() => chiudiGiorni(giorno, giorno)}><CalendarX2 className="h-4 w-4 text-boa" /> Segna giorno chiuso</Button>}
                 <NuovaPrenotazione
                   tavoli={tavoli}
                   occupatiPerTurno={occupatiPerTurno}
                   onCrea={(d) => creaPrenotazioneRistorante({ ...d, data: giorno })}
                 />
+                </div>
               </div>
+              {chiusoGiorno && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-boa px-4 py-3 text-white">
+                  <span className="inline-flex items-center gap-2 font-semibold"><CalendarX2 className="h-5 w-5" /> Ristorante chiuso{chiusoGiorno.nota && <span className="font-normal text-white/85">· {chiusoGiorno.nota}</span>}</span>
+                  <button type="button" onClick={() => riapriGiorno(giorno)} className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-sm font-medium hover:bg-white/25"><Undo2 className="h-4 w-4" /> Riapri</button>
+                </div>
+              )}
               {richiesteGiorno.length > 0 && (
                 <div className="rounded-xl border border-dashed border-boa/50 bg-boa/5 p-3">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-boa">Dal sito · da confermare</p>
@@ -217,7 +238,7 @@ export default function Ristorante() {
                     <div key={turno}>
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-sm font-semibold capitalize text-profondo">{turno}</span>
-                        <span className="num text-xs text-profondo/55">{list.length} tavoli · {coperti} coperti</span>
+                        <span className="num text-xs text-profondo/55">{list.length} pren. · {coperti} coperti · <DispBreve d={disponibilitaTurno(tavoli, prenGiorno, giorno, turno)} /></span>
                       </div>
                       <ul className="space-y-1.5">
                         {list.length === 0 && <li className="text-sm text-profondo/45">Nessuna prenotazione.</li>}
@@ -419,4 +440,11 @@ function Kpi({ icona: Icona, etichetta, valore }: { icona: typeof Users; etichet
       </CardBody>
     </Card>
   )
+}
+
+/** "N tavoli liberi" (o "Pieno") per l'intestazione di un turno. */
+function DispBreve({ d }: { d: ReturnType<typeof disponibilitaTurno> }) {
+  return d.pieno
+    ? <span className="font-semibold text-boa">pieno</span>
+    : <span className="font-semibold text-cabina">{d.tavoliLiberi} tavoli liberi</span>
 }

@@ -11,6 +11,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react'
 import type {
   ArticoloMagazzino,
+  GiornoChiuso,
   CategoriaPiatto,
   LinguaMenu,
   Cliente,
@@ -173,6 +174,11 @@ interface DemoDataValue {
   inviaRichiestaOmbrellone: (dati: DatiRichiestaOmbrellone) => void
   // Sito — prenotazioni ristorante
   richiesteRistorante: RichiestaRistorante[]
+  /** Giorni di chiusura del ristorante (condivisi via Supabase): il sito non accetta richieste. */
+  giorniChiusi: GiornoChiuso[]
+  /** Chiude uno o più giorni consecutivi (dal–al inclusi). */
+  chiudiGiorni: (dal: string, al: string, nota?: string) => void
+  riapriGiorno: (data: string) => void
   confermaRistorante: (id: string) => void
   rifiutaRistorante: (id: string) => void
   inviaRichiestaRistorante: (dati: DatiRichiestaRistorante) => void
@@ -278,6 +284,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [canaliPrenotazione, setCanaliPrenotazione] = useState<CanaliPrenotazione>({ ombrelloni: true, ristorante: true, eventi: true })
   const [clientiAggiunti, setClientiAggiunti] = useState<Cliente[]>([])
   const [richiesteRistorante, setRichiesteRistorante] = useState<RichiestaRistorante[]>([])
+  const [giorniChiusi, setGiorniChiusi] = useState<GiornoChiuso[]>([])
   const [richiesteEventi, setRichiesteEventi] = useState<RichiestaEvento[]>([])
   const [postaCliente, setPostaCliente] = useState<Email[]>([])
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
@@ -355,6 +362,28 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
+  useSyncSupabase({
+    tabella: 'giorni_chiusi', righe: giorniChiusi, setRighe: setGiorniChiusi,
+    aRiga: (g) => ({ id: g.id, data: g.data, nota: g.nota ?? null }),
+    daRiga: (r) => ({ id: r.id, data: r.data as string, nota: (r.nota as string) ?? undefined }),
+    ordina: (a, b) => String(a.data).localeCompare(String(b.data)),
+  })
+  const chiudiGiorni = useCallback((dal: string, al: string, nota?: string) => {
+    const [da, a] = dal <= al ? [dal, al] : [al, dal]
+    const nuovi: GiornoChiuso[] = []
+    for (let d = new Date(`${da}T12:00:00`); ; d.setDate(d.getDate() + 1)) {
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      if (iso > a || nuovi.length > 366) break
+      nuovi.push({ id: iso, data: iso, nota })
+    }
+    setGiorniChiusi((prev) => {
+      const date = new Set(nuovi.map((g) => g.data))
+      return [...prev.filter((g) => !date.has(g.data)), ...nuovi].sort((x, y) => x.data.localeCompare(y.data))
+    })
+  }, [])
+  const riapriGiorno = useCallback((data: string) => {
+    setGiorniChiusi((prev) => prev.filter((g) => g.data !== data))
+  }, [])
   // Ogni richiesta confermata (anche da un altro dispositivo) entra tra le prenotazioni del ristorante.
   useEffect(() => {
     const conf = richiesteRistorante.filter((r) => r.stato === 'confermata')
@@ -821,6 +850,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setTavoliGiorno({})
     setMagazzino(clona(seedMagazzino))
     setPrenotazioniRistorante(clona(seedPrenotazioniRist))
+    if (!supabaseAttivo) setGiorniChiusi([])
     setDemoInCorso(false)
     setIncassoDemo(0)
     setDemoProgresso(0)
@@ -940,6 +970,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rifiutaPrenotazione,
       inviaRichiestaOmbrellone,
       richiesteRistorante,
+      giorniChiusi,
+      chiudiGiorni,
+      riapriGiorno,
       confermaRistorante,
       rifiutaRistorante,
       inviaRichiestaRistorante,
@@ -1023,6 +1056,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       rifiutaPrenotazione,
       inviaRichiestaOmbrellone,
       richiesteRistorante,
+      giorniChiusi,
+      chiudiGiorni,
+      riapriGiorno,
       confermaRistorante,
       rifiutaRistorante,
       inviaRichiestaRistorante,

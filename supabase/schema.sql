@@ -120,3 +120,19 @@ end $$;
 drop trigger if exists notifica_nuova_richiesta on beachin.richieste_ristorante;
 create trigger notifica_nuova_richiesta after insert on beachin.richieste_ristorante
   for each row when (new.stato = 'da_confermare') execute function beachin.notifica_nuova_richiesta();
+
+-- Giorni di chiusura del ristorante (segnati da Prenotazioni / app admin, letti dal sito pubblico)
+create table if not exists beachin.giorni_chiusi (
+  id text primary key,          -- = data ISO (yyyy-mm-dd)
+  data text not null,
+  nota text
+);
+grant select, insert, update, delete on beachin.giorni_chiusi to anon, authenticated, service_role;
+alter table beachin.giorni_chiusi enable row level security;
+drop policy if exists "demo anon" on beachin.giorni_chiusi;
+create policy "demo anon" on beachin.giorni_chiusi for all to anon using (true) with check (true);
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='beachin' and tablename='giorni_chiusi') then
+    alter publication supabase_realtime add table beachin.giorni_chiusi;
+  end if;
+end $$;
