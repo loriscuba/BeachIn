@@ -44,32 +44,40 @@ export function Planimetria({ prenGiorno, giorno, oggi }: { prenGiorno: Prenotaz
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="lg:col-span-2">
-        <CardHeader
-          titolo={<span className="inline-flex flex-wrap items-center gap-2">
-            {standard ? 'Disposizione standard' : `Tavoli · ${giorno === oggi ? 'oggi' : format(parseISO(giorno), 'EEE d MMM', { locale: itLocale })}`}
-            {!standard && (personalizzato ? <Badge tono="tenda">Personalizzata</Badge> : <Badge tono="neutro">Standard</Badge>)}
-          </span>}
-          sottotitolo={standard
-            ? `${tavoli.length} tavoli · ${tavoli.reduce((s, t) => s + t.posti, 0)} posti — il modello da cui parte ogni giorno`
-            : `${tavoli.length} tavoli · ${tavoli.reduce((s, t) => s + t.posti, 0)} posti · ${occupati.size} occupati a ${turno} — trascina per spostare (solo questo giorno)`}
-          azione={<div className="flex flex-wrap gap-2">
-            <div className="flex rounded-lg border border-calce-200 p-0.5 text-sm">
-              <button type="button" onClick={() => setStandard(false)} className={cn('rounded-md px-3 py-1', !standard ? 'bg-profondo text-white' : 'text-profondo/60')}>Questo giorno</button>
-              <button type="button" onClick={() => { setStandard(true); setSelId(undefined) }} className={cn('inline-flex items-center gap-1 rounded-md px-3 py-1', standard ? 'bg-profondo text-white' : 'text-profondo/60')}><LayoutGrid className="h-3.5 w-3.5" /> Standard</button>
+        {/* Intestazione a tutta larghezza: titolo e riepilogo sopra, comandi in una riga a parte */}
+        <div className="space-y-3 px-4 pt-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-profondo">
+                {standard ? 'Disposizione standard' : `Tavoli · ${giorno === oggi ? 'oggi' : format(parseISO(giorno), 'EEEE d MMMM', { locale: itLocale })}`}
+                {!standard && (personalizzato ? <Badge tono="tenda">Personalizzata</Badge> : <Badge tono="neutro">Standard</Badge>)}
+              </h3>
+              <p className="mt-0.5 text-sm text-profondo/60">
+                <span className="num">{tavoli.length}</span> tavoli · <span className="num">{tavoli.reduce((s, t) => s + t.posti, 0)}</span> posti
+                {standard
+                  ? ' — il modello da cui parte ogni giorno'
+                  : <> · <span className="num">{occupati.size}</span> occupati a {turno}</>}
+              </p>
             </div>
-            {!standard && <div className="flex rounded-lg border border-calce-200 p-0.5 text-sm">
+            <Button dimensione="sm" onClick={() => stampaQr([...tavoli].sort((a, b) => a.numero - b.numero).map((t) => ({ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) })), config.nome)}><Printer className="h-4 w-4" /> QR di tutti i tavoli</Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-calce-200 bg-calce/40 p-0.5 text-sm">
+              <button type="button" onClick={() => setStandard(false)} className={cn('rounded-md px-3 py-1 font-medium', !standard ? 'bg-profondo text-white' : 'text-profondo/70 hover:text-profondo')}>Questo giorno</button>
+              <button type="button" onClick={() => { setStandard(true); setSelId(undefined) }} className={cn('inline-flex items-center gap-1 rounded-md px-3 py-1 font-medium', standard ? 'bg-profondo text-white' : 'text-profondo/70 hover:text-profondo')}><LayoutGrid className="h-3.5 w-3.5" /> Standard</button>
+            </div>
+            {!standard && <div className="flex rounded-lg border border-calce-200 bg-calce/40 p-0.5 text-sm">
               {(['pranzo', 'cena'] as Turno[]).map((x) => (
-                <button key={x} type="button" onClick={() => setTurno(x)} className={cn('rounded-md px-3 py-1 capitalize', turno === x ? 'bg-profondo text-white' : 'text-profondo/60')}>{x}</button>
+                <button key={x} type="button" onClick={() => setTurno(x)} className={cn('rounded-md px-3 py-1 font-medium capitalize', turno === x ? 'bg-profondo text-white' : 'text-profondo/70 hover:text-profondo')}>{x}</button>
               ))}
             </div>}
-            {!standard && personalizzato && <>
-              <Button onClick={() => ripristinaDisposizione(giorno)} title="Il giorno torna alla disposizione standard"><RotateCcw className="h-4 w-4" /> Disposizione standard</Button>
-              <Button onClick={() => salvaComeStandard(giorno)} title="Usa questa disposizione come nuovo standard"><Save className="h-4 w-4" /> Salva come standard</Button>
-            </>}
-            <Button onClick={() => stampaQr([...tavoli].sort((a, b) => a.numero - b.numero).map((t) => ({ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) })), config.nome)}><Printer className="h-4 w-4" /> QR di tutti i tavoli</Button>
-          </div>}
-        />
-        <CardBody className="pt-1">
+            {!standard && personalizzato && <div className="flex flex-wrap gap-2 sm:ml-auto">
+              <Button dimensione="sm" onClick={() => ripristinaDisposizione(giorno)} title="Il giorno torna alla disposizione standard"><RotateCcw className="h-4 w-4" /> Disposizione standard</Button>
+              <Button dimensione="sm" onClick={() => salvaComeStandard(giorno)} title="Usa questa disposizione come nuovo standard"><Save className="h-4 w-4" /> Salva come standard</Button>
+            </div>}
+          </div>
+        </div>
+        <CardBody className="pt-3">
           <div
             ref={area}
             className="relative aspect-[16/10] w-full touch-none select-none overflow-hidden rounded-xl border border-calce-200 bg-white"
@@ -107,7 +115,7 @@ export function Planimetria({ prenGiorno, giorno, oggi }: { prenGiorno: Prenotaz
           <p className="mt-2 flex flex-wrap items-center gap-3 text-xs text-profondo/55">
             <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-full bg-cabina" /> occupato ({turno})</span>
             <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-full border-2 border-profondo/25" /> libero</span>
-            <span className="inline-flex items-center gap-1"><Move className="h-3 w-3" /> la zona si aggiorna in base a dove lo lasci</span>
+            <span className="inline-flex items-center gap-1"><Move className="h-3 w-3" /> trascina per spostare{standard ? ' (modello)' : ' (solo questo giorno)'}: la zona segue dove lo lasci</span>
           </p>
         </CardBody>
       </Card>
