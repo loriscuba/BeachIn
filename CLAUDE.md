@@ -21,6 +21,11 @@ React 18 + Vite + TypeScript + Tailwind + react-router-dom (HashRouter per
 l'anteprima statica via `VITE_ROUTER=hash`) + Recharts + lucide-react +
 date-fns (locale it). `noUnusedLocals` ON: rimuovi import/variabili inutilizzati o il build fallisce.
 
+## Shell (menu laterale)
+- `Sidebar` a scomparsa anche su desktop: hamburger nella `Topbar` sempre visibile (apre/chiude), su desktop la colonna
+  scorre fuori (`lg:-ml-64`) e la scelta è ricordata in localStorage `beachin.menu.v1`; su telefono resta pannello sopra i contenuti.
+- `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
+
 ## Architettura dati
 - `src/context/DemoDataContext.tsx`: unico store mutabile in memoria. Le azioni
   stabili (useCallback) leggono lo stato fresco tramite ref sincronizzate in
