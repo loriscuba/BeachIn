@@ -34,10 +34,10 @@ const etichettaStato: Record<StatoPrenotazione, string> = {
 const zone = ZONE.map((z) => ({ chiave: z.zona, label: z.nome }))
 const etichettaZona = nomeZona
 
-type Sezione = 'menu' | 'tavoli' | 'magazzino' | 'prenotazioni'
+type Sezione = 'prenotazioni' | 'menu' | 'magazzino'
 const sezioni: { valore: Sezione; etichetta: string }[] = [
-  { valore: 'menu', etichetta: 'Menu' }, { valore: 'tavoli', etichetta: 'Tavoli' },
-  { valore: 'magazzino', etichetta: 'Magazzino' }, { valore: 'prenotazioni', etichetta: 'Prenotazioni' },
+  { valore: 'prenotazioni', etichetta: 'Prenotazioni' }, { valore: 'menu', etichetta: 'Menu' },
+  { valore: 'magazzino', etichetta: 'Magazzino' },
 ]
 
 const margine = (p: Piatto) => (p.prezzo - p.foodCost) / p.prezzo
@@ -56,7 +56,8 @@ export default function Ristorante() {
   const [caricato, setCaricato] = useState(false)
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
   const [q, setQ] = useSearchParams()
-  const tab = (sezioni.find((x) => x.valore === q.get('tab'))?.valore ?? 'menu') as Sezione
+  // I tavoli ora si gestiscono per giorno dentro Prenotazioni: il vecchio ?tab=tavoli porta lì.
+  const tab = (sezioni.find((x) => x.valore === q.get('tab'))?.valore ?? 'prenotazioni') as Sezione
 
   useEffect(() => {
     getServiziRistorante().then((s) => { setServizi(s); setCaricato(true) })
@@ -72,11 +73,10 @@ export default function Ristorante() {
     return { coperti, incasso, scontrino: coperti ? incasso / coperti : 0, incidenzaFc: ricNum ? fcNum / ricNum : 0 }
   }, [servizi, menu, oggi])
 
-  const prenOggi = useMemo(() => prenotazioniRistorante.filter((p) => p.data === oggi), [prenotazioniRistorante, oggi])
   const tavoliPerId = useMemo(() => new Map(tavoli.map((t) => [t.id, t])), [tavoli])
 
-  // Tavoli occupati per turno (da prenotazioni attive di oggi) → per non assegnare due volte.
-  // Prenotazioni: giorno scelto nel calendario (di default oggi)
+  // Prenotazioni: giorno scelto nel calendario (di default oggi). Tavoli occupati per
+  // turno di quel giorno → per non assegnare due volte; ogni giorno ha la sua disposizione.
   const [giorno, setGiorno] = useState(oggi)
   const prenGiorno = useMemo(() => prenotazioniRistorante.filter((p) => p.data === giorno), [prenotazioniRistorante, giorno])
   const richiesteGiorno = richiesteRistorante.filter((r) => r.stato === 'da_confermare' && r.data === giorno)
@@ -162,13 +162,11 @@ export default function Ristorante() {
         </>
       )}
 
-      {tab === 'tavoli' && <Planimetria prenOggi={prenOggi} nuovoTavolo={<NuovoTavolo tavoli={tavoli} onCrea={aggiungiTavolo} />} />}
-
       {tab === 'magazzino' && <Magazzino />}
 
       {tab === 'prenotazioni' && (
         <Card>
-          <CardHeader titolo="Prenotazioni" sottotitolo="Calendario settimanale · clicca un giorno per gestirlo" azione={<a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50" title="App del gestore: conferma le richieste dal sito e modifica il menu a voce"><Smartphone className="h-4 w-4" /> App admin</a>} />
+          <CardHeader titolo="Prenotazioni" sottotitolo="Calendario settimanale · clicca un giorno per gestire tavoli e prenotazioni" azione={<a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50" title="App del gestore: conferma le richieste dal sito e modifica il menu a voce"><Smartphone className="h-4 w-4" /> App admin</a>} />
           <CardBody className="space-y-4 pt-2">
             <CalendarioPrenotazioni
               giorno={giorno}
@@ -177,8 +175,13 @@ export default function Ristorante() {
               prenotazioni={prenotazioniRistorante}
               richieste={richiesteRistorante.filter((r) => r.stato === 'da_confermare')}
             />
-            <div className="border-t border-calce-200 pt-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          </CardBody>
+        </Card>
+      )}
+
+      {tab === 'prenotazioni' && (
+        <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-display text-xl font-semibold capitalize text-profondo">{format(parseISO(giorno), 'EEEE d MMMM', { locale: itLocale })}{giorno === oggi && <span className="ml-2 align-middle text-xs font-sans font-semibold uppercase text-boa">oggi</span>}</h3>
                 <NuovaPrenotazione
                   tavoli={tavoli}
@@ -187,7 +190,7 @@ export default function Ristorante() {
                 />
               </div>
               {richiesteGiorno.length > 0 && (
-                <div className="mb-4 rounded-xl border border-dashed border-boa/50 bg-boa/5 p-3">
+                <div className="rounded-xl border border-dashed border-boa/50 bg-boa/5 p-3">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-boa">Dal sito · da confermare</p>
                   <ul className="space-y-1.5">
                     {richiesteGiorno.map((r) => (
@@ -202,6 +205,10 @@ export default function Ristorante() {
                   </ul>
                 </div>
               )}
+              <Planimetria key={giorno} prenGiorno={prenGiorno} giorno={giorno} oggi={oggi} nuovoTavolo={<NuovoTavolo tavoli={tavoli} onCrea={aggiungiTavolo} />} />
+              <Card>
+                <CardHeader titolo="Lista prenotazioni" sottotitolo={`${prenGiorno.filter((p) => p.stato !== 'annullata').length} attive · assegna o cambia il tavolo`} />
+                <CardBody className="pt-1">
               <div className="grid gap-4 sm:grid-cols-2">
                 {(['pranzo', 'cena'] as Turno[]).map((turno) => {
                   const list = prenGiorno.filter((p) => p.turno === turno)
@@ -231,9 +238,9 @@ export default function Ristorante() {
                   )
                 })}
               </div>
-            </div>
-          </CardBody>
-        </Card>
+                </CardBody>
+              </Card>
+        </div>
       )}
     </div>
   )

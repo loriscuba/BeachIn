@@ -9,12 +9,15 @@ import { QrCodice, stampaQr } from '@/components/QrCodice'
 import { urlMenu } from '@/lib/menuLingue'
 import { config } from '@/data/config'
 import { cn } from '@/lib/cn'
+import { format, parseISO } from 'date-fns'
+import { it as itLocale } from 'date-fns/locale'
 
-/** Sottosezione Tavoli: planimetria trascinabile, occupazione di oggi e QR per tavolo. */
-export function Planimetria({ prenOggi, nuovoTavolo }: { prenOggi: PrenotazioneRistorante[]; nuovoTavolo: ReactNode }) {
+/** Tavoli del giorno scelto: planimetria trascinabile, occupazione per turno e QR per tavolo. */
+export function Planimetria({ prenGiorno, giorno, oggi, nuovoTavolo }: { prenGiorno: PrenotazioneRistorante[]; giorno: string; oggi: string; nuovoTavolo: ReactNode }) {
   const { tavoli, spostaTavolo, rimuoviTavolo, modificaTavolo, assegnaTavolo } = useDemoData()
-  const [turno, setTurno] = useState<Turno>(new Date().getHours() < 16 ? 'pranzo' : 'cena')
-  const attive = prenOggi.filter((p) => p.turno === turno && p.stato !== 'annullata')
+  // Oggi parte dal turno in corso; gli altri giorni dal pranzo.
+  const [turno, setTurno] = useState<Turno>(giorno === oggi && new Date().getHours() >= 16 ? 'cena' : 'pranzo')
+  const attive = prenGiorno.filter((p) => p.turno === turno && p.stato !== 'annullata')
   const occupati = new Set(attive.flatMap((p) => (p.tavoloId ? [p.tavoloId] : [])))
   const area = useRef<HTMLDivElement>(null)
   const [trascina, setTrascina] = useState<{ id: string; x: number; y: number }>()
@@ -31,7 +34,7 @@ export function Planimetria({ prenOggi, nuovoTavolo }: { prenOggi: PrenotazioneR
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="lg:col-span-2">
         <CardHeader
-          titolo="Disposizione tavoli"
+          titolo={`Tavoli · ${giorno === oggi ? 'oggi' : format(parseISO(giorno), 'EEE d MMM', { locale: itLocale })}`}
           sottotitolo={`${tavoli.length} tavoli · ${tavoli.reduce((s, t) => s + t.posti, 0)} posti · ${occupati.size} occupati a ${turno} — trascina per spostare`}
           azione={<div className="flex flex-wrap gap-2">
             <div className="flex rounded-lg border border-calce-200 p-0.5 text-sm">

@@ -99,15 +99,15 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   online entra tra quelle del ristorante e le si può assegnare un tavolo.
 
 ## Ristorante a sottosezioni (tab `?tab=`)
-- `Ristorante.tsx`: KPI + Tabs **Menu | Tavoli | Magazzino | Prenotazioni** (componenti in `src/pages/ristorante/`).
+- `Ristorante.tsx`: KPI + Tabs **Prenotazioni | Menu | Magazzino** (default Prenotazioni; il vecchio `?tab=tavoli` porta lì; componenti in `src/pages/ristorante/`).
 - **Menu** (`PannelloMenu`): traduzioni 5 lingue (it/en/fr/de/es, `src/lib/menuLingue.ts`: seed curato, poi MyMemory
   + glossario), correzione manuale (`impostaTraduzione`), QR (`src/components/QrCodice.tsx`, lib `qrcode`, `stampaQr`),
   **Assistente vocale incorporato** (tolto dalla sidebar; `/assistente-vocale` → redirect a `/ristorante?tab=menu`).
   `aggiungiPiatto/rinominaPiatto` ritraducono da soli (`traduzioni: {}` = in corso). Lista unica "Menu" = `EditorMenu` divisa per **sezioni dinamiche** (`sezioniMenu` nel context, `CategoriaPiatto = string` = id sezione; `aggiungiSezione/rinominaSezione/rimuoviSezione/spostaSezione`, nomi tradotti con `nomeSezioneIn`); piatti modificabili al click (nome, prezzo, traduzione, sezione, **foto** `Piatto.foto` via `modificaPiatto`), aggiunta piatto per sezione; la foto appare nel menu pubblico; assistente in riquadro piccolo (`<AssistenteVocale compatto />`, senza la sua lista menu) sotto il QR.
 - **Menu pubblico**: rotta `/menu?tavolo=N&lang=xx` (`MenuPubblico.tsx`, fuori dallo shell), `urlMenu()` per i QR.
-- **Tavoli** (`Planimetria`): pianta del Lido (`src/lib/zoneTavoli.ts`: Veranda + Interno a sx, Ciringuito a dx; zone `veranda|interno|ciringuito`), drag&drop (`Tavolo.x/y` in %, `spostaTavolo` → `zonaDaPos`), selettore pranzo/cena, pannello tavolo: modifica numero/posti/zona (`modificaTavolo`), ospiti, "Assegna" prenotazioni confermate senza tavolo,
+- **Tavoli** (`Planimetria`, dentro Prenotazioni sotto il giorno scelto: occupazione per giorno+turno, `key={giorno}`): pianta del Lido (`src/lib/zoneTavoli.ts`: Veranda + Interno a sx, Ciringuito a dx; zone `veranda|interno|ciringuito`), drag&drop (`Tavolo.x/y` in %, `spostaTavolo` → `zonaDaPos`), selettore pranzo/cena, pannello tavolo: modifica numero/posti/zona (`modificaTavolo`), ospiti, "Assegna" prenotazioni confermate senza tavolo,
   QR per tavolo e stampa di tutti. **Prenotazioni**: calendario settimanale (`CalendarioPrenotazioni.tsx`, lun–dom, pranzo/cena,
-  chip per prenotazione + richieste dal sito da confermare tratteggiate) → click giorno = dettaglio sotto (gestione tavoli, conferma/rifiuta
+  chip per prenotazione + richieste dal sito da confermare tratteggiate) → click giorno = dettaglio sotto (richieste, planimetria tavoli di quel giorno, lista prenotazioni con gestione tavoli, conferma/rifiuta
   richieste, nuova prenotazione con la data scelta). **Magazzino**: `magazzino` + `movimentaArticolo/aggiungiArticolo/rimuoviArticolo`.
 
 ## Moduli commerciali (vendita a moduli)
