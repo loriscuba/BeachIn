@@ -26,16 +26,18 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-profondo text-white',
-          'transition-transform duration-200 lg:static lg:translate-x-0',
-          aperta ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white',
+          // mobile: pannello sopra i contenuti; desktop: colonna che scorre fuori a sinistra
+          'transition-all duration-200 lg:static',
+          aperta ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
         )}
+        aria-hidden={!aperta}
       >
         {/* Intestazione */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
           <Logo />
           <button
-            className="lg:hidden text-white/70 hover:text-white p-1"
+            className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white"
             onClick={onChiudi}
             aria-label="Chiudi menu"
           >
@@ -61,7 +63,8 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
                         <NavLink
                           to={v.percorso}
                           end={v.percorso === '/'}
-                          onClick={onChiudi}
+                          // su desktop il menu resta aperto dopo la scelta
+                          onClick={() => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }}
                           title={bloccato ? 'Modulo non incluso nel piano — attivalo' : undefined}
                           className={({ isActive }) =>
                             cn(

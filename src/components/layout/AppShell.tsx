@@ -25,8 +25,20 @@ const sottotitoli: Record<string, string> = {
   '/impostazioni': 'Anagrafica, arenile, utenti e ruoli',
 }
 
+const CHIAVE_MENU = 'beachin.menu.v1'
+
 export function AppShell() {
-  const [menuAperto, setMenuAperto] = useState(false)
+  // Menu laterale a scomparsa: su telefono parte chiuso; su desktop si ricorda la scelta.
+  const [menuAperto, setMenuAperto] = useState(() => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) return false
+    try { return localStorage.getItem(CHIAVE_MENU) !== 'chiuso' } catch { return true }
+  })
+  const impostaMenu = (aperto: boolean) => {
+    setMenuAperto(aperto)
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+      try { localStorage.setItem(CHIAVE_MENU, aperto ? 'aperto' : 'chiuso') } catch { /* storage non disponibile */ }
+    }
+  }
   const { pathname } = useLocation()
 
   const voce = navigazione.find((v) =>
@@ -37,13 +49,13 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-calce">
-      <Sidebar aperta={menuAperto} onChiudi={() => setMenuAperto(false)} />
+      <Sidebar aperta={menuAperto} onChiudi={() => impostaMenu(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           titolo={titolo}
           sottotitolo={sottotitolo}
-          onApriMenu={() => setMenuAperto(true)}
+          onApriMenu={() => impostaMenu(!menuAperto)}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1400px] px-4 py-5 lg:px-6 lg:py-6">

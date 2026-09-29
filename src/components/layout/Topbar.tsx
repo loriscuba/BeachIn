@@ -13,9 +13,10 @@ export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-calce-200 bg-calce/85 px-4 backdrop-blur lg:px-6">
       <button
-        className="lg:hidden -ml-1 rounded-lg p-2 text-profondo hover:bg-profondo/5"
+        className="-ml-1 rounded-lg p-2 text-profondo hover:bg-profondo/5"
         onClick={onApriMenu}
-        aria-label="Apri menu"
+        aria-label="Apri o chiudi il menu"
+        title="Menu"
       >
         <Menu className="h-5 w-5" />
       </button>
