@@ -5,7 +5,6 @@ import {
   Users,
   Tags,
   Coffee,
-  ConciergeBell,
   UtensilsCrossed,
   Receipt,
   Calculator,
@@ -26,6 +25,16 @@ export interface VoceNav {
   /** Fase in cui la pagina viene riempita (usata dal segnaposto). */
   fase: number
   gruppo: 'Operatività' | 'Gestione' | 'Presenza online' | 'Impostazioni'
+  /** Sottomenu: percorsi con `?tab=` della stessa pagina (o altre pagine, es. Comande sotto Bar). */
+  figli?: SottoVoce[]
+}
+
+export interface SottoVoce {
+  percorso: string
+  etichetta: string
+  modulo: ModuloId
+  /** Contatore stile iPhone: 'richieste' = richieste tavolo dal sito da confermare. */
+  badge?: 'richieste'
 }
 
 /**
@@ -34,14 +43,29 @@ export interface VoceNav {
  */
 export const navigazione: VoceNav[] = [
   { percorso: '/', etichetta: 'Panoramica', icona: Home, modulo: 'panoramica', fase: 4, gruppo: 'Operatività' },
+  {
+    percorso: '/bar', etichetta: 'Bar', icona: Coffee, modulo: 'bar', fase: 5, gruppo: 'Operatività',
+    figli: [
+      { percorso: '/bar?tab=listino', etichetta: 'Listino', modulo: 'bar' },
+      { percorso: '/bar?tab=conti', etichetta: 'Conti', modulo: 'bar' },
+      { percorso: '/comande', etichetta: 'Comande', modulo: 'comande' },
+    ],
+  },
+  {
+    percorso: '/ristorante', etichetta: 'Ristorante', icona: UtensilsCrossed, modulo: 'ristorante', fase: 5, gruppo: 'Operatività',
+    figli: [
+      { percorso: '/ristorante?tab=prenotazioni', etichetta: 'Prenotazioni', modulo: 'ristorante', badge: 'richieste' },
+      { percorso: '/ristorante?tab=tavoli', etichetta: 'Tavoli', modulo: 'ristorante' },
+      { percorso: '/ristorante?tab=menu', etichetta: 'Menu', modulo: 'ristorante' },
+      { percorso: '/ristorante?tab=magazzino', etichetta: 'Magazzino', modulo: 'ristorante' },
+      { percorso: '/ristorante?tab=giorni', etichetta: 'Gestione giorni', modulo: 'ristorante' },
+    ],
+  },
   { percorso: '/cruscotto', etichetta: 'Cruscotto completo', icona: LayoutDashboard, modulo: 'cruscotto', fase: 4, gruppo: 'Operatività' },
   { percorso: '/arenile', etichetta: 'Arenile', icona: Umbrella, modulo: 'arenile', fase: 3, gruppo: 'Operatività' },
   { percorso: '/clienti', etichetta: 'Clienti', icona: Users, modulo: 'clienti', fase: 5, gruppo: 'Operatività' },
-  { percorso: '/comande', etichetta: 'Comande', icona: ConciergeBell, modulo: 'comande', fase: 5, gruppo: 'Operatività' },
 
   { percorso: '/tariffe', etichetta: 'Tariffe', icona: Tags, modulo: 'tariffe', fase: 5, gruppo: 'Gestione' },
-  { percorso: '/bar', etichetta: 'Bar', icona: Coffee, modulo: 'bar', fase: 5, gruppo: 'Gestione' },
-  { percorso: '/ristorante', etichetta: 'Ristorante', icona: UtensilsCrossed, modulo: 'ristorante', fase: 5, gruppo: 'Gestione' },
   { percorso: '/costi', etichetta: 'Costi', icona: Receipt, modulo: 'costi', fase: 6, gruppo: 'Gestione' },
   { percorso: '/conto-economico', etichetta: 'Conto economico', icona: Calculator, modulo: 'conto-economico', fase: 6, gruppo: 'Gestione' },
   { percorso: '/personale', etichetta: 'Personale', icona: UserCog, modulo: 'personale', fase: 7, gruppo: 'Gestione' },
