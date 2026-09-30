@@ -44,8 +44,10 @@ export function AppShell() {
   const voce = navigazione.find((v) =>
     v.percorso === '/' ? pathname === '/' : pathname.startsWith(v.percorso)
   )
-  const titolo = voce?.etichetta ?? 'BeachIn'
-  const sottotitolo = sottotitoli[voce?.percorso ?? ''] ?? undefined
+  // pagine raggiungibili solo da un sottomenu (es. Comande sotto Bar)
+  const figlio = voce ? undefined : navigazione.flatMap((v) => v.figli ?? []).find((f) => f.percorso === pathname)
+  const titolo = voce?.etichetta ?? figlio?.etichetta ?? 'BeachIn'
+  const sottotitolo = sottotitoli[voce?.percorso ?? figlio?.percorso ?? ''] ?? undefined
 
   return (
     <div className="flex h-screen overflow-hidden bg-calce">

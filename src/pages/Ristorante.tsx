@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Star, ThumbsDown, X, Phone, Check, Smartphone, CalendarX2, Undo2, ChevronLeft, ChevronRight, ChevronDown, CalendarDays, LayoutGrid } from 'lucide-react'
+import { Star, ThumbsDown, X, Phone, Check, Smartphone, CalendarX2, Undo2, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
@@ -24,6 +24,7 @@ import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
 import { urlAdminApp } from '@/lib/adminapp'
 import { GiorniChiusi } from '@/components/GiorniChiusi'
+import { BadgeConta } from '@/components/layout/Sidebar'
 import { disponibilitaTurno } from '@/lib/disponibilita'
 
 const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro' | 'stagionale'> = {
@@ -34,10 +35,10 @@ const etichettaStato: Record<StatoPrenotazione, string> = {
 }
 const etichettaZona = nomeZona
 
-type Sezione = 'prenotazioni' | 'menu' | 'magazzino'
+type Sezione = 'prenotazioni' | 'tavoli' | 'menu' | 'magazzino' | 'giorni'
 const sezioni: { valore: Sezione; etichetta: string }[] = [
-  { valore: 'prenotazioni', etichetta: 'Prenotazioni' }, { valore: 'menu', etichetta: 'Menu' },
-  { valore: 'magazzino', etichetta: 'Magazzino' },
+  { valore: 'prenotazioni', etichetta: 'Prenotazioni' }, { valore: 'tavoli', etichetta: 'Tavoli' }, { valore: 'menu', etichetta: 'Menu' },
+  { valore: 'magazzino', etichetta: 'Magazzino' }, { valore: 'giorni', etichetta: 'Gestione giorni' },
 ]
 
 const margine = (p: Piatto) => (p.prezzo - p.foodCost) / p.prezzo
@@ -48,11 +49,9 @@ export default function Ristorante() {
   const {
     menu, sezioniMenu, tavoliDelGiorno, prenotazioniRistorante, richiesteRistorante, confermaRistorante, rifiutaRistorante,
     creaPrenotazioneRistorante, assegnaTavolo, impostaStatoPrenotazione, rimuoviPrenotazioneRistorante,
-    giorniChiusi, chiudiGiorni, riapriGiorno,
+    giorniChiusi, riapriGiorno,
   } = useDemoData()
-  const [pannelloChiusure, setPannelloChiusure] = useState(false)
   const [vediSettimana, setVediSettimana] = useState(false)
-  const [vediPianta, setVediPianta] = useState(false)
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
   const [q, setQ] = useSearchParams()
   // I tavoli ora si gestiscono per giorno dentro Prenotazioni: il vecchio ?tab=tavoli porta lì.
@@ -91,7 +90,9 @@ export default function Ristorante() {
   const arrivati = listaTurno.filter((p) => p.stato === 'arrivata').length
   const attesi = listaTurno.filter((p) => p.stato === 'confermata' || p.stato === 'in_attesa').length
   const richiesteTurno = richiesteGiorno.filter((r) => r.turno === turno)
-  const chiusiFuturi = giorniChiusi.filter((g) => g.data >= oggi).length
+  // Richieste dal sito da confermare, di qualunque giorno: le più recenti in cima.
+  const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
+    .sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0) || b.ricevutaIl.localeCompare(a.ricevutaIl))
 
   const menuFiltrato = filtroCat === 'tutte' ? menu : menu.filter((p) => p.categoria === filtroCat)
   const piuVenduti = [...menu].sort((a, b) => b.vendutiStagione - a.vendutiStagione).slice(0, 4)
@@ -99,7 +100,7 @@ export default function Ristorante() {
 
   return (
     <div className="space-y-4">
-      <Tabs opzioni={sezioni} valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />
+      <Tabs opzioni={sezioni.map((x) => (x.valore === 'prenotazioni' ? { ...x, badge: daConfermare.length } : x))} valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />
 
       {tab === 'menu' && (
         <>
@@ -157,37 +158,25 @@ export default function Ristorante() {
 
       {tab === 'magazzino' && <Magazzino />}
 
-      {tab === 'prenotazioni' && (
+      {(tab === 'prenotazioni' || tab === 'tavoli') && (
         <div className="space-y-3">
-          {/* Barra del giorno: frecce, oggi, settimana, chiusure, nuova prenotazione */}
+          {/* Barra del giorno, condivisa tra Prenotazioni e Tavoli: stesso giorno scelto */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center rounded-xl border border-calce-200 bg-white">
-              <button type="button" onClick={() => spostaGiorno(-1)} className="grid h-10 w-10 place-content-center text-profondo hover:bg-calce/60" aria-label="Giorno prima"><ChevronLeft className="h-5 w-5" /></button>
+              <button type="button" onClick={() => spostaGiorno(-1)} className="grid h-11 w-11 place-content-center text-profondo hover:bg-calce/60" aria-label="Giorno prima"><ChevronLeft className="h-5 w-5" /></button>
               <span className="min-w-[9.5rem] text-center font-display text-lg font-semibold capitalize text-profondo">
                 {giorno === oggi ? 'Oggi' : format(parseISO(giorno), 'EEE d MMM', { locale: itLocale })}
               </span>
-              <button type="button" onClick={() => spostaGiorno(1)} className="grid h-10 w-10 place-content-center text-profondo hover:bg-calce/60" aria-label="Giorno dopo"><ChevronRight className="h-5 w-5" /></button>
+              <button type="button" onClick={() => spostaGiorno(1)} className="grid h-11 w-11 place-content-center text-profondo hover:bg-calce/60" aria-label="Giorno dopo"><ChevronRight className="h-5 w-5" /></button>
             </div>
             {giorno !== oggi && <Button dimensione="sm" onClick={() => setGiornoStato(oggi)}>Torna a oggi</Button>}
             <Button dimensione="sm" onClick={() => setVediSettimana(!vediSettimana)}><CalendarDays className="h-4 w-4" /> Settimana</Button>
-            <button type="button" onClick={() => setPannelloChiusure(!pannelloChiusure)} className="relative grid h-9 w-9 place-content-center rounded-lg border border-calce-200 bg-white text-boa hover:bg-calce/60" title="Giorni chiusi" aria-label="Giorni chiusi">
-              <CalendarX2 className="h-4 w-4" />
-              {chiusiFuturi > 0 && <span className="num absolute -right-1.5 -top-1.5 rounded-full bg-boa px-1.5 text-[10px] text-white">{chiusiFuturi}</span>}
-            </button>
-            <div className="ml-auto">
-              <NuovaPrenotazione tavoli={tavoli} occupatiPerTurno={occupatiPerTurno} onCrea={(d) => creaPrenotazioneRistorante({ ...d, data: giorno })} />
-            </div>
+            {tab === 'prenotazioni' && (
+              <div className="ml-auto">
+                <NuovaPrenotazione tavoli={tavoli} occupatiPerTurno={occupatiPerTurno} onCrea={(d) => creaPrenotazioneRistorante({ ...d, data: giorno })} />
+              </div>
+            )}
           </div>
-
-          {pannelloChiusure && (
-            <Card>
-              <CardBody className="space-y-2 sm:max-w-md">
-                <p className="text-sm font-semibold text-profondo">Giorni di chiusura <span className="font-normal text-profondo/55">· sul sito compaiono in rosso e non si prenota</span></p>
-                {!chiusoGiorno && <Button dimensione="sm" onClick={() => chiudiGiorni(giorno, giorno)}><CalendarX2 className="h-4 w-4 text-boa" /> Chiudi questo giorno</Button>}
-                <GiorniChiusi />
-              </CardBody>
-            </Card>
-          )}
 
           {vediSettimana && (
             <Card>
@@ -197,7 +186,7 @@ export default function Ristorante() {
                   oggi={oggi}
                   onGiorno={setGiorno}
                   prenotazioni={prenotazioniRistorante}
-                  richieste={richiesteRistorante.filter((r) => r.stato === 'da_confermare')}
+                  richieste={daConfermare}
                   chiusi={giorniChiusi}
                 />
               </CardBody>
@@ -211,34 +200,46 @@ export default function Ristorante() {
             </div>
           )}
 
-          {/* Turno + riepilogo in grande */}
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-white p-1 sm:w-72">
-            {(['pranzo', 'cena'] as Turno[]).map((t) => (
-              <button key={t} type="button" onClick={() => setTurno(t)} className={cn('h-10 rounded-lg text-sm font-semibold capitalize', turno === t ? 'bg-profondo text-white' : 'text-profondo hover:bg-calce/60')}>{t}</button>
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <Numero etichetta="Coperti" valore={disp.copertiPrenotati} sotto={`${arrivati}/${arrivati + attesi} arrivati`} />
-            <Numero etichetta="Tavoli liberi" valore={disp.tavoliLiberi} sotto={disp.pieno ? 'pieno' : `${disp.postiLiberi} posti`} rosso={disp.pieno} />
-            <Numero etichetta="Da confermare" valore={richiesteTurno.length} sotto="dal sito" rosso={richiesteTurno.length > 0} />
-          </div>
+          {tab === 'tavoli' && <Planimetria key={giorno} prenGiorno={prenGiorno} giorno={giorno} oggi={oggi} />}
+        </div>
+      )}
 
-          {richiesteTurno.length > 0 && (
-            <div className="rounded-xl border border-dashed border-boa/50 bg-boa/5 p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-boa">Dal sito · da confermare</p>
+      {tab === 'prenotazioni' && (
+        <div className="space-y-3">
+          {/* Tutte le richieste nuove dal sito, qualunque sia la data: sempre in cima */}
+          {daConfermare.length > 0 && (
+            <div className="rounded-xl border-2 border-boa/60 bg-boa/5 p-3">
+              <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-boa">
+                <BadgeConta n={daConfermare.length} /> Nuove dal sito · da confermare
+              </p>
               <ul className="space-y-1.5">
-                {richiesteTurno.map((r) => (
+                {daConfermare.map((r) => (
                   <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
-                    <span className="text-profondo"><b>{r.nome}</b> · {r.coperti} pers.{r.telefono && <> · {r.telefono}</>}{r.note && <span className="text-profondo/55"> · {r.note}</span>}</span>
+                    <button type="button" onClick={() => { setGiornoStato(r.data); setTurno(r.turno) }} className="min-w-0 text-left" title="Vai al giorno">
+                      <span className="mr-2 inline-block rounded-md bg-profondo px-2 py-0.5 text-xs font-semibold capitalize text-white">{format(parseISO(r.data), 'EEE d MMM', { locale: itLocale })} · {r.turno}</span>
+                      <span className="text-profondo"><b>{r.nome}</b> · {r.coperti} pers.{r.telefono && <> · {r.telefono}</>}{r.note && <span className="text-profondo/55"> · {r.note}</span>}</span>
+                    </button>
                     <span className="flex gap-1.5">
-                      <Button dimensione="sm" onClick={() => rifiutaRistorante(r.id)}><X className="h-4 w-4 text-boa" /> Rifiuta</Button>
-                      <Button dimensione="sm" variante="primario" onClick={() => confermaRistorante(r.id)}><Check className="h-4 w-4" /> Conferma</Button>
+                      <Button onClick={() => rifiutaRistorante(r.id)}><X className="h-4 w-4 text-boa" /> Rifiuta</Button>
+                      <Button variante="primario" onClick={() => confermaRistorante(r.id)}><Check className="h-4 w-4" /> Conferma</Button>
                     </span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
+
+          {/* Turno + riepilogo in grande */}
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-white p-1 sm:w-72">
+            {(['pranzo', 'cena'] as Turno[]).map((t) => (
+              <button key={t} type="button" onClick={() => setTurno(t)} className={cn('h-11 rounded-lg text-sm font-semibold capitalize', turno === t ? 'bg-profondo text-white' : 'text-profondo hover:bg-calce/60')}>{t}</button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <Numero etichetta="Coperti" valore={disp.copertiPrenotati} sotto={`${arrivati}/${arrivati + attesi} arrivati`} />
+            <Numero etichetta="Tavoli liberi" valore={disp.tavoliLiberi} sotto={disp.pieno ? 'pieno' : `${disp.postiLiberi} posti`} rosso={disp.pieno} />
+            <Numero etichetta="Da confermare" valore={richiesteTurno.length} sotto="in questo turno" rosso={richiesteTurno.length > 0} />
+          </div>
 
           {/* Arrivi del turno */}
           <ul className="space-y-1.5">
@@ -257,15 +258,17 @@ export default function Ristorante() {
             ))}
           </ul>
 
-          {/* Pianta tavoli: si apre quando serve */}
-          <button type="button" onClick={() => setVediPianta(!vediPianta)} className="flex w-full items-center justify-between rounded-xl border border-calce-200 bg-white px-4 py-3 text-sm font-semibold text-profondo hover:bg-calce/40">
-            <span className="inline-flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-cabina" /> Pianta tavoli</span>
-            <ChevronDown className={cn('h-4 w-4 transition-transform', vediPianta && 'rotate-180')} />
-          </button>
-          {vediPianta && <Planimetria key={giorno} prenGiorno={prenGiorno} giorno={giorno} oggi={oggi} />}
-
           <a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-profondo/55 hover:text-profondo"><Smartphone className="h-3.5 w-3.5" /> App admin per il telefono</a>
         </div>
+      )}
+
+      {tab === 'giorni' && (
+        <Card>
+          <CardHeader titolo="Giorni di chiusura" sottotitolo="Sul sito compaiono in rosso e non si prenota" />
+          <CardBody className="pt-1 sm:max-w-md">
+            <GiorniChiusi />
+          </CardBody>
+        </Card>
       )}
     </div>
   )

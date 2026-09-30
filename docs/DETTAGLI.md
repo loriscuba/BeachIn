@@ -107,8 +107,18 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Lista del turno con bottone **Arrivati** (stato `arrivata` di `StatoPrenotazione`; vincolo DB aggiornato, migration
   `beachin_prenotazione_arrivata`) e select tavolo. Calendario settimanale dietro "Settimana", pianta tavoli dietro "Pianta tavoli",
   giorni chiusi dietro l'icona calendario. Tolti i KPI incasso/scontrino/food cost.
-- **Campanella notifiche** in alto a destra (`src/components/layout/CentroNotifiche.tsx`, nella `Topbar`, solo con modulo
-  `ristorante`): richieste tavolo dal sito da confermare, conferma/rifiuta dal pannello, campanello + avviso a ogni richiesta nuova.
+- (ott 2026) Campanella tolta. Le richieste dal sito da confermare, di **qualunque data**, stanno in un riquadro in cima a
+  Prenotazioni (tocco sulla data = vai a quel giorno/turno) e hanno un **badge rosso** su Ristorante/Prenotazioni nel menu
+  laterale e sulla scheda Prenotazioni (`BadgeConta` in `Sidebar.tsx`, `Tabs` accetta `badge`).
+- Schede: **Prenotazioni | Tavoli | Menu | Magazzino | Gestione giorni** (`?tab=`). Prenotazioni e Tavoli condividono lo
+  stesso giorno (stato del componente + barra giorno comune). Gestione giorni = `<GiorniChiusi />`.
+
+## Menu laterale a sottomenu (ott 2026)
+- `VoceNav.figli?: SottoVoce[]` in `src/config/navigazione.tsx` (percorsi con `?tab=`; `badge: 'richieste'`). Ordine:
+  Panoramica · **Bar** (Listino, Conti, Comande) · **Ristorante** (Prenotazioni, Tavoli, Menu, Magazzino, Gestione giorni) · resto.
+- `Sidebar`: voce con figli = pulsante che apre/chiude (aperto di default se ci sei dentro), righe alte per iPad.
+  `AppShell` ricava titolo/sottotitolo anche dai figli (es. `/comande`).
+- `Bar.tsx`: solo schede Listino (giacenze) e Conti (per ombrellone); tolte vendite/KPI. Modulo `bar` aggiunto al piano `ristorante_web`.
 
 ## Disponibilità tavoli + giorni chiusi
 - `src/lib/disponibilita.ts`: `disponibilitaTurno(tavoli, pren, data, turno, coperti?)` (tavoli/posti liberi, prenotazioni senza
