@@ -5,17 +5,19 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Loader2, Users, UtensilsCrossed, BookOpen, Inbox } from 'lucide-react'
+import { Loader2, Users, BookOpen, Inbox } from 'lucide-react'
 import type { PrenotazioneRistorante, ServizioRistoranteGiorno } from '@/data/types'
 import { getPrenotazioniRistorante, getServiziRistorante } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
+import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { euro, numero } from '@/lib/formatters'
+import { numero } from '@/lib/formatters'
 
 export default function Panoramica() {
   const { menu, richiesteRistorante, prenotazioniOnline } = useDemoData()
+  const { moduloAttivo } = useModuli()
   const [servizi, setServizi] = useState<ServizioRistoranteGiorno[]>([])
   const [prenotazioni, setPrenotazioni] = useState<PrenotazioneRistorante[]>([])
   const [caricato, setCaricato] = useState(false)
@@ -33,13 +35,12 @@ export default function Panoramica() {
   const kpi = useMemo(() => {
     const s = servizi.filter((x) => x.data === oggi)
     const coperti = s.reduce((a, x) => a + x.coperti, 0)
-    const incasso = s.reduce((a, x) => a + x.incasso, 0)
-    return { coperti, incasso }
+    return { coperti }
   }, [servizi, oggi])
 
   const daConfermareSito =
     richiesteRistorante.filter((r) => r.stato === 'da_confermare').length +
-    prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length
+    (moduloAttivo('arenile') ? prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length : 0)
 
   const prenOggi = prenotazioni.filter((p) => p.data === oggi)
 
@@ -54,9 +55,8 @@ export default function Panoramica() {
   return (
     <div className="space-y-4">
       {/* KPI dei moduli attivi */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Kpi icona={Users} etichetta="Coperti oggi" valore={numero(kpi.coperti)} />
-        <Kpi icona={UtensilsCrossed} etichetta="Incasso ristorante oggi" valore={euro(kpi.incasso)} />
         <Kpi icona={BookOpen} etichetta="Piatti a menù" valore={numero(menu.length)} />
         <Kpi icona={Inbox} etichetta="Dal sito da confermare" valore={numero(daConfermareSito)} />
       </div>

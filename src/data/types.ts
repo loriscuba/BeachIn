@@ -293,7 +293,7 @@ export interface Piatto {
 export type LinguaMenu = 'it' | 'en' | 'fr' | 'de' | 'es'
 
 export type Turno = 'pranzo' | 'cena'
-export type StatoPrenotazione = 'confermata' | 'in_attesa' | 'annullata'
+export type StatoPrenotazione = 'confermata' | 'in_attesa' | 'annullata' | 'arrivata'
 
 export interface Tavolo {
   id: string

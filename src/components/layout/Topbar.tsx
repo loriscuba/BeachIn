@@ -1,7 +1,7 @@
 import { Menu, FlaskConical, CalendarClock } from 'lucide-react'
 import { config } from '@/data/config'
 import { dataEstesa } from '@/lib/formatters'
-import { BottoneDemo } from '@/components/demo/DemoPlayer'
+import { CentroNotifiche } from '@/components/layout/CentroNotifiche'
 
 interface TopbarProps {
   titolo: string
@@ -28,14 +28,14 @@ export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
         )}
       </div>
 
-      {/* Avvia demo guidata */}
-      <BottoneDemo />
 
       {/* Data simulata della demo */}
       <div className="hidden items-center gap-1.5 rounded-lg border border-calce-200 bg-white px-3 py-1.5 text-sm text-profondo md:flex">
         <CalendarClock className="h-4 w-4 text-cabina" />
         <span className="font-medium capitalize">{dataEstesa(config.stagione.oggi)}</span>
       </div>
+
+      <CentroNotifiche />
 
       {/* Badge dati dimostrativi — sempre visibile */}
       <div
