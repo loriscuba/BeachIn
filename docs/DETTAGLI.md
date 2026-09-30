@@ -101,6 +101,15 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   chip per prenotazione + richieste dal sito da confermare tratteggiate) → click giorno = dettaglio sotto (richieste, planimetria tavoli di quel giorno, lista prenotazioni con gestione tavoli, conferma/rifiuta
   richieste, nuova prenotazione con la data scelta). **Magazzino**: `magazzino` + `movimentaArticolo/aggiungiArticolo/rimuoviArticolo`.
 
+## Ristorante → Prenotazioni: vista "servizio" (ott 2026)
+- Si apre su **oggi** e sul **turno in corso** (pranzo prima delle 16, poi cena); frecce ‹ › per cambiare giorno, `?giorno=AAAA-MM-GG`
+  apre un giorno preciso (usato dalla campanella). Tre numeri grandi: coperti (arrivati/attesi), tavoli liberi, da confermare.
+- Lista del turno con bottone **Arrivati** (stato `arrivata` di `StatoPrenotazione`; vincolo DB aggiornato, migration
+  `beachin_prenotazione_arrivata`) e select tavolo. Calendario settimanale dietro "Settimana", pianta tavoli dietro "Pianta tavoli",
+  giorni chiusi dietro l'icona calendario. Tolti i KPI incasso/scontrino/food cost.
+- **Campanella notifiche** in alto a destra (`src/components/layout/CentroNotifiche.tsx`, nella `Topbar`, solo con modulo
+  `ristorante`): richieste tavolo dal sito da confermare, conferma/rifiuta dal pannello, campanello + avviso a ogni richiesta nuova.
+
 ## Disponibilità tavoli + giorni chiusi
 - `src/lib/disponibilita.ts`: `disponibilitaTurno(tavoli, pren, data, turno, coperti?)` (tavoli/posti liberi, prenotazioni senza
   tavolo, `pieno`, `tavoloAdatto`) e `statoGiorno(...)` → `chiuso|pieno|parziale|libero`.

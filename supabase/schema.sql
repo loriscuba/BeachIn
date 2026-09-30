@@ -158,7 +158,7 @@ create table if not exists beachin.prenotazioni_ristorante (
   nome text not null,
   coperti int not null default 2,
   tavolo_id text,
-  stato text not null default 'confermata' check (stato in ('confermata','in_attesa','annullata')),
+  stato text not null default 'confermata' check (stato in ('confermata','in_attesa','annullata','arrivata')),
   note text,
   telefono text,
   origine text check (origine in ('manuale','sito'))

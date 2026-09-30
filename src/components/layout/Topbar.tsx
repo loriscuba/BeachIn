@@ -1,6 +1,7 @@
 import { Menu, FlaskConical, CalendarClock } from 'lucide-react'
 import { config } from '@/data/config'
 import { dataEstesa } from '@/lib/formatters'
+import { CentroNotifiche } from '@/components/layout/CentroNotifiche'
 
 interface TopbarProps {
   titolo: string
@@ -33,6 +34,8 @@ export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
         <CalendarClock className="h-4 w-4 text-cabina" />
         <span className="font-medium capitalize">{dataEstesa(config.stagione.oggi)}</span>
       </div>
+
+      <CentroNotifiche />
 
       {/* Badge dati dimostrativi — sempre visibile */}
       <div

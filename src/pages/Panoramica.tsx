@@ -9,6 +9,7 @@ import { Loader2, Users, BookOpen, Inbox } from 'lucide-react'
 import type { PrenotazioneRistorante, ServizioRistoranteGiorno } from '@/data/types'
 import { getPrenotazioniRistorante, getServiziRistorante } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
+import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -16,6 +17,7 @@ import { numero } from '@/lib/formatters'
 
 export default function Panoramica() {
   const { menu, richiesteRistorante, prenotazioniOnline } = useDemoData()
+  const { moduloAttivo } = useModuli()
   const [servizi, setServizi] = useState<ServizioRistoranteGiorno[]>([])
   const [prenotazioni, setPrenotazioni] = useState<PrenotazioneRistorante[]>([])
   const [caricato, setCaricato] = useState(false)
@@ -38,7 +40,7 @@ export default function Panoramica() {
 
   const daConfermareSito =
     richiesteRistorante.filter((r) => r.stato === 'da_confermare').length +
-    prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length
+    (moduloAttivo('arenile') ? prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length : 0)
 
   const prenOggi = prenotazioni.filter((p) => p.data === oggi)
 
