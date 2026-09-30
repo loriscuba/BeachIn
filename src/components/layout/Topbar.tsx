@@ -1,7 +1,6 @@
 import { Menu, FlaskConical, CalendarClock } from 'lucide-react'
 import { config } from '@/data/config'
 import { dataEstesa } from '@/lib/formatters'
-import { BottoneDemo } from '@/components/demo/DemoPlayer'
 
 interface TopbarProps {
   titolo: string
@@ -28,8 +27,6 @@ export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
         )}
       </div>
 
-      {/* Avvia demo guidata */}
-      <BottoneDemo />
 
       {/* Data simulata della demo */}
       <div className="hidden items-center gap-1.5 rounded-lg border border-calce-200 bg-white px-3 py-1.5 text-sm text-profondo md:flex">
