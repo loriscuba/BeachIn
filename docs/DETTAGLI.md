@@ -118,6 +118,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Panoramica · **Bar** (Listino, Conti, Comande) · **Ristorante** (Prenotazioni, Tavoli, Menu, Magazzino, Gestione giorni) · resto.
 - `Sidebar`: voce con figli = pulsante che apre/chiude (aperto di default se ci sei dentro), righe alte per iPad.
   `AppShell` ricava titolo/sottotitolo anche dai figli (es. `/comande`).
+- Il menu mostra **solo i moduli attivi** (niente voci col lucchetto; si attivano da Impostazioni → Moduli e piano).
+- La `Sidebar` suona il `campanello()` a ogni richiesta tavolo nuova dal sito (non al primo caricamento; audio sbloccato al primo tocco).
 - `Bar.tsx`: solo schede Listino (giacenze) e Conti (per ombrellone); tolte vendite/KPI. Modulo `bar` aggiunto al piano `ristorante_web`.
 
 ## Disponibilità tavoli + giorni chiusi

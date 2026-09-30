@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import { X, Lock, ChevronDown } from 'lucide-react'
 import { navigazione, gruppiNav, type SottoVoce, type VoceNav } from '@/config/navigazione'
@@ -7,6 +7,7 @@ import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Logo } from './Logo'
 import { cn } from '@/lib/cn'
+import { campanello, sbloccaAudio } from '@/lib/suoni'
 
 interface SidebarProps {
   aperta: boolean
@@ -37,6 +38,19 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
   const conta = { richieste: richiesteRistorante.filter((r) => r.stato === 'da_confermare').length }
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
+  // Suono a ogni richiesta nuova dal sito (non al primo caricamento). Il browser
+  // permette l'audio solo dopo un gesto: lo sblocchiamo al primo tocco sulla pagina.
+  const viste = useRef<Set<string> | null>(null)
+  const idRichieste = richiesteRistorante.filter((r) => r.stato === 'da_confermare').map((r) => r.id)
+  useEffect(() => {
+    if (viste.current && moduloAttivo('ristorante') && idRichieste.some((id) => !viste.current!.has(id))) campanello()
+    viste.current = new Set(idRichieste)
+  }, [idRichieste.join()]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const sblocca = () => sbloccaAudio()
+    window.addEventListener('pointerdown', sblocca, { once: true })
+    return () => window.removeEventListener('pointerdown', sblocca)
+  }, [])
   const dentro = (v: VoceNav) => (v.figli ?? []).some((f) => pathname === f.percorso.split('?')[0])
   return (
     <>
@@ -73,7 +87,11 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
         {/* Navigazione */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
           {gruppiNav.map((gruppo) => {
-            const voci = navigazione.filter((v) => v.gruppo === gruppo)
+            // Si mostrano solo i moduli attivi (i bloccati restano raggiungibili da Impostazioni → Moduli)
+            const voci = navigazione
+              .filter((v) => v.gruppo === gruppo)
+              .map((v) => (v.figli ? { ...v, figli: v.figli.filter((f) => moduloAttivo(f.modulo)) } : v))
+              .filter((v) => (v.figli ? v.figli.length > 0 : moduloAttivo(v.modulo)))
             if (voci.length === 0) return null
             return (
               <div key={gruppo}>
