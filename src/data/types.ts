@@ -176,14 +176,13 @@ export interface TariffaAccessoria {
 // Bar
 // ————————————————————————————————————————————————————————————
 
-export type CategoriaBar =
-  | 'caffetteria'
-  | 'bibite'
-  | 'birre'
-  | 'cocktail'
-  | 'gelati'
-  | 'snack'
-  | 'gastronomia'
+/** Id della categoria del bar (= `SezioneBar.id`; categorie modificabili dal Listino). */
+export type CategoriaBar = string
+
+export interface SezioneBar {
+  id: string
+  nome: string
+}
 
 export interface ArticoloBar {
   id: string
@@ -194,6 +193,8 @@ export interface ArticoloBar {
   giacenza: number
   sogliaRiordino: number
   unita: string
+  /** false = esaurito/nascosto in ComandApp e nelle Comande (resta nel listino). */
+  disponibile?: boolean
 }
 
 export interface RigaConto {
@@ -247,6 +248,8 @@ export interface Comanda {
   cliente?: string
   /** Istante di invio (ms), per l'ordinamento tra dispositivi. */
   ts?: number
+  /** Incassata: esce dal conto aperto dell'ombrellone (Bar → Conti). */
+  pagata?: boolean
 }
 
 // ————————————————————————————————————————————————————————————

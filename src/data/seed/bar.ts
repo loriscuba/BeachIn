@@ -3,7 +3,7 @@
  * serie giornaliera, così l'incasso bar coincide col Cruscotto e il Conto
  * economico) e conti aperti per ombrellone.
  */
-import type { ArticoloBar, CategoriaBar, ContoOmbrellone, RigaConto, VenditaBarGiorno } from '../types'
+import type { ArticoloBar, CategoriaBar, SezioneBar, ContoOmbrellone, RigaConto, VenditaBarGiorno } from '../types'
 import { creaRng, intero, scegli, arrotonda, forse, type Rng } from './_rng'
 import { giorni, dettaglioBarGiorno } from './giornaliero'
 import { postazioni } from './spiaggia'
@@ -107,6 +107,12 @@ function costruisciArticoli(rng: Rng): ArticoloBar[] {
 }
 
 export const articoliBar: ArticoloBar[] = costruisciArticoli(creaRng(1717))
+
+const nomiSezione: Record<string, string> = {
+  caffetteria: 'Caffetteria', bibite: 'Bibite', birre: 'Birre', cocktail: 'Cocktail', gelati: 'Gelati', snack: 'Snack', gastronomia: 'Gastronomia',
+}
+/** Categorie iniziali del listino bar (poi modificabili). */
+export const sezioniBar: SezioneBar[] = listino.map((g) => ({ id: g.categoria, nome: nomiSezione[g.categoria] ?? g.categoria }))
 
 // — Vendite giornaliere (dalla serie giornaliera) —
 export const venditeBar: VenditaBarGiorno[] = giorni.map((g) => {

@@ -6,16 +6,14 @@
  * da ComandApp (`/comandapp`, app del bagnante): all'arrivo suona il campanello.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Loader2, Plus, Minus, Send, Check, X, Umbrella, Coffee, Search, Bell, BellOff, Smartphone, ExternalLink, Copy } from 'lucide-react'
-import type { ArticoloBar, CategoriaBar, Comanda, RigaComanda, StatoComanda } from '@/data/types'
-import { getArticoliBar } from '@/data/api'
+import { Plus, Minus, Send, Check, X, Umbrella, Coffee, Search, Bell, BellOff, Smartphone, ExternalLink, Copy } from 'lucide-react'
+import type { CategoriaBar, Comanda, RigaComanda, StatoComanda } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { euroCent, numero } from '@/lib/formatters'
-import { etichetteCategoriaBar } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
 import { QrCodice } from '@/components/QrCodice'
 import { supabaseAttivo } from '@/lib/supabase'
@@ -30,9 +28,12 @@ const azione: Partial<Record<StatoComanda, string>> = {
 }
 
 export default function Comande() {
-  const { comande, inviaComanda, avanzaComanda, annullaComanda } = useDemoData()
-  const [articoli, setArticoli] = useState<ArticoloBar[]>([])
-  const [caricato, setCaricato] = useState(false)
+  const { comande, inviaComanda, avanzaComanda, annullaComanda, articoliBar, sezioniBar } = useDemoData()
+  // stesso listino di ComandApp: solo gli articoli disponibili, nell'ordine delle categorie
+  const articoli = useMemo(
+    () => sezioniBar.flatMap((s) => articoliBar.filter((a) => a.categoria === s.id && a.disponibile !== false)),
+    [articoliBar, sezioniBar]
+  )
   const [ombrellone, setOmbrellone] = useState('')
   const [note, setNote] = useState('')
   const [qta, setQta] = useState<Record<string, number>>({})
@@ -50,10 +51,6 @@ export default function Comande() {
     nuove.forEach((c) => visti.current.add(c.id))
     if (suoni && nuove.some((c) => c.stato === 'in_attesa')) campanello()
   }, [comande, suoni])
-
-  useEffect(() => {
-    getArticoliBar().then((a) => { setArticoli(a); setCaricato(true) })
-  }, [])
 
   const q = cerca.trim().toLowerCase()
   const mostrati = articoli.filter(
@@ -89,10 +86,6 @@ export default function Comande() {
   }
 
   const aperte = comande.filter((c) => c.stato !== 'pronta').length
-
-  if (!caricato) {
-    return <div className="grid h-64 place-items-center text-profondo/50"><Loader2 className="h-6 w-6 animate-spin" /></div>
-  }
 
   return (
     <div className="space-y-4">
@@ -137,7 +130,7 @@ export default function Comande() {
               <Select
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value as CategoriaBar | 'tutte')}
-                opzioni={[{ valore: 'tutte', etichetta: 'Tutte' }, ...Object.entries(etichetteCategoriaBar).map(([v, l]) => ({ valore: v, etichetta: l }))]}
+                opzioni={[{ valore: 'tutte', etichetta: 'Tutte' }, ...sezioniBar.map((s) => ({ valore: s.id, etichetta: s.nome }))]}
               />
             </div>
           </div>

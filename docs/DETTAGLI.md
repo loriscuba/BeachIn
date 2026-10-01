@@ -141,6 +141,14 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Il menu mostra **solo i moduli attivi** (niente voci col lucchetto; si attivano da Impostazioni → Moduli e piano).
 - La `Sidebar` suona il `campanello()` a ogni richiesta tavolo nuova dal sito (non al primo caricamento; audio sbloccato al primo tocco).
 - `Bar.tsx`: solo schede Listino (giacenze) e Conti (per ombrellone); tolte vendite/KPI. Modulo `bar` aggiunto al piano `ristorante_web`.
+- **Listino bar condiviso** (ott 2026): `sezioniBar` + `articoliBar` nel context, sync Supabase `beachin.bar_sezioni` /
+  `beachin.articoli_bar` (semina dai seed). Usati da Bar → Listino, ComandApp e Comande (non più `getArticoliBar`, che resta
+  solo per il Cruscotto). Listino tutto modificabile: articolo (modal: nome, categoria, prezzo, costo, giacenza, soglia, unità,
+  disponibile), categorie (rinomina, ordine = schede ComandApp, aggiungi, elimina solo se vuota), toggle Disponibile/Esaurito
+  (gli esauriti spariscono da ComandApp/Comande). `CategoriaBar` ora è `string`.
+- **Conti** = comande non pagate raggruppate per ombrellone (clienti, righe, dettaglio comande); **Incassa** →
+  `incassaOmbrellone()` segna `pagata` (colonna `beachin.comande.pagata`). I vecchi conti finti (`seed/bar.ts`) non sono più
+  caricati (`conti` parte vuoto, usato ancora da arenile/demo).
 
 ## Disponibilità tavoli + giorni chiusi
 - `src/lib/disponibilita.ts`: `disponibilitaTurno(tavoli, pren, data, turno, coperti?)` (tavoli/posti liberi, prenotazioni senza
