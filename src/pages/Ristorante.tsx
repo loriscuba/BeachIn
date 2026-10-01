@@ -245,7 +245,13 @@ export default function Ristorante() {
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <Numero etichetta="Coperti previsti" valore={disp.copertiPrenotati} sotto={`${attive.length} prenotazion${attive.length === 1 ? 'e' : 'i'}`} />
             <Numero etichetta="Tavoli liberi" valore={disp.liberi.length} sotto={`su ${disp.tavoliTotali} tavoli`} rosso={disp.pieno} />
-            <Numero etichetta="Da sistemare" valore={disp.senzaTavolo} sotto="senza tavolo assegnato" rosso={disp.senzaTavolo > 0} />
+            <Numero
+              etichetta="Da sistemare"
+              valore={disp.senzaTavolo}
+              sotto={disp.senzaTavolo > 0 ? 'tocca per sistemare' : 'senza tavolo assegnato'}
+              rosso={disp.senzaTavolo > 0}
+              onClick={disp.senzaTavolo > 0 ? () => setPrenTavolo(listaTurno.find((x) => !x.tavoloId && x.stato !== 'annullata')?.id) : undefined}
+            />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]">
@@ -360,13 +366,17 @@ export default function Ristorante() {
 }
 
 /** Numero grande del riepilogo di turno. */
-function Numero({ etichetta, valore, sotto, rosso }: { etichetta: string; valore: number; sotto: string; rosso?: boolean }) {
+function Numero({ etichetta, valore, sotto, rosso, onClick }: { etichetta: string; valore: number; sotto: string; rosso?: boolean; onClick?: () => void }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className="rounded-xl border border-calce-200 bg-white px-3 py-3 sm:px-4 sm:py-4">
+    <Tag
+      {...(onClick ? { type: 'button' as const, onClick } : {})}
+      className={cn('rounded-xl border px-3 py-3 text-left sm:px-4 sm:py-4', onClick ? 'border-2 border-boa/60 bg-boa/5 hover:bg-boa/10' : 'border-calce-200 bg-white')}
+    >
       <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-profondo/55 sm:text-[11px]">{etichetta}</p>
       <p className={cn('num mt-1 text-3xl font-bold leading-tight sm:text-4xl', rosso ? 'text-boa' : 'text-profondo')}>{valore}</p>
-      <p className="truncate text-xs text-profondo/55">{sotto}</p>
-    </div>
+      <p className={cn('truncate text-xs', onClick ? 'font-semibold text-boa' : 'text-profondo/55')}>{sotto}</p>
+    </Tag>
   )
 }
 
@@ -382,9 +392,10 @@ function RigaPrenotazione({
 }) {
   const annullata = p.stato === 'annullata'
   const arrivata = p.stato === 'arrivata'
+  const daSistemare = !tavoloAssegnato && !annullata && !arrivata
   return (
-    <li className={cn('flex rounded-xl border border-calce-200 bg-white', (annullata || arrivata) && 'opacity-60')}>
-      <div className="flex w-20 shrink-0 flex-col items-center justify-center border-r border-calce-200 px-2 py-3 sm:w-24">
+    <li className={cn('flex overflow-hidden rounded-xl border bg-white', daSistemare ? 'border-2 border-tenda shadow-sm' : 'border-calce-200', (annullata || arrivata) && 'opacity-60')}>
+      <div className={cn('flex w-20 shrink-0 flex-col items-center justify-center border-r px-2 py-3 sm:w-24', daSistemare ? 'border-tenda bg-tenda/25' : 'border-calce-200')}>
         <span className="num text-xl font-bold text-profondo">{p.ora ?? '—'}</span>
         <span className="text-xs capitalize text-profondo/55">{p.turno}</span>
       </div>
@@ -396,6 +407,7 @@ function RigaPrenotazione({
               {p.origine === 'sito' && <Badge tono="stagionale">Sito</Badge>}
               {p.origine === 'manuale' && <Badge tono="neutro"><Phone className="h-3 w-3" /> Tel.</Badge>}
               {(annullata || p.stato === 'in_attesa') && <Badge tono={tonoStato[p.stato]}>{etichettaStato[p.stato]}</Badge>}
+              {daSistemare && <span className="rounded-md bg-tenda px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-profondo">Da sistemare</span>}
             </p>
             <p className="text-sm text-profondo/60">
               {p.coperti} persone · {tavoloAssegnato

@@ -122,6 +122,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - (ott 2026) Tolta la vista settimanale (`CalendarioPrenotazioni` eliminato). Il tavolo si sceglie **sempre dalla pianta in un
   modal** (`src/pages/ristorante/ScegliTavolo.tsx`): dalla scheda prenotazione, da "Assegna" dei suggerimenti (tavolo consigliato
   cerchiato) e dal form nuova prenotazione. Occupati grigi col nome, troppo piccoli bordati di giallo, "Togli il tavolo".
+- Prenotazioni senza tavolo evidenziate (bordo e colonna orario gialli, etichetta "Da sistemare"); il riquadro
+  **Da sistemare** è cliccabile e apre la pianta per la prima prenotazione senza tavolo del turno.
 - `PrenotazioneRistorante.ora?` ("HH:mm"): colonna `ora` in `beachin.prenotazioni_ristorante` (migration
   `beachin_prenotazione_ora`, righe esistenti riempite con orari di esempio); la lista è ordinata per orario.
 
