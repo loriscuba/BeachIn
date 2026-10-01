@@ -35,9 +35,11 @@ const CAT_DA_PAROLA: Record<string, CategoriaPiatto> = {
 /** Estrae un prezzo dal testo, restituendo anche il testo senza quella parte. */
 function estraiPrezzo(testo: string): { prezzo: number | null; resto: string } {
   // 1) numero + valuta (assorbe anche un "a"/"per" davanti, per non lasciarlo nel nome)
-  let m = testo.match(/(?:\b(?:a|per)\s+)?(\d+(?:[.,]\d{1,2})?)\s*(?:€|euro|eur)\b/i)
-  // 2) numero preceduto da "a"/"per"
-  if (!m) m = testo.match(/\b(?:a|per)\s+(\d+(?:[.,]\d{1,2})?)\b/i)
+  //    e anche «al prezzo di», «a un prezzo di», «costo di»
+  const davanti = String.raw`(?:\b(?:a|al|per|con|ad)\s+)?(?:(?:un\s+|il\s+)?(?:prezzo|costo)\s+(?:di\s+)?)?`
+  let m = testo.match(new RegExp(davanti + String.raw`(\d+(?:[.,]\d{1,2})?)\s*(?:€|euro|eur)\b`, 'i'))
+  // 2) numero preceduto da "a"/"per"/"al prezzo di"
+  if (!m) m = testo.match(new RegExp(String.raw`(?:\b(?:a|al|per|con)\s+)?(?:\b(?:a|per)\s+|(?:un\s+|il\s+)?(?:prezzo|costo)\s+(?:di\s+)?)(\d+(?:[.,]\d{1,2})?)\b`, 'i'))
   // 3) un numero qualsiasi
   if (!m) m = testo.match(/(\d+(?:[.,]\d{1,2})?)/)
   if (!m) return { prezzo: null, resto: testo }
@@ -51,7 +53,7 @@ function estraiPrezzo(testo: string): { prezzo: number | null; resto: string } {
  * non rovina piatti come "Pizza Margherita" o "Vino della casa".
  */
 function estraiCategoria(testo: string): { categoria: CategoriaPiatto | null; resto: string } {
-  const m = testo.match(/\b(?:categoria|tra i|tra gli|nei|nella|nelle|nel|come)\s+([a-zàèéìòù]+)/i)
+  const m = testo.match(/\b(?:categoria|tra i|tra gli|tra le|fra i|fra gli|fra le|nei|negli|nella|nelle|nel|in|come)\s+([a-zàèéìòù]+)/i)
   if (m) {
     const cat = CAT_DA_PAROLA[m[1].toLowerCase()]
     if (cat) return { categoria: cat, resto: testo.replace(m[0], ' ').replace(/\s+/g, ' ').trim() }
@@ -69,16 +71,17 @@ function inferisciCategoria(nome: string): CategoriaPiatto | null {
 function pulisciNome(t: string): string {
   const s = t
     .replace(/\s+/g, ' ')
+    .replace(/^[\s,;:.]+|[\s,;:.]+$/g, '')
     .replace(/^(?:il|lo|la|i|gli|le|l'|un|uno|una|un')\s+/i, '')
     .replace(/^(?:di|del|dello|della|dei|degli|delle|al|allo|alla|ai)\s+/i, '')
     .trim()
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
-const VERBI = 'aggiungi|aggiungere|inserisci|inserire|togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+const VERBI = 'aggiungi|aggiungere|inserisci|inserire|annulla|annullare|togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
 
 /** Imperativi a cui il parlato attacca un pronome: «toglimi», «inseriscimi», «toglimelo», «leggimi il menu». */
-const IMPERATIVI = 'aggiungi|inserisci|togli|rimuovi|elimina|cancella|leva|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+const IMPERATIVI = 'aggiungi|inserisci|annulla|sposta|togli|rimuovi|elimina|cancella|leva|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
 
 /**
  * Riporta il parlato alla forma base prima del parsing: stacca i pronomi dai verbi
@@ -142,7 +145,7 @@ export function parseComandoMenu(raw: string): ComandoMenu {
   }
 
   // Rimuovi
-  const rm = lower.match(/\b(togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare)\b\s+(.+)$/)
+  const rm = lower.match(/\b(annulla|annullare|togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare)\b\s+(.+)$/)
   if (rm) {
     const bersaglio = rm[2].replace(/\bda(?:l|i|llo|lla|gli|lle)?\s+men[uù]\b/gi, ' ')
     return { azione: 'rimuovi', nome: pulisciNome(bersaglio) }
@@ -154,7 +157,10 @@ export function parseComandoMenu(raw: string): ComandoMenu {
     // Lavoriamo sul testo originale (maiuscole preservate): il gruppo catturato
     // proviene dal lower, ma ha la stessa lunghezza della coda originale.
     const restoOriginale = testo.slice(testo.length - add[1].length)
-    const cat = estraiCategoria(restoOriginale)
+    // «…, però spostalo nei secondi» / «e mettilo tra i dolci»: resta solo l'indicazione di categoria
+    const cat = estraiCategoria(
+      restoOriginale.replace(/[,;]?\s*(?:\b(?:però|pero|ma|e)\s+)?\b(?:sposta|spostare|metti|mettere|inserisci)\s+(?=(?:categoria|tra|fra|nei|negli|nella|nelle|nel|in|come)\b)/gi, ' '),
+    )
     const pr = estraiPrezzo(cat.resto)
     const nome = pulisciNome(
       pr.resto.replace(/\b(?:nel|nei|nella|al|alla|come)\s+men[uù]\b/gi, ' ')
