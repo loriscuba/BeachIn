@@ -76,7 +76,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
         <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
           <Logo />
           <button
-            className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white"
+            className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
             onClick={onChiudi}
             aria-label="Chiudi menu"
           >
