@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Star, ThumbsDown, X, Phone, Check, Smartphone, CalendarX2, Undo2, ChevronLeft, ChevronRight, CalendarDays, Plus, Lightbulb } from 'lucide-react'
+import { Star, ThumbsDown, X, Phone, Check, Smartphone, CalendarX2, Undo2, ChevronLeft, ChevronRight, Plus, Lightbulb, LayoutGrid } from 'lucide-react'
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
@@ -14,10 +14,9 @@ import { Tabella, type Colonna } from '@/components/ui/Tabella'
 import { Tabs } from '@/components/ui/Tabs'
 import { PannelloMenu } from '@/pages/ristorante/PannelloMenu'
 import { Planimetria } from '@/pages/ristorante/Planimetria'
-import { CalendarioPrenotazioni } from '@/pages/ristorante/CalendarioPrenotazioni'
+import { ScegliTavolo } from '@/pages/ristorante/ScegliTavolo'
 import { addDays, format, parseISO } from 'date-fns'
 import { it as itLocale } from 'date-fns/locale'
-import { nomeZona } from '@/lib/zoneTavoli'
 import { Magazzino } from '@/pages/ristorante/Magazzino'
 import { euroCent, numero, percento } from '@/lib/formatters'
 import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
@@ -34,7 +33,6 @@ const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro' | 'stagi
 const etichettaStato: Record<StatoPrenotazione, string> = {
   confermata: 'Confermata', in_attesa: 'In attesa', annullata: 'Annullata', arrivata: 'Arrivati',
 }
-const etichettaZona = nomeZona
 const zonaBreve = (z: Tavolo['zona']) => z.charAt(0).toUpperCase() + z.slice(1)
 
 type Sezione = 'prenotazioni' | 'tavoli' | 'menu' | 'magazzino' | 'giorni'
@@ -53,7 +51,6 @@ export default function Ristorante() {
     creaPrenotazioneRistorante, assegnaTavolo, impostaStatoPrenotazione, rimuoviPrenotazioneRistorante,
     giorniChiusi, riapriGiorno,
   } = useDemoData()
-  const [vediSettimana, setVediSettimana] = useState(false)
   const [nuovaAperta, setNuovaAperta] = useState(false)
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
   const [q, setQ] = useSearchParams()
@@ -68,7 +65,9 @@ export default function Ristorante() {
     const g = q.get('giorno')
     if (g) { setGiornoStato(g); setQ({ tab: 'prenotazioni' }, { replace: true }) }
   }, [q, setQ])
-  const setGiorno = (g: string) => { setGiornoStato(g); setVediSettimana(false) }
+  const setGiorno = setGiornoStato
+  // prenotazione a cui si sta scegliendo il tavolo (modal con la pianta)
+  const [prenTavolo, setPrenTavolo] = useState<string>()
   const spostaGiorno = (n: number) => setGiornoStato(format(addDays(parseISO(giorno), n), 'yyyy-MM-dd'))
 
   // ogni giorno ha la sua disposizione (o quella standard)
@@ -76,10 +75,11 @@ export default function Ristorante() {
   const tavoliPerId = useMemo(() => new Map(tavoli.map((t) => [t.id, t])), [tavoli])
   const prenGiorno = useMemo(() => prenotazioniRistorante.filter((p) => p.data === giorno), [prenotazioniRistorante, giorno])
   const chiusoGiorno = giorniChiusi.find((g) => g.data === giorno)
-  const occupatiPerTurno = useMemo(() => {
-    const m: Record<Turno, Set<string>> = { pranzo: new Set(), cena: new Set() }
+  // tavolo → chi lo occupa, per turno
+  const occupantiPerTurno = useMemo(() => {
+    const m: Record<Turno, Map<string, string>> = { pranzo: new Map(), cena: new Map() }
     for (const p of prenGiorno) {
-      if (p.tavoloId && p.stato !== 'annullata') m[p.turno].add(p.tavoloId)
+      if (p.tavoloId && p.stato !== 'annullata') m[p.turno].set(p.tavoloId, p.nome)
     }
     return m
   }, [prenGiorno])
@@ -188,7 +188,6 @@ export default function Ristorante() {
               </div>
             )}
             <div className="ml-auto flex items-center gap-2">
-              <Button dimensione="sm" onClick={() => setVediSettimana(!vediSettimana)}><CalendarDays className="h-4 w-4" /> Settimana</Button>
               {tab === 'prenotazioni' && (
                 <Button variante="primario" onClick={() => setNuovaAperta(true)}><Plus className="h-4 w-4" /> Nuova prenotazione</Button>
               )}
@@ -199,26 +198,11 @@ export default function Ristorante() {
             <NuovaPrenotazione
               key={turno}
               tavoli={tavoli}
-              occupatiPerTurno={occupatiPerTurno}
+              occupantiPerTurno={occupantiPerTurno}
               turnoIniziale={turno}
               onChiudi={() => setNuovaAperta(false)}
               onCrea={(d) => { creaPrenotazioneRistorante({ ...d, data: giorno }); setNuovaAperta(false) }}
             />
-          )}
-
-          {vediSettimana && (
-            <Card>
-              <CardBody className="pt-3">
-                <CalendarioPrenotazioni
-                  giorno={giorno}
-                  oggi={oggi}
-                  onGiorno={setGiorno}
-                  prenotazioni={prenotazioniRistorante}
-                  richieste={daConfermare}
-                  chiusi={giorniChiusi}
-                />
-              </CardBody>
-            </Card>
           )}
 
           {chiusoGiorno && (
@@ -278,10 +262,8 @@ export default function Ristorante() {
                     <RigaPrenotazione
                       key={p.id}
                       pren={p}
-                      tavoli={tavoli}
                       tavoloAssegnato={p.tavoloId ? tavoliPerId.get(p.tavoloId) : undefined}
-                      occupati={occupatiPerTurno[turno]}
-                      onAssegna={(tavoloId) => assegnaTavolo(p.id, tavoloId)}
+                      onTavolo={() => setPrenTavolo(p.id)}
                       onStato={(stato) => impostaStatoPrenotazione(p.id, stato)}
                       onRimuovi={() => rimuoviPrenotazioneRistorante(p.id)}
                     />
@@ -309,12 +291,29 @@ export default function Ristorante() {
                                 : 'Il più piccolo libero che basta · libero nel turno'}
                           </p>
                         </div>
-                        <Button variante="primario" dimensione="sm" onClick={() => assegnaTavolo(p.id, t.id)}><Check className="h-4 w-4" /> Assegna</Button>
+                        <Button variante="primario" dimensione="sm" onClick={() => setPrenTavolo(p.id)}><Check className="h-4 w-4" /> Assegna</Button>
                       </li>
                     ))}
                   </ul>
                 </section>
               )}
+
+              {(() => {
+                const p = prenTavolo ? listaTurno.find((x) => x.id === prenTavolo) : undefined
+                return p && (
+                  <ScegliTavolo
+                    aperto
+                    onChiudi={() => setPrenTavolo(undefined)}
+                    titolo={`Tavolo per ${p.nome} · ${p.coperti} persone${p.ora ? ` alle ${p.ora}` : ''}`}
+                    coperti={p.coperti}
+                    tavoli={tavoli}
+                    occupanti={occupantiPerTurno[turno]}
+                    correnteId={p.tavoloId}
+                    consigliatoId={suggerimenti.find((x) => x.pren.id === p.id)?.tavolo.id}
+                    onScegli={(id) => assegnaTavolo(p.id, id)}
+                  />
+                )
+              })()}
 
               <a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-profondo/55 hover:text-profondo"><Smartphone className="h-3.5 w-3.5" /> App admin per il telefono</a>
             </div>
@@ -371,22 +370,13 @@ function Numero({ etichetta, valore, sotto, rosso }: { etichetta: string; valore
   )
 }
 
-/** Opzioni tavolo per un turno: i liberi + quello già assegnato (se c'è). */
-function opzioniTavoli(tavoli: Tavolo[], occupati: Set<string>, correnteId?: string) {
-  return tavoli
-    .filter((t) => !occupati.has(t.id) || t.id === correnteId)
-    .map((t) => ({ valore: t.id, etichetta: `Tav ${t.numero} · ${t.posti}p · ${etichettaZona(t.zona)}` }))
-}
-
 /** Scheda di una prenotazione: orario, nome, tavolo, note, arrivo e assegnazione tavolo. */
 function RigaPrenotazione({
-  pren: p, tavoli, tavoloAssegnato, occupati, onAssegna, onStato, onRimuovi,
+  pren: p, tavoloAssegnato, onTavolo, onStato, onRimuovi,
 }: {
   pren: PrenotazioneRistorante
-  tavoli: Tavolo[]
   tavoloAssegnato?: Tavolo
-  occupati: Set<string>
-  onAssegna: (tavoloId?: string) => void
+  onTavolo: () => void
   onStato: (stato: StatoPrenotazione) => void
   onRimuovi: () => void
 }) {
@@ -430,15 +420,18 @@ function RigaPrenotazione({
           </div>
         </div>
         <div className="mt-2 flex items-center gap-2">
-          <div className="flex-1">
-            <Select
-              aria-label={`Tavolo per ${p.nome}`}
-              value={p.tavoloId ?? ''}
-              onChange={(e) => onAssegna(e.target.value || undefined)}
-              opzioni={[{ valore: '', etichetta: '— Da assegnare —' }, ...opzioniTavoli(tavoli, occupati, p.tavoloId)]}
-              className="h-8 text-[13px]"
-            />
-          </div>
+          {!annullata && (
+            <button
+              type="button"
+              onClick={onTavolo}
+              className={cn('inline-flex h-9 flex-1 items-center gap-1.5 rounded-lg border px-3 text-left text-[13px] font-medium',
+                tavoloAssegnato ? 'border-calce-200 text-profondo hover:bg-calce/60' : 'border-dashed border-tenda bg-tenda/10 text-profondo hover:bg-tenda/20')}
+            >
+              <LayoutGrid className="h-4 w-4 shrink-0 text-cabina" />
+              {tavoloAssegnato ? <>Tavolo {tavoloAssegnato.numero} · {zonaBreve(tavoloAssegnato.zona)} <span className="ml-auto text-profondo/45">Cambia</span></> : 'Scegli il tavolo sulla pianta'}
+            </button>
+          )}
+          {annullata && <span className="flex-1" />}
           {annullata ? (
             <button type="button" onClick={onRimuovi} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/45 hover:bg-boa/10 hover:text-boa" title="Elimina prenotazione" aria-label="Elimina prenotazione"><X className="h-4 w-4" /></button>
           ) : (
@@ -452,10 +445,10 @@ function RigaPrenotazione({
 
 /** Form per una prenotazione presa a telefono / in loco. */
 function NuovaPrenotazione({
-  tavoli, occupatiPerTurno, turnoIniziale, onCrea, onChiudi,
+  tavoli, occupantiPerTurno, turnoIniziale, onCrea, onChiudi,
 }: {
   tavoli: Tavolo[]
-  occupatiPerTurno: Record<Turno, Set<string>>
+  occupantiPerTurno: Record<Turno, Map<string, string>>
   turnoIniziale: Turno
   onCrea: (dati: { nome: string; coperti: number; turno: Turno; ora?: string; telefono?: string; note?: string; tavoloId?: string }) => void
   onChiudi: () => void
@@ -467,6 +460,8 @@ function NuovaPrenotazione({
   const [ora, setOra] = useState(turnoIniziale === 'pranzo' ? '12:30' : '20:00')
   const [tavoloId, setTavoloId] = useState('')
   const [note, setNote] = useState('')
+  const [pianta, setPianta] = useState(false)
+  const tavoloScelto = tavoli.find((t) => t.id === tavoloId)
 
   const salva = () => {
     if (nome.trim() === '') return
@@ -501,10 +496,23 @@ function NuovaPrenotazione({
           <span className="mb-1 block text-xs font-medium text-profondo/60">Coperti</span>
           <input type="number" min={1} value={coperti} onChange={(e) => setCoperti(Math.max(1, Number(e.target.value) || 1))} className={cn(campo, 'num')} />
         </label>
-        <label className="block">
+        <div className="block">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Tavolo (facoltativo)</span>
-          <Select value={tavoloId} onChange={(e) => setTavoloId(e.target.value)} opzioni={[{ valore: '', etichetta: '— Da assegnare —' }, ...opzioniTavoli(tavoli, occupatiPerTurno[turno])]} />
-        </label>
+          <button type="button" onClick={() => setPianta(true)} className={cn(campo, 'inline-flex items-center gap-1.5 text-left')}>
+            <LayoutGrid className="h-4 w-4 shrink-0 text-cabina" />
+            {tavoloScelto ? `Tavolo ${tavoloScelto.numero} · ${zonaBreve(tavoloScelto.zona)}` : 'Scegli sulla pianta'}
+          </button>
+        </div>
+        <ScegliTavolo
+          aperto={pianta}
+          onChiudi={() => setPianta(false)}
+          titolo={`Tavolo per ${nome.trim() || 'la nuova prenotazione'} · ${coperti} persone`}
+          coperti={coperti}
+          tavoli={tavoli}
+          occupanti={occupantiPerTurno[turno]}
+          correnteId={tavoloId || undefined}
+          onScegli={(id) => setTavoloId(id ?? '')}
+        />
         <label className="block sm:col-span-2 lg:col-span-4">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Note (facoltative)</span>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="es. preferisce la veranda, seggiolone…" className={campo} />
