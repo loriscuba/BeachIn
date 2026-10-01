@@ -59,7 +59,13 @@ export function Planimetria({ prenGiorno, giorno, oggi }: { prenGiorno: Prenotaz
                   : <> · <span className="num">{occupati.size}</span> occupati a {turno}</>}
               </p>
             </div>
-            <Button dimensione="sm" onClick={() => stampaQr([...tavoli].sort((a, b) => a.numero - b.numero).map((t) => ({ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) })), config.nome)}><Printer className="h-4 w-4" /> QR di tutti i tavoli</Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {!standard && personalizzato && <>
+                <Button dimensione="sm" onClick={() => ripristinaDisposizione(giorno)} title="Il giorno torna alla disposizione standard"><RotateCcw className="h-4 w-4" /> Disposizione standard</Button>
+                <Button dimensione="sm" onClick={() => salvaComeStandard(giorno)} title="Usa questa disposizione come nuovo standard"><Save className="h-4 w-4" /> Salva come standard</Button>
+              </>}
+              <Button dimensione="sm" onClick={() => stampaQr([...tavoli].sort((a, b) => a.numero - b.numero).map((t) => ({ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) })), config.nome)}><Printer className="h-4 w-4" /> QR di tutti i tavoli</Button>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-lg border border-calce-200 bg-calce/40 p-0.5 text-sm">
@@ -70,10 +76,6 @@ export function Planimetria({ prenGiorno, giorno, oggi }: { prenGiorno: Prenotaz
               {(['pranzo', 'cena'] as Turno[]).map((x) => (
                 <button key={x} type="button" onClick={() => setTurno(x)} className={cn('rounded-md px-3 py-1 font-medium capitalize', turno === x ? 'bg-profondo text-white' : 'text-profondo/70 hover:text-profondo')}>{x}</button>
               ))}
-            </div>}
-            {!standard && personalizzato && <div className="flex flex-wrap gap-2 sm:ml-auto">
-              <Button dimensione="sm" onClick={() => ripristinaDisposizione(giorno)} title="Il giorno torna alla disposizione standard"><RotateCcw className="h-4 w-4" /> Disposizione standard</Button>
-              <Button dimensione="sm" onClick={() => salvaComeStandard(giorno)} title="Usa questa disposizione come nuovo standard"><Save className="h-4 w-4" /> Salva come standard</Button>
             </div>}
           </div>
         </div>
