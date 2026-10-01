@@ -155,6 +155,7 @@ create table if not exists beachin.prenotazioni_ristorante (
   id text primary key,
   data text not null,
   turno text not null check (turno in ('pranzo','cena')),
+  ora text,
   nome text not null,
   coperti int not null default 2,
   tavolo_id text,
@@ -163,6 +164,7 @@ create table if not exists beachin.prenotazioni_ristorante (
   telefono text,
   origine text check (origine in ('manuale','sito'))
 );
+alter table beachin.prenotazioni_ristorante add column if not exists ora text;
 do $$
 declare t text;
 begin

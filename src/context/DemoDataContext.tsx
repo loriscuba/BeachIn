@@ -115,6 +115,7 @@ export interface DatiPrenotazioneRistorante {
   nome: string
   coperti: number
   turno: Turno
+  ora?: string
   data?: string
   telefono?: string
   note?: string
@@ -369,11 +370,11 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   useSyncSupabase({
     tabella: 'prenotazioni_ristorante', righe: prenotazioniRistorante, setRighe: setPrenotazioniRistorante, semina: true,
     aRiga: (p) => ({
-      id: p.id, data: p.data, turno: p.turno, nome: p.nome, coperti: p.coperti, tavolo_id: p.tavoloId ?? null, stato: p.stato,
+      id: p.id, data: p.data, turno: p.turno, ora: p.ora ?? null, nome: p.nome, coperti: p.coperti, tavolo_id: p.tavoloId ?? null, stato: p.stato,
       note: p.note ?? null, telefono: p.telefono ?? null, origine: p.origine ?? null,
     }),
     daRiga: (r) => ({
-      id: r.id, data: r.data as string, turno: r.turno as Turno, nome: r.nome as string, coperti: Number(r.coperti),
+      id: r.id, data: r.data as string, turno: r.turno as Turno, ora: (r.ora as string) ?? undefined, nome: r.nome as string, coperti: Number(r.coperti),
       tavoloId: (r.tavolo_id as string) ?? undefined, stato: r.stato as StatoPrenotazione, note: (r.note as string) ?? undefined,
       telefono: (r.telefono as string) ?? undefined, origine: (r.origine as PrenotazioneRistorante['origine']) ?? undefined,
     }),
@@ -842,7 +843,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [cambiaTavoli])
   const creaPrenotazioneRistorante = useCallback((d: DatiPrenotazioneRistorante) => {
     setPrenotazioniRistorante((prev) => [
-      { id: nuovoId('PR'), data: d.data ?? config.stagione.oggi, turno: d.turno, nome: d.nome, coperti: d.coperti, tavoloId: d.tavoloId, stato: 'confermata', note: d.note, telefono: d.telefono, origine: 'manuale' },
+      { id: nuovoId('PR'), data: d.data ?? config.stagione.oggi, turno: d.turno, ora: d.ora, nome: d.nome, coperti: d.coperti, tavoloId: d.tavoloId, stato: 'confermata', note: d.note, telefono: d.telefono, origine: 'manuale' },
       ...prev,
     ])
   }, [])

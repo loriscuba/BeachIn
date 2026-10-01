@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Star, ThumbsDown, X, Phone, Check, Smartphone, CalendarX2, Undo2, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
+import { Star, ThumbsDown, X, Phone, Check, Smartphone, CalendarX2, Undo2, ChevronLeft, ChevronRight, CalendarDays, Plus, Lightbulb } from 'lucide-react'
 import type {
   CategoriaPiatto, Piatto, PrenotazioneRistorante, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
@@ -25,7 +25,8 @@ import { cn } from '@/lib/cn'
 import { urlAdminApp } from '@/lib/adminapp'
 import { GiorniChiusi } from '@/components/GiorniChiusi'
 import { BadgeConta } from '@/components/layout/Sidebar'
-import { disponibilitaTurno } from '@/lib/disponibilita'
+import { disponibilitaTurno, suggerisciTavoli } from '@/lib/disponibilita'
+import { CalendarioMese } from '@/pages/ristorante/CalendarioMese'
 
 const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro' | 'stagionale'> = {
   confermata: 'acqua', in_attesa: 'tenda', annullata: 'neutro', arrivata: 'stagionale',
@@ -34,6 +35,7 @@ const etichettaStato: Record<StatoPrenotazione, string> = {
   confermata: 'Confermata', in_attesa: 'In attesa', annullata: 'Annullata', arrivata: 'Arrivati',
 }
 const etichettaZona = nomeZona
+const zonaBreve = (z: Tavolo['zona']) => z.charAt(0).toUpperCase() + z.slice(1)
 
 type Sezione = 'prenotazioni' | 'tavoli' | 'menu' | 'magazzino' | 'giorni'
 const sezioni: { valore: Sezione; etichetta: string }[] = [
@@ -52,6 +54,7 @@ export default function Ristorante() {
     giorniChiusi, riapriGiorno,
   } = useDemoData()
   const [vediSettimana, setVediSettimana] = useState(false)
+  const [nuovaAperta, setNuovaAperta] = useState(false)
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
   const [q, setQ] = useSearchParams()
   // I tavoli ora si gestiscono per giorno dentro Prenotazioni: il vecchio ?tab=tavoli porta lì.
@@ -72,7 +75,6 @@ export default function Ristorante() {
   const tavoli = tavoliDelGiorno(giorno)
   const tavoliPerId = useMemo(() => new Map(tavoli.map((t) => [t.id, t])), [tavoli])
   const prenGiorno = useMemo(() => prenotazioniRistorante.filter((p) => p.data === giorno), [prenotazioniRistorante, giorno])
-  const richiesteGiorno = richiesteRistorante.filter((r) => r.stato === 'da_confermare' && r.data === giorno)
   const chiusoGiorno = giorniChiusi.find((g) => g.data === giorno)
   const occupatiPerTurno = useMemo(() => {
     const m: Record<Turno, Set<string>> = { pranzo: new Set(), cena: new Set() }
@@ -85,11 +87,12 @@ export default function Ristorante() {
   // Lista del turno: prima chi deve ancora arrivare, poi gli arrivati, in fondo gli annullati.
   const ordine: Record<StatoPrenotazione, number> = { in_attesa: 0, confermata: 0, arrivata: 1, annullata: 2 }
   const listaTurno = prenGiorno.filter((p) => p.turno === turno)
-    .sort((a, b) => ordine[a.stato] - ordine[b.stato] || a.nome.localeCompare(b.nome))
+    .sort((a, b) => ordine[a.stato] - ordine[b.stato] || (a.ora ?? '99').localeCompare(b.ora ?? '99') || a.nome.localeCompare(b.nome))
+  const attive = listaTurno.filter((p) => p.stato !== 'annullata')
   const disp = disponibilitaTurno(tavoli, prenGiorno, giorno, turno)
+  const suggerimenti = suggerisciTavoli(tavoli, prenGiorno, giorno, turno)
   const arrivati = listaTurno.filter((p) => p.stato === 'arrivata').length
   const attesi = listaTurno.filter((p) => p.stato === 'confermata' || p.stato === 'in_attesa').length
-  const richiesteTurno = richiesteGiorno.filter((r) => r.turno === turno)
   // Richieste dal sito da confermare, di qualunque giorno: le più recenti in cima.
   const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
     .sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0) || b.ricevutaIl.localeCompare(a.ricevutaIl))
@@ -160,6 +163,13 @@ export default function Ristorante() {
 
       {(tab === 'prenotazioni' || tab === 'tavoli') && (
         <div className="space-y-3">
+          {tab === 'prenotazioni' && (
+            <div className="pt-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cabina">Panoramica del servizio</p>
+              <h2 className="font-display text-2xl font-bold text-profondo sm:text-3xl">Prenotazioni</h2>
+              <p className="text-sm text-profondo/60">Arrivi, tavoli e disponibilità in un solo colpo d’occhio.</p>
+            </div>
+          )}
           {/* Barra del giorno, condivisa tra Prenotazioni e Tavoli: stesso giorno scelto */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center rounded-xl border border-calce-200 bg-white">
@@ -170,13 +180,31 @@ export default function Ristorante() {
               <button type="button" onClick={() => spostaGiorno(1)} className="grid h-11 w-11 place-content-center text-profondo hover:bg-calce/60" aria-label="Giorno dopo"><ChevronRight className="h-5 w-5" /></button>
             </div>
             {giorno !== oggi && <Button dimensione="sm" onClick={() => setGiornoStato(oggi)}>Torna a oggi</Button>}
-            <Button dimensione="sm" onClick={() => setVediSettimana(!vediSettimana)}><CalendarDays className="h-4 w-4" /> Settimana</Button>
             {tab === 'prenotazioni' && (
-              <div className="ml-auto">
-                <NuovaPrenotazione tavoli={tavoli} occupatiPerTurno={occupatiPerTurno} onCrea={(d) => creaPrenotazioneRistorante({ ...d, data: giorno })} />
+              <div className="grid grid-cols-2 rounded-xl border border-calce-200 bg-white p-1">
+                {(['pranzo', 'cena'] as Turno[]).map((t) => (
+                  <button key={t} type="button" onClick={() => setTurno(t)} className={cn('h-9 min-w-[5.5rem] rounded-lg px-3 text-sm font-semibold capitalize', turno === t ? 'bg-profondo text-white' : 'text-profondo/70 hover:bg-calce/60')}>{t}</button>
+                ))}
               </div>
             )}
+            <div className="ml-auto flex items-center gap-2">
+              <Button dimensione="sm" onClick={() => setVediSettimana(!vediSettimana)}><CalendarDays className="h-4 w-4" /> Settimana</Button>
+              {tab === 'prenotazioni' && (
+                <Button variante="primario" onClick={() => setNuovaAperta(true)}><Plus className="h-4 w-4" /> Nuova prenotazione</Button>
+              )}
+            </div>
           </div>
+
+          {tab === 'prenotazioni' && nuovaAperta && (
+            <NuovaPrenotazione
+              key={turno}
+              tavoli={tavoli}
+              occupatiPerTurno={occupatiPerTurno}
+              turnoIniziale={turno}
+              onChiudi={() => setNuovaAperta(false)}
+              onCrea={(d) => { creaPrenotazioneRistorante({ ...d, data: giorno }); setNuovaAperta(false) }}
+            />
+          )}
 
           {vediSettimana && (
             <Card>
@@ -205,7 +233,7 @@ export default function Ristorante() {
       )}
 
       {tab === 'prenotazioni' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Tutte le richieste nuove dal sito, qualunque sia la data: sempre in cima */}
           {daConfermare.length > 0 && (
             <div className="rounded-xl border-2 border-boa/60 bg-boa/5 p-3">
@@ -229,36 +257,94 @@ export default function Ristorante() {
             </div>
           )}
 
-          {/* Turno + riepilogo in grande */}
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-white p-1 sm:w-72">
-            {(['pranzo', 'cena'] as Turno[]).map((t) => (
-              <button key={t} type="button" onClick={() => setTurno(t)} className={cn('h-11 rounded-lg text-sm font-semibold capitalize', turno === t ? 'bg-profondo text-white' : 'text-profondo hover:bg-calce/60')}>{t}</button>
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <Numero etichetta="Coperti" valore={disp.copertiPrenotati} sotto={`${arrivati}/${arrivati + attesi} arrivati`} />
-            <Numero etichetta="Tavoli liberi" valore={disp.tavoliLiberi} sotto={disp.pieno ? 'pieno' : `${disp.postiLiberi} posti`} rosso={disp.pieno} />
-            <Numero etichetta="Da confermare" valore={richiesteTurno.length} sotto="in questo turno" rosso={richiesteTurno.length > 0} />
+          {/* Riepilogo del turno in grande */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <Numero etichetta="Coperti previsti" valore={disp.copertiPrenotati} sotto={`${attive.length} prenotazion${attive.length === 1 ? 'e' : 'i'}`} />
+            <Numero etichetta="Tavoli liberi" valore={disp.liberi.length} sotto={`su ${disp.tavoliTotali} tavoli`} rosso={disp.pieno} />
+            <Numero etichetta="Da sistemare" valore={disp.senzaTavolo} sotto="senza tavolo assegnato" rosso={disp.senzaTavolo > 0} />
           </div>
 
-          {/* Arrivi del turno */}
-          <ul className="space-y-1.5">
-            {listaTurno.length === 0 && <li className="rounded-xl bg-white px-4 py-6 text-center text-sm text-profondo/45">Nessuna prenotazione per {turno}.</li>}
-            {listaTurno.map((p) => (
-              <RigaPrenotazione
-                key={p.id}
-                pren={p}
-                tavoli={tavoli}
-                tavoloAssegnato={p.tavoloId ? tavoliPerId.get(p.tavoloId) : undefined}
-                occupati={occupatiPerTurno[turno]}
-                onAssegna={(tavoloId) => assegnaTavolo(p.id, tavoloId)}
-                onStato={(stato) => impostaStatoPrenotazione(p.id, stato)}
-                onRimuovi={() => rimuoviPrenotazioneRistorante(p.id)}
-              />
-            ))}
-          </ul>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]">
+            <div className="min-w-0 space-y-6">
+              {/* Arrivi del turno */}
+              <section>
+                <div className="mb-2 flex items-baseline justify-between gap-2">
+                  <h3 className="font-display text-lg font-semibold text-profondo">In arrivo</h3>
+                  <span className="text-xs text-profondo/55">{attesi} da accogliere · {arrivati} arrivat{arrivati === 1 ? 'o' : 'i'}</span>
+                </div>
+                <ul className="space-y-2">
+                  {listaTurno.length === 0 && <li className="rounded-xl border border-calce-200 bg-white px-4 py-8 text-center text-sm text-profondo/45">Nessuna prenotazione per {turno}.</li>}
+                  {listaTurno.map((p) => (
+                    <RigaPrenotazione
+                      key={p.id}
+                      pren={p}
+                      tavoli={tavoli}
+                      tavoloAssegnato={p.tavoloId ? tavoliPerId.get(p.tavoloId) : undefined}
+                      occupati={occupatiPerTurno[turno]}
+                      onAssegna={(tavoloId) => assegnaTavolo(p.id, tavoloId)}
+                      onStato={(stato) => impostaStatoPrenotazione(p.id, stato)}
+                      onRimuovi={() => rimuoviPrenotazioneRistorante(p.id)}
+                    />
+                  ))}
+                </ul>
+              </section>
 
-          <a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-profondo/55 hover:text-profondo"><Smartphone className="h-3.5 w-3.5" /> App admin per il telefono</a>
+              {/* Tavoli consigliati per chi è ancora senza */}
+              {suggerimenti.length > 0 && (
+                <section>
+                  <div className="mb-2 flex items-baseline justify-between gap-2">
+                    <h3 className="font-display text-lg font-semibold text-profondo">Suggerimenti tavoli</h3>
+                    <span className="text-xs text-profondo/55">{disp.senzaTavolo} da assegnare</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {suggerimenti.map(({ pren: p, tavolo: t, zona, zonaRispettata }) => (
+                      <li key={p.id} className="flex items-center justify-between gap-3 rounded-xl border border-calce-200 bg-white p-4">
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-1.5 text-sm font-semibold text-cabina"><Lightbulb className="h-4 w-4" /> Tavolo {t.numero} consigliato</p>
+                          <p className="mt-1 text-sm text-profondo"><b>{p.nome}</b> · {p.coperti} persone{p.ora && <> alle <span className="num">{p.ora}</span></>}</p>
+                          <p className="text-sm text-profondo/70">{t.posti} posti in {zonaBreve(t.zona)}</p>
+                          <p className={cn('mt-1 text-xs', zonaRispettata === false ? 'text-boa' : 'text-[#2F7564]')}>
+                            {zonaRispettata === true ? 'Rispetta la zona preferita · libero nel turno'
+                              : zonaRispettata === false ? `${zonaBreve(zona!)} piena · il più adatto libero`
+                                : 'Il più piccolo libero che basta · libero nel turno'}
+                          </p>
+                        </div>
+                        <Button variante="primario" dimensione="sm" onClick={() => assegnaTavolo(p.id, t.id)}><Check className="h-4 w-4" /> Assegna</Button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              <a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-profondo/55 hover:text-profondo"><Smartphone className="h-3.5 w-3.5" /> App admin per il telefono</a>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-xl border border-calce-200 bg-white p-4">
+                <CalendarioMese giorno={giorno} oggi={oggi} onGiorno={setGiorno} prenotazioni={prenotazioniRistorante} richieste={daConfermare} chiusi={giorniChiusi} />
+              </div>
+              <div className="rounded-xl border border-calce-200 bg-white p-4">
+                <h3 className="font-display text-base font-semibold text-profondo">Disponibilità tavoli</h3>
+                <p className="mb-3 text-xs capitalize text-profondo/55">{turno} · {disp.tavoliTotali - disp.liberi.length} occupati, {disp.liberi.length} liberi</p>
+                <ul className="max-h-[26rem] space-y-1.5 overflow-y-auto pr-0.5">
+                  {[...tavoli].sort((a, b) => a.numero - b.numero).map((t) => {
+                    const chi = attive.find((p) => p.tavoloId === t.id)
+                    return (
+                      <li key={t.id} className={cn('flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm', chi ? 'border-calce-200 bg-calce/40' : 'border-calce-200 bg-white')}>
+                        <span className="min-w-0 truncate">
+                          <b className="text-profondo">Tavolo {t.numero}</b>
+                          <span className="text-profondo/55"> · {t.posti} posti · {zonaBreve(t.zona)}</span>
+                        </span>
+                        {chi
+                          ? <span className="shrink-0 truncate text-xs font-medium text-profondo/60" title={chi.nome}>{chi.nome}</span>
+                          : <span className="shrink-0 text-xs font-semibold text-cabina">Libero</span>}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -277,9 +363,9 @@ export default function Ristorante() {
 /** Numero grande del riepilogo di turno. */
 function Numero({ etichetta, valore, sotto, rosso }: { etichetta: string; valore: number; sotto: string; rosso?: boolean }) {
   return (
-    <div className="rounded-xl bg-white px-3 py-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-profondo/55">{etichetta}</p>
-      <p className={cn('num text-3xl font-bold leading-tight', rosso ? 'text-boa' : 'text-profondo')}>{valore}</p>
+    <div className="rounded-xl border border-calce-200 bg-white px-3 py-3 sm:px-4 sm:py-4">
+      <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-profondo/55 sm:text-[11px]">{etichetta}</p>
+      <p className={cn('num mt-1 text-3xl font-bold leading-tight sm:text-4xl', rosso ? 'text-boa' : 'text-profondo')}>{valore}</p>
       <p className="truncate text-xs text-profondo/55">{sotto}</p>
     </div>
   )
@@ -292,7 +378,7 @@ function opzioniTavoli(tavoli: Tavolo[], occupati: Set<string>, correnteId?: str
     .map((t) => ({ valore: t.id, etichetta: `Tav ${t.numero} · ${t.posti}p · ${etichettaZona(t.zona)}` }))
 }
 
-/** Riga di una prenotazione: nome, coperti, stato, assegnazione tavolo. */
+/** Scheda di una prenotazione: orario, nome, tavolo, note, arrivo e assegnazione tavolo. */
 function RigaPrenotazione({
   pren: p, tavoli, tavoloAssegnato, occupati, onAssegna, onStato, onRimuovi,
 }: {
@@ -307,50 +393,58 @@ function RigaPrenotazione({
   const annullata = p.stato === 'annullata'
   const arrivata = p.stato === 'arrivata'
   return (
-    <li className={cn('rounded-xl border border-calce-200 bg-white px-3 py-2.5', (annullata || arrivata) && 'opacity-60')}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 truncate text-sm font-medium text-profondo">
-            {p.nome}
-            {p.origine === 'sito' && <Badge tono="stagionale">Sito</Badge>}
-            {p.origine === 'manuale' && <Badge tono="neutro"><Phone className="h-3 w-3" /> Tel.</Badge>}
-          </p>
-          {p.telefono && <p className="num truncate text-xs text-profondo/50">{p.telefono}</p>}
-          {p.note && <p className="truncate text-xs text-profondo/50">{p.note}</p>}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="num text-lg font-bold text-profondo">{p.coperti}<span className="text-xs font-normal text-profondo/55"> pers.</span></span>
-          {!annullata && (
-            <button
-              type="button"
-              onClick={() => onStato(arrivata ? 'confermata' : 'arrivata')}
-              className={cn('inline-flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-semibold', arrivata ? 'bg-calce-200 text-profondo' : 'bg-profondo text-white hover:bg-profondo/90')}
-              title={arrivata ? 'Annulla arrivo' : 'Segna come arrivati'}
-            >
-              {arrivata ? <><Undo2 className="h-4 w-4" /> Arrivati</> : <><Check className="h-4 w-4" /> Arrivati</>}
-            </button>
-          )}
-          {(annullata || p.stato === 'in_attesa') && <Badge tono={tonoStato[p.stato]}>{etichettaStato[p.stato]}</Badge>}
-        </div>
+    <li className={cn('flex rounded-xl border border-calce-200 bg-white', (annullata || arrivata) && 'opacity-60')}>
+      <div className="flex w-20 shrink-0 flex-col items-center justify-center border-r border-calce-200 px-2 py-3 sm:w-24">
+        <span className="num text-xl font-bold text-profondo">{p.ora ?? '—'}</span>
+        <span className="text-xs capitalize text-profondo/55">{p.turno}</span>
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <div className="flex-1">
-          <Select
-            aria-label={`Tavolo per ${p.nome}`}
-            value={p.tavoloId ?? ''}
-            onChange={(e) => onAssegna(e.target.value || undefined)}
-            opzioni={[{ valore: '', etichetta: '— Da assegnare —' }, ...opzioniTavoli(tavoli, occupati, p.tavoloId)]}
-            className="h-8 text-[13px]"
-          />
+      <div className="min-w-0 flex-1 px-3 py-3 sm:px-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-1.5 font-semibold text-profondo">
+              {p.nome}
+              {p.origine === 'sito' && <Badge tono="stagionale">Sito</Badge>}
+              {p.origine === 'manuale' && <Badge tono="neutro"><Phone className="h-3 w-3" /> Tel.</Badge>}
+              {(annullata || p.stato === 'in_attesa') && <Badge tono={tonoStato[p.stato]}>{etichettaStato[p.stato]}</Badge>}
+            </p>
+            <p className="text-sm text-profondo/60">
+              {p.coperti} persone · {tavoloAssegnato
+                ? <>Tavolo {tavoloAssegnato.numero} · {zonaBreve(tavoloAssegnato.zona)}</>
+                : <span className="text-[#9A6B00]">Tavolo da assegnare</span>}
+            </p>
+            {p.note && <p className="text-xs font-semibold text-[#9A6B00]">{p.note}</p>}
+            {p.telefono && <p className="num text-xs text-profondo/50">{p.telefono}</p>}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="num hidden text-lg font-bold text-profondo sm:inline">{p.coperti}<span className="text-xs font-normal text-profondo/55"> pers.</span></span>
+            {!annullata && (
+              <button
+                type="button"
+                onClick={() => onStato(arrivata ? 'confermata' : 'arrivata')}
+                className={cn('inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold', arrivata ? 'border-calce-200 bg-calce-200 text-profondo' : 'border-calce-200 bg-white text-profondo shadow-sm hover:bg-calce/60')}
+                title={arrivata ? 'Annulla arrivo' : 'Segna come arrivati'}
+              >
+                {arrivata ? <Undo2 className="h-4 w-4" /> : <Check className="h-4 w-4" />} Arrivati
+              </button>
+            )}
+          </div>
         </div>
-        {tavoloAssegnato
-          ? null
-          : <span className="text-[11px] text-tenda">senza tavolo</span>}
-        {annullata ? (
-          <button type="button" onClick={onRimuovi} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/45 hover:bg-boa/10 hover:text-boa" title="Elimina prenotazione" aria-label="Elimina prenotazione"><X className="h-4 w-4" /></button>
-        ) : (
-          <button type="button" onClick={() => onStato('annullata')} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/45 hover:bg-boa/10 hover:text-boa" title="Annulla prenotazione" aria-label="Annulla prenotazione"><X className="h-4 w-4" /></button>
-        )}
+        <div className="mt-2 flex items-center gap-2">
+          <div className="flex-1">
+            <Select
+              aria-label={`Tavolo per ${p.nome}`}
+              value={p.tavoloId ?? ''}
+              onChange={(e) => onAssegna(e.target.value || undefined)}
+              opzioni={[{ valore: '', etichetta: '— Da assegnare —' }, ...opzioniTavoli(tavoli, occupati, p.tavoloId)]}
+              className="h-8 text-[13px]"
+            />
+          </div>
+          {annullata ? (
+            <button type="button" onClick={onRimuovi} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/45 hover:bg-boa/10 hover:text-boa" title="Elimina prenotazione" aria-label="Elimina prenotazione"><X className="h-4 w-4" /></button>
+          ) : (
+            <button type="button" onClick={() => onStato('annullata')} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/45 hover:bg-boa/10 hover:text-boa" title="Annulla prenotazione" aria-label="Annulla prenotazione"><X className="h-4 w-4" /></button>
+          )}
+        </div>
       </div>
     </li>
   )
@@ -358,70 +452,66 @@ function RigaPrenotazione({
 
 /** Form per una prenotazione presa a telefono / in loco. */
 function NuovaPrenotazione({
-  tavoli, occupatiPerTurno, onCrea,
+  tavoli, occupatiPerTurno, turnoIniziale, onCrea, onChiudi,
 }: {
   tavoli: Tavolo[]
   occupatiPerTurno: Record<Turno, Set<string>>
-  onCrea: (dati: { nome: string; coperti: number; turno: Turno; telefono?: string; note?: string; tavoloId?: string }) => void
+  turnoIniziale: Turno
+  onCrea: (dati: { nome: string; coperti: number; turno: Turno; ora?: string; telefono?: string; note?: string; tavoloId?: string }) => void
+  onChiudi: () => void
 }) {
-  const [aperto, setAperto] = useState(false)
   const [nome, setNome] = useState('')
   const [telefono, setTelefono] = useState('')
   const [coperti, setCoperti] = useState(2)
-  const [turno, setTurno] = useState<Turno>('cena')
+  const [turno, setTurno] = useState<Turno>(turnoIniziale)
+  const [ora, setOra] = useState(turnoIniziale === 'pranzo' ? '12:30' : '20:00')
   const [tavoloId, setTavoloId] = useState('')
   const [note, setNote] = useState('')
 
-  const reset = () => { setNome(''); setTelefono(''); setCoperti(2); setTurno('cena'); setTavoloId(''); setNote('') }
   const salva = () => {
     if (nome.trim() === '') return
-    onCrea({ nome: nome.trim(), coperti, turno, telefono: telefono.trim() || undefined, note: note.trim() || undefined, tavoloId: tavoloId || undefined })
-    reset(); setAperto(false)
+    onCrea({ nome: nome.trim(), coperti, turno, ora: ora || undefined, telefono: telefono.trim() || undefined, note: note.trim() || undefined, tavoloId: tavoloId || undefined })
   }
-
-  if (!aperto) {
-    return (
-      <div className="flex justify-end">
-        <Button variante="primario" dimensione="sm" onClick={() => setAperto(true)}>
-          <Phone className="h-4 w-4" /> Nuova prenotazione (telefono)
-        </Button>
-      </div>
-    )
-  }
+  const campo = 'h-10 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring'
 
   return (
-    <div className="rounded-xl border border-calce-200 bg-calce/50 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-profondo"><Phone className="h-4 w-4 text-cabina" /> Prenotazione a telefono</span>
-        <button type="button" onClick={() => { reset(); setAperto(false) }} className="grid h-7 w-7 place-content-center rounded-md text-profondo/45 hover:bg-white" aria-label="Chiudi"><X className="h-4 w-4" /></button>
+    <div className="rounded-xl border border-calce-200 bg-white p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 font-display font-semibold text-profondo"><Phone className="h-4 w-4 text-cabina" /> Nuova prenotazione</span>
+        <button type="button" onClick={onChiudi} className="grid h-8 w-8 place-content-center rounded-md text-profondo/45 hover:bg-calce/60" aria-label="Chiudi"><X className="h-4 w-4" /></button>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <label className="block">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="block sm:col-span-2">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Nome</span>
-          <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="es. Fam. Rossi" className="h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
+          <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="es. Fam. Rossi" className={campo} />
         </label>
-        <label className="block">
+        <label className="block sm:col-span-2">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Telefono</span>
-          <input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="es. 340 1234567" className="h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-profondo/60">Coperti</span>
-          <input type="number" min={1} value={coperti} onChange={(e) => setCoperti(Math.max(1, Number(e.target.value) || 1))} className="num h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
+          <input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="es. 340 1234567" className={campo} />
         </label>
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Turno</span>
-          <Select value={turno} onChange={(e) => setTurno(e.target.value as Turno)} opzioni={[{ valore: 'pranzo', etichetta: 'Pranzo' }, { valore: 'cena', etichetta: 'Cena' }]} />
+          <Select value={turno} onChange={(e) => { const t = e.target.value as Turno; setTurno(t); setOra(t === 'pranzo' ? '12:30' : '20:00'); setTavoloId('') }} opzioni={[{ valore: 'pranzo', etichetta: 'Pranzo' }, { valore: 'cena', etichetta: 'Cena' }]} />
         </label>
-        <label className="block sm:col-span-2">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-profondo/60">Orario</span>
+          <input type="time" step={900} value={ora} onChange={(e) => setOra(e.target.value)} className={cn(campo, 'num')} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-profondo/60">Coperti</span>
+          <input type="number" min={1} value={coperti} onChange={(e) => setCoperti(Math.max(1, Number(e.target.value) || 1))} className={cn(campo, 'num')} />
+        </label>
+        <label className="block">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Tavolo (facoltativo)</span>
           <Select value={tavoloId} onChange={(e) => setTavoloId(e.target.value)} opzioni={[{ valore: '', etichetta: '— Da assegnare —' }, ...opzioniTavoli(tavoli, occupatiPerTurno[turno])]} />
         </label>
-        <label className="block sm:col-span-2">
+        <label className="block sm:col-span-2 lg:col-span-4">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Note (facoltative)</span>
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="es. tavolo vista mare, seggiolone…" className="h-9 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="es. preferisce la veranda, seggiolone…" className={campo} />
         </label>
       </div>
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex justify-end gap-2">
+        <Button dimensione="sm" onClick={onChiudi}>Annulla</Button>
         <Button variante="primario" dimensione="sm" onClick={salva} disabled={nome.trim() === ''}>
           <Check className="h-4 w-4" /> Salva prenotazione
         </Button>

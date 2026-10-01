@@ -45,3 +45,40 @@ export function statoGiorno(tavoli: Tavolo[], prenotazioni: PrenotazioneRistoran
   const stato: StatoGiorno = chiuso ? 'chiuso' : pieno.pranzo && pieno.cena ? 'pieno' : pieno.pranzo || pieno.cena ? 'parziale' : 'libero'
   return { stato, pieno, nota: chiusi.find((g) => g.data === data)?.nota }
 }
+
+/** Zona preferita letta dalle note ("preferisce la veranda", "vista mare", "dentro"...). */
+export function zonaPreferita(note?: string): Tavolo['zona'] | undefined {
+  const n = (note ?? '').toLowerCase()
+  if (/veranda|vista mare|fuori|esterno|aperto/.test(n)) return 'veranda'
+  if (/interno|dentro|al chiuso/.test(n)) return 'interno'
+  if (/ciringuito|chiringuito/.test(n)) return 'ciringuito'
+  return undefined
+}
+
+export interface SuggerimentoTavolo {
+  pren: PrenotazioneRistorante
+  tavolo: Tavolo
+  zona?: Tavolo['zona']
+  /** Il tavolo è nella zona chiesta (undefined = nessuna preferenza). */
+  zonaRispettata?: boolean
+}
+
+/**
+ * Un tavolo consigliato per ogni prenotazione attiva del turno senza tavolo: libero, abbastanza grande,
+ * nella zona preferita se possibile, il più piccolo che basta. Le comitive grandi scelgono per prime.
+ */
+export function suggerisciTavoli(tavoli: Tavolo[], prenotazioni: PrenotazioneRistorante[], data: string, turno: Turno): SuggerimentoTavolo[] {
+  const attive = prenotazioni.filter((p) => p.data === data && p.turno === turno && p.stato !== 'annullata')
+  const presi = new Set(attive.flatMap((p) => (p.tavoloId ? [p.tavoloId] : [])))
+  const out: SuggerimentoTavolo[] = []
+  for (const p of attive.filter((x) => !x.tavoloId).sort((a, b) => b.coperti - a.coperti)) {
+    const zona = zonaPreferita(p.note)
+    const tavolo = tavoli
+      .filter((t) => !presi.has(t.id) && t.posti >= p.coperti)
+      .sort((a, b) => Number(zona != null && b.zona === zona) - Number(zona != null && a.zona === zona) || a.posti - b.posti || a.numero - b.numero)[0]
+    if (!tavolo) continue
+    presi.add(tavolo.id)
+    out.push({ pren: p, tavolo, zona, zonaRispettata: zona ? tavolo.zona === zona : undefined })
+  }
+  return out.sort((a, b) => (a.pren.ora ?? '').localeCompare(b.pren.ora ?? '') || a.pren.nome.localeCompare(b.pren.nome))
+}
