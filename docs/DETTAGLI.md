@@ -176,6 +176,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Attivazione dal vivo (demo/vendita) da **Impostazioni → Moduli e piano** (`applicaPiano`, `toggle`).
 
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
+- **Prenotazione ombrellone sul sito = doppio controllo**: `prenotaOmbrelloni = moduloAttivo('arenile') && canaliPrenotazione.ombrelloni`
+  (`SitoAnteprima`): se falso spariscono sezione Prenota, voce nav, CTA hero e bottone flottante (niente più box "sospese").
+  Listino/disponibilità dipendono solo dal modulo Arenile. In Sito → Prenotazioni l'interruttore Ombrelloni, le richieste
+  ombrelloni e le righe disponibilità/listino compaiono solo con Arenile attivo.
 - Sito gestionale: panoramica, **prenotazioni** (Ombrelloni/Ristorante/Eventi con
   Conferma/Rifiuta), **posta** admin, contenuti, recensioni/messaggi.
 - **Galleria foto**: caricamento multiplo dal gestionale (Sito → Galleria, `ridimensionaImmagine`);

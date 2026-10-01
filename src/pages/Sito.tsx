@@ -7,6 +7,7 @@ import {
 import type { Email, StatoSito, Turno } from '@/data/types'
 import { getDisponibilitaSito, getStatoSito } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
+import { useModuli } from '@/context/ModuliContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -28,6 +29,8 @@ export default function Sito() {
     postaAdmin, segnaEmailLetta, pagine, pubblicaPagina, listinoPubblicato,
     galleria, aggiungiFoto, rimuoviFoto, rinominaFoto,
   } = useDemoData()
+  // Senza modulo Arenile gli ombrelloni spariscono anche da qui (interruttore, richieste, disponibilità)
+  const arenile = useModuli().moduloAttivo('arenile')
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [sez, setSez] = useState<Sezione>('panoramica')
@@ -40,7 +43,7 @@ export default function Sito() {
     })
   }, [])
 
-  const daConfermareOmbr = prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length
+  const daConfermareOmbr = !arenile ? 0 : prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length
   const daConfermareRist = richiesteRistorante.filter((p) => p.stato === 'da_confermare').length
   const daConfermareEve = richiesteEventi.filter((p) => p.stato === 'da_confermare').length
   const daConfermare = daConfermareOmbr + daConfermareRist + daConfermareEve
@@ -94,17 +97,17 @@ export default function Sito() {
             <Card>
               <CardHeader titolo="Sincronizzato con il gestionale" sottotitolo="Sul sito i dati sono sempre quelli veri" />
               <CardBody className="space-y-3 pt-2">
-                <div className="flex items-center justify-between rounded-lg border border-calce-200 bg-white px-3 py-2.5">
+                {arenile && <div className="flex items-center justify-between rounded-lg border border-calce-200 bg-white px-3 py-2.5">
                   <span className="flex items-center gap-2 text-sm text-profondo"><Umbrella className="h-4 w-4 text-cabina" /> Disponibilità ombrelloni</span>
                   <span className="text-right">
                     <span className="num block text-sm font-bold text-profondo">{disp.libere} liberi</span>
                     <span className="text-xs text-profondo/50">occupazione {percento(disp.occupazione)}</span>
                   </span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-calce-200 bg-white px-3 py-2.5">
+                </div>}
+                {arenile && <div className="flex items-center justify-between rounded-lg border border-calce-200 bg-white px-3 py-2.5">
                   <span className="flex items-center gap-2 text-sm text-profondo"><Tags className="h-4 w-4 text-cabina" /> Listino prezzi</span>
                   <Badge tono={listinoPubblicato ? 'acqua' : 'tenda'} puntino>{listinoPubblicato ? 'Pubblicato' : 'Bozza'}</Badge>
-                </div>
+                </div>}
                 <p className="text-xs text-profondo/50">
                   Disponibilità e listino non si inseriscono qui: arrivano da Arenile e Tariffe e si aggiornano da soli.
                 </p>
@@ -142,8 +145,8 @@ export default function Sito() {
               titolo={<span className="inline-flex items-center gap-2"><Globe className="h-4 w-4 text-cabina" /> Prenotazioni online attive</span>}
               sottotitolo="Decidi cosa può essere prenotato dal sito pubblico"
             />
-            <CardBody className="grid gap-2 pt-1 sm:grid-cols-3">
-              <Interruttore icona={Umbrella} etichetta="Ombrelloni" attivo={canaliPrenotazione.ombrelloni} onCambia={(v) => impostaCanalePrenotazione('ombrelloni', v)} />
+            <CardBody className={cn('grid gap-2 pt-1', arenile ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+              {arenile && <Interruttore icona={Umbrella} etichetta="Ombrelloni" attivo={canaliPrenotazione.ombrelloni} onCambia={(v) => impostaCanalePrenotazione('ombrelloni', v)} />}
               <Interruttore icona={UtensilsCrossed} etichetta="Ristorante" attivo={canaliPrenotazione.ristorante} onCambia={(v) => impostaCanalePrenotazione('ristorante', v)} />
               <Interruttore icona={Ticket} etichetta="Eventi" attivo={canaliPrenotazione.eventi} onCambia={(v) => impostaCanalePrenotazione('eventi', v)} />
             </CardBody>
@@ -154,7 +157,7 @@ export default function Sito() {
           </p>
 
           {/* Ombrelloni */}
-          <Card>
+          {arenile && <Card>
             <CardHeader titolo={<span className="inline-flex items-center gap-2"><Umbrella className="h-4 w-4 text-cabina" /> Ombrelloni</span>} sottotitolo={`${prenotazioniOnline.length} richieste`} />
             <CardBody className="pt-1">
               {prenotazioniOnline.length === 0 ? <Vuoto testo="Nessuna richiesta ombrellone." /> : (
@@ -172,7 +175,7 @@ export default function Sito() {
                 </ul>
               )}
             </CardBody>
-          </Card>
+          </Card>}
 
           {/* Ristorante */}
           <Card>

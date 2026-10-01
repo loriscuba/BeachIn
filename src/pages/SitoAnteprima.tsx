@@ -20,7 +20,7 @@ import { CalendarioDisponibilita } from '@/components/sito/CalendarioDisponibili
 
 const file: FilaId[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
 const periodi: Periodo[] = ['bassa', 'media', 'alta', 'altissima']
-// Le voci 'prenota' e 'listino' riguardano gli ombrelloni: spariscono se il modulo Arenile è spento.
+// 'listino' sparisce se il modulo Arenile è spento; 'prenota' anche se è spenta la prenotazione online ombrelloni.
 const nav = [
   ['servizi', 'Servizi'], ['ristorante', 'Ristorante'], ['prenota', 'Prenota'],
   ['listino', 'Listino'], ['eventi', 'Eventi'], ['galleria', 'Galleria'], ['contatti', 'Contatti'],
@@ -40,9 +40,11 @@ export default function SitoAnteprima() {
   const { eventi, postaCliente, canaliPrenotazione, galleria, menu, sezioniMenu } = useDemoData()
   // Gestione ombrelloni (modulo Arenile): se spento, dal sito spariscono prenotazione, listino e disponibilità.
   const ombrelloni = useModuli().moduloAttivo('arenile')
-  const voci = nav.filter(([id]) => ombrelloni || (id !== 'prenota' && id !== 'listino'))
+  // Prenotazione ombrellone dal sito: doppio controllo, modulo Arenile attivo E canale "Ombrelloni" acceso (Sito → Prenotazioni).
+  const prenotaOmbrelloni = ombrelloni && canaliPrenotazione.ombrelloni
+  const voci = nav.filter(([id]) => (id !== 'prenota' || prenotaOmbrelloni) && (id !== 'listino' || ombrelloni))
   const voceNastro = nastro.filter((t) => ombrelloni || !/ombrell/i.test(t))
-  const idPrenota = ombrelloni ? 'prenota' : 'ristorante'
+  const idPrenota = prenotaOmbrelloni ? 'prenota' : 'ristorante'
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [listino, setListino] = useState<VoceTariffa[]>([])
@@ -178,7 +180,7 @@ export default function SitoAnteprima() {
             {sottoHero && <p className="mt-3 font-display text-3xl italic text-white/90 sm:text-4xl lg:text-5xl">{sottoHero}</p>}
             <p className="mt-6 max-w-xl text-base leading-7 text-white/80 sm:text-lg">{sito?.home.testo}</p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
-              {ombrelloni ? (
+              {prenotaOmbrelloni ? (
                 <>
                   <button onClick={() => scrollTo('prenota')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
                     <Umbrella className="h-5 w-5" /> Prenota l’ombrellone <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -354,8 +356,8 @@ export default function SitoAnteprima() {
         </div>
       </section>
 
-      {ombrelloni && (<>
-      {/* Prenota ombrellone */}
+      {prenotaOmbrelloni && (
+      /* Prenota ombrellone */
       <section id="prenota" className="relative scroll-mt-16 overflow-hidden bg-profondo py-20 text-white lg:py-28">
         <img src={fotoSito.spiaggiaDrone} alt="" className="absolute inset-0 h-full w-full object-cover opacity-15" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-br from-profondo via-profondo/95 to-cabina/70" />
@@ -381,13 +383,13 @@ export default function SitoAnteprima() {
             </ul>
           </div>
           <div className="reveal lg:col-span-3">
-            {canaliPrenotazione.ombrelloni
-              ? <FormOmbrellone onInviato={(nome) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
-              : <Sospese testo="Le prenotazioni online degli ombrelloni sono momentaneamente sospese. Passa in cassa o chiamaci per la disponibilità." />}
+            <FormOmbrellone onInviato={(nome) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
           </div>
         </div>
       </section>
+      )}
 
+      {ombrelloni && (<>
       {/* Listino */}
       <section id="listino" className="scroll-mt-20 py-20 lg:py-28">
         <div className="mx-auto max-w-5xl px-5 lg:px-8">
@@ -547,7 +549,7 @@ export default function SitoAnteprima() {
         onClick={() => scrollTo(idPrenota)}
         className={cn('fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-boa px-5 py-3.5 font-semibold text-white shadow-2xl shadow-boa/40 transition-all duration-500 lg:hidden', oltreHero ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-6 opacity-0')}
       >
-        {ombrelloni ? <><Umbrella className="h-5 w-5" /> Prenota</> : <><UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo</>}
+        {prenotaOmbrelloni ? <><Umbrella className="h-5 w-5" /> Prenota</> : <><UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo</>}
       </button>
 
       {/* Toast */}
