@@ -12,6 +12,7 @@ import { euroCent } from '@/lib/formatters'
 import { PASSI_COMANDA, UTENTI_COMANDAPP, etichettaStatoComanda } from '@/lib/comandapp'
 import { ding, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
+import { quandoComanda } from '@/lib/contiBar'
 
 type Utente = (typeof UTENTI_COMANDAPP)[number]
 const CHIAVE = 'comandapp.sessione.v1'
@@ -160,7 +161,7 @@ function Area({ utente }: { utente: Utente }) {
             return (
               <div key={c.id} className="rounded-2xl bg-white p-4 shadow-sm">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm text-profondo/55">Ordine delle {c.ora}</span>
+                  <span className="text-sm text-profondo/55">Ordine di {quandoComanda(c)}</span>
                   <span className={cn('rounded-full px-3 py-1 text-xs font-bold', c.stato === 'pronta' ? 'bg-acqua text-white' : 'bg-tenda/30 text-profondo')}>{etichettaStatoComanda[c.stato]}</span>
                 </div>
                 <div className="mb-3 flex items-center">

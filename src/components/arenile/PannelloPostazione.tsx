@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Select'
 import { euro, euroCent, data as fmtData } from '@/lib/formatters'
 import { etichetteTipologia, stiliStato } from '@/lib/arenile'
+import { contiAperti, quandoComanda } from '@/lib/contiBar'
 
 interface Props {
   postazioneId?: string
@@ -21,15 +22,16 @@ interface Props {
 type Modo = 'vista' | 'assegna' | 'sposta'
 
 export function PannelloPostazione({ postazioneId, clienti, onChiudi }: Props) {
-  const { postazioni, conti, assegnaPostazione, liberaPostazione, spostaPostazione, segnaFuoriServizio, incassaConto } =
+  const { postazioni, comande, assegnaPostazione, liberaPostazione, spostaPostazione, segnaFuoriServizio, incassaComande } =
     useDemoData()
   const [modo, setModo] = useState<Modo>('vista')
 
   const p = postazioni.find((x) => x.id === postazioneId)
   const clientiMap = useMemo(() => new Map(clienti.map((c) => [c.id, c])), [clienti])
   const cliente = p?.clienteId ? clientiMap.get(p.clienteId) : undefined
-  const conto = conti.find((c) => c.postazioneId === p?.id && c.aperto)
-  const totaleConto = conto ? conto.righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0) : 0
+  // conto bar vero: comande non pagate il cui numero ombrellone corrisponde a questa postazione
+  const conto = useMemo(() => contiAperti(comande).find((c) => c.postazioneId === p?.id), [comande, p?.id])
+  const totaleConto = conto?.totale ?? 0
 
   // reset modalità alla chiusura/cambio postazione
   const chiudi = () => {
@@ -159,15 +161,20 @@ export function PannelloPostazione({ postazioneId, clienti, onChiudi }: Props) {
                       <span className="text-profondo/80">
                         <span className="num text-profondo/50">{r.quantita}×</span> {r.nome}
                       </span>
-                      <span className="num text-profondo">{euroCent(r.quantita * r.prezzoUnitario)}</span>
+                      <span className="num text-profondo">{euroCent(r.quantita * r.prezzo)}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="flex items-center justify-between border-t border-calce-200 px-3 py-2">
-                  <span className="text-sm font-semibold text-profondo">Totale</span>
+                  <span className="text-sm font-semibold text-profondo">Totale <span className="text-xs font-normal text-profondo/50">· {conto.comande.length} {conto.comande.length === 1 ? 'comanda' : 'comande'} dal {quandoComanda(conto.comande[0])}{conto.clienti.length ? ` · ${conto.clienti.join(', ')}` : ''}</span></span>
                   <span className="num text-sm font-bold text-profondo">{euroCent(totaleConto)}</span>
                 </div>
               </div>
+            ) : null}
+            {conto ? (
+              <Button variante="primario" className="mt-2 w-full" onClick={() => incassaComande(conto.comande.map((c) => c.id))}>
+                <CheckCircle2 className="h-4 w-4" /> Incassa conto {euroCent(totaleConto)}
+              </Button>
             ) : (
               <p className="text-sm text-profondo/50">Nessun conto aperto.</p>
             )}
@@ -184,15 +191,6 @@ export function PannelloPostazione({ postazioneId, clienti, onChiudi }: Props) {
             </Button>
           ) : (
             <>
-              {conto && (
-                <Button
-                  variante="primario"
-                  className="col-span-2"
-                  onClick={() => incassaConto(conto.id)}
-                >
-                  <CheckCircle2 className="h-4 w-4" /> Incassa conto {euro(totaleConto)}
-                </Button>
-              )}
               <Button variante="secondario" onClick={() => setModo('sposta')}>
                 <ArrowLeftRight className="h-4 w-4" /> Sposta
               </Button>

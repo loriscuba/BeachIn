@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Plus, Search, Pencil, Tags, Trash2, ChevronUp, ChevronDown, Umbrella, Smartphone } from 'lucide-react'
-import type { ArticoloBar, Comanda } from '@/data/types'
+import type { ArticoloBar } from '@/data/types'
+import { contiAperti, quandoComanda } from '@/lib/contiBar'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -28,36 +29,10 @@ export default function Bar() {
 
 // ———————————————————————————————— Conti ————————————————————————————————
 
-interface ContoAperto {
-  ombrellone: string
-  clienti: string[]
-  comande: Comanda[]
-  righe: { nome: string; quantita: number; importo: number }[]
-  totale: number
-  dalle: string
-}
-
 function Conti() {
-  const { comande, incassaOmbrellone } = useDemoData()
+  const { comande, incassaComande } = useDemoData()
   const [aperto, setAperto] = useState<string>()
-  const conti = useMemo(() => {
-    const m = new Map<string, ContoAperto>()
-    for (const c of [...comande].sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))) {
-      if (c.pagata) continue
-      const k = c.ombrellone
-      const conto = m.get(k) ?? { ombrellone: k, clienti: [], comande: [], righe: [], totale: 0, dalle: c.ora }
-      if (c.cliente && !conto.clienti.includes(c.cliente)) conto.clienti.push(c.cliente)
-      conto.comande.push(c)
-      conto.totale += c.totale
-      for (const r of c.righe) {
-        const riga = conto.righe.find((x) => x.nome === r.nome && x.importo / x.quantita === r.prezzoUnitario)
-        if (riga) { riga.quantita += r.quantita; riga.importo += r.quantita * r.prezzoUnitario }
-        else conto.righe.push({ nome: r.nome, quantita: r.quantita, importo: r.quantita * r.prezzoUnitario })
-      }
-      m.set(k, conto)
-    }
-    return [...m.values()].sort((a, b) => a.ombrellone.localeCompare(b.ombrellone, 'it', { numeric: true }))
-  }, [comande])
+  const conti = useMemo(() => contiAperti(comande), [comande])
   const totale = conti.reduce((s, c) => s + c.totale, 0)
 
   return (
@@ -72,25 +47,25 @@ function Conti() {
         ) : (
           <ul className="divide-y divide-calce-200">
             {conti.map((c) => {
-              const espanso = aperto === c.ombrellone
+              const espanso = aperto === c.chiave
               const inCorso = c.comande.filter((x) => x.stato !== 'pronta').length
               return (
-                <li key={c.ombrellone} className="py-2.5">
+                <li key={c.chiave} className="py-2.5">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setAperto(espanso ? undefined : c.ombrellone)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <button onClick={() => setAperto(espanso ? undefined : c.chiave)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                       <span className="grid h-10 w-10 shrink-0 place-content-center rounded-full bg-cabina/10 text-cabina"><Umbrella className="h-5 w-5" /></span>
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold text-profondo">
-                          Ombrellone {c.ombrellone}{c.clienti.length > 0 && <span className="font-normal text-profondo/70"> · {c.clienti.join(', ')}</span>}
+                          Ombrellone {c.ombrellone}{c.postazioneId && c.postazioneId !== c.ombrellone && <span className="font-normal text-profondo/50"> ({c.postazioneId})</span>}{c.clienti.length > 0 && <span className="font-normal text-profondo/70"> · {c.clienti.join(', ')}</span>}
                         </span>
                         <span className="block truncate text-xs text-profondo/55">
-                          {c.comande.length} {c.comande.length === 1 ? 'comanda' : 'comande'} dalle {c.dalle}
+                          {c.comande.length} {c.comande.length === 1 ? 'comanda' : 'comande'} dal {quandoComanda(c.comande[0])}
                           {inCorso > 0 && <> · <span className="text-[#7A5A12]">{inCorso} in corso</span></>} · {c.righe.map((r) => `${r.quantita}× ${r.nome}`).join(', ')}
                         </span>
                       </span>
                     </button>
                     <span className="num shrink-0 text-sm font-bold text-profondo">{euroCent(c.totale)}</span>
-                    <Button variante="primario" dimensione="sm" onClick={() => incassaOmbrellone(c.ombrellone)}>
+                    <Button variante="primario" dimensione="sm" onClick={() => incassaComande(c.comande.map((x) => x.id))}>
                       <CheckCircle2 className="h-4 w-4" /> Incassa
                     </Button>
                   </div>
@@ -99,7 +74,7 @@ function Conti() {
                       {c.comande.map((x) => (
                         <li key={x.id}>
                           <p className="flex items-center gap-1.5 text-xs text-profondo/55">
-                            {x.origine === 'app' && <Smartphone className="h-3.5 w-3.5" />} {x.ora} · {x.origine === 'app' ? 'ComandApp' : 'banco'}{x.cliente ? ` · ${x.cliente}` : ''}
+                            {x.origine === 'app' && <Smartphone className="h-3.5 w-3.5" />} {quandoComanda(x)} · {x.origine === 'app' ? 'ComandApp' : 'banco'}{x.cliente ? ` · ${x.cliente}` : ''}
                           </p>
                           {x.righe.map((r) => (
                             <p key={r.articoloId} className="flex justify-between"><span>{r.quantita}× {r.nome}</span><span className="num">{euroCent(r.quantita * r.prezzoUnitario)}</span></p>

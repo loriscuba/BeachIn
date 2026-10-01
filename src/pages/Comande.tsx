@@ -16,6 +16,7 @@ import { Select } from '@/components/ui/Select'
 import { euroCent, numero } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { QrCodice } from '@/components/QrCodice'
+import { quandoComanda } from '@/lib/contiBar'
 import { supabaseAttivo } from '@/lib/supabase'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { etichettaStatoComanda as etichettaStato, urlComandApp, UTENTI_COMANDAPP } from '@/lib/comandapp'
@@ -216,7 +217,7 @@ function ComandaCard({ comanda: c, onAvanza, onAnnulla }: { comanda: Comanda; on
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 font-bold text-profondo"><Umbrella className="h-4 w-4 text-cabina" /> {c.ombrellone || '—'}{c.origine === 'app' && <Badge tono="mare">App</Badge>}{c.cliente && <span className="text-xs font-normal text-profondo/50">{c.cliente}</span>}</span>
         <div className="flex items-center gap-2">
-          <span className="num text-xs text-profondo/45">{c.ora}</span>
+          <span className="num text-xs text-profondo/45">{quandoComanda(c)}</span>
           <Badge tono={tonoStato[c.stato]} puntino>{etichettaStato[c.stato]}</Badge>
         </div>
       </div>
