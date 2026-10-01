@@ -178,3 +178,43 @@ begin
     end if;
   end loop;
 end $$;
+
+-- Listino bar condiviso (gestionale Bar → Listino, ComandApp, Comande) + conto per ombrellone dalle comande
+alter table beachin.comande add column if not exists pagata boolean not null default false;
+
+create table if not exists beachin.bar_sezioni (
+  id text primary key,
+  nome text not null,
+  ordine int not null default 0
+);
+
+create table if not exists beachin.articoli_bar (
+  id text primary key,
+  nome text not null,
+  categoria text not null,
+  prezzo_vendita numeric(10,2) not null default 0,
+  costo_acquisto numeric(10,2) not null default 0,
+  giacenza int not null default 0,
+  soglia_riordino int not null default 0,
+  unita text not null default 'pz',
+  disponibile boolean not null default true,
+  ordine int not null default 0
+);
+
+grant select, insert, update, delete on beachin.bar_sezioni, beachin.articoli_bar to anon, authenticated, service_role;
+alter table beachin.bar_sezioni enable row level security;
+alter table beachin.articoli_bar enable row level security;
+drop policy if exists "demo anon" on beachin.bar_sezioni;
+drop policy if exists "demo anon" on beachin.articoli_bar;
+create policy "demo anon" on beachin.bar_sezioni for all to anon using (true) with check (true);
+create policy "demo anon" on beachin.articoli_bar for all to anon using (true) with check (true);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['bar_sezioni','articoli_bar'] loop
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'beachin' and tablename = t) then
+      execute format('alter publication supabase_realtime add table beachin.%I', t);
+    end if;
+  end loop;
+end $$;

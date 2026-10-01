@@ -4,13 +4,11 @@
  * Le comande finiscono nel cruscotto del bar (pagina Comande) con il campanello.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Umbrella, LogOut, Plus, Minus, Send, Check, Loader2, ChefHat, Bell, ClipboardList, ShoppingBag } from 'lucide-react'
-import type { ArticoloBar, CategoriaBar, StatoComanda } from '@/data/types'
-import { getArticoliBar } from '@/data/api'
+import { Umbrella, LogOut, Plus, Minus, Send, Check, ChefHat, Bell, ClipboardList, ShoppingBag } from 'lucide-react'
+import type { CategoriaBar, StatoComanda } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
-import { etichetteCategoriaBar } from '@/lib/etichette'
 import { PASSI_COMANDA, UTENTI_COMANDAPP, etichettaStatoComanda } from '@/lib/comandapp'
 import { ding, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
@@ -77,13 +75,15 @@ function Login({ onEntra }: { onEntra: (u: Utente) => void }) {
 }
 
 function Area({ utente }: { utente: Utente }) {
-  const { comande, inviaComanda } = useDemoData()
+  const { comande, inviaComanda, articoliBar, sezioniBar } = useDemoData()
   const [tab, setTab] = useState<'ordina' | 'ordini'>('ordina')
-  const [articoli, setArticoli] = useState<ArticoloBar[]>()
-  const [cat, setCat] = useState<CategoriaBar>('gastronomia')
+  // stesso listino del gestionale (Bar → Listino): solo articoli disponibili, categorie nell'ordine scelto
+  const articoli = useMemo(() => articoliBar.filter((a) => a.disponibile !== false), [articoliBar])
+  const categorie = useMemo(() => sezioniBar.filter((s) => articoli.some((a) => a.categoria === s.id)), [sezioniBar, articoli])
+  const [scelta, setCat] = useState<CategoriaBar>()
+  const cat = scelta && categorie.some((c) => c.id === scelta) ? scelta : categorie[0]?.id
   const [qta, setQta] = useState<Record<string, number>>({})
   const [note, setNote] = useState('')
-  useEffect(() => { getArticoliBar().then((a) => { setArticoli(a); if (!a.some((x) => x.categoria === cat)) setCat(a[0]?.categoria) }) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mie = comande.filter((c) => c.ombrellone === utente.ombrellone && c.origine === 'app')
   // "ding" quando una mia comanda diventa pronta
@@ -94,8 +94,7 @@ function Area({ utente }: { utente: Utente }) {
     if (nuove.length) ding()
   }, [mie])
 
-  const categorie = useMemo(() => [...new Set((articoli ?? []).map((a) => a.categoria))], [articoli])
-  const righe = (articoli ?? []).filter((a) => qta[a.id]).map((a) => ({ articoloId: a.id, nome: a.nome, quantita: qta[a.id], prezzoUnitario: a.prezzoVendita }))
+  const righe = articoli.filter((a) => qta[a.id]).map((a) => ({ articoloId: a.id, nome: a.nome, quantita: qta[a.id], prezzoUnitario: a.prezzoVendita }))
   const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
   const cambia = (id: string, d: number) => setQta((q) => { const v = Math.max(0, (q[id] ?? 0) + d); const n = { ...q }; if (v) n[id] = v; else delete n[id]; return n })
@@ -113,11 +112,11 @@ function Area({ utente }: { utente: Utente }) {
         <button onClick={() => setTab('ordini')} className={cn('rounded-lg py-2', tab === 'ordini' ? 'bg-profondo text-white' : 'text-profondo/60')}>I miei ordini {mie.some((c) => c.stato !== 'pronta') && '•'}</button>
       </div>
 
-      {tab === 'ordina' && (!articoli ? <Loader2 className="mx-auto h-6 w-6 animate-spin text-profondo/40" /> : (
+      {tab === 'ordina' && (articoli.length === 0 ? <p className="rounded-xl bg-white p-6 text-center text-sm text-profondo/50 shadow-sm">Il bar non ha articoli disponibili al momento.</p> : (
         <>
           <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1">
             {categorie.map((c) => (
-              <button key={c} onClick={() => setCat(c)} className={cn('shrink-0 rounded-full px-4 py-1.5 text-sm font-medium', cat === c ? 'bg-cabina text-white' : 'bg-white text-profondo/70 shadow-sm')}>{etichetteCategoriaBar[c]}</button>
+              <button key={c.id} onClick={() => setCat(c.id)} className={cn('shrink-0 rounded-full px-4 py-1.5 text-sm font-medium', cat === c.id ? 'bg-cabina text-white' : 'bg-white text-profondo/70 shadow-sm')}>{c.nome}</button>
             ))}
           </div>
           <ul className="space-y-2">

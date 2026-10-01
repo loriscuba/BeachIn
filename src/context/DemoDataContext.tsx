@@ -17,6 +17,8 @@ import type {
   Cliente,
   Comanda,
   ContoOmbrellone,
+  ArticoloBar,
+  SezioneBar,
   Email,
   RigaComanda,
   StatoComanda,
@@ -40,7 +42,7 @@ import type {
 } from '@/data/types'
 
 import { postazioni as seedPostazioni } from '@/data/seed/spiaggia'
-import { contiOmbrellone as seedConti, articoliBar } from '@/data/seed/bar'
+import { articoliBar, sezioniBar as seedSezioniBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
 import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
 import { traduciNome } from '@/lib/menuLingue'
@@ -155,6 +157,19 @@ interface DemoDataValue {
 
   // Bar
   incassaConto: (contoId: string) => void
+  /** Listino bar condiviso (gestionale, ComandApp, Comande): categorie + articoli modificabili. */
+  sezioniBar: SezioneBar[]
+  articoliBar: ArticoloBar[]
+  aggiungiSezioneBar: (nome: string) => SezioneBar
+  rinominaSezioneBar: (id: string, nome: string) => void
+  spostaSezioneBar: (id: string, verso: -1 | 1) => void
+  /** Elimina la categoria (solo se vuota). */
+  rimuoviSezioneBar: (id: string) => void
+  aggiungiArticoloBar: (dati: Omit<ArticoloBar, 'id'>) => ArticoloBar
+  modificaArticoloBar: (id: string, patch: Partial<Omit<ArticoloBar, 'id'>>) => void
+  rimuoviArticoloBar: (id: string) => void
+  /** Conto dell'ombrellone = comande non ancora pagate: le segna tutte pagate. */
+  incassaOmbrellone: (ombrellone: string) => void
 
   // Comande dall'ombrellone (servizio in spiaggia)
   comande: Comanda[]
@@ -275,7 +290,27 @@ const DemoDataContext = createContext<DemoDataValue | null>(null)
 
 export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [postazioni, setPostazioni] = useState<Postazione[]>(() => clona(seedPostazioni))
-  const [conti, setConti] = useState<ContoOmbrellone[]>(() => clona(seedConti))
+  const [conti, setConti] = useState<ContoOmbrellone[]>([])
+  const [sezioniBar, setSezioniBar] = useState<SezioneBar[]>(() => clona(seedSezioniBar))
+  const [articoliBarStato, setArticoliBar] = useState<ArticoloBar[]>(() => clona(articoliBar))
+  useSyncSupabase({
+    tabella: 'bar_sezioni', righe: sezioniBar, setRighe: setSezioniBar, semina: true,
+    aRiga: (s, i) => ({ id: s.id, nome: s.nome, ordine: i }),
+    daRiga: (r) => ({ id: r.id, nome: r.nome as string }),
+    ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
+  })
+  useSyncSupabase({
+    tabella: 'articoli_bar', righe: articoliBarStato, setRighe: setArticoliBar, semina: true,
+    aRiga: (a, i) => ({
+      id: a.id, nome: a.nome, categoria: a.categoria, prezzo_vendita: a.prezzoVendita, costo_acquisto: a.costoAcquisto,
+      giacenza: a.giacenza, soglia_riordino: a.sogliaRiordino, unita: a.unita, disponibile: a.disponibile !== false, ordine: i,
+    }),
+    daRiga: (r) => ({
+      id: r.id, nome: r.nome as string, categoria: r.categoria as string, prezzoVendita: Number(r.prezzo_vendita), costoAcquisto: Number(r.costo_acquisto),
+      giacenza: Number(r.giacenza), sogliaRiordino: Number(r.soglia_riordino), unita: r.unita as string, disponibile: r.disponibile !== false,
+    }),
+    ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
+  })
   const [costi, setCosti] = useState<VoceCosto[]>(() => clona(seedCosti))
   const [prenotazioniOnline, setPrenotazioni] = useState<PrenotazioneOnline[]>(() =>
     clona(statoSito.prenotazioni)
@@ -336,12 +371,13 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     tabella: 'comande', righe: comande, setRighe: setComande,
     aRiga: (c) => ({
       id: c.id, ombrellone: c.ombrellone, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora,
-      note: c.note ?? null, origine: c.origine ?? null, cliente: c.cliente ?? null, ts: c.ts ?? 0,
+      note: c.note ?? null, origine: c.origine ?? null, cliente: c.cliente ?? null, ts: c.ts ?? 0, pagata: !!c.pagata,
     }),
     daRiga: (r) => ({
       id: r.id, ombrellone: r.ombrellone as string, righe: r.righe as Comanda['righe'], totale: Number(r.totale),
       stato: r.stato as StatoComanda, ora: r.ora as string, note: (r.note as string) ?? undefined,
       origine: (r.origine as Comanda['origine']) ?? undefined, cliente: (r.cliente as string) ?? undefined, ts: Number(r.ts),
+      pagata: !!r.pagata,
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
@@ -519,6 +555,43 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const incassaConto = useCallback((contoId: string) => {
     setConti((prev) => prev.map((c) => (c.id === contoId ? { ...c, aperto: false } : c)))
+  }, [])
+
+  // — Listino bar —
+  const aggiungiSezioneBar = useCallback((nome: string) => {
+    const sez: SezioneBar = { id: nuovoId('SB'), nome: nome.trim() }
+    setSezioniBar((prev) => [...prev, sez])
+    return sez
+  }, [])
+  const rinominaSezioneBar = useCallback((id: string, nome: string) => {
+    setSezioniBar((prev) => prev.map((s) => (s.id === id ? { ...s, nome: nome.trim() } : s)))
+  }, [])
+  const spostaSezioneBar = useCallback((id: string, verso: -1 | 1) => {
+    setSezioniBar((prev) => {
+      const i = prev.findIndex((s) => s.id === id)
+      const j = i + verso
+      if (i < 0 || j < 0 || j >= prev.length) return prev
+      const n = [...prev]
+      ;[n[i], n[j]] = [n[j], n[i]]
+      return n
+    })
+  }, [])
+  const rimuoviSezioneBar = useCallback((id: string) => {
+    setSezioniBar((prev) => prev.filter((s) => s.id !== id))
+  }, [])
+  const aggiungiArticoloBar = useCallback((dati: Omit<ArticoloBar, 'id'>) => {
+    const art: ArticoloBar = { ...dati, id: nuovoId('B') }
+    setArticoliBar((prev) => [...prev, art])
+    return art
+  }, [])
+  const modificaArticoloBar = useCallback((id: string, patch: Partial<Omit<ArticoloBar, 'id'>>) => {
+    setArticoliBar((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)))
+  }, [])
+  const rimuoviArticoloBar = useCallback((id: string) => {
+    setArticoliBar((prev) => prev.filter((a) => a.id !== id))
+  }, [])
+  const incassaOmbrellone = useCallback((ombrellone: string) => {
+    setComande((prev) => prev.map((c) => (c.ombrellone === ombrellone && !c.pagata ? { ...c, pagata: true } : c)))
   }, [])
 
   // — Comande dall'ombrellone —
@@ -870,7 +943,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
     setPostazioni(clona(seedPostazioni))
-    setConti(clona(seedConti))
+    setConti([])
     setCosti(clona(seedCosti))
     setPrenotazioni(clona(statoSito.prenotazioni))
     setPagine(clona(statoSito.pagine))
@@ -1002,6 +1075,16 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaFuoriServizio,
       cambiaStato,
       incassaConto,
+      sezioniBar,
+      articoliBar: articoliBarStato,
+      aggiungiSezioneBar,
+      rinominaSezioneBar,
+      spostaSezioneBar,
+      rimuoviSezioneBar,
+      aggiungiArticoloBar,
+      modificaArticoloBar,
+      rimuoviArticoloBar,
+      incassaOmbrellone,
       comande,
       inviaComanda,
       avanzaComanda,
@@ -1088,6 +1171,16 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaFuoriServizio,
       cambiaStato,
       incassaConto,
+      sezioniBar,
+      articoliBarStato,
+      aggiungiSezioneBar,
+      rinominaSezioneBar,
+      spostaSezioneBar,
+      rimuoviSezioneBar,
+      aggiungiArticoloBar,
+      modificaArticoloBar,
+      rimuoviArticoloBar,
+      incassaOmbrellone,
       comande,
       inviaComanda,
       avanzaComanda,
