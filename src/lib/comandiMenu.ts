@@ -75,7 +75,25 @@ function pulisciNome(t: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
-const VERBI = 'aggiungi|aggiungere|inserisci|inserire|togli|rimuovi|rimuovere|elimina|eliminare|cancella|leva|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+const VERBI = 'aggiungi|aggiungere|inserisci|inserire|togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+
+/** Imperativi a cui il parlato attacca un pronome: «toglimi», «inseriscimi», «toglimelo», «leggimi il menu». */
+const IMPERATIVI = 'aggiungi|inserisci|togli|rimuovi|elimina|cancella|leva|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+
+/**
+ * Riporta il parlato alla forma base prima del parsing: stacca i pronomi dai verbi
+ * («toglimi la tartare» → «togli la tartare») e toglie le formule di cortesia
+ * («per favore», «puoi …», «vorrei …»), che altrimenti finirebbero nel nome del piatto.
+ */
+export function normalizzaComando(testo: string): string {
+  return testo
+    .replace(new RegExp(`\\b(${IMPERATIVI})(?:me|ce)?(?:mi|ci|lo|la|li|le|ne)\\b`, 'gi'), '$1')
+    .replace(/\b(?:per (?:favore|piacere|cortesia)|grazie|cortesemente)\b/gi, ' ')
+    .replace(/\b(?:mi |ci )?(?:puoi|potresti|vorrei|voglio|devi|dovresti)\s+(?=\w)/gi, ' ')
+    .replace(/[.!?]+(?=\s|$)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 /**
  * Divide una frase con più comandi: «togli la pasta allo scoglio e aggiungi il filetto a 14 €»
@@ -84,11 +102,11 @@ const VERBI = 'aggiungi|aggiungere|inserisci|inserire|togli|rimuovi|rimuovere|el
  */
 export function dividiComandi(testo: string): string[] {
   const re = new RegExp(`\\s*(?:[,;.]\\s*(?:e\\s+|poi\\s+|e poi\\s+)?|\\s(?:e poi|poi|e anche|anche|e|ed)\\s+)(?=(?:${VERBI})\\b)`, 'gi')
-  return testo.split(re).map((p) => p.trim()).filter(Boolean)
+  return normalizzaComando(testo).split(re).map((p) => p.trim()).filter(Boolean)
 }
 
 export function parseComandoMenu(raw: string): ComandoMenu {
-  const testo = (raw || '').trim()
+  const testo = normalizzaComando(raw || '')
   if (!testo) return { azione: 'sconosciuto' }
   const lower = testo.toLowerCase()
 
@@ -109,13 +127,13 @@ export function parseComandoMenu(raw: string): ComandoMenu {
   if (rn) return { azione: 'rinomina', nome: pulisciNome(rn[1]), nuovoNome: pulisciNome(rn[2]) }
 
   // Cambia prezzo
-  if (/\b(prezzo|metti|imposta|porta|cambia|modifica)\b/.test(lower) &&
+  if (/\b(prezzo|metti|mettere|imposta|impostare|porta|portare|cambia|cambiare|modifica|modificare)\b/.test(lower) &&
       !/\b(aggiungi|aggiungere|inserisci|nuovo)\b/.test(lower)) {
     const p = estraiPrezzo(testo)
     if (p.prezzo !== null) {
       const nome = pulisciNome(
         p.resto
-          .replace(/\b(cambia|modifica|imposta|metti|porta|aggiorna)\b/gi, ' ')
+          .replace(/\b(cambia|cambiare|modifica|modificare|imposta|impostare|metti|mettere|porta|portare|aggiorna|aggiornare)\b/gi, ' ')
           .replace(/\b(?:il|lo|la)?\s*prezzo\b/gi, ' ')
           .replace(/\b(di|del|dello|della|dei|a|per)\b/gi, ' ')
       )
@@ -124,7 +142,7 @@ export function parseComandoMenu(raw: string): ComandoMenu {
   }
 
   // Rimuovi
-  const rm = lower.match(/\b(togli|rimuovi|rimuovere|elimina|eliminare|cancella|leva)\b\s+(.+)$/)
+  const rm = lower.match(/\b(togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare)\b\s+(.+)$/)
   if (rm) {
     const bersaglio = rm[2].replace(/\bda(?:l|i|llo|lla|gli|lle)?\s+men[uù]\b/gi, ' ')
     return { azione: 'rimuovi', nome: pulisciNome(bersaglio) }
