@@ -12,7 +12,8 @@ import { Mic, Send, Trash2, Volume2, UtensilsCrossed } from 'lucide-react'
 import type { CategoriaPiatto, Piatto } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useVoce } from '@/hooks/useVoce'
-import { dividiComandi, parseComandoMenu } from '@/lib/comandiMenu'
+import { dividiComandi, parseComandoMenu, type ComandoMenu } from '@/lib/comandiMenu'
+import { interpretaConAI, interpretazioneDisponibile } from '@/lib/interpretaComando'
 import { trovaMigliore } from '@/lib/fuzzy'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -104,6 +105,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
   const [testo, setTesto] = useState('')
   const [parlaAttivo, setParlaAttivoState] = useState(true)
   const [ultimoId, setUltimoId] = useState<string | null>(null)
+  const [pensa, setPensa] = useState(false)
   const seqRef = useRef(1)
   const chatRef = useRef<HTMLDivElement>(null)
 
@@ -124,11 +126,21 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
       ? rispondi(`Non ho trovato «${nome}». Forse intendevi «${suggerimento.nome}»? Ripeti con il nome esatto.`, 'errore')
       : rispondi(`Non trovo «${nome}» nel menu.`, 'errore')
 
-  function gestisci(alternative: string[]) {
+  async function gestisci(alternative: string[]) {
     const pulite = alternative.map((a) => a.trim()).filter(Boolean)
     if (!pulite.length) return
     // più comandi nella stessa frase ("togli X e aggiungi Y a 14 €"): li eseguo in ordine
     const parti = dividiComandi(pulite[0])
+    // se le regole non capiscono una parte, l'intera frase passa all'LLM (Groq)
+    if (parti.map(parseComandoMenu).some((c) => c.azione === 'sconosciuto') && interpretazioneDisponibile()) {
+      aggiungiMessaggio('utente', pulite[0])
+      setPensa(true)
+      const comandi = await interpretaConAI(pulite[0], menu.map((p) => p.nome), sezioniMenu.map((s) => ({ id: s.id, nome: s.nome })))
+      setPensa(false)
+      if (comandi.length) comandi.forEach((c) => esegui([pulite[0]], false, c))
+      else esegui([pulite[0]], false, { azione: 'sconosciuto' })
+      return
+    }
     if (parti.length > 1) {
       aggiungiMessaggio('utente', pulite[0])
       parti.forEach((p) => esegui([p], false))
@@ -137,10 +149,13 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
     esegui(pulite, true)
   }
 
-  function esegui(alts: string[], mostraFrase: boolean) {
+  /** `dato`: comando già interpretato (dall'LLM); altrimenti si usa il parser a regole. */
+  function esegui(alts: string[], mostraFrase: boolean, dato?: ComandoMenu) {
     const testo = alts[0]
     if (mostraFrase) aggiungiMessaggio('utente', testo)
-    const c = parseComandoMenu(testo)
+    const c = dato ?? parseComandoMenu(testo)
+    // con un comando dall'LLM le alternative di trascrizione non servono: si cerca il nome che ha restituito
+    if (dato && 'nome' in dato) alts = [dato.nome]
 
     switch (c.azione) {
       case 'aggiungi': {
@@ -255,7 +270,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
           sottotitolo="Parla o scrivi per modificare il menu"
           azione={
             <Badge tono={inAscolto || registrazione.stato === 'registro' ? 'boa' : supportata || usaWhisper ? 'acqua' : 'spento'} puntino>
-              {inAscolto || registrazione.stato === 'registro' ? 'In ascolto' : registrazione.stato === 'trascrivo' ? 'Trascrivo' : supportata || usaWhisper ? 'Pronto' : 'Solo testo'}
+              {inAscolto || registrazione.stato === 'registro' ? 'In ascolto' : registrazione.stato === 'trascrivo' ? 'Trascrivo' : pensa ? 'Interpreto…' : supportata || usaWhisper ? 'Pronto' : 'Solo testo'}
             </Badge>
           }
         />
