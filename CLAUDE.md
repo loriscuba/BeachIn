@@ -11,8 +11,9 @@ BeachIn è l'**aggregatore di moduli**.
 - **Appunti**: `APPUNTI.md` in radice. Leggerlo a inizio sessione. Quando l'utente chiede di "appuntare"/"segnare"
   qualcosa, aggiungerlo lì nella sezione giusta (checklist `[ ]`, spuntare `[x]` quando fatto).
 - Quando cambia un modulo, aggiornare la sua sezione in `docs/DETTAGLI.md` (non gonfiare questo file).
-- **Risparmio token**: build/typecheck di norma bastano; screenshot solo se richiesti; non rileggere l'artifact
-  pubblicato (è enorme); aprire solo la parte di file che serve.
+- **Risparmio token (priorità assoluta)**: usare sempre meno token possibile. **Mai screenshot/verifiche visive**
+  (né per controllo né da mandare all'utente) se l'utente non li chiede esplicitamente: bastano build/typecheck.
+  Non rileggere l'artifact pubblicato (è enorme); aprire solo la parte di file che serve; risposte brevi.
 - **Supabase in autonomia**: Claude può eseguire da solo, senza chiedere conferma, le operazioni sul DB via connettore
   MCP Supabase (insert, update, delete, select, migration, deploy Edge Function) sul progetto **Demo IPA**
   (`exchjppslwhbnbzuhfqs`), **solo nello schema `beachin`** (il progetto è condiviso con altre demo: non toccare altri
