@@ -3,11 +3,9 @@
  * Mostra i KPI e le liste solo dei moduli inclusi (Ristorante + Sito), senza
  * aggregare i centri della suite completa (quello è il Cruscotto completo).
  */
-import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Loader2, Users, BookOpen, Inbox } from 'lucide-react'
-import type { PrenotazioneRistorante, ServizioRistoranteGiorno } from '@/data/types'
-import { getPrenotazioniRistorante, getServiziRistorante } from '@/data/api'
+import { Users, BookOpen, Inbox } from 'lucide-react'
+import type { StatoPrenotazione } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
@@ -15,48 +13,28 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { numero } from '@/lib/formatters'
 
+const ordineStato: Record<StatoPrenotazione, number> = { in_attesa: 0, confermata: 0, arrivata: 1, annullata: 2 }
+
 export default function Panoramica() {
-  const { menu, richiesteRistorante, prenotazioniOnline } = useDemoData()
+  // Prenotazioni vere (le stesse di Ristorante → Prenotazioni, sincronizzate), non i dati di esempio fissi
+  const { menu, richiesteRistorante, prenotazioniOnline, prenotazioniRistorante } = useDemoData()
   const { moduloAttivo } = useModuli()
-  const [servizi, setServizi] = useState<ServizioRistoranteGiorno[]>([])
-  const [prenotazioni, setPrenotazioni] = useState<PrenotazioneRistorante[]>([])
-  const [caricato, setCaricato] = useState(false)
-
-  useEffect(() => {
-    Promise.all([getServiziRistorante(), getPrenotazioniRistorante()]).then(([s, p]) => {
-      setServizi(s)
-      setPrenotazioni(p)
-      setCaricato(true)
-    })
-  }, [])
-
   const oggi = config.stagione.oggi
-
-  const kpi = useMemo(() => {
-    const s = servizi.filter((x) => x.data === oggi)
-    const coperti = s.reduce((a, x) => a + x.coperti, 0)
-    return { coperti }
-  }, [servizi, oggi])
+  const prenOggi = prenotazioniRistorante
+    .filter((p) => p.data === oggi && p.stato !== 'annullata')
+    .sort((a, b) => (a.turno === b.turno ? 0 : a.turno === 'pranzo' ? -1 : 1) || ordineStato[a.stato] - ordineStato[b.stato] || (a.ora ?? '99').localeCompare(b.ora ?? '99'))
+  const coperti = (t: string) => prenOggi.filter((p) => p.turno === t).reduce((s, p) => s + p.coperti, 0)
+  const kpi = { pranzo: coperti('pranzo'), cena: coperti('cena') }
 
   const daConfermareSito =
     richiesteRistorante.filter((r) => r.stato === 'da_confermare').length +
     (moduloAttivo('arenile') ? prenotazioniOnline.filter((p) => p.stato === 'da_confermare').length : 0)
 
-  const prenOggi = prenotazioni.filter((p) => p.data === oggi)
-
-  if (!caricato) {
-    return (
-      <div className="grid h-64 place-items-center text-profondo/50">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-4">
       {/* KPI dei moduli attivi */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <Kpi icona={Users} etichetta="Coperti oggi" valore={numero(kpi.coperti)} />
+        <Kpi icona={Users} etichetta="Coperti oggi" valore={numero(kpi.pranzo + kpi.cena)} sotto={`${kpi.pranzo} pranzo · ${kpi.cena} cena`} />
         <Kpi icona={BookOpen} etichetta="Piatti a menù" valore={numero(menu.length)} />
         <Kpi icona={Inbox} etichetta="Dal sito da confermare" valore={numero(daConfermareSito)} />
       </div>
@@ -66,7 +44,7 @@ export default function Panoramica() {
         <Card>
           <CardHeader
             titolo="Ristorante · oggi"
-            sottotitolo={`${prenOggi.length} prenotazioni`}
+            sottotitolo={`${prenOggi.length} prenotazioni${prenOggi.length > 8 ? ' · le prime 8' : ''}`}
             azione={<Link to="/ristorante" className="text-sm font-medium text-cabina hover:underline">Apri</Link>}
           />
           <CardBody className="pt-1">
@@ -74,11 +52,11 @@ export default function Panoramica() {
               {prenOggi.length === 0 && (
                 <li className="py-6 text-center text-sm text-profondo/45">Nessuna prenotazione per oggi.</li>
               )}
-              {prenOggi.slice(0, 6).map((p) => (
+              {prenOggi.slice(0, 8).map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-3 py-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-profondo">{p.nome}</p>
-                    <p className="text-xs capitalize text-profondo/50">{p.turno}</p>
+                    <p className="text-xs text-profondo/50"><span className="capitalize">{p.turno}</span>{p.ora ? ` · ${p.ora}` : ''}{p.stato === 'arrivata' ? ' · arrivato' : p.stato === 'in_attesa' ? ' · in attesa' : ''}</p>
                   </div>
                   <span className="num shrink-0 text-sm text-profondo/70">{p.coperti} cop.</span>
                 </li>
@@ -119,7 +97,7 @@ export default function Panoramica() {
   )
 }
 
-function Kpi({ icona: Icona, etichetta, valore }: { icona: typeof Users; etichetta: string; valore: string }) {
+function Kpi({ icona: Icona, etichetta, valore, sotto }: { icona: typeof Users; etichetta: string; valore: string; sotto?: string }) {
   return (
     <Card>
       <CardBody>
@@ -127,6 +105,7 @@ function Kpi({ icona: Icona, etichetta, valore }: { icona: typeof Users; etichet
           <Icona className="h-3.5 w-3.5 text-cabina" /> {etichetta}
         </p>
         <p className="num mt-0.5 text-2xl font-bold text-profondo">{valore}</p>
+        {sotto && <p className="text-xs text-profondo/55">{sotto}</p>}
       </CardBody>
     </Card>
   )
