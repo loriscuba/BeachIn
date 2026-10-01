@@ -114,11 +114,14 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   stesso giorno (stato del componente + barra giorno comune). Gestione giorni = `<GiorniChiusi />`.
 
 - (ott 2026, layout "panoramica del servizio" ispirato al mockup Lovable) Titolo + barra: giorno ‹ Oggi ›, Pranzo/Cena,
-  Settimana, **Nuova prenotazione** (apre il form a tutta larghezza, con **orario**). Tre schede: Coperti previsti · Tavoli
+  **Nuova prenotazione** (apre il form a tutta larghezza, con **orario**). Tre schede: Coperti previsti · Tavoli
   liberi (su N) · Da sistemare (senza tavolo). Due colonne: a sx **In arrivo** (schede con orario a sinistra, tavolo·zona,
   note, Arrivati, select tavolo) e **Suggerimenti tavoli** (`suggerisciTavoli` in `src/lib/disponibilita.ts`: libero, più
   piccolo che basta, zona preferita letta dalle note con `zonaPreferita`; bottone Assegna); a dx **calendario del mese**
   (`src/pages/ristorante/CalendarioMese.tsx`, pallino = prenotazioni, rosso = da confermare/chiuso) e **Disponibilità tavoli**.
+- (ott 2026) Tolta la vista settimanale (`CalendarioPrenotazioni` eliminato). Il tavolo si sceglie **sempre dalla pianta in un
+  modal** (`src/pages/ristorante/ScegliTavolo.tsx`): dalla scheda prenotazione, da "Assegna" dei suggerimenti (tavolo consigliato
+  cerchiato) e dal form nuova prenotazione. Occupati grigi col nome, troppo piccoli bordati di giallo, "Togli il tavolo".
 - `PrenotazioneRistorante.ora?` ("HH:mm"): colonna `ora` in `beachin.prenotazioni_ristorante` (migration
   `beachin_prenotazione_ora`, righe esistenti riempite con orari di esempio); la lista è ordinata per orario.
 
