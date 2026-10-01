@@ -168,8 +168,8 @@ interface DemoDataValue {
   aggiungiArticoloBar: (dati: Omit<ArticoloBar, 'id'>) => ArticoloBar
   modificaArticoloBar: (id: string, patch: Partial<Omit<ArticoloBar, 'id'>>) => void
   rimuoviArticoloBar: (id: string) => void
-  /** Conto dell'ombrellone = comande non ancora pagate: le segna tutte pagate. */
-  incassaOmbrellone: (ombrellone: string) => void
+  /** Incassa un conto ombrellone: segna pagate le comande indicate (vedi `lib/contiBar.ts`). */
+  incassaComande: (ids: string[]) => void
 
   // Comande dall'ombrellone (servizio in spiaggia)
   comande: Comanda[]
@@ -590,8 +590,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const rimuoviArticoloBar = useCallback((id: string) => {
     setArticoliBar((prev) => prev.filter((a) => a.id !== id))
   }, [])
-  const incassaOmbrellone = useCallback((ombrellone: string) => {
-    setComande((prev) => prev.map((c) => (c.ombrellone === ombrellone && !c.pagata ? { ...c, pagata: true } : c)))
+  const incassaComande = useCallback((ids: string[]) => {
+    const da = new Set(ids)
+    setComande((prev) => prev.map((c) => (da.has(c.id) && !c.pagata ? { ...c, pagata: true } : c)))
   }, [])
 
   // — Comande dall'ombrellone —
@@ -1084,7 +1085,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiArticoloBar,
       modificaArticoloBar,
       rimuoviArticoloBar,
-      incassaOmbrellone,
+      incassaComande,
       comande,
       inviaComanda,
       avanzaComanda,
@@ -1180,7 +1181,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiArticoloBar,
       modificaArticoloBar,
       rimuoviArticoloBar,
-      incassaOmbrellone,
+      incassaComande,
       comande,
       inviaComanda,
       avanzaComanda,

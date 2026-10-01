@@ -146,8 +146,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   solo per il Cruscotto). Listino tutto modificabile: articolo (modal: nome, categoria, prezzo, costo, giacenza, soglia, unità,
   disponibile), categorie (rinomina, ordine = schede ComandApp, aggiungi, elimina solo se vuota), toggle Disponibile/Esaurito
   (gli esauriti spariscono da ComandApp/Comande). `CategoriaBar` ora è `string`.
-- **Conti** = comande non pagate raggruppate per ombrellone (clienti, righe, dettaglio comande); **Incassa** →
-  `incassaOmbrellone()` segna `pagata` (colonna `beachin.comande.pagata`). I vecchi conti finti (`seed/bar.ts`) non sono più
+- **Conti** (`src/lib/contiBar.ts`: `contiAperti`, `postazioneDaOmbrellone`, `quandoComanda`): numero ombrellone della comanda →
+  postazione ("A-12"/"a12" = fila+numero; numero solo = progressivo arenile, A=1…20, B=21…40 → "12"=A-12, "27"=B-07).
+  Il conto compare anche in Spiaggia (`PannelloPostazione`, sezione Conto bar + Incassa, anche su postazione libera).
+  Orari delle comande con giorno ("oggi 13:50", "ieri 20:00", "lun 29 set …") in Conti, Comande e ComandApp.
+- Conti = comande non pagate raggruppate per ombrellone (clienti, righe, dettaglio comande); **Incassa** →
+  `incassaComande(ids)` segna `pagata` (colonna `beachin.comande.pagata`). I vecchi conti finti (`seed/bar.ts`) non sono più
   caricati (`conti` parte vuoto, usato ancora da arenile/demo).
 
 ## Disponibilità tavoli + giorni chiusi
