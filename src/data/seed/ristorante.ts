@@ -157,6 +157,11 @@ const nomiPren = [
   'Fam. Rossi', 'Bianchi', 'Sig. Ferrari', 'Gruppo Conti', 'Esposito', 'Fam. Greco',
   'Marino', 'Sig.ra Villa', 'Ricci', 'Fam. Costa', 'Lombardi', 'Fam. De Luca',
 ]
+const orariSeed: Record<Turno, string[]> = {
+  pranzo: ['12:15', '12:30', '12:45', '13:00', '13:30'],
+  cena: ['19:30', '19:45', '20:00', '20:15', '20:30', '20:45', '21:00', '21:15'],
+}
+
 function costruisciPrenotazioni(rng: Rng): PrenotazioneRistorante[] {
   const out: PrenotazioneRistorante[] = []
   const oggi = parseISO(config.stagione.oggi)
@@ -173,6 +178,7 @@ function costruisciPrenotazioni(rng: Rng): PrenotazioneRistorante[] {
           id: `PR-${String(n).padStart(3, '0')}`,
           data,
           turno,
+          ora: orariSeed[turno][k % orariSeed[turno].length],
           nome: scegli(rng, nomiPren),
           coperti: intero(rng, 2, tav.posti),
           tavoloId: forse(rng, 0.7) ? tav.id : undefined,

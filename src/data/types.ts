@@ -324,6 +324,8 @@ export interface PrenotazioneRistorante {
   id: string
   data: string
   turno: Turno
+  /** Orario di arrivo "HH:mm" (facoltativo: le richieste dal sito hanno solo il turno). */
+  ora?: string
   nome: string
   coperti: number
   tavoloId?: string
