@@ -33,10 +33,13 @@ function sottoAttivo(f: SottoVoce, fratelli: SottoVoce[], pathname: string, sear
 
 export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const { moduloAttivo } = useModuli()
-  const { richiesteRistorante } = useDemoData()
+  const { richiesteRistorante, comande } = useDemoData()
   const { pathname, search } = useLocation()
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
-  const conta = { richieste: richiesteRistorante.filter((r) => r.stato === 'da_confermare').length }
+  const conta = {
+    richieste: richiesteRistorante.filter((r) => r.stato === 'da_confermare').length,
+    comande: moduloAttivo('comande') ? comande.filter((c) => c.stato === 'in_attesa').length : 0,
+  }
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
   // Suono a ogni richiesta nuova dal sito (non al primo caricamento). Il browser
   // permette l'audio solo dopo un gesto: lo sblocchiamo al primo tocco sulla pagina.

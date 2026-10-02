@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { format } from 'date-fns'
+import { it } from 'date-fns/locale'
 import { useSearchParams } from 'react-router-dom'
-import { CheckCircle2, Plus, Search, Pencil, Tags, Trash2, ChevronUp, ChevronDown, Umbrella, Smartphone } from 'lucide-react'
+import { CheckCircle2, Plus, Search, Pencil, Tags, Trash2, ChevronUp, ChevronDown, Umbrella, Smartphone, CalendarDays } from 'lucide-react'
 import type { ArticoloBar, Comanda } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -10,6 +12,7 @@ import { Select } from '@/components/ui/Select'
 import { Tabs } from '@/components/ui/Tabs'
 import { euroCent, numero, percento } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
+import { etichettaStatoComanda } from '@/lib/comandapp'
 
 /**
  * Bar: Listino (condiviso con ComandApp e Comande, tutto modificabile: categorie e articoli)
@@ -21,7 +24,7 @@ export default function Bar() {
   return (
     <div className="space-y-4">
       <Tabs valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} opzioni={[{ valore: 'listino', etichetta: 'Listino' }, { valore: 'conti', etichetta: 'Conti' }]} />
-      {tab === 'conti' ? <Conti /> : <Listino />}
+      {tab === 'conti' ? <><Conti /><Giornata /></> : <Listino />}
     </div>
   )
 }
@@ -90,24 +93,93 @@ function Conti() {
                       </span>
                     </button>
                     <span className="num shrink-0 text-sm font-bold text-profondo">{euroCent(c.totale)}</span>
+                    <Button variante="secondario" dimensione="sm" onClick={() => setAperto(espanso ? undefined : c.ombrellone)} aria-expanded={espanso}>
+                      Dettaglio <ChevronDown className={cn('h-4 w-4 transition-transform', espanso && 'rotate-180')} />
+                    </Button>
                     <Button variante="primario" dimensione="sm" onClick={() => incassaOmbrellone(c.ombrellone)}>
                       <CheckCircle2 className="h-4 w-4" /> Incassa
                     </Button>
                   </div>
                   {espanso && (
-                    <ul className="ml-[3.25rem] mt-2 space-y-1 rounded-lg bg-calce/60 p-3 text-sm">
-                      {c.comande.map((x) => (
-                        <li key={x.id}>
-                          <p className="flex items-center gap-1.5 text-xs text-profondo/55">
-                            {x.origine === 'app' && <Smartphone className="h-3.5 w-3.5" />} {x.ora} · {x.origine === 'app' ? 'ComandApp' : 'banco'}{x.cliente ? ` · ${x.cliente}` : ''}
-                          </p>
-                          {x.righe.map((r) => (
-                            <p key={r.articoloId} className="flex justify-between"><span>{r.quantita}× {r.nome}</span><span className="num">{euroCent(r.quantita * r.prezzoUnitario)}</span></p>
-                          ))}
-                        </li>
-                      ))}
+                    <ul className="mt-2 space-y-2 rounded-lg bg-calce/60 p-3 text-sm sm:ml-[3.25rem]">
+                      {c.comande.map((x) => <DettaglioComanda key={x.id} c={x} />)}
                     </ul>
                   )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  )
+}
+
+/** Una comanda: giorno, ora, origine, stato, righe e totale. */
+function DettaglioComanda({ c, conOmbrellone }: { c: Comanda; conOmbrellone?: boolean }) {
+  return (
+    <li className="border-b border-calce-200 pb-2 last:border-0 last:pb-0">
+      <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-profondo/60">
+        {c.origine === 'app' && <Smartphone className="h-3.5 w-3.5" />}
+        <span className="font-semibold text-profondo">{c.ts ? format(c.ts, 'EEE d MMM', { locale: it }) + ' · ' : ''}{c.ora}</span>
+        {conOmbrellone && <span>· Ombrellone {c.ombrellone}</span>}
+        <span>· {c.origine === 'app' ? 'ComandApp' : 'banco'}{c.cliente ? ` · ${c.cliente}` : ''}</span>
+        <span>· {etichettaStatoComanda[c.stato]}</span>
+        <span className={cn('ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold', c.pagata ? 'bg-acqua/25 text-[#2F6B5C]' : 'bg-tenda/30 text-[#7A5A12]')}>{c.pagata ? 'Incassata' : 'Da incassare'}</span>
+      </p>
+      {c.righe.map((r, i) => (
+        <p key={r.articoloId + i} className="flex justify-between"><span>{r.quantita}× {r.nome}</span><span className="num">{euroCent(r.quantita * r.prezzoUnitario)}</span></p>
+      ))}
+      {c.note && <p className="text-xs italic text-profondo/60">Nota: {c.note}</p>}
+      <p className="flex justify-between font-semibold text-profondo"><span>Totale comanda</span><span className="num">{euroCent(c.totale)}</span></p>
+    </li>
+  )
+}
+
+const giornoDi = (c: Comanda) => format(c.ts ?? Date.now(), 'yyyy-MM-dd')
+
+/** Dettaglio del giorno: tutte le comande (incassate e no) della giornata scelta. */
+function Giornata() {
+  const { comande } = useDemoData()
+  const oggi = format(new Date(), 'yyyy-MM-dd')
+  const giorni = useMemo(() => [...new Set([oggi, ...comande.map(giornoDi)])].sort().reverse(), [comande, oggi])
+  const [giorno, setGiorno] = useState(oggi)
+  const [aperta, setAperta] = useState<string>()
+  const delGiorno = comande.filter((c) => giornoDi(c) === giorno).sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0))
+  const incassato = delGiorno.filter((c) => c.pagata).reduce((s, c) => s + c.totale, 0)
+  const totale = delGiorno.reduce((s, c) => s + c.totale, 0)
+  return (
+    <Card>
+      <CardHeader
+        titolo="Dettaglio del giorno"
+        sottotitolo={`${delGiorno.length} ${delGiorno.length === 1 ? 'comanda' : 'comande'} · totale ${euroCent(totale)} · incassato ${euroCent(incassato)} · da incassare ${euroCent(totale - incassato)}`}
+        azione={
+          <label className="flex items-center gap-2 text-sm text-profondo/70">
+            <CalendarDays className="h-4 w-4" />
+            <Select value={giorno} onChange={(e) => setGiorno(e.target.value)} opzioni={giorni.map((g) => ({ valore: g, etichetta: g === oggi ? 'Oggi' : format(new Date(g + 'T12:00'), 'EEEE d MMMM', { locale: it }) }))} />
+          </label>
+        }
+      />
+      <CardBody className="pt-1">
+        {delGiorno.length === 0 ? (
+          <p className="py-6 text-center text-sm text-profondo/50">Nessuna comanda in questo giorno.</p>
+        ) : (
+          <ul className="divide-y divide-calce-200">
+            {delGiorno.map((c) => {
+              const espansa = aperta === c.id
+              return (
+                <li key={c.id} className="py-2">
+                  <button onClick={() => setAperta(espansa ? undefined : c.id)} aria-expanded={espansa} className="flex w-full items-center gap-3 text-left">
+                    <span className="num w-12 shrink-0 text-sm font-semibold text-profondo">{c.ora}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-profondo">Ombrellone {c.ombrellone}{c.cliente && <span className="font-normal text-profondo/70"> · {c.cliente}</span>}</span>
+                      <span className="block truncate text-xs text-profondo/55">{etichettaStatoComanda[c.stato]} · {c.righe.map((r) => `${r.quantita}× ${r.nome}`).join(', ')}</span>
+                    </span>
+                    <span className={cn('hidden rounded-full px-2 py-0.5 text-[11px] font-semibold sm:inline', c.pagata ? 'bg-acqua/25 text-[#2F6B5C]' : 'bg-tenda/30 text-[#7A5A12]')}>{c.pagata ? 'Incassata' : 'Da incassare'}</span>
+                    <span className="num shrink-0 text-sm font-bold text-profondo">{euroCent(c.totale)}</span>
+                    <ChevronDown className={cn('h-4 w-4 shrink-0 text-profondo/50 transition-transform', espansa && 'rotate-180')} />
+                  </button>
+                  {espansa && <ul className="mt-2 rounded-lg bg-calce/60 p-3 text-sm sm:ml-[3.75rem]"><DettaglioComanda c={c} conOmbrellone /></ul>}
                 </li>
               )
             })}

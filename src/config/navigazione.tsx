@@ -33,8 +33,8 @@ export interface SottoVoce {
   percorso: string
   etichetta: string
   modulo: ModuloId
-  /** Contatore stile iPhone: 'richieste' = richieste tavolo dal sito da confermare. */
-  badge?: 'richieste'
+  /** Contatore stile iPhone: 'richieste' = richieste tavolo dal sito da confermare; 'comande' = comande appena arrivate. */
+  badge?: 'richieste' | 'comande'
 }
 
 /**
@@ -48,7 +48,7 @@ export const navigazione: VoceNav[] = [
     figli: [
       { percorso: '/bar?tab=listino', etichetta: 'Listino', modulo: 'bar' },
       { percorso: '/bar?tab=conti', etichetta: 'Conti', modulo: 'bar' },
-      { percorso: '/comande', etichetta: 'Comande', modulo: 'comande' },
+      { percorso: '/comande', etichetta: 'Comande', modulo: 'comande', badge: 'comande' },
     ],
   },
   {

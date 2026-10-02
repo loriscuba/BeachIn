@@ -151,6 +151,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Conti** = comande non pagate raggruppate per ombrellone (clienti, righe, dettaglio comande); **Incassa** →
   `incassaOmbrellone()` segna `pagata` (colonna `beachin.comande.pagata`). I vecchi conti finti (`seed/bar.ts`) non sono più
   caricati (`conti` parte vuoto, usato ancora da arenile/demo).
+  Conti: bottone **Dettaglio** per ombrellone (ogni comanda con giorno, ora, origine, stato, righe, note, totale) e card
+  **Dettaglio del giorno** (`Giornata`: tutte le comande del giorno scelto, incassate e no, con totale/incassato/da incassare).
+  Badge `comande` in Sidebar (Bar → Comande e voce Bar chiusa) = comande `in_attesa`.
 
 ## Disponibilità tavoli + giorni chiusi
 - `src/lib/disponibilita.ts`: `disponibilitaTurno(tavoli, pren, data, turno, coperti?)` (tavoli/posti liberi, prenotazioni senza
