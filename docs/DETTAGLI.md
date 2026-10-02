@@ -37,7 +37,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Installabile come PWA a sé: `public/comandapp.webmanifest` + `comandapp-icon-192/512.png` (logo Lido dei Pini blu su fondo
   giallo TENDA, ricolorato dalle icone admin), collegati da `impostaManifest()` in `src/lib/notifichePush.ts`.
   Banner "Aggiungi alla Home" (`src/components/PulsanteInstalla.tsx`): prompt nativo su Android/Chrome
-  (`beforeinstallprompt`, registra anche `sw-admin.js`), istruzioni Condividi→Home su iOS; nascosto se già installata.
+  (`beforeinstallprompt`, registra anche `sw-admin.js`), su iPhone modal a schermo intero
+  con i passi Condividi→Home + freccia (Safari non permette di aprire Condividi da codice), link "continua nel browser"
+  (ricordato in sessionStorage), nei browser in-app (Instagram/Facebook…) invito ad aprire in Safari con "Copia link";
+  nascosto se già installata.
 - **Supabase** (solo comande + menu/sezioni): `src/lib/supabase.ts` (env `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`,
   vedi `.env.example`; Pages li legge da GitHub Actions *Variables*), schema **`beachin`** (progetto Supabase condiviso tra demo; client con `db.schema`, Realtime su `SCHEMA`; va aggiunto agli *Exposed schemas* della Data API) in `supabase/schema.sql` (tabelle `comande`,
   `menu_sezioni`, `menu_piatti`, RLS aperta ad anon = solo demo, Realtime). Hook generico `src/hooks/useSyncSupabase.ts`:
