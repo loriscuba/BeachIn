@@ -13,6 +13,7 @@ import { PASSI_COMANDA, UTENTI_COMANDAPP, etichettaStatoComanda } from '@/lib/co
 import { ding, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
 import { impostaManifest } from '@/lib/notifichePush'
+import PulsanteInstalla from '@/components/PulsanteInstalla'
 
 type Utente = (typeof UTENTI_COMANDAPP)[number]
 const CHIAVE = 'comandapp.sessione.v1'
@@ -24,7 +25,11 @@ function leggiSessione(): Utente | undefined {
 
 export default function ComandApp() {
   // installabile come app a sé (icona gialla, distinta dall'app Admin)
-  useEffect(() => { impostaManifest('comandapp.webmanifest', 'comandapp-icon-192.png', 'ComandApp') }, [])
+  useEffect(() => {
+    impostaManifest('comandapp.webmanifest', 'comandapp-icon-192.png', 'ComandApp')
+    // service worker: richiesto da alcuni browser Android per proporre l'installazione
+    if ('serviceWorker' in navigator) void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw-admin.js`, { scope: import.meta.env.BASE_URL }).catch(() => undefined)
+  }, [])
   const [utente, setUtente] = useState<Utente | undefined>(leggiSessione)
   const esci = () => { try { localStorage.removeItem(CHIAVE) } catch { /* */ } setUtente(undefined) }
   return (
@@ -44,6 +49,7 @@ export default function ComandApp() {
         </div>
       </header>
       <main className="mx-auto max-w-md px-4 py-4">
+        <PulsanteInstalla nome="ComandApp" />
         {utente ? <Area utente={utente} /> : <Login onEntra={(u) => { try { localStorage.setItem(CHIAVE, u.utente) } catch { /* */ } setUtente(u) }} />}
       </main>
     </div>
