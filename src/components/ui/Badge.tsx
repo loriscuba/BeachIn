@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
-type Tono = 'neutro' | 'mare' | 'acqua' | 'tenda' | 'boa' | 'stagionale' | 'spento'
+type Tono = 'neutro' | 'mare' | 'acqua' | 'tenda' | 'boa' | 'stagionale' | 'spento' | 'verde' | 'giallo' | 'rosso'
 
 const toni: Record<Tono, string> = {
   neutro: 'bg-calce-200 text-profondo',
@@ -11,6 +11,10 @@ const toni: Record<Tono, string> = {
   boa: 'bg-boa/15 text-boa',
   stagionale: 'bg-cabina/15 text-cabina',
   spento: 'bg-calce-200 text-profondo/50',
+  // Colori "parlanti" per gli stati (verde = fatto, giallo = da fare, rosso = annullato)
+  verde: 'bg-emerald-100 text-emerald-800',
+  giallo: 'bg-amber-100 text-amber-800',
+  rosso: 'bg-red-100 text-red-700',
 }
 
 interface BadgeProps {

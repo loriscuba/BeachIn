@@ -44,7 +44,7 @@ export default function SitoAnteprima() {
   const prenotaOmbrelloni = ombrelloni && canaliPrenotazione.ombrelloni
   const voci = nav.filter(([id]) => (id !== 'prenota' || prenotaOmbrelloni) && (id !== 'listino' || ombrelloni))
   const voceNastro = nastro.filter((t) => ombrelloni || !/ombrell/i.test(t))
-  const idPrenota = prenotaOmbrelloni ? 'prenota' : 'ristorante'
+  const idPrenota = prenotaOmbrelloni ? 'prenota' : 'prenota-tavolo'
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [listino, setListino] = useState<VoceTariffa[]>([])
@@ -107,7 +107,15 @@ export default function SitoAnteprima() {
 
   const scrollTo = (id: string) => {
     setMenuMobile(false)
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const vai = () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    vai()
+    // foto lazy e animazioni "reveal" spostano il layout durante lo scroll: a fine corsa si ricorregge sul bersaglio
+    for (const ms of [700, 1400]) window.setTimeout(() => {
+      const el = document.getElementById(id)
+      if (!el) return
+      const atteso = parseFloat(getComputedStyle(el).scrollMarginTop) || 0
+      if (Math.abs(el.getBoundingClientRect().top - atteso) > 4) vai()
+    }, ms)
   }
 
   const [titoloHero, sottoHero] = (sito?.home.titolo ?? config.nome).split(/\s+—\s+/)
@@ -185,13 +193,13 @@ export default function SitoAnteprima() {
                   <button onClick={() => scrollTo('prenota')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
                     <Umbrella className="h-5 w-5" /> Prenota l’ombrellone <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>
-                  <button onClick={() => scrollTo('ristorante')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
+                  <button onClick={() => scrollTo('prenota-tavolo')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
                     <UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo
                   </button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => scrollTo('ristorante')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
+                  <button onClick={() => scrollTo('prenota-tavolo')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
                     <UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>
                   <button onClick={() => scrollTo('eventi')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
@@ -336,7 +344,7 @@ export default function SitoAnteprima() {
                 </li>
               ))}
             </ul>
-            <div className="reveal mt-10">
+            <div id="prenota-tavolo" className="reveal mt-10 scroll-mt-24">
               {canaliPrenotazione.ristorante
                 ? <FormRistorante onInviato={(nome) => { mostraToast(`Richiesta tavolo inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
                 : <Sospese testo="Le prenotazioni del ristorante online sono momentaneamente sospese. Chiamaci per riservare un tavolo." />}
@@ -741,14 +749,14 @@ function Lightbox({ foto, indice, onCambia, onChiudi }: { foto: { src: string; t
 
 function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento?: Evento; prenotabile: boolean; onChiudi: () => void; onPrenotato: (nome: string) => void }) {
   const { inviaRichiestaEvento } = useDemoData()
-  const [f, setF] = useState({ nome: '', email: '', telefono: '', persone: '2', note: '' })
+  const [f, setF] = useState({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false })
   const [inviato, setInviato] = useState(false)
-  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
-  const valido = f.nome.trim() && f.email.trim()
+  const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
+  const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy
   const passato = !!e && e.data < config.stagione.oggi
 
   // reset del form quando cambia l'evento selezionato
-  useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '' }); setInviato(false) }, [e?.id])
+  useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false }); setInviato(false) }, [e?.id])
 
   const invia = (ev: React.FormEvent) => {
     ev.preventDefault()
@@ -799,10 +807,12 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
             <form onSubmit={invia} className="grid grid-cols-2 gap-3 rounded-2xl border border-calce-200 bg-calce/40 p-4">
               <p className="col-span-2 flex items-center gap-1.5 font-bold text-profondo"><Ticket className="h-4 w-4 text-cabina" /> Prenota la tua partecipazione</p>
               <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(ev) => set('nome', ev.target.value)} placeholder="Mario Rossi" /></Campo>
-              <Campo label="Email"><input type="email" required className={pc} value={f.email} onChange={(ev) => set('email', ev.target.value)} placeholder="tu@email.it" /></Campo>
-              <Campo label="Telefono"><input className={pc} value={f.telefono} onChange={(ev) => set('telefono', ev.target.value)} placeholder="340 1234567" /></Campo>
+              <Campo label="Email"><input type="email" className={pc} value={f.email} onChange={(ev) => set('email', ev.target.value)} placeholder="tu@email.it" /></Campo>
+              <Campo label="Cellulare"><input type="tel" className={pc} value={f.telefono} onChange={(ev) => set('telefono', ev.target.value)} placeholder="340 1234567" /></Campo>
+              <NotaContatto email={f.email} telefono={f.telefono} />
               <Campo label="Persone"><input type="number" min={1} className={pc} value={f.persone} onChange={(ev) => set('persone', ev.target.value)} /></Campo>
               <Campo label="Note"><input className={pc} value={f.note} onChange={(ev) => set('note', ev.target.value)} placeholder="facoltative" /></Campo>
+              <ConsensoPrivacy checked={f.privacy} onChange={(v) => set('privacy', v)} />
               <button type="submit" disabled={!valido} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">Invia richiesta</button>
             </form>
           )}
@@ -857,10 +867,10 @@ function PostaCliente({ aperta, onChiudi }: { aperta: boolean; onChiudi: () => v
 function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
   const { inviaRichiestaOmbrellone } = useDemoData()
   const oggi = config.stagione.oggi
-  const [f, setF] = useState({ nome: '', email: '', telefono: '', dal: oggi, al: oggi, tipologia: 'ombrellone_2_lettini' as TipologiaPostazione, persone: '2' })
+  const [f, setF] = useState({ nome: '', email: '', telefono: '', dal: oggi, al: oggi, tipologia: 'ombrellone_2_lettini' as TipologiaPostazione, persone: '2', privacy: false })
   const [inviato, setInviato] = useState(false)
-  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
-  const valido = f.nome.trim() && f.email.trim()
+  const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
+  const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy
 
   if (inviato) return <Successo testo="La tua richiesta di ombrellone è partita. Trovi la ricevuta ne “La mia posta” — appena la confermiamo dal gestionale ricevi l’email di conferma." onAltro={() => setInviato(false)} />
 
@@ -869,8 +879,9 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 text-profondo shadow-2xl shadow-profondo-900/30 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold">Richiedi il tuo ombrellone</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
-      <Campo label="Email"><input type="email" required className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
-      <Campo label="Telefono"><input className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
+      <Campo label="Email"><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
+      <Campo label="Cellulare"><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
+      <NotaContatto email={f.email} telefono={f.telefono} />
       <Campo label="Dal"><input type="date" className={pc} value={f.dal} onChange={(e) => set('dal', e.target.value)} /></Campo>
       <Campo label="Al"><input type="date" className={pc} value={f.al} onChange={(e) => set('al', e.target.value)} /></Campo>
       <Campo label="Tipologia">
@@ -883,6 +894,7 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
         </select>
       </Campo>
       <Campo label="Persone"><input type="number" min={1} className={pc} value={f.persone} onChange={(e) => set('persone', e.target.value)} /></Campo>
+      <ConsensoPrivacy checked={f.privacy} onChange={(v) => set('privacy', v)} />
       <button type="submit" disabled={!valido} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">Invia richiesta</button>
     </form>
   )
@@ -893,12 +905,12 @@ function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
   const oggi = config.stagione.oggi
   // disponibilità dal vivo: giorni chiusi (dall'app admin/gestionale) e turni al completo
   const statoDi = (d: string) => statoGiorno(tavoliDelGiorno(d), prenotazioniRistorante, giorniChiusi, d)
-  const [f, setF] = useState({ nome: '', email: '', telefono: '', data: oggi, turno: 'cena' as Turno, coperti: '2', note: '' })
+  const [f, setF] = useState({ nome: '', email: '', telefono: '', data: oggi, turno: 'cena' as Turno, coperti: '2', note: '', privacy: false })
   const [inviato, setInviato] = useState(false)
-  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
+  const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const sel = statoDi(f.data)
   const turnoPieno = sel.pieno[f.turno]
-  const valido = f.nome.trim() && f.email.trim() && !turnoPieno
+  const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy && !turnoPieno
   const scegliData = (d: string) => {
     const st = statoDi(d)
     // se il turno scelto è al completo quel giorno, passa all'altro
@@ -912,8 +924,9 @@ function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 shadow-xl shadow-profondo/10 ring-1 ring-calce-200 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold text-profondo">Prenota un tavolo</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
-      <Campo label="Email"><input type="email" required className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
-      <Campo label="Telefono"><input className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
+      <Campo label="Email"><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
+      <Campo label="Cellulare"><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
+      <NotaContatto email={f.email} telefono={f.telefono} />
       <div className="col-span-2">
         <span className="mb-1 block text-xs font-medium text-profondo/60">Data</span>
         <CalendarioDisponibilita valore={f.data} minimo={oggi} onScegli={scegliData} stato={(d) => statoDi(d).stato} />
@@ -930,6 +943,7 @@ function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
           {sel.stato === 'chiuso' ? `Il ristorante è chiuso questo giorno${sel.nota ? ` (${sel.nota})` : ''}: scegli un’altra data.` : 'Questo turno è al completo: scegli un altro giorno o turno.'}
         </p>
       )}
+      <ConsensoPrivacy checked={f.privacy} onChange={(v) => set('privacy', v)} />
       <button type="submit" disabled={!valido} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">Invia richiesta</button>
     </form>
   )
@@ -956,6 +970,57 @@ function Sospese({ testo, className }: { testo: string; className?: string }) {
         <p className="mt-0.5 text-sm text-profondo/65">{testo}</p>
       </div>
     </div>
+  )
+}
+
+/** Basta uno dei due recapiti: email valida oppure cellulare (almeno 9 cifre). */
+function contattoValido(email: string, telefono: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || telefono.replace(/\D/g, '').length >= 9
+}
+
+function NotaContatto({ email, telefono }: { email: string; telefono: string }) {
+  const ok = contattoValido(email, telefono)
+  return (
+    <p className={cn('col-span-2 -mt-2 text-xs', ok ? 'text-profondo/50' : 'font-medium text-[#9A6B00]')}>
+      {ok ? 'Ti ricontattiamo al recapito indicato.' : 'Obbligatorio almeno uno tra email e cellulare.'}
+    </p>
+  )
+}
+
+/** Checkbox di consenso con informativa GDPR (art. 13 Reg. UE 2016/679) leggibile in una finestra. */
+function ConsensoPrivacy({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  const [aperta, setAperta] = useState(false)
+  const recapito = config.email || config.telefono
+  return (
+    <>
+      <label className="col-span-2 flex items-start gap-2.5 text-sm text-profondo/75">
+        <input type="checkbox" required checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-boa" />
+        <span>
+          Ho letto l’<button type="button" onClick={() => setAperta(true)} className="font-semibold text-cabina underline underline-offset-2">informativa sul trattamento dei dati personali</button> e acconsento al trattamento per gestire la mia richiesta. <span className="text-boa">*</span>
+        </span>
+      </label>
+      {aperta && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-profondo-900/60 p-4 backdrop-blur-sm" onClick={() => setAperta(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Informativa privacy" onClick={(e) => e.stopPropagation()} className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 text-sm leading-6 text-profondo shadow-2xl sm:p-8">
+            <div className="flex items-start justify-between gap-3">
+              <p className="font-display text-2xl font-semibold">Informativa privacy</p>
+              <button type="button" onClick={() => setAperta(false)} aria-label="Chiudi" className="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-calce"><X className="h-5 w-5" /></button>
+            </div>
+            <p className="mt-1 text-xs text-profondo/55">ai sensi dell’art. 13 del Regolamento UE 2016/679 (GDPR)</p>
+            <div className="mt-4 space-y-3 text-profondo/80">
+              <p><b>Titolare del trattamento.</b> {config.nome}, {config.indirizzo} {config.localita}. Contatto: {recapito}.</p>
+              <p><b>Dati trattati.</b> Nome e cognome, email e/o numero di cellulare, dati della prenotazione (date, persone, eventuali note).</p>
+              <p><b>Finalità e base giuridica.</b> Gestire la richiesta di prenotazione e ricontattarti per confermarla (art. 6.1.b GDPR, misure precontrattuali richieste dall’interessato). I dati non sono usati per marketing senza un tuo ulteriore consenso esplicito.</p>
+              <p><b>Conferimento.</b> Nome e almeno un recapito (email o cellulare) sono necessari: senza non possiamo gestire la prenotazione.</p>
+              <p><b>Conservazione.</b> Per il tempo necessario a gestire la prenotazione e fino alla fine della stagione balneare, salvo obblighi di legge (es. fiscali) che richiedano tempi più lunghi.</p>
+              <p><b>Destinatari.</b> Personale autorizzato dello stabilimento e fornitori tecnici (hosting, invio email) nominati responsabili del trattamento. I dati non vengono diffusi.</p>
+              <p><b>I tuoi diritti.</b> Accesso, rettifica, cancellazione, limitazione, opposizione e portabilità (artt. 15–22 GDPR), scrivendo o chiamando il Titolare. Puoi proporre reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it).</p>
+            </div>
+            <button type="button" onClick={() => { onChange(true); setAperta(false) }} className="mt-6 h-11 w-full rounded-full bg-boa font-semibold text-white hover:bg-[#ee6440]">Ho letto, acconsento</button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

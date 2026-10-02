@@ -28,11 +28,11 @@ import { BadgeConta } from '@/components/layout/Sidebar'
 import { disponibilitaTurno, suggerisciTavoli } from '@/lib/disponibilita'
 import { CalendarioMese } from '@/pages/ristorante/CalendarioMese'
 
-const tonoStato: Record<StatoPrenotazione, 'acqua' | 'tenda' | 'neutro' | 'stagionale'> = {
-  confermata: 'acqua', in_attesa: 'tenda', annullata: 'neutro', arrivata: 'stagionale',
+const tonoStato: Record<StatoPrenotazione, 'verde' | 'giallo' | 'rosso'> = {
+  confermata: 'giallo', in_attesa: 'giallo', annullata: 'rosso', arrivata: 'verde',
 }
 const etichettaStato: Record<StatoPrenotazione, string> = {
-  confermata: 'Confermata', in_attesa: 'In attesa', annullata: 'Annullata', arrivata: 'Arrivati',
+  confermata: 'Da accogliere', in_attesa: 'In attesa', annullata: 'Annullata', arrivata: 'Arrivati',
 }
 const zonaBreve = (z: Tavolo['zona']) => z.charAt(0).toUpperCase() + z.slice(1)
 
@@ -263,7 +263,7 @@ export default function Ristorante() {
               <section>
                 <div className="mb-2 flex items-baseline justify-between gap-2">
                   <h3 className="font-display text-lg font-semibold text-profondo">In arrivo</h3>
-                  <span className="text-xs text-profondo/55">{attesi} da accogliere · {arrivati} arrivat{arrivati === 1 ? 'o' : 'i'}</span>
+                  <span className="flex gap-1.5"><Badge tono="giallo" puntino>{attesi} da accogliere</Badge><Badge tono="verde" puntino>{arrivati} arrivat{arrivati === 1 ? 'o' : 'i'}</Badge></span>
                 </div>
                 <ul className="space-y-2">
                   {listaTurno.length === 0 && <li className="rounded-xl border border-calce-200 bg-white px-4 py-8 text-center text-sm text-profondo/45">Nessuna prenotazione per {turno}.</li>}
@@ -429,7 +429,7 @@ function RigaPrenotazione({
   const arrivata = p.stato === 'arrivata'
   const daSistemare = !tavoloAssegnato && !annullata && !arrivata
   return (
-    <li className={cn('flex overflow-hidden rounded-xl border bg-white', daSistemare ? 'border-2 border-tenda shadow-sm' : 'border-calce-200', (annullata || arrivata) && 'opacity-60')}>
+    <li className={cn('flex overflow-hidden rounded-xl border bg-white', daSistemare ? 'border-2 border-tenda shadow-sm' : 'border-calce-200', annullata && 'opacity-70', arrivata && 'border-emerald-200 bg-emerald-50/40')}>
       <div className={cn('flex w-20 shrink-0 flex-col items-center justify-center border-r px-2 py-3 sm:w-24', daSistemare ? 'border-tenda bg-tenda/25' : 'border-calce-200')}>
         <span className="num text-xl font-bold text-profondo">{p.ora ?? '—'}</span>
         <span className="text-xs capitalize text-profondo/55">{p.turno}</span>
@@ -441,7 +441,7 @@ function RigaPrenotazione({
               {p.nome}
               {p.origine === 'sito' && <Badge tono="stagionale">Sito</Badge>}
               {p.origine === 'manuale' && <Badge tono="neutro"><Phone className="h-3 w-3" /> Tel.</Badge>}
-              {(annullata || p.stato === 'in_attesa') && <Badge tono={tonoStato[p.stato]}>{etichettaStato[p.stato]}</Badge>}
+              <Badge tono={tonoStato[p.stato]} puntino>{etichettaStato[p.stato]}</Badge>
               {daSistemare && <span className="rounded-md bg-tenda px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-profondo">Da sistemare</span>}
             </p>
             <p className="text-sm text-profondo/60">
@@ -454,14 +454,27 @@ function RigaPrenotazione({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="num hidden text-lg font-bold text-profondo sm:inline">{p.coperti}<span className="text-xs font-normal text-profondo/55"> pers.</span></span>
-            {!annullata && (
+            {annullata ? (
               <button
                 type="button"
-                onClick={() => onStato(arrivata ? 'confermata' : 'arrivata')}
-                className={cn('inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold', arrivata ? 'border-calce-200 bg-calce-200 text-profondo' : 'border-calce-200 bg-white text-profondo shadow-sm hover:bg-calce/60')}
-                title={arrivata ? 'Annulla arrivo' : 'Segna come arrivati'}
+                onClick={() => onStato('confermata')}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-calce-200 bg-white px-3 text-sm font-semibold text-profondo shadow-sm hover:bg-calce/60"
+                title="Recupera la prenotazione annullata"
               >
-                {arrivata ? <Undo2 className="h-4 w-4" /> : <Check className="h-4 w-4" />} Arrivati
+                <Undo2 className="h-4 w-4" /> Recupera
+              </button>
+            ) : arrivata ? (
+              <button type="button" onClick={() => onStato('confermata')} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/40 hover:bg-calce/60 hover:text-profondo" title="Annulla arrivo" aria-label="Annulla arrivo">
+                <Undo2 className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onStato('arrivata')}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-100"
+                title="Segna come arrivati"
+              >
+                <Check className="h-4 w-4" /> Accogli
               </button>
             )}
           </div>

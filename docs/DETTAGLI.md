@@ -179,6 +179,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Piano di default: `ristorante_web` (Panoramica, Ristorante, Assistente vocale, Comande, Eventi, Sito, Impostazioni).
 - Attivazione dal vivo (demo/vendita) da **Impostazioni → Moduli e piano** (`applicaPiano`, `toggle`).
 
+- (ott 2026) **Colori parlanti** sugli stati (toni `verde/giallo/rosso` di `Badge`): giallo *Da accogliere* (+ bottone
+  verde **Accogli**), verde *Arrivati* (badge, scheda verdina, piccola ↺ per annullare l'arrivo), rosso *Annullata* con
+  bottone **Recupera** (torna `confermata`). Riepilogo "In arrivo" con badge giallo/verde.
+
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
 - **Prenotazione ombrellone sul sito = doppio controllo**: `prenotaOmbrelloni = moduloAttivo('arenile') && canaliPrenotazione.ombrelloni`
   (`SitoAnteprima`): se falso spariscono sezione Prenota, voce nav, CTA hero e bottone flottante (niente più box "sospese").
@@ -214,6 +218,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `RichiestaEvento.origine: 'sito' | 'manuale'`).
 
 ## Grafica sito pubblico (SitoAnteprima) — restyling "wow"
+- (ott 2026) Form prenotazione (ombrellone, tavolo, evento): obbligatorio **email o cellulare** (`contattoValido`) e
+  checkbox **consenso GDPR** con informativa art. 13 in finestra (`ConsensoPrivacy`). Pulsanti "Prenota" portano al form
+  (`#prenota` o `#prenota-tavolo`); `scrollTo` ricorregge a fine corsa (foto lazy/reveal spostavano il bersaglio).
 - Foto in `src/assets/sito/` (JPEG ottimizzati, export `fotoSito` da `index.ts`): reali dello stabilimento
   (drone, ombrelloni, bagnino, beach volley, torneo, bar) + concept del mockup Lovable (ristorante, famiglia,
   pineta, mare-pini, tramonto) da sostituire con scatti reali. Sorgente: Drive, cartella "BeachIN".
