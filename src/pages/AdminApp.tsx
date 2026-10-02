@@ -67,7 +67,7 @@ function Area() {
   const { richiesteRistorante, confermaRistorante, rifiutaRistorante, assegnaTavolo, giorniChiusi } = useDemoData()
   const [daConfermareTavolo, setDaConfermareTavolo] = useState<RichiestaRistorante>()
   const [chiusureAperte, setChiusureAperte] = useState(false)
-  const chiusureFuture = giorniChiusi.filter((g) => g.data >= config.stagione.oggi).length
+  const chiusureFuture = giorniChiusi.filter((g) => g.data >= config.oggi).length
   const [tab, setTab] = useState<'prenotazioni' | 'menu'>('prenotazioni')
   const [suoni, setSuoni] = useState(true)
   const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
@@ -156,7 +156,7 @@ const ordineStato: Record<StatoPrenotazione, number> = { in_attesa: 0, confermat
 /** Panoramica di oggi: coperti e riempimento per turno, avvisi, lista arrivi con tavolo e "arrivato" a un tocco. */
 function OggiRistorante() {
   const { prenotazioniRistorante, richiesteRistorante, tavoliDelGiorno, giorniChiusi, assegnaTavolo, impostaStatoPrenotazione } = useDemoData()
-  const oggi = config.stagione.oggi
+  const oggi = config.oggi
   const [turno, setTurno] = useState<Turno>(() => (new Date().getHours() < 16 ? 'pranzo' : 'cena'))
   const [daAssegnare, setDaAssegnare] = useState<PrenotazioneRistorante>()
   const tavoli = tavoliDelGiorno(oggi)

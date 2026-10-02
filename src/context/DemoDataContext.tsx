@@ -645,7 +645,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const pushMail = useCallback(
     (casella: Email['casella'], tipo: Email['tipo'], da: string, a: string, oggetto: string, corpo: string) => {
-      const mail: Email = { id: nuovoId('MAIL'), casella, tipo, da, a, oggetto, corpo, data: config.stagione.oggi, letto: false }
+      const mail: Email = { id: nuovoId('MAIL'), casella, tipo, da, a, oggetto, corpo, data: config.oggi, letto: false }
       if (casella === 'cliente') setPostaCliente((p) => [mail, ...p])
       else setPostaAdmin((p) => [mail, ...p])
     },
@@ -654,7 +654,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const inviaRichiestaOmbrellone = useCallback((d: DatiRichiestaOmbrellone) => {
     setPrenotazioni((prev) => [
-      { id: nuovoId('PO'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, dal: d.dal, al: d.al, tipologiaPostazione: d.tipologiaPostazione, persone: d.persone, stato: 'da_confermare', messaggio: d.messaggio },
+      { id: nuovoId('PO'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, dal: d.dal, al: d.al, tipologiaPostazione: d.tipologiaPostazione, persone: d.persone, stato: 'da_confermare', messaggio: d.messaggio },
       ...prev,
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — ombrellone',
@@ -665,7 +665,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const inviaRichiestaRistorante = useCallback((d: DatiRichiestaRistorante) => {
     setRichiesteRistorante((prev) => [
-      { id: nuovoId('RR'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, coperti: d.coperti, stato: 'da_confermare', note: d.note, ts: Date.now() },
+      { id: nuovoId('RR'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, coperti: d.coperti, stato: 'da_confermare', note: d.note, ts: Date.now() },
       ...prev,
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — tavolo ristorante',
@@ -713,7 +713,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const inviaRichiestaEvento = useCallback((d: DatiRichiestaEvento) => {
     setRichiesteEventi((prev) => [
-      { id: nuovoId('RE'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'da_confermare', note: d.note, origine: 'sito' },
+      { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'da_confermare', note: d.note, origine: 'sito' },
       ...prev,
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, `Richiesta ricevuta — ${d.eventoNome}`,
@@ -738,7 +738,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const aggiungiPartecipanteEvento = useCallback((d: DatiPartecipanteEvento) => {
     setRichiesteEventi((prev) => [
-      { id: nuovoId('RE'), ricevutaIl: config.stagione.oggi, nome: d.nome, email: d.email ?? '', telefono: d.telefono ?? '', eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'confermata', note: d.note, origine: 'manuale' },
+      { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email ?? '', telefono: d.telefono ?? '', eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'confermata', note: d.note, origine: 'manuale' },
       ...prev,
     ])
   }, [])
@@ -916,7 +916,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [cambiaTavoli])
   const creaPrenotazioneRistorante = useCallback((d: DatiPrenotazioneRistorante) => {
     setPrenotazioniRistorante((prev) => [
-      { id: nuovoId('PR'), data: d.data ?? config.stagione.oggi, turno: d.turno, ora: d.ora, nome: d.nome, coperti: d.coperti, tavoloId: d.tavoloId, stato: 'confermata', note: d.note, telefono: d.telefono, origine: 'manuale' },
+      { id: nuovoId('PR'), data: d.data ?? config.oggi, turno: d.turno, ora: d.ora, nome: d.nome, coperti: d.coperti, tavoloId: d.tavoloId, stato: 'confermata', note: d.note, telefono: d.telefono, origine: 'manuale' },
       ...prev,
     ])
   }, [])

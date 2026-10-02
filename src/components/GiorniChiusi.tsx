@@ -23,7 +23,7 @@ function periodi(date: { data: string; nota?: string }[]) {
 /** Segna uno o più giorni di chiusura del ristorante; il sito pubblico li mostra in rosso. */
 export function GiorniChiusi({ grande }: { grande?: boolean }) {
   const { giorniChiusi, chiudiGiorni, riapriGiorno } = useDemoData()
-  const oggi = config.stagione.oggi
+  const oggi = config.oggi
   const [dal, setDal] = useState(oggi)
   const [al, setAl] = useState(oggi)
   const [nota, setNota] = useState('')

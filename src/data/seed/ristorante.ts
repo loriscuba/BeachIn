@@ -164,7 +164,7 @@ const orariSeed: Record<Turno, string[]> = {
 
 function costruisciPrenotazioni(rng: Rng): PrenotazioneRistorante[] {
   const out: PrenotazioneRistorante[] = []
-  const oggi = parseISO(config.stagione.oggi)
+  const oggi = parseISO(config.oggi)
   let n = 0
   const statoPesi: StatoPrenotazione[] = ['confermata', 'in_attesa', 'annullata']
   for (let giorno = 0; giorno < 5; giorno++) {

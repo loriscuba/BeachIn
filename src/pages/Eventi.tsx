@@ -41,7 +41,7 @@ export default function Eventi() {
     return Object.entries(g).sort(([a], [b]) => a.localeCompare(b))
   }, [ordinati])
 
-  const oggi = config.stagione.oggi
+  const oggi = config.oggi
   // Versione "viva" dell'evento selezionato: si aggiorna quando cambia l'album.
   const selLive = sel ? eventi.find((x) => x.id === sel.id) ?? sel : undefined
 
@@ -281,7 +281,7 @@ function Partecipanti({ evento: e, lista, totPersone, onAggiungi, onRimuovi }: {
 
 function FormEvento({ stato, onChiudi, onSalva }: { stato: { open: boolean; evento?: Evento }; onChiudi: () => void; onSalva: (e: Evento) => void }) {
   const e = stato.evento
-  const vuoto = { nome: '', tipo: 'musica' as TipoEvento, data: config.stagione.oggi, budget: '0', costiSostenuti: '0', ricavi: '0', partecipanti: '0', descrizione: '', prezzo: '0', foto: '' }
+  const vuoto = { nome: '', tipo: 'musica' as TipoEvento, data: config.oggi, budget: '0', costiSostenuti: '0', ricavi: '0', partecipanti: '0', descrizione: '', prezzo: '0', foto: '' }
   const iniziale = e
     ? { nome: e.nome, tipo: e.tipo, data: e.data, budget: String(e.budget), costiSostenuti: String(e.costiSostenuti), ricavi: String(e.ricavi), partecipanti: String(e.partecipanti), descrizione: e.descrizione, prezzo: String(e.prezzo ?? 0), foto: e.foto ?? '' }
     : vuoto

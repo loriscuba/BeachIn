@@ -30,7 +30,7 @@ export default function Panoramica() {
   const { magazzino, eventi, richiesteRistorante, prenotazioniOnline, prenotazioniRistorante } = useDemoData()
   const { moduloAttivo } = useModuli()
   const meteo = useMeteoOggi()
-  const oggi = config.stagione.oggi
+  const oggi = config.oggi
   const prenOggi = prenotazioniRistorante
     .filter((p) => p.data === oggi && p.stato !== 'annullata')
     .sort((a, b) => (a.turno === b.turno ? 0 : a.turno === 'pranzo' ? -1 : 1) || ordineStato[a.stato] - ordineStato[b.stato] || (a.ora ?? '99').localeCompare(b.ora ?? '99'))

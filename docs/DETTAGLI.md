@@ -191,7 +191,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `statoSito.galleria`, campo `FotoGalleria.immagine` data URI). **Didascalia** modificabile per foto
   (`rinominaFoto`), mostrata sul sito pubblico (`SitoAnteprima`).
 - **Data "oggi"**: `config.stagione.oggi` è la data REALE del dispositivo, limitata alla stagione
-  (`oggiInStagione()` in `config.ts`), così i numeri (serie giornaliera/KPI) restano validi.
+  (`oggiInStagione()` in `config.ts`), così i numeri (serie giornaliera/KPI) restano validi: si usa solo
+  per i dati spiaggia. `config.oggi` è la data reale NON limitata: Topbar, Ristorante/prenotazioni (seed
+  generato da oggi), AdminApp, Eventi, Panoramica, giorni chiusi, `ricevutaIl` delle richieste.
+- **Topbar**: data di oggi + meteo attuale di Savona (`useMeteoOggi`, una fetch condivisa con cache 30 min).
+- **Ristorante → annulla/elimina prenotazione**: chiede conferma con `Modal` (stato `daCancellare`).
 - **Eventi sul sito pubblico**: `SitoAnteprima` mostra sia i prossimi eventi sia quelli **conclusi**
   (badge "Concluso" + link "Rivedi le foto"); per un evento passato il modal nasconde il form di
   prenotazione e mostra l'album. (Prima filtrava solo `data >= oggi`, quindi i conclusi sparivano.)

@@ -9,6 +9,7 @@ import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Tabella, type Colonna } from '@/components/ui/Tabella'
 import { Tabs } from '@/components/ui/Tabs'
@@ -57,7 +58,7 @@ export default function Ristorante() {
   // I tavoli ora si gestiscono per giorno dentro Prenotazioni: il vecchio ?tab=tavoli porta lì.
   const tab = (sezioni.find((x) => x.valore === q.get('tab'))?.valore ?? 'prenotazioni') as Sezione
 
-  const oggi = config.stagione.oggi
+  const oggi = config.oggi
   // Giorno scelto (di default oggi; ?giorno= arriva dalla campanella delle notifiche).
   const [giorno, setGiornoStato] = useState(q.get('giorno') ?? oggi)
   const [turno, setTurno] = useState<Turno>(new Date().getHours() < 16 ? 'pranzo' : 'cena')
@@ -68,6 +69,8 @@ export default function Ristorante() {
   const setGiorno = setGiornoStato
   // prenotazione a cui si sta scegliendo il tavolo (modal con la pianta)
   const [prenTavolo, setPrenTavolo] = useState<string>()
+  // Conferma prima di annullare/eliminare una prenotazione.
+  const [daCancellare, setDaCancellare] = useState<{ pren: PrenotazioneRistorante; elimina: boolean }>()
   const spostaGiorno = (n: number) => setGiornoStato(format(addDays(parseISO(giorno), n), 'yyyy-MM-dd'))
 
   // ogni giorno ha la sua disposizione (o quella standard)
@@ -270,8 +273,8 @@ export default function Ristorante() {
                       pren={p}
                       tavoloAssegnato={p.tavoloId ? tavoliPerId.get(p.tavoloId) : undefined}
                       onTavolo={() => setPrenTavolo(p.id)}
-                      onStato={(stato) => impostaStatoPrenotazione(p.id, stato)}
-                      onRimuovi={() => rimuoviPrenotazioneRistorante(p.id)}
+                      onStato={(stato) => (stato === 'annullata' ? setDaCancellare({ pren: p, elimina: false }) : impostaStatoPrenotazione(p.id, stato))}
+                      onRimuovi={() => setDaCancellare({ pren: p, elimina: true })}
                     />
                   ))}
                 </ul>
@@ -320,6 +323,38 @@ export default function Ristorante() {
                   />
                 )
               })()}
+
+              <Modal
+                aperto={!!daCancellare}
+                onChiudi={() => setDaCancellare(undefined)}
+                titolo={daCancellare?.elimina ? 'Eliminare la prenotazione?' : 'Annullare la prenotazione?'}
+                larghezza="max-w-sm"
+                piede={
+                  <div className="flex justify-end gap-2">
+                    <Button dimensione="sm" onClick={() => setDaCancellare(undefined)}>No, indietro</Button>
+                    <Button
+                      dimensione="sm"
+                      variante="pericolo"
+                      onClick={() => {
+                        if (!daCancellare) return
+                        if (daCancellare.elimina) rimuoviPrenotazioneRistorante(daCancellare.pren.id)
+                        else impostaStatoPrenotazione(daCancellare.pren.id, 'annullata')
+                        setDaCancellare(undefined)
+                      }}
+                    >
+                      Sì, {daCancellare?.elimina ? 'elimina' : 'annulla'}
+                    </Button>
+                  </div>
+                }
+              >
+                {daCancellare && (
+                  <p className="text-sm text-profondo">
+                    <b>{daCancellare.pren.nome}</b> · {daCancellare.pren.coperti} persone · {daCancellare.pren.turno}
+                    {daCancellare.pren.ora ? ` alle ${daCancellare.pren.ora}` : ''} del {format(parseISO(daCancellare.pren.data), 'd MMMM', { locale: itLocale })}.
+                    {daCancellare.elimina && <span className="mt-1 block text-profondo/60">La prenotazione verrà rimossa definitivamente.</span>}
+                  </p>
+                )}
+              </Modal>
 
               <a href={urlAdminApp()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-profondo/55 hover:text-profondo"><Smartphone className="h-3.5 w-3.5" /> App admin per il telefono</a>
             </div>
