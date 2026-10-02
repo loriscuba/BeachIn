@@ -34,6 +34,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Sync tra schede dello stesso browser: `comande` in localStorage `beachin.comande.v1` + evento `storage` (niente backend:
   tra dispositivi diversi serve un server). Suoni Web Audio in `src/lib/suoni.ts` (`campanello`/`ding`, sblocco al primo gesto);
   la pagina Comande ha link+QR ComandApp, "Attiva suoni" e suona il campanello a ogni comanda nuova.
+  Installabile come PWA a sé: `public/comandapp.webmanifest` + `comandapp-icon-192/512.png` (logo ombrellone su fondo
+  giallo TENDA, distinto dall'admin navy), collegati da `impostaManifest()` in `src/lib/notifichePush.ts`.
 - **Supabase** (solo comande + menu/sezioni): `src/lib/supabase.ts` (env `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`,
   vedi `.env.example`; Pages li legge da GitHub Actions *Variables*), schema **`beachin`** (progetto Supabase condiviso tra demo; client con `db.schema`, Realtime su `SCHEMA`; va aggiunto agli *Exposed schemas* della Data API) in `supabase/schema.sql` (tabelle `comande`,
   `menu_sezioni`, `menu_piatti`, RLS aperta ad anon = solo demo, Realtime). Hook generico `src/hooks/useSyncSupabase.ts`:

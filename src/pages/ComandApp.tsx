@@ -12,6 +12,7 @@ import { euroCent } from '@/lib/formatters'
 import { PASSI_COMANDA, UTENTI_COMANDAPP, etichettaStatoComanda } from '@/lib/comandapp'
 import { ding, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
+import { impostaManifest } from '@/lib/notifichePush'
 
 type Utente = (typeof UTENTI_COMANDAPP)[number]
 const CHIAVE = 'comandapp.sessione.v1'
@@ -22,6 +23,8 @@ function leggiSessione(): Utente | undefined {
 }
 
 export default function ComandApp() {
+  // installabile come app a sé (icona gialla, distinta dall'app Admin)
+  useEffect(() => { impostaManifest('comandapp.webmanifest', 'comandapp-icon-192.png', 'ComandApp') }, [])
   const [utente, setUtente] = useState<Utente | undefined>(leggiSessione)
   const esci = () => { try { localStorage.removeItem(CHIAVE) } catch { /* */ } setUtente(undefined) }
   return (

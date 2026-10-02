@@ -48,20 +48,23 @@ export async function attivaPush(): Promise<StatoPush> {
   return 'attivo'
 }
 
+/** Collega manifest e meta iOS alla pagina corrente (sostituisce quelli di un'altra app già aperta). */
+export function impostaManifest(manifest: string, icona: string, titolo: string) {
+  const base = import.meta.env.BASE_URL
+  const metti = (tag: string, chiave: string, valore: string, attr: string, val: string) => {
+    let el = document.head.querySelector(`${tag}[${chiave}="${valore}"]`)
+    if (!el) { el = document.createElement(tag); el.setAttribute(chiave, valore); document.head.appendChild(el) }
+    el.setAttribute(attr, val)
+  }
+  metti('link', 'rel', 'manifest', 'href', `${base}${manifest}`)
+  metti('link', 'rel', 'apple-touch-icon', 'href', `${base}${icona}`)
+  metti('meta', 'name', 'apple-mobile-web-app-capable', 'content', 'yes')
+  metti('meta', 'name', 'apple-mobile-web-app-title', 'content', titolo)
+}
+
 /** Rende l'app admin installabile (manifest + meta iOS), solo su questa pagina. */
 export function preparaInstallazione() {
-  const base = import.meta.env.BASE_URL
-  const aggiungi = (tag: string, attr: Record<string, string>) => {
-    const sel = `${tag}[${Object.entries(attr).slice(0, 1).map(([k, v]) => `${k}="${v}"`)}]`
-    if (document.head.querySelector(sel)) return
-    const el = document.createElement(tag)
-    Object.entries(attr).forEach(([k, v]) => el.setAttribute(k, v))
-    document.head.appendChild(el)
-  }
-  aggiungi('link', { rel: 'manifest', href: `${base}admin.webmanifest` })
-  aggiungi('link', { rel: 'apple-touch-icon', href: `${base}admin-icon-192.png` })
-  aggiungi('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' })
-  aggiungi('meta', { name: 'apple-mobile-web-app-title', content: 'BeachIn Admin' })
+  impostaManifest('admin.webmanifest', 'admin-icon-192.png', 'BeachIn Admin')
   // tocco su una notifica con l'app già aperta: ricarico per avere le prenotazioni aggiornate
   if ('serviceWorker' in navigator && !(window as unknown as { __bxAggiorna?: boolean }).__bxAggiorna) {
     (window as unknown as { __bxAggiorna?: boolean }).__bxAggiorna = true

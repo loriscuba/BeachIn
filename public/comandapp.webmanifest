@@ -1,0 +1,14 @@
+{
+  "name": "ComandApp — Lido dei Pini",
+  "short_name": "ComandApp",
+  "description": "Ordina dall'ombrellone: bar e cucina del Lido dei Pini",
+  "start_url": "./#/comandapp",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2C14E",
+  "theme_color": "#F2C14E",
+  "icons": [
+    { "src": "comandapp-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "comandapp-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
