@@ -183,6 +183,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   verde **Accogli**), verde *Arrivati* (badge, scheda verdina, piccola ↺ per annullare l'arrivo), rosso *Annullata* con
   bottone **Recupera** (torna `confermata`). Riepilogo "In arrivo" con badge giallo/verde.
 
+- (ott 2026) Nelle schede **In arrivo** senza tavolo compare il bottone verde **Consigliato: tavolo N** (primo libero
+  adatto da `suggerisciTavoli`) che lo assegna con un tocco; la pianta resta accanto.
+- QR (menu, tavoli, ComandApp, AdminApp) usano `urlPubblico()` (`src/lib/urlPubblico.ts`): fuori da GitHub Pages/Vercel
+  (artifact, localhost) puntano a GitHub Pages, altrimenti il telefono riceveva un indirizzo non apribile.
+
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
 - **Prenotazione ombrellone sul sito = doppio controllo**: `prenotaOmbrelloni = moduloAttivo('arenile') && canaliPrenotazione.ombrelloni`
   (`SitoAnteprima`): se falso spariscono sezione Prenota, voce nav, CTA hero e bottone flottante (niente più box "sospese").

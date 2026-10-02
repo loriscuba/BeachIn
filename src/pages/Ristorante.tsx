@@ -273,6 +273,8 @@ export default function Ristorante() {
                       pren={p}
                       tavoloAssegnato={p.tavoloId ? tavoliPerId.get(p.tavoloId) : undefined}
                       onTavolo={() => setPrenTavolo(p.id)}
+                      suggerito={suggerimenti.find((x) => x.pren.id === p.id)?.tavolo}
+                      onAssegna={(id) => assegnaTavolo(p.id, id)}
                       onStato={(stato) => (stato === 'annullata' ? setDaCancellare({ pren: p, elimina: false }) : impostaStatoPrenotazione(p.id, stato))}
                       onRimuovi={() => setDaCancellare({ pren: p, elimina: true })}
                     />
@@ -417,11 +419,14 @@ function Numero({ etichetta, valore, sotto, rosso, onClick }: { etichetta: strin
 
 /** Scheda di una prenotazione: orario, nome, tavolo, note, arrivo e assegnazione tavolo. */
 function RigaPrenotazione({
-  pren: p, tavoloAssegnato, onTavolo, onStato, onRimuovi,
+  pren: p, tavoloAssegnato, suggerito, onTavolo, onAssegna, onStato, onRimuovi,
 }: {
   pren: PrenotazioneRistorante
   tavoloAssegnato?: Tavolo
+  /** Primo tavolo libero adatto (da `suggerisciTavoli`), proposto quando manca il tavolo. */
+  suggerito?: Tavolo
   onTavolo: () => void
+  onAssegna: (tavoloId: string) => void
   onStato: (stato: StatoPrenotazione) => void
   onRimuovi: () => void
 }) {
@@ -488,7 +493,18 @@ function RigaPrenotazione({
                 tavoloAssegnato ? 'border-calce-200 text-profondo hover:bg-calce/60' : 'border-dashed border-tenda bg-tenda/10 text-profondo hover:bg-tenda/20')}
             >
               <LayoutGrid className="h-4 w-4 shrink-0 text-cabina" />
-              {tavoloAssegnato ? <>Tavolo {tavoloAssegnato.numero} · {zonaBreve(tavoloAssegnato.zona)} <span className="ml-auto text-profondo/45">Cambia</span></> : 'Scegli il tavolo sulla pianta'}
+              {tavoloAssegnato ? <>Tavolo {tavoloAssegnato.numero} · {zonaBreve(tavoloAssegnato.zona)} <span className="ml-auto text-profondo/45">Cambia</span></> : suggerito ? 'Pianta' : 'Scegli il tavolo sulla pianta'}
+            </button>
+          )}
+          {daSistemare && suggerito && (
+            <button
+              type="button"
+              onClick={() => onAssegna(suggerito.id)}
+              className="inline-flex h-9 flex-[2] items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-left text-[13px] font-semibold text-emerald-800 hover:bg-emerald-100"
+              title="Assegna il primo tavolo libero adatto"
+            >
+              <Lightbulb className="h-4 w-4 shrink-0" /> Consigliato: tavolo {suggerito.numero} · {zonaBreve(suggerito.zona)} ({suggerito.posti} posti)
+              <span className="ml-auto">Assegna</span>
             </button>
           )}
           {annullata && <span className="flex-1" />}

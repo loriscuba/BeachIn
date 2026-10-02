@@ -5,6 +5,7 @@
  *   MyMemory (dal browser del gestore) e, se non risponde, un glossario parola per parola.
  *   Domani: stessa firma, dietro un LLM/servizio a pagamento lato server.
  */
+import { urlPubblico } from '@/lib/urlPubblico'
 import type { CategoriaPiatto, LinguaMenu } from '@/data/types'
 
 export const LINGUE: { id: LinguaMenu; nome: string; bandiera: string }[] = [
@@ -173,7 +174,5 @@ export const nomeIn = (p: { nome: string; traduzioni?: TraduzioniPiatto }, l: Li
 
 /** URL del menu pubblico (per il QR), compatibile con HashRouter e BrowserRouter. */
 export function urlMenu(tavolo?: number): string {
-  const q = tavolo ? `?tavolo=${tavolo}` : ''
-  if (import.meta.env.VITE_ROUTER === 'hash') return `${window.location.href.split('#')[0]}#/menu${q}`
-  return `${window.location.origin}${import.meta.env.BASE_URL}menu${q}`
+  return urlPubblico(`menu${tavolo ? `?tavolo=${tavolo}` : ''}`)
 }

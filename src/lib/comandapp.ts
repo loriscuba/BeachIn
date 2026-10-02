@@ -1,3 +1,4 @@
+import { urlPubblico } from '@/lib/urlPubblico'
 import type { StatoComanda } from '@/data/types'
 
 /** Stati della comanda: etichette e ordine (ComandApp + cruscotto bar). */
@@ -15,6 +16,5 @@ export const UTENTI_COMANDAPP = [
 
 /** Link pubblico di ComandApp (da dare al bagnante). */
 export function urlComandApp(): string {
-  if (import.meta.env.VITE_ROUTER === 'hash') return `${window.location.href.split('#')[0]}#/comandapp`
-  return `${window.location.origin}${import.meta.env.BASE_URL}comandapp`
+  return urlPubblico('comandapp')
 }
