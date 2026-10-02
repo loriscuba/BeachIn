@@ -5,8 +5,9 @@
  */
 import { Link } from 'react-router-dom'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
-import { Users, Inbox, Globe, Sun } from 'lucide-react'
-import type { StatoPrenotazione } from '@/data/types'
+import { Users, Inbox, Globe, Sun, CloudSun, Cloud, CloudRain, CloudLightning, PartyPopper } from 'lucide-react'
+import type { Meteo, StatoPrenotazione } from '@/data/types'
+import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
@@ -15,12 +16,20 @@ import { Badge } from '@/components/ui/Badge'
 import { numero, dataEstesa } from '@/lib/formatters'
 import { statoSito } from '@/data/seed/sito'
 
+const meteoIcona: Record<Meteo, typeof Sun> = {
+  sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
+}
+const meteoLabel: Record<Meteo, string> = {
+  sole: 'Sole', poco_nuvoloso: 'Poco nuvoloso', nuvoloso: 'Nuvoloso', pioggia: 'Pioggia', temporale: 'Temporale',
+}
+
 const ordineStato: Record<StatoPrenotazione, number> = { in_attesa: 0, confermata: 0, arrivata: 1, annullata: 2 }
 
 export default function Panoramica() {
   // Prenotazioni vere (le stesse di Ristorante → Prenotazioni, sincronizzate), non i dati di esempio fissi
   const { magazzino, eventi, richiesteRistorante, prenotazioniOnline, prenotazioniRistorante } = useDemoData()
   const { moduloAttivo } = useModuli()
+  const meteo = useMeteoOggi()
   const oggi = config.stagione.oggi
   const prenOggi = prenotazioniRistorante
     .filter((p) => p.data === oggi && p.stato !== 'annullata')
@@ -52,7 +61,19 @@ export default function Panoramica() {
   return (
     <div className="space-y-4">
       {/* KPI dei moduli attivi */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <Kpi
+          icona={meteoIcona[meteo.meteo]}
+          etichetta="Meteo oggi"
+          valore={`${meteo.temp ?? meteo.max}°`}
+          sotto={`${meteoLabel[meteo.meteo]} · ${meteo.min != null ? `${meteo.min}°/` : 'max '}${meteo.max}°${meteo.vento != null ? ` · vento ${meteo.vento} km/h` : ''}`}
+        />
+        <Kpi
+          icona={PartyPopper}
+          etichetta="Prossimo evento"
+          valore={prossimo ? (traGiorni === 0 ? 'Oggi' : `${traGiorni} gg`) : '—'}
+          sotto={prossimo ? prossimo.nome : 'nessuno in programma'}
+        />
         <Kpi icona={Users} etichetta="Coperti oggi" valore={numero(kpi.pranzo + kpi.cena)} sotto={`${kpi.pranzo} pranzo · ${kpi.cena} cena`} />
         <Kpi icona={Inbox} etichetta="Dal sito da confermare" valore={numero(daConfermareSito)} />
         <Kpi icona={Globe} etichetta="Visite sito ieri" valore={numero(ieri)} sotto={`${deltaVisite >= 0 ? '+' : ''}${deltaVisite}% sulla media 7 gg`} />

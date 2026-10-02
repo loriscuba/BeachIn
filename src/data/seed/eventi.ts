@@ -27,6 +27,7 @@ const def: DefE[] = [
   { nome: 'Festa di Ferragosto', tipo: 'festa', data: '2026-08-15', budget: 3500, costi: 3300, ricavi: 4200, partecipanti: 220, descrizione: 'Cena, musica e spettacolo pirotecnico sulla spiaggia.', foto: fotoSito.pineta },
   { nome: 'Aperitivo in musica', tipo: 'musica', data: '2026-08-22', budget: 1800, costi: 1500, ricavi: 0, partecipanti: 0, descrizione: 'Secondo appuntamento con DJ set (in programma).', foto: fotoSito.barDistillati },
   { nome: 'Torneo di racchettoni', tipo: 'sport', data: '2026-09-05', budget: 900, costi: 0, ricavi: 0, partecipanti: 0, descrizione: 'Chiusura di stagione con torneo e merenda (in programma).', foto: fotoSito.ombrelloniCielo },
+  { nome: 'Cena d’autunno', tipo: 'gastronomia', data: '2026-10-17', budget: 1200, costi: 0, ricavi: 0, partecipanti: 0, descrizione: 'Il ristorante resta aperto: menù di pesce e castagne, a lido chiuso (in programma).', foto: fotoSito.ristorante },
 ]
 
 export const eventi: Evento[] = def.map((d, i) => ({
