@@ -169,6 +169,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`
   (in memoria + localStorage `beachin.moduli.v1`; domani = campo per-cliente dal DB).
 - Core sempre attivi: `panoramica` (home ridotta, rotta `/`) e `impostazioni`.
+- **Panoramica** (`src/pages/Panoramica.tsx`): KPI meteo oggi (reale da Open-Meteo per Savona, hook
+  `src/hooks/useMeteoOggi.ts`, riserva = `giornoOggi` della demo) · giorni al prossimo evento · coperti oggi · dal sito da confermare · visite sito ieri
+  (vs media 7 gg, da `statoSito.visite`) · giorni alla chiusura stagione. Card: Ristorante oggi, Sito da confermare,
+  Prossimo evento (countdown; se nessuno, l'ultimo passato), Magazzino sotto scorta (`quantita < scortaMinima`).
 - Gating: ogni voce nav ha `modulo`; `src/components/ModuloGate.tsx` protegge le rotte → se il modulo
   non è attivo mostra `src/pages/ModuloBloccato.tsx` (pagina di upsell, deep-link non fa 404). La Sidebar
   mostra i moduli bloccati col lucchetto. Il Cruscotto completo è ora rotta `/cruscotto` (modulo `cruscotto`).
