@@ -79,3 +79,39 @@ gestire chiavi e costi.
 ## 5. Idee / sviluppi futuri
 - Risposte dell'admin al cliente dalla casella di posta
 - Modifica di una prenotazione prima della conferma
+
+---
+
+## 6. Piano commerciale (ottobre 2026)
+
+**Mission:** programmare con Claude Code gestionali a moduli per le PMI, partendo da realtà della propria zona
+già conosciute. Si vende **un processo informatizzato** (prenotazioni, menu, turni, costi…), non "un gestionale".
+
+### Fase 0 — Preparare l'offerta (ottobre)
+- [ ] Caso studio Lido dei Pini: 1 pagina con prima/dopo e numeri (tempo risparmiato, prenotazioni online, errori evitati)
+- [ ] Listino da validare: **ipotesi** setup 300–800 € + canone 30–80 €/mese per modulo, pacchetto d'ingresso
+      (es. Sito + Prenotazioni) e moduli aggiuntivi in upsell
+- [ ] Pilota: 30 giorni gratis o scontati in cambio di caso studio e referenza
+- [ ] Presentazione breve (5–6 slide) + demo navigabile
+
+### Fase 1 — Lista contatti caldi (ottobre–novembre)
+- [ ] Foglio con ~20 realtà conosciute in zona: nome, settore, processo che oggi fa a mano (carta/Excel/WhatsApp),
+      referente, quanto lo conosci, stato (da contattare / incontrato / demo / offerta / cliente / no)
+- [ ] Priorità = problema evidente × fiducia già esistente. Settori candidati: stabilimenti, ristoranti/bar, B&B,
+      palestre, officine, negozi, studi professionali
+
+### Fase 2 — Colloqui e demo (novembre–febbraio)
+- [ ] Colloquio di 30 min con domande fisse: dove perdi tempo? cosa fai a mano? quanto ti costa un errore?
+- [ ] Demo personalizzata entro 48 h col loro nome e logo (il vantaggio di lavorare con Claude Code)
+- [ ] Ritmo: 3 contatti e 1 demo a settimana
+- Stagionalità: i balneari decidono in inverno (nov–mar) per la stagione dopo; gli altri settori tutto l'anno
+
+### Fase 3 — Chiusura
+- [ ] Offerta scritta + contratto tipo + informativa privacy (GDPR)
+- [ ] **Obiettivo: 3 clienti paganti entro marzo 2027**
+
+### Lavoro tecnico che serve alla vendita
+- [ ] Multi-cliente: una configurazione per cliente (oggi `src/config.ts`) e dati separati su Supabase
+- [ ] Separare i moduli generici (prenotazioni, menu QR, personale, costi, sito) da quelli solo balneari,
+      per riusarli in altri settori
+- [ ] Generatore di demo: nuovo cliente demo (nome, logo, colori, moduli) in pochi minuti
