@@ -299,9 +299,9 @@ export default function SitoAnteprima() {
             <TesseraFoto classe="row-span-2" foto={fotoSito.barDistillati} titolo="Bar" testo="Colazioni, caffè e pause fresche tutto il giorno." icona={Coffee} />
             <TesseraFoto foto={fotoSito.ristorante} titolo="Ristorante" testo="Pesce fresco a pranzo e cena, tutto l’anno." icona={UtensilsCrossed} />
             <TesseraFoto foto={fotoSito.beachVolley} titolo="Beach volley" testo="Campo da beach volley, tornei e ping pong." icona={Sparkles} />
-            <TesseraIcona colore="bg-profondo text-white" icona={Home} titolo="Cabine" testo="Per effetti personali, giochi e gonfiabili." />
-            <TesseraIcona colore="bg-acqua text-profondo" icona={ShowerHead} titolo="Docce e servizi" testo="Docce calde e fredde, servizi igienici." />
-            <TesseraIcona colore="bg-tenda text-profondo" icona={Sofa} titolo="Area relax" testo="Divanetti all’ombra tra un bagno e l’altro." />
+            <TesseraFoto foto={fotoSito.cabine} icona={Home} titolo="Cabine" testo="Per effetti personali, giochi e gonfiabili." />
+            <TesseraFoto foto={fotoSito.docce} icona={ShowerHead} titolo="Docce e servizi" testo="Docce calde e fredde, servizi igienici." />
+            <TesseraFoto foto={fotoSito.areaRelax} icona={Sofa} titolo="Area relax" testo="Divanetti all’ombra tra un bagno e l’altro." />
             <TesseraFoto foto={fotoSito.famiglia} titolo="Animazione" testo="Per i bambini e intrattenimento per adulti." icona={Sun} />
           </div>
         </div>
@@ -547,6 +547,7 @@ export default function SitoAnteprima() {
           <div>
             <img src={logoLido} alt={config.nome} className="mx-auto h-20 w-auto brightness-0 invert sm:mx-0" />
             <p className="mt-1 text-sm text-white/50">{config.indirizzo} {config.localita}{config.partitaIva && ` · P.IVA ${config.partitaIva}`}</p>
+            <p className="mt-1 text-[10px] text-white/30">Foto Cabine: J. Billinger (CC BY-SA 2.0) · Docce: J. Robles (CC BY-SA 3.0) · Area relax: Cayo Espanto (CC BY-SA 4.0), via Wikimedia Commons</p>
           </div>
           <p className="text-xs text-white/40">Sito dimostrativo generato dal gestionale <span className="font-semibold text-white/70">Beach<span className="text-tenda">In</span></span></p>
         </div>
@@ -660,18 +661,6 @@ function TesseraFoto({ foto, titolo, testo, icona: Icona, classe }: { foto: stri
         <span className="mb-2 grid h-9 w-9 place-items-center rounded-full bg-white/15 backdrop-blur"><Icona className="h-4 w-4" /></span>
         <h3 className="font-display text-xl font-semibold leading-tight sm:text-2xl">{titolo}</h3>
         <p className="mt-1 hidden text-sm text-white/75 sm:block">{testo}</p>
-      </div>
-    </div>
-  )
-}
-
-function TesseraIcona({ icona: Icona, titolo, testo, colore }: { icona: typeof Umbrella; titolo: string; testo: string; colore: string }) {
-  return (
-    <div className={cn('reveal group flex flex-col justify-between rounded-3xl p-5 transition-transform duration-500 hover:-translate-y-1 sm:p-6', colore)}>
-      <Icona className="h-8 w-8 transition-transform duration-500 group-hover:rotate-12" strokeWidth={1.5} />
-      <div>
-        <h3 className="font-display text-xl font-semibold sm:text-2xl">{titolo}</h3>
-        <p className="mt-1 text-sm opacity-75">{testo}</p>
       </div>
     </div>
   )
