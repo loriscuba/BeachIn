@@ -4,6 +4,10 @@ App demo di gestione commerciale per uno **stabilimento balneare** italiano (cli
 Tutto in italiano. Dati finti ma strutturati come una vera API, numeri riconciliati tra le pagine.
 BeachIn è l'**aggregatore di moduli**.
 
+**Mission dell'utente**: programmare con Claude Code gestionali a moduli che informatizzano processi delle PMI,
+partendo dalla propria zona. Claude aiuta sia a programmare sia a pianificare la vendita
+(piano commerciale in `APPUNTI.md` → sezione 6).
+
 **Dettagli per modulo** (context, azioni, tabelle, flussi): `docs/DETTAGLI.md` — leggere solo la sezione che serve.
 
 ## Regole di lavoro
