@@ -1,7 +1,8 @@
 /**
- * Foto del sito pubblico (ottimizzate, max ~1400px). Reali: drone, spiaggia dall'alto (hero),
- * ombrelloni, bagnino, beach volley, torneo, bar, ristorante (sala sul mare); famiglia/pineta/mare-pini/tramonto sono
- * immagini concept del mockup, da sostituire con scatti reali quando arrivano.
+ * Foto del sito pubblico (ottimizzate, max ~1400px). Reali, dall'Instagram del lido: hero drone, ombrelloni,
+ * pattino di salvataggio (bagnino), tramonto, ristorante, spritz (bar), beach volley, torneo, staff (famiglia),
+ * drone onde (pineta), golfo (mare-pini). Cabine/docce/area relax: Wikimedia Commons CC BY-SA (crediti nel footer
+ * del sito), da sostituire con scatti reali.
  */
 import logoColori from './logo-colori.jpg'
 import ombrelloniCielo from './ombrelloni-cielo.jpg'
@@ -17,10 +18,13 @@ import marePini from './mare-pini.jpg'
 import tramonto from './tramonto.jpg'
 import spiaggiaAlto from './spiaggia-alto.jpg'
 import logoLido from './logo-lido.png'
+import cabine from './cabine.jpg'
+import docce from './docce.jpg'
+import areaRelax from './area-relax.jpg'
 
 export const fotoSito = {
   logoColori, ombrelloniCielo, spiaggiaDrone, bagnino, beachVolley, torneo, barDistillati,
-  ristorante, famiglia, pineta, marePini, tramonto, spiaggiaAlto,
+  ristorante, famiglia, pineta, marePini, tramonto, spiaggiaAlto, cabine, docce, areaRelax,
 }
 
 /** Logo Lido dei Pini (tratto scuro su trasparente, ricavato dalla grafica ufficiale). */

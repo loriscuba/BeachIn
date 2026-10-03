@@ -236,9 +236,14 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - (ott 2026) Form prenotazione (ombrellone, tavolo, evento): obbligatorio **email o cellulare** (`contattoValido`) e
   checkbox **consenso GDPR** con informativa art. 13 in finestra (`ConsensoPrivacy`). Pulsanti "Prenota" portano al form
   (`#prenota` o `#prenota-tavolo`); `scrollTo` ricorregge a fine corsa (foto lazy/reveal spostavano il bersaglio).
-- Foto in `src/assets/sito/` (JPEG ottimizzati, export `fotoSito` da `index.ts`): reali dello stabilimento
-  (drone, ombrelloni, bagnino, beach volley, torneo, bar) + concept del mockup Lovable (ristorante, famiglia,
-  pineta, mare-pini, tramonto) da sostituire con scatti reali. Sorgente: Drive, cartella "BeachIN".
+- Foto in `src/assets/sito/` (JPEG ottimizzati max 1400px, export `fotoSito` da `index.ts`). (ott 2026) Quasi tutte
+  sostituite con scatti reali dall'Instagram del lido (Drive, cartella "LidoDeiPiniInstagram"): hero drone, ombrelloni
+  all'alba, pattino "Salvataggio" (`bagnino`), tramonto, tavola vista mare (`ristorante`), spritz (`barDistillati`),
+  beach volley, torneo, staff (`famiglia`), drone onde (`pineta`), golfo (`marePini`). I nomi file sono rimasti
+  quelli vecchi per non toccare i seed.
+- Servizi: **Cabine / Docce e servizi / Area relax** ora sono `TesseraFoto` (non più tessere a icona; `TesseraIcona`
+  rimossa) con foto Wikimedia Commons CC BY-SA (`cabine.jpg`, `docce.jpg`, `area-relax.jpg`); crediti obbligatori
+  in piccolo nel footer. Da sostituire con foto reali del lido quando arrivano.
 - Le foto alimentano anche i seed: galleria (`seed/sito.ts`, campo `immagine`) ed eventi (`foto`/`galleria`).
 - Layout: hero a tutto schermo (Ken Burns + parallasse + onde SVG animate), nastro scorrevole, "Lo stabilimento"
   con contatori animati, servizi a bento con foto, ristorante stile menu (legge `menu` dal context), fascia tramonto
