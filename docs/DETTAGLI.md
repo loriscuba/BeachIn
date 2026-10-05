@@ -99,10 +99,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   online entra tra quelle del ristorante e le si può assegnare un tavolo.
 
 ## Email al cliente (Brevo)
-- Edge Function `supabase/functions/beachin-email`, chiamata da 2 trigger su `beachin.richieste_ristorante`
-  (insert `da_confermare` → "richiesta ricevuta"; cambio stato → "confermata"/"rifiutata"). Salta se manca l'email.
+- Edge Function `supabase/functions/beachin-email`, chiamata da 2 trigger su `beachin.richieste_ristorante` e
+  `beachin.richieste_eventi` (il body porta `tabella`; insert `da_confermare` → "richiesta ricevuta"; cambio stato → "confermata"/"rifiutata"). Salta se manca l'email.
 - Segreti nel Vault: `beachin_brevo_key`, `beachin_email_mittente` (mittente verificato su Brevo). Senza: nessun invio.
-- La "posta" simulata in app (`pushMail` nel context) resta per la demo locale. Ombrellone/eventi non sono su Supabase → niente mail reali.
+- La "posta" simulata in app (`pushMail` nel context) resta per la demo locale. Eventi sincronizzati su `richieste_eventi`; ombrellone non è su Supabase → niente mail reali.
 
 ## Ristorante a sottosezioni (tab `?tab=`)
 - `Ristorante.tsx`: KPI + Tabs **Prenotazioni | Menu | Magazzino** (default Prenotazioni; il vecchio `?tab=tavoli` porta lì; componenti in `src/pages/ristorante/`).

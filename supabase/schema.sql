@@ -131,7 +131,7 @@ begin
   perform net.http_post(
     url := 'https://exchjppslwhbnbzuhfqs.supabase.co/functions/v1/beachin-email',
     headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer <chiave anon>'),
-    body := jsonb_build_object('record', to_jsonb(new))
+    body := jsonb_build_object('tabella', tg_table_name, 'record', to_jsonb(new))
   );
   return new;
 end $$;
@@ -140,6 +140,39 @@ create trigger email_nuova_richiesta after insert on beachin.richieste_ristorant
   for each row when (new.stato = 'da_confermare' and position('@' in new.email) > 0) execute function beachin.email_richiesta();
 drop trigger if exists email_esito_richiesta on beachin.richieste_ristorante;
 create trigger email_esito_richiesta after update of stato on beachin.richieste_ristorante
+  for each row when (old.stato is distinct from new.stato and new.stato in ('confermata','rifiutata') and position('@' in new.email) > 0)
+  execute function beachin.email_richiesta();
+
+-- Richieste eventi dal sito (stesse mail via Brevo, testo per evento)
+create table if not exists beachin.richieste_eventi (
+  id text primary key,
+  ricevuta_il text not null,
+  nome text not null,
+  email text not null default '',
+  telefono text not null default '',
+  evento_id text not null,
+  evento_nome text not null,
+  evento_data text not null,
+  persone int not null default 1,
+  stato text not null default 'da_confermare' check (stato in ('da_confermare','confermata','rifiutata')),
+  note text,
+  origine text,
+  ts bigint not null default (extract(epoch from now()) * 1000)::bigint
+);
+grant select, insert, update, delete on beachin.richieste_eventi to anon, authenticated, service_role;
+alter table beachin.richieste_eventi enable row level security;
+drop policy if exists "demo anon" on beachin.richieste_eventi;
+create policy "demo anon" on beachin.richieste_eventi for all to anon using (true) with check (true);
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='beachin' and tablename='richieste_eventi') then
+    alter publication supabase_realtime add table beachin.richieste_eventi;
+  end if;
+end $$;
+drop trigger if exists email_nuova_richiesta on beachin.richieste_eventi;
+create trigger email_nuova_richiesta after insert on beachin.richieste_eventi
+  for each row when (new.stato = 'da_confermare' and position('@' in new.email) > 0) execute function beachin.email_richiesta();
+drop trigger if exists email_esito_richiesta on beachin.richieste_eventi;
+create trigger email_esito_richiesta after update of stato on beachin.richieste_eventi
   for each row when (old.stato is distinct from new.stato and new.stato in ('confermata','rifiutata') and position('@' in new.email) > 0)
   execute function beachin.email_richiesta();
 

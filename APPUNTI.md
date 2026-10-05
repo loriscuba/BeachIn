@@ -74,8 +74,10 @@ gestire chiavi e costi.
 - [ ] Oggi i dati sono in memoria (demo): per l'uso reale servono database e login per il gestionale
 - [ ] Email vere per le prenotazioni (oggi la "posta" è simulata dentro l'app)
   - [x] Edge Function `beachin-email` (Brevo) + trigger su `richieste_ristorante`: mail al cliente su richiesta ricevuta / confermata / rifiutata
-  - [ ] Account Brevo: verificare mittente/dominio, mettere nel Vault `beachin_brevo_key` e `beachin_email_mittente`
-  - [ ] Ombrellone ed eventi: oggi solo in memoria, servono tabelle Supabase per mandare mail anche lì
+  - [x] Account Brevo + segreti nel Vault (prova inviata e arrivata)
+  - [ ] Mittente sul dominio del cliente (oggi Gmail → rischio spam)
+  - [x] Eventi: tabella `richieste_eventi` su Supabase + mail
+  - [ ] Ombrellone: oggi solo in memoria, serve tabella Supabase per mandare mail anche lì
 
 ---
 

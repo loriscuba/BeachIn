@@ -430,6 +430,20 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
+  // Richieste eventi dal sito: su Supabase (i trigger mandano le mail al cliente via Brevo).
+  useSyncSupabase({
+    tabella: 'richieste_eventi', righe: richiesteEventi, setRighe: setRichiesteEventi,
+    aRiga: (r) => ({
+      id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, evento_id: r.eventoId,
+      evento_nome: r.eventoNome, evento_data: r.eventoData, persone: r.persone, stato: r.stato, note: r.note ?? null, origine: r.origine ?? null,
+    }),
+    daRiga: (r) => ({
+      id: r.id, ricevutaIl: r.ricevuta_il as string, nome: r.nome as string, email: r.email as string, telefono: r.telefono as string,
+      eventoId: r.evento_id as string, eventoNome: r.evento_nome as string, eventoData: r.evento_data as string, persone: Number(r.persone),
+      stato: r.stato as RichiestaEvento['stato'], note: (r.note as string) ?? undefined, origine: (r.origine as RichiestaEvento['origine']) ?? undefined,
+    }),
+    ordina: (a, b) => Number(b.ts) - Number(a.ts),
+  })
   useSyncSupabase({
     tabella: 'giorni_chiusi', righe: giorniChiusi, setRighe: setGiorniChiusi,
     aRiga: (g) => ({ id: g.id, data: g.data, nota: g.nota ?? null }),
