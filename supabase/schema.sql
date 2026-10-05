@@ -121,6 +121,28 @@ drop trigger if exists notifica_nuova_richiesta on beachin.richieste_ristorante;
 create trigger notifica_nuova_richiesta after insert on beachin.richieste_ristorante
   for each row when (new.stato = 'da_confermare') execute function beachin.notifica_nuova_richiesta();
 
+-- Email al cliente via Brevo (vedi supabase/functions/beachin-email). Segreti nel Vault:
+--   select vault.create_secret('<chiave API Brevo xkeysib-...>', 'beachin_brevo_key');
+--   select vault.create_secret('<mittente verificato su Brevo>', 'beachin_email_mittente');
+-- Senza segreti la funzione risponde "Brevo non configurato" e non invia nulla.
+create or replace function beachin.email_richiesta()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  perform net.http_post(
+    url := 'https://exchjppslwhbnbzuhfqs.supabase.co/functions/v1/beachin-email',
+    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer <chiave anon>'),
+    body := jsonb_build_object('record', to_jsonb(new))
+  );
+  return new;
+end $$;
+drop trigger if exists email_nuova_richiesta on beachin.richieste_ristorante;
+create trigger email_nuova_richiesta after insert on beachin.richieste_ristorante
+  for each row when (new.stato = 'da_confermare' and position('@' in new.email) > 0) execute function beachin.email_richiesta();
+drop trigger if exists email_esito_richiesta on beachin.richieste_ristorante;
+create trigger email_esito_richiesta after update of stato on beachin.richieste_ristorante
+  for each row when (old.stato is distinct from new.stato and new.stato in ('confermata','rifiutata') and position('@' in new.email) > 0)
+  execute function beachin.email_richiesta();
+
 -- Giorni di chiusura del ristorante (segnati da Prenotazioni / app admin, letti dal sito pubblico)
 create table if not exists beachin.giorni_chiusi (
   id text primary key,          -- = data ISO (yyyy-mm-dd)

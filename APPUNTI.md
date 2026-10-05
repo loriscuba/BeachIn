@@ -73,6 +73,9 @@ gestire chiavi e costi.
 - [ ] Dominio del cliente (es. lidodeipini.it?) da collegare a Pages o Vercel
 - [ ] Oggi i dati sono in memoria (demo): per l'uso reale servono database e login per il gestionale
 - [ ] Email vere per le prenotazioni (oggi la "posta" è simulata dentro l'app)
+  - [x] Edge Function `beachin-email` (Brevo) + trigger su `richieste_ristorante`: mail al cliente su richiesta ricevuta / confermata / rifiutata
+  - [ ] Account Brevo: verificare mittente/dominio, mettere nel Vault `beachin_brevo_key` e `beachin_email_mittente`
+  - [ ] Ombrellone ed eventi: oggi solo in memoria, servono tabelle Supabase per mandare mail anche lì
 
 ---
 
