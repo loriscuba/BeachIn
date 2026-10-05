@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(oci:*)"
+      "Bash(oci:*)",
+      "Bash(oci os object put -bn prod-backup --namespace axll6zmc6b9c --name keys/:*)"
     ]
   }
 }
