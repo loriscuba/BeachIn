@@ -1,7 +1,8 @@
 -- BeachIn · tabelle Supabase per ComandApp (comande) e menu del ristorante (assistente vocale / editor menu).
 -- Tutto nello schema dedicato `beachin` (progetto Supabase condiviso tra più demo).
--- 1) Eseguire una volta in Supabase → SQL Editor (idempotente).
--- 2) Esporre lo schema all'API: Project Settings → Data API (API settings) → "Exposed schemas" → aggiungere `beachin`.
+-- Migrazione 0001 (ex supabase/schema.sql). Applicata da scripts/migra.sh (workflow "Deploy"), idempotente.
+-- Lo schema `beachin` va esposto all'API (Data API → Exposed schemas): lo fa il workflow.
+-- URL delle funzioni e chiave anon per il trigger push stanno nel Vault (beachin_functions_url, beachin_anon_key).
 -- ATTENZIONE: policy aperte al ruolo anon = chiunque abbia la chiave pubblica può leggere/scrivere.
 -- Va bene per la demo; in produzione servono Supabase Auth e policy per ruolo (bagnante/bar/gestore).
 
@@ -93,6 +94,7 @@ end $$;
 
 -- Notifiche push app admin (vedi supabase/functions/beachin-push). La chiave privata VAPID va nel Vault:
 --   select vault.create_secret('<chiave privata VAPID>', 'beachin_vapid_private');
+-- (in produzione lo crea il workflow "Deploy" dal secret VAPID_PRIVATE_KEY)
 create extension if not exists pg_net with schema extensions;
 create table if not exists beachin.push_iscrizioni (
   endpoint text primary key, p256dh text not null, auth text not null, url text,
@@ -109,10 +111,14 @@ revoke all on function beachin.registra_push(text, text, text, text) from public
 grant execute on function beachin.registra_push(text, text, text, text) to anon, authenticated;
 create or replace function beachin.notifica_nuova_richiesta()
 returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_url text := (select decrypted_secret from vault.decrypted_secrets where name = 'beachin_functions_url');
+  v_anon text := (select decrypted_secret from vault.decrypted_secrets where name = 'beachin_anon_key');
 begin
+  if v_url is null or v_anon is null then return new; end if;
   perform net.http_post(
-    url := 'https://exchjppslwhbnbzuhfqs.supabase.co/functions/v1/beachin-push',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer <chiave anon>'),
+    url := v_url || '/beachin-push',
+    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || v_anon),
     body := jsonb_build_object('record', to_jsonb(new))
   );
   return new;

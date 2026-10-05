@@ -1,0 +1,137 @@
+name: Deploy (manuale)
+
+# Parte solo a mano: Actions → "Deploy (manuale)" → Run workflow.
+# Allinea nell'ordine: database (migrazioni) → Edge Functions → web.
+#   demo        → Supabase Demo IPA (schema beachin). Il web demo resta su GitHub Pages/Vercel da main.
+#   produzione  → Supabase "BeachIn Prod" + VM Oracle prod-web (Caddy, https://<ip>.sslip.io).
+# Configurazione in Settings → Environments (demo / produzione): vedi docs/DETTAGLI.md → "Deploy".
+
+on:
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: Ambiente
+        type: choice
+        options: [produzione, demo]
+        default: produzione
+      ref:
+        description: Versione da pubblicare (branch, tag o commit)
+        default: main
+      web:
+        description: Pubblica anche il web (solo produzione)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.ambiente }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # L'environment "produzione" può richiedere l'approvazione (Required reviewers).
+    environment: ${{ inputs.ambiente }}
+    env:
+      REF_PROGETTO: ${{ vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout ${{ inputs.ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Controllo configurazione
+        run: |
+          test -n "$REF_PROGETTO" || { echo "manca la variabile SUPABASE_PROJECT_REF"; exit 1; }
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "manca il secret SUPABASE_ACCESS_TOKEN"; exit 1; }
+          test -n "${{ secrets.SUPABASE_DB_URL }}" || { echo "manca il secret SUPABASE_DB_URL"; exit 1; }
+          echo "Pubblico ${{ inputs.ref }} ($(git rev-parse --short HEAD)) su ${{ inputs.ambiente }}"
+
+      - name: Client Postgres
+        run: sudo apt-get install -y -qq postgresql-client >/dev/null
+
+      # 1) Database
+      - name: Migrazioni
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/migra.sh
+
+      - name: Schema esposto all'API e segreti del Vault (solo produzione)
+        if: inputs.ambiente == 'produzione'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          ANON: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VAPID: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$REF_PROGETTO/postgrest" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+            -d '{"db_schema":"public,graphql_public,beachin"}' >/dev/null
+          segreto() {
+            [ -n "$2" ] || { echo "salto $1 (vuoto)"; return; }
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -q -X -v nome="$1" -v val="$2" <<'SQL'
+          select vault.create_secret(:'val', :'nome') where not exists (select 1 from vault.secrets where name = :'nome');
+          select vault.update_secret(id, :'val') from vault.secrets where name = :'nome';
+          SQL
+          }
+          segreto beachin_functions_url "https://$REF_PROGETTO.supabase.co/functions/v1"
+          segreto beachin_anon_key "$ANON"
+          segreto beachin_vapid_private "$VAPID"
+
+      # 2) Edge Functions
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Segreti delle Edge Functions
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -n "$GROQ_API_KEY" ]; then
+            supabase secrets set --project-ref "$REF_PROGETTO" GROQ_API_KEY="$GROQ_API_KEY"
+          else
+            echo "GROQ_API_KEY non impostata: lascio quella già nel progetto"
+          fi
+
+      - name: Edge Functions
+        run: |
+          for f in supabase/functions/*/; do
+            supabase functions deploy "$(basename "$f")" --project-ref "$REF_PROGETTO" --use-api
+          done
+
+      # 3) Web (solo produzione)
+      - uses: actions/setup-node@v4
+        if: inputs.ambiente == 'produzione' && inputs.web
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Build
+        if: inputs.ambiente == 'produzione' && inputs.web
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          npm ci
+          npm run build
+          tar czf beachin.tgz -C dist .
+
+      - name: Pubblica su prod-web
+        if: inputs.ambiente == 'produzione' && inputs.web
+        env:
+          HOST: ${{ vars.PROD_HOST }}
+          IMPRONTA: ${{ vars.PROD_HOST_FINGERPRINT }}
+          CHIAVE: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$CHIAVE" > ~/.ssh/id && chmod 600 ~/.ssh/id
+          # Accetta l'host solo se l'impronta ED25519 coincide con quella registrata
+          ssh-keyscan -t ed25519 "$HOST" 2>/dev/null > ~/.ssh/known_hosts
+          ssh-keygen -lf ~/.ssh/known_hosts | grep -qF "$IMPRONTA" || { echo "impronta host diversa"; exit 1; }
+          S="ssh -i ~/.ssh/id ubuntu@$HOST"
+          VERSIONE="$(date -u +%Y%m%d-%H%M)-$(git rev-parse --short HEAD)"
+          scp -i ~/.ssh/id beachin.tgz deploy/rilascio.sh "ubuntu@$HOST:/tmp/"
+          $S "sudo install -m 755 /tmp/rilascio.sh /usr/local/bin/beachin-rilascio && sudo beachin-rilascio /tmp/beachin.tgz '$VERSIONE'"
+          curl -fsS -o /dev/null "https://$(echo "$HOST" | tr . -).sslip.io/" && echo "online: $VERSIONE"

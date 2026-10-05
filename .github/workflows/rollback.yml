@@ -1,0 +1,25 @@
+name: Rollback web produzione
+
+# Rimette online la versione web precedente su prod-web (non tocca il database).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: produzione
+    steps:
+      - name: Versione precedente
+        env:
+          HOST: ${{ vars.PROD_HOST }}
+          IMPRONTA: ${{ vars.PROD_HOST_FINGERPRINT }}
+          CHIAVE: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$CHIAVE" > ~/.ssh/id && chmod 600 ~/.ssh/id
+          ssh-keyscan -t ed25519 "$HOST" 2>/dev/null > ~/.ssh/known_hosts
+          ssh-keygen -lf ~/.ssh/known_hosts | grep -qF "$IMPRONTA" || { echo "impronta host diversa"; exit 1; }
+          ssh -i ~/.ssh/id "ubuntu@$HOST" "sudo beachin-rilascio --rollback && sudo beachin-rilascio --lista"

@@ -42,7 +42,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (ricordato in sessionStorage), nei browser in-app (Instagram/Facebook…) invito ad aprire in Safari con "Copia link";
   nascosto se già installata.
 - **Supabase** (solo comande + menu/sezioni): `src/lib/supabase.ts` (env `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`,
-  vedi `.env.example`; Pages li legge da GitHub Actions *Variables*), schema **`beachin`** (progetto Supabase condiviso tra demo; client con `db.schema`, Realtime su `SCHEMA`; va aggiunto agli *Exposed schemas* della Data API) in `supabase/schema.sql` (tabelle `comande`,
+  vedi `.env.example`; Pages li legge da GitHub Actions *Variables*), schema **`beachin`** (progetto Supabase condiviso tra demo; client con `db.schema`, Realtime su `SCHEMA`; va aggiunto agli *Exposed schemas* della Data API) in `supabase/migrations/` (tabelle `comande`,
   `menu_sezioni`, `menu_piatti`, RLS aperta ad anon = solo demo, Realtime). Hook generico `src/hooks/useSyncSupabase.ts`:
   lettura iniziale (semina i seed se tabella vuota), upsert/delete delle differenze a ogni cambio di stato, ricarica su
   evento Realtime. Progetto: **Demo IPA** (`exchjppslwhbnbzuhfqs`, eu-west-1, condiviso tra demo), schema già creato via connettore MCP Supabase (migration `beachin_schema`). Senza env → tutto come prima (localStorage per le comande). Con Supabase il `reset()` non tocca menu/comande.
@@ -292,6 +292,25 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   beach volley, ping pong (niente noleggi/parcheggio). Recensioni sul sito = temi riassunti + badge Tripadvisor
   (non citazioni). Menu ristorante = REALE (Menù del proprietario da restaurantguru: 25 piatti con prezzi, `seed/ristorante.ts`; food cost/allergeni stimati, bevande dimostrative). Restano dimostrativi: listino, eventi, recensioni del gestionale, numeri arenile.
 - Tripadvisor e gli altri siti sono bloccati dalla rete dell'ambiente: dati presi via WebSearch.
+
+## Deploy produzione (Oracle + Supabase prod)
+- **Ambienti**: *demo* = Pages/Vercel da `main` + Supabase Demo IPA (schema `beachin`); *produzione* = VM Oracle
+  `prod-web` (compartment demo, eu-amsterdam-1, A1.Flex 2/12/100, IP riservato 158.178.144.127, Caddy HTTPS su
+  https://158-178-144-127.sslip.io) + progetto Supabase "BeachIn Prod". VCN `prod-vcn` 10.1.0.0/16, ingress 22/80/443.
+  Bucket privato `prod-backup` (namespace `axll6zmc6b9c`): `keys/prod-web` (chiave SSH), `releases/`.
+- **Migrazioni**: `supabase/migrations/NNNN_*.sql`, applicate in ordine da `scripts/migra.sh` (tabella `beachin.migrazioni`,
+  una transazione per file, `--baseline` = registra senza eseguire). Demo: baseline 0001 registrata il 5/10/2026.
+  Migrazioni *compatibili all'indietro* (prima aggiungere, poi togliere in un rilascio successivo): il DB va online prima del web.
+- **Workflow `.github/workflows/deploy.yml`** (solo manuale): sceglie ambiente + ref (branch/tag/commit) → migrazioni →
+  (prod) Exposed schemas + Vault (`beachin_functions_url`, `beachin_anon_key`, `beachin_vapid_private`) → secret
+  `GROQ_API_KEY` → deploy di tutte le Edge Functions → (prod) build + `deploy/rilascio.sh` sulla VM via SSH.
+  `rollback.yml` = versione web precedente (`beachin-rilascio --rollback`; sulla VM tiene 5 versioni in `/var/www/rilasci`).
+- **Settings → Environments** (`produzione` con *Required reviewers*; `demo`):
+  - Variables: `SUPABASE_PROJECT_REF`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; solo prod: `PROD_HOST`=158.178.144.127,
+    `PROD_HOST_FINGERPRINT`=`SHA256:v6Rfu25peR4w1/rUTwgmdw56NdJ9I+zLeAbgt4ekYPI`.
+  - Secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL` (stringa *Session pooler* IPv4), `GROQ_API_KEY` (opz.);
+    solo prod: `PROD_SSH_KEY` (= `keys/prod-web` del bucket), `VAPID_PRIVATE_KEY`.
+- Il trigger push (`notifica_nuova_richiesta`) legge URL funzioni e chiave anon dal Vault: senza segreti non invia nulla.
 
 ## Anteprima single-file (Artifact)
 1. `VITE_INLINE=1 VITE_ROUTER=hash npm run build` (VITE_INLINE=1 forza un bundle unico;
