@@ -1,0 +1,10 @@
+{
+  "name": "beachin-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "server.js",
+  "dependencies": {
+    "oracledb": "^6.6.0"
+  }
+}
