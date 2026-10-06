@@ -25,7 +25,7 @@ BeachIn è l'**aggregatore di moduli**.
 ## Deploy e anteprima
 - **GitHub Pages** — https://loriscuba.github.io/BeachIn/ (`.github/workflows/pages.yml`, `VITE_BASE=/BeachIn/` + HashRouter).
 - **Vercel** — anteprima per branch (BrowserRouter, `vercel.json` con rewrite SPA).
-- **Produzione** — VM Oracle prod-web https://158-178-144-127.sslip.io + Supabase prod, solo da workflow manuale "Deploy".
+- **Produzione** — VM Oracle prod-web https://158-178-144-127.sslip.io + Supabase self-hosted su VM prod-db, solo da workflow manuale "Deploy".
 - **Artifact** — https://claude.ai/artifact/PqRRUL2ws33iz2m9qn99nV (ripubblicare sullo stesso URL;
   procedura single-file in `docs/DETTAGLI.md` → "Anteprima single-file").
 

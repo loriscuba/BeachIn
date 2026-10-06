@@ -293,23 +293,31 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (non citazioni). Menu ristorante = REALE (Menù del proprietario da restaurantguru: 25 piatti con prezzi, `seed/ristorante.ts`; food cost/allergeni stimati, bevande dimostrative). Restano dimostrativi: listino, eventi, recensioni del gestionale, numeri arenile.
 - Tripadvisor e gli altri siti sono bloccati dalla rete dell'ambiente: dati presi via WebSearch.
 
-## Deploy produzione (Oracle + Supabase prod)
-- **Ambienti**: *demo* = Pages/Vercel da `main` + Supabase Demo IPA (schema `beachin`); *produzione* = VM Oracle
-  `prod-web` (compartment demo, eu-amsterdam-1, A1.Flex 2/12/100, IP riservato 158.178.144.127, Caddy HTTPS su
-  https://158-178-144-127.sslip.io) + progetto Supabase "BeachIn Prod". VCN `prod-vcn` 10.1.0.0/16, ingress 22/80/443.
-  Bucket privato `prod-backup` (namespace `axll6zmc6b9c`): `keys/prod-web` (chiave SSH), `releases/`.
+## Deploy produzione (Oracle: prod-web + prod-db)
+- **Ambienti**: *demo* = Pages/Vercel da `main` + Supabase Cloud Demo IPA (schema `beachin`); *produzione* = VM Oracle
+  `prod-web` (web, Caddy, IP riservato 158.178.144.127 → https://158-178-144-127.sslip.io) + VM `prod-db` (Supabase
+  self-hosted in Docker, API su `https://api-<ip>.sslip.io`). Compartment demo, eu-amsterdam-1, A1.Flex 2 OCPU/12 GB/100 GB
+  ciascuna (= tetto Always Free). VCN `prod-vcn` 10.1.0.0/16, ingress 22/80/443. Bucket privato `prod-backup`
+  (namespace `axll6zmc6b9c`): `keys/prod-web` (chiave SSH di entrambe le VM), `releases/`, `db/` (dump notturni).
+- **prod-db** nasce da `deploy/prod-db-cloud-init.sh` (sostituire `__DOMINIO__` e `__PAR_BACKUP__`): installa Docker +
+  compose ufficiale Supabase in `/opt/supabase/docker`, genera i segreti sulla VM (`.env`, mai fuori), Caddy espone solo
+  `/rest /auth /realtime /storage /functions /graphql` (Studio solo via tunnel SSH su `localhost:8000`, utente `beachin`,
+  password in `.env`), `beachin-psql` (psql nel container), backup `pg_dump` alle 02:17 UTC nel bucket. In console stampa
+  `BEACHIN-STATO`, `BEACHIN-REST` e `BEACHIN-ANON` (chiave anon, pubblica).
 - **Migrazioni**: `supabase/migrations/NNNN_*.sql`, applicate in ordine da `scripts/migra.sh` (tabella `beachin.migrazioni`,
-  una transazione per file, `--baseline` = registra senza eseguire). Demo: baseline 0001 registrata il 5/10/2026.
-  Migrazioni *compatibili all'indietro* (prima aggiungere, poi togliere in un rilascio successivo): il DB va online prima del web.
-- **Workflow `.github/workflows/deploy.yml`** (solo manuale): sceglie ambiente + ref (branch/tag/commit) → migrazioni →
-  (prod) Exposed schemas + Vault (`beachin_functions_url`, `beachin_anon_key`, `beachin_vapid_private`) → secret
-  `GROQ_API_KEY` → deploy di tutte le Edge Functions → (prod) build + `deploy/rilascio.sh` sulla VM via SSH.
-  `rollback.yml` = versione web precedente (`beachin-rilascio --rollback`; sulla VM tiene 5 versioni in `/var/www/rilasci`).
-- **Settings → Environments** (`produzione` con *Required reviewers*; `demo`):
-  - Variables: `SUPABASE_PROJECT_REF`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`; solo prod: `PROD_HOST`=158.178.144.127,
-    `PROD_HOST_FINGERPRINT`=`SHA256:v6Rfu25peR4w1/rUTwgmdw56NdJ9I+zLeAbgt4ekYPI`.
-  - Secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL` (stringa *Session pooler* IPv4), `GROQ_API_KEY` (opz.);
-    solo prod: `PROD_SSH_KEY` (= `keys/prod-web` del bucket), `VAPID_PRIVATE_KEY`.
+  una transazione per file, `--baseline` = registra senza eseguire; `DB_URL` per Supabase Cloud, `PSQL_CMD` per prod-db).
+  Demo: baseline 0001 registrata il 5/10/2026. Migrazioni *compatibili all'indietro*: il DB va online prima del web.
+- **Workflow `.github/workflows/deploy.yml`** (solo manuale, sceglie ambiente + ref):
+  demo → migrazioni + `supabase functions deploy`; produzione → SSH su prod-db: migrazioni, Vault (`beachin_functions_url`
+  = `http://kong:8000/functions/v1`, `beachin_anon_key`, `beachin_vapid_private`), copia funzioni in
+  `volumes/functions` + `GROQ_API_KEY` nel `.env` + riavvio container `functions`; poi build + `deploy/rilascio.sh` su
+  prod-web. `rollback.yml` = versione web precedente (sulla VM 5 versioni in `/var/www/rilasci`).
+- **Settings → Environments**:
+  - `produzione` (*Required reviewers*): Variables `PROD_HOST`=158.178.144.127, `PROD_HOST_FINGERPRINT`=
+    `SHA256:v6Rfu25peR4w1/rUTwgmdw56NdJ9I+zLeAbgt4ekYPI`, `PROD_DB_HOST`, `PROD_DB_HOST_FINGERPRINT` (dalla console di
+    prod-db), `VITE_SUPABASE_URL`=`https://api-<ip>.sslip.io`, `VITE_SUPABASE_ANON_KEY` (= `BEACHIN-ANON`); Secrets
+    `PROD_SSH_KEY` (= `keys/prod-web`), `VAPID_PRIVATE_KEY`, `GROQ_API_KEY`.
+  - `demo`: Variables `SUPABASE_PROJECT_REF`; Secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL` (Session pooler IPv4).
 - Il trigger push (`notifica_nuova_richiesta`) legge URL funzioni e chiave anon dal Vault: senza segreti non invia nulla.
 
 ## Anteprima single-file (Artifact)
