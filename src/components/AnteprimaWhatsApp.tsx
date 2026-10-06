@@ -75,7 +75,7 @@ export function AnteprimaWhatsApp() {
           </a>
         </div>
       </div>
-      <p className="mt-1 text-center text-[10px] text-profondo/50">Anteprima demo · {m.esito === 'conferma' ? 'conferma' : 'rifiuto'} inviato al cliente</p>
+      <p className="mt-1 text-center text-[10px] text-profondo/50">Anteprima demo · {m.esito === 'richiesta' ? 'ricevuta della richiesta' : m.esito === 'conferma' ? 'conferma' : 'rifiuto'} inviato al cliente</p>
     </div>
   )
 }

@@ -548,6 +548,8 @@ export interface RichiestaRistorante {
   telefono: string
   data: string
   turno: Turno
+  /** Orario di arrivo "HH:mm" scelto sul sito. */
+  ora?: string
   coperti: number
   stato: StatoPrenotazioneOnline
   note?: string

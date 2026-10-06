@@ -283,3 +283,6 @@ begin
     end if;
   end loop;
 end $$;
+
+-- Orario di arrivo scelto sul sito (migration beachin_richieste_ristorante_ora)
+alter table beachin.richieste_ristorante add column if not exists ora text;

@@ -188,6 +188,18 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   "sta scrivendo…", messaggio, `ding()`, spunte grigie → blu. Pulsante "Invia davvero su WhatsApp" = link `wa.me`
   con numero (prefisso 39 se manca) e testo già compilati. Nessun invio automatico reale (servirebbe WhatsApp Business API).
 
+## Prenotazione tavolo dal sito: orario e posti (ott 2026)
+- `src/lib/disponibilita.ts`: `ORARI_TURNO` (pranzo 12:00–14:00, cena 19:00–21:30, ogni 30'), `COPERTI_PER_ORARIO` (16 coperti in
+  arrivo per mezz'ora), `MAX_COPERTI_SITO` (12). `sistemazionePer(liberi, coperti)` = un tavolo solo o 2–3 tavoli uniti (meno posti
+  sprecati, stessa zona). `prenotabilita(...)` siede prima prenotazioni senza tavolo e richieste `da_confermare`, poi dà i coperti
+  prenotabili (con sistemazione) e i posti per orario.
+- Sito `FormRistorante`: select Persone solo con i gruppi che ci stanno, chip Orario (barrati se pieni), testo "tavoli da 3 + 2 uniti";
+  turno pieno se nessun gruppo ci sta.
+- `RichiestaRistorante.ora` (Supabase `beachin.richieste_ristorante.ora`, migration `beachin_richieste_ristorante_ora`), passa alla
+  `PrenotazioneRistorante` alla conferma; orario in mail locali, Edge Function `beachin-email` (v3) e WhatsApp.
+- App admin `Disponibilita`: se manca un tavolo adatto propone i tavoli da unire.
+- WhatsApp simulato anche alla **ricevuta** della richiesta (ombrellone, tavolo, evento; `esito:'richiesta'`), anteprima montata anche in `SitoAnteprima`.
+
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
   upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`

@@ -8,7 +8,7 @@ import { LogOut, Check, X, Users, Phone, CalendarDays, Mic, Inbox, Bell, BellOff
 import type { PrenotazioneRistorante, RichiestaRistorante, StatoPrenotazione, Turno } from '@/data/types'
 import { PiantaTavoli } from '@/pages/ristorante/ScegliTavolo'
 import { nomeZona } from '@/lib/zoneTavoli'
-import { disponibilitaTurno } from '@/lib/disponibilita'
+import { disponibilitaTurno, sistemazionePer } from '@/lib/disponibilita'
 import { GiorniChiusi } from '@/components/GiorniChiusi'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
@@ -106,7 +106,7 @@ function Area() {
             <div key={r.id} className="rounded-2xl bg-white p-4 shadow-sm">
               <p className="text-lg font-semibold">{r.nome}</p>
               <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-profondo/70">
-                <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4" /> {dataIt(r.data)} · <span className="capitalize">{r.turno}</span></span>
+                <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4" /> {dataIt(r.data)} · <span className="capitalize">{r.turno}</span>{r.ora && <> · <b className="num">{r.ora}</b></>}</span>
                 <span className="inline-flex items-center gap-1"><Users className="h-4 w-4" /> {r.coperti} coperti</span>
                 {r.telefono && <a href={`tel:${r.telefono}`} className="inline-flex items-center gap-1 text-cabina"><Phone className="h-4 w-4" /> {r.telefono}</a>}
               </p>
@@ -338,11 +338,14 @@ function Disponibilita({ r }: { r: RichiestaRistorante }) {
     )
   }
   const d = disponibilitaTurno(tavoliDelGiorno(r.data), prenotazioniRistorante, r.data, r.turno, r.coperti)
+  const unione = d.tavoloAdatto ? undefined : sistemazionePer(d.liberi, r.coperti)
   const esito = d.pieno
     ? { tono: 'bg-boa/10 text-boa', Icona: OctagonX, testo: `Tutto pieno a ${r.turno}` }
     : d.tavoloAdatto
       ? { tono: 'bg-acqua/15 text-profondo', Icona: CircleCheck, testo: `C'è posto: tavolo ${d.tavoloAdatto.numero} da ${d.tavoloAdatto.posti} posti libero` }
-      : { tono: 'bg-tenda/20 text-[#7A5A12]', Icona: TriangleAlert, testo: `Nessun tavolo libero da ${r.coperti} posti: serve unire tavoli` }
+      : unione
+        ? { tono: 'bg-tenda/20 text-[#7A5A12]', Icona: TriangleAlert, testo: `Nessun tavolo da ${r.coperti}: unire i tavoli ${unione.tavoli.map((t) => `${t.numero} (${t.posti})`).join(' + ')}` }
+        : { tono: 'bg-tenda/20 text-[#7A5A12]', Icona: TriangleAlert, testo: `Nessun tavolo libero da ${r.coperti} posti: serve unire tavoli` }
   return (
     <div className={cn('mt-3 rounded-xl px-3 py-2.5 text-sm', esito.tono)}>
       <p className="flex items-start gap-2 font-semibold"><esito.Icona className="mt-0.5 h-4 w-4 shrink-0" /> {esito.testo}</p>

@@ -195,7 +195,7 @@ export default function Sito() {
                     <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-profondo">{p.nome} <span className="font-normal text-profondo/50">· {p.coperti} coperti</span></p>
-                        <p className="num text-xs text-profondo/55">{turnoLabel(p.turno)} del {fmtData(p.data)}</p>
+                        <p className="num text-xs text-profondo/55">{turnoLabel(p.turno)}{p.ora ? ` alle ${p.ora}` : ''} del {fmtData(p.data)}</p>
                         {p.note && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.note}”</p>}
                       </div>
                       <AzioniRichiesta stato={p.stato} onConferma={() => confermaRistorante(p.id)} onRifiuta={() => rifiutaRistorante(p.id)} />
