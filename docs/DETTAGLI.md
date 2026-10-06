@@ -309,16 +309,16 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Demo: baseline 0001 registrata il 5/10/2026. Migrazioni *compatibili all'indietro*: il DB va online prima del web.
 - **Workflow `.github/workflows/deploy.yml`** (solo manuale, sceglie ambiente + ref):
   demo → migrazioni + `supabase functions deploy`; produzione → SSH su prod-db: migrazioni, Vault (`beachin_functions_url`
-  = `http://api-gw:8000/functions/v1`, `beachin_anon_key`, `beachin_vapid_private`), copia funzioni in
+  = `http://api-gw:8000/functions/v1`, `beachin_anon_key`, `beachin_vapid_private`, `beachin_brevo_key`, `beachin_email_mittente`), copia funzioni in
   `volumes/functions` + `GROQ_API_KEY` nel `.env` + riavvio container `functions`; poi build + `deploy/rilascio.sh` su
   prod-web. `rollback.yml` = versione web precedente (sulla VM 5 versioni in `/var/www/rilasci`).
 - **Settings → Environments**:
   - `produzione` (*Required reviewers*): Variables `PROD_HOST`=158.178.144.127, `PROD_HOST_FINGERPRINT`=
     `SHA256:v6Rfu25peR4w1/rUTwgmdw56NdJ9I+zLeAbgt4ekYPI`, `PROD_DB_HOST`=141.148.241.169, `PROD_DB_HOST_FINGERPRINT`=
-    `SHA256:V9zLcj7PRO/qbRBZ5XH3FP4NHpmRMiEmY5aoUU7+39U`, `VITE_SUPABASE_URL`=https://api-141-148-241-169.sslip.io, `VITE_SUPABASE_ANON_KEY` (= `BEACHIN-ANON`); Secrets
-    `PROD_SSH_KEY` (= `keys/prod-web`), `VAPID_PRIVATE_KEY`, `GROQ_API_KEY`.
+    `SHA256:V9zLcj7PRO/qbRBZ5XH3FP4NHpmRMiEmY5aoUU7+39U`, `VITE_SUPABASE_URL`=https://api-141-148-241-169.sslip.io, `VITE_SUPABASE_ANON_KEY` (= `BEACHIN-ANON`); `EMAIL_MITTENTE`; Secrets
+    `PROD_SSH_KEY` (= `keys/prod-web`), `VAPID_PRIVATE_KEY`, `GROQ_API_KEY`, `BREVO_API_KEY`.
   - `demo`: Variables `SUPABASE_PROJECT_REF`; Secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL` (Session pooler IPv4).
-- Il trigger push (`notifica_nuova_richiesta`) legge URL funzioni e chiave anon dal Vault: senza segreti non invia nulla.
+- I trigger push (`notifica_nuova_richiesta`) ed email (`email_richiesta`) leggono URL funzioni e chiave anon dal Vault: senza segreti non invia nulla.
 
 ## Anteprima single-file (Artifact)
 1. `VITE_INLINE=1 VITE_ROUTER=hash npm run build` (VITE_INLINE=1 forza un bundle unico;

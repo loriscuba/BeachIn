@@ -105,6 +105,8 @@ jobs:
       - name: Segreti del Vault
         env:
           VAPID: ${{ secrets.VAPID_PRIVATE_KEY }}
+          BREVO: ${{ secrets.BREVO_API_KEY }}
+          MITTENTE: ${{ vars.EMAIL_MITTENTE }}
         run: |
           segreto() {
             [ -n "$2" ] || { echo "salto $1 (vuoto)"; return; }
@@ -117,6 +119,8 @@ jobs:
           segreto beachin_functions_url "http://api-gw:8000/functions/v1"
           segreto beachin_anon_key "${{ vars.VITE_SUPABASE_ANON_KEY }}"
           segreto beachin_vapid_private "$VAPID"
+          segreto beachin_brevo_key "$BREVO"
+          segreto beachin_email_mittente "$MITTENTE"
 
       # 2) Edge Functions (cartelle in volumes/functions, servite da edge-runtime)
       - name: Edge Functions

@@ -133,10 +133,14 @@ create trigger notifica_nuova_richiesta after insert on beachin.richieste_ristor
 -- Senza segreti la funzione risponde "Brevo non configurato" e non invia nulla.
 create or replace function beachin.email_richiesta()
 returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_url text := (select decrypted_secret from vault.decrypted_secrets where name = 'beachin_functions_url');
+  v_anon text := (select decrypted_secret from vault.decrypted_secrets where name = 'beachin_anon_key');
 begin
+  if v_url is null or v_anon is null then return new; end if;
   perform net.http_post(
-    url := 'https://exchjppslwhbnbzuhfqs.supabase.co/functions/v1/beachin-email',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer <chiave anon>'),
+    url := v_url || '/beachin-email',
+    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || v_anon),
     body := jsonb_build_object('tabella', tg_table_name, 'record', to_jsonb(new))
   );
   return new;
