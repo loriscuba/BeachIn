@@ -204,6 +204,14 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - QR (menu, tavoli, ComandApp, AdminApp) usano `urlPubblico()` (`src/lib/urlPubblico.ts`): fuori da GitHub Pages/Vercel
   (artifact, localhost) puntano a GitHub Pages, altrimenti il telefono riceveva un indirizzo non apribile.
 
+## Sito → Sito e marketing (ott 2026)
+- Tab `marketing` di `Sito.tsx` (le sezioni di Sito ora stanno in `?tab=`; sottomenu Panoramica / Sito e marketing).
+  UI `src/pages/sito/Marketing.tsx` (Recharts `ComposedChart`, gauge SVG, bolle SVG), dati `src/data/marketing.ts`.
+- Dati: serie giornaliera 1/6–30/9 per 2026 e 2025 (`creaRng`), picco a Ferragosto (salita σ 32 gg, discesa σ 17),
+  weekend ×1,28, lunedì ×0,85. Ogni mese deriva da totali (ripartizione a resto massimo, nessuna unità persa);
+  la stagione è la somma dei mesi. Vincoli in testa al file, verificati da `npm test`.
+- Tripadvisor: voto/recensioni da `config.tripadvisor`, distribuzione che torna a 4,4. Salute del sito: fissa.
+
 ## Stato funzionalità Sito + Eventi (ultimo lavoro)
 - **Prenotazione ombrellone sul sito = doppio controllo**: `prenotaOmbrelloni = moduloAttivo('arenile') && canaliPrenotazione.ombrelloni`
   (`SitoAnteprima`): se falso spariscono sezione Prenota, voce nav, CTA hero e bottone flottante (niente più box "sospese").

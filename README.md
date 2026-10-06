@@ -112,6 +112,25 @@ gestire il **menu del ristorante parlando** — o scrivendo — con un assistent
   quindi le modifiche fatte a voce si vedono subito anche lì (prezzi, nuovi
   piatti, rimozioni).
 
+## Sito e marketing (cruscotto del titolare)
+
+Menu **Sito internet → Sito e marketing** (`/sito?tab=marketing`). Selettore di periodo (giugno, luglio, agosto,
+settembre, tutta la stagione) con confronto sulla stagione 2025 e sei blocchi: visite al sito (Cloudflare Web
+Analytics), cosa fanno i visitatori, da dove arrivano e pagine più viste, Google (Search Console + Profilo
+dell'attività), recensioni Tripadvisor, salute del sito (checklist SEO e Core Web Vitals).
+
+- **Dati di esempio** con seed fisso in `src/data/marketing.ts` (una sola funzione `getMarketing(periodo)`); la UI è in
+  `src/pages/sito/Marketing.tsx`. Ricerche Google con nome e località reali, voto e numero di recensioni dalla scheda
+  Tripadvisor in `config.ts`, richieste di prenotazione confrontate con le postazioni a giornata.
+- **Verifica dei numeri**: `npm test` (`scripts/verifica-marketing.mjs`) controlla somme dei giorni, stagione = somma
+  dei mesi, ricerca ~41%, Maps ~17% = clic dal profilo, apparizioni ~5,8× visite, % clic ~7%, interazioni 11–18%,
+  visitatori 70–76%, picco in agosto.
+- **Per passare ai dati veri** si sostituisce solo il corpo di `getMarketing` (lato server, chiavi mai nel browser):
+  1. Cloudflare Web Analytics (GraphQL Analytics API) oppure Umami — visite, visitatori, provenienze, pagine, eventi clic;
+  2. Google Search Console API (Search Analytics) — apparizioni, clic, posizione, ricerche;
+  3. Google Business Profile Performance API — visualizzazioni Maps/Ricerca, chiamate, indicazioni, clic sul sito;
+  4. Tripadvisor Content API (location ID 2464057) — voto, numero e ultime recensioni.
+
 ## Percorso di demo consigliato (10 passi)
 
 Da seguire davanti al cliente. Apri l'app e vai in ordine.
