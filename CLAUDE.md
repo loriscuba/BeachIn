@@ -17,12 +17,15 @@ BeachIn è l'**aggregatore di moduli**.
 - **Supabase in autonomia**: Claude può eseguire da solo, senza chiedere conferma, le operazioni sul DB via connettore
   MCP Supabase (insert, update, delete, select, migration, deploy Edge Function) sul progetto **Demo IPA**
   (`exchjppslwhbnbzuhfqs`), **solo nello schema `beachin`** (il progetto è condiviso con altre demo: non toccare altri
-  schemi). Poi riportare nel repo lo schema cambiato (`supabase/schema.sql`, `supabase/functions/`) e dirlo all'utente.
+  schemi). Ogni modifica allo schema va anche in una **nuova** migrazione `supabase/migrations/NNNN_nome.sql` (registrata in
+  `beachin.migrazioni` del Demo) e le funzioni in `supabase/functions/`; dirlo all'utente. La produzione si allinea solo col
+  workflow manuale "Deploy" (vedi `docs/DETTAGLI.md` → "Deploy produzione"): mai toccarla direttamente.
   Segreti (VAPID privata, `GROQ_API_KEY`) mai nel repo.
 
 ## Deploy e anteprima
 - **GitHub Pages** — https://loriscuba.github.io/BeachIn/ (`.github/workflows/pages.yml`, `VITE_BASE=/BeachIn/` + HashRouter).
 - **Vercel** — anteprima per branch (BrowserRouter, `vercel.json` con rewrite SPA).
+- **Produzione** — VM Oracle prod-web https://158-178-144-127.sslip.io + Supabase self-hosted su VM prod-db, solo da workflow manuale "Deploy".
 - **Artifact** — https://claude.ai/artifact/PqRRUL2ws33iz2m9qn99nV (ripubblicare sullo stesso URL;
   procedura single-file in `docs/DETTAGLI.md` → "Anteprima single-file").
 
@@ -36,7 +39,7 @@ lucide-react + date-fns (locale it). `noUnusedLocals` ON: rimuovi import/variabi
 - Dati: `src/data/types.ts` (tipi), `src/data/seed/*` (dati iniziali), `src/data/api.ts` (getter read-only async).
 - Pagine: `src/pages` (Ristorante con sottocartella `ristorante/`; pagine pubbliche fuori dallo shell:
   `SitoAnteprima`, `MenuPubblico` `/menu`, `ComandApp` `/comandapp`, `AdminApp` `/adminapp`).
-- Supabase: `src/lib/supabase.ts`, hook `src/hooks/useSyncSupabase.ts`, schema `supabase/schema.sql`,
+- Supabase: `src/lib/supabase.ts`, hook `src/hooks/useSyncSupabase.ts`, migrazioni `supabase/migrations/`,
   funzioni `supabase/functions/`. Senza env `VITE_SUPABASE_*` tutto funziona in locale.
 - Config cliente: `src/config.ts`.
 - Palette: NAVY `#0F3B4C`, CABINA `#2E7D9A`, ACQUA `#7FB7A8`, TENDA `#F2C14E`, BOA `#E4572E`, CALCE `#EDF1F2`

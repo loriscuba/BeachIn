@@ -1,0 +1,161 @@
+name: Deploy (manuale)
+
+# Parte solo a mano: Actions → "Deploy (manuale)" → Run workflow.
+# Allinea nell'ordine: database (migrazioni) → Edge Functions → web.
+#   demo        → Supabase Cloud Demo IPA (schema beachin). Il web demo resta su GitHub Pages/Vercel da main.
+#   produzione  → Supabase self-hosted sulla VM Oracle prod-db + web sulla VM prod-web (Caddy, *.sslip.io).
+# Configurazione in Settings → Environments (demo / produzione): vedi docs/DETTAGLI.md → "Deploy produzione".
+
+on:
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: Ambiente
+        type: choice
+        options: [produzione, demo]
+        default: produzione
+      ref:
+        description: Versione da pubblicare (branch, tag o commit)
+        default: main
+      web:
+        description: Pubblica anche il web (solo produzione)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.ambiente }}
+  cancel-in-progress: false
+
+jobs:
+  demo:
+    if: inputs.ambiente == 'demo'
+    runs-on: ubuntu-latest
+    environment: demo
+    env:
+      REF_PROGETTO: ${{ vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Controllo configurazione
+        run: |
+          test -n "$REF_PROGETTO" || { echo "manca la variabile SUPABASE_PROJECT_REF"; exit 1; }
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "manca il secret SUPABASE_ACCESS_TOKEN"; exit 1; }
+          test -n "${{ secrets.SUPABASE_DB_URL }}" || { echo "manca il secret SUPABASE_DB_URL"; exit 1; }
+
+      - name: Migrazioni
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          bash scripts/migra.sh
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Edge Functions
+        run: |
+          for f in supabase/functions/*/; do
+            supabase functions deploy "$(basename "$f")" --project-ref "$REF_PROGETTO" --use-api
+          done
+
+  produzione:
+    if: inputs.ambiente == 'produzione'
+    runs-on: ubuntu-latest
+    # Settings → Environments → produzione → Required reviewers = approvazione prima di partire.
+    environment: produzione
+    env:
+      DB_HOST: ${{ vars.PROD_DB_HOST }}
+      WEB_HOST: ${{ vars.PROD_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: SSH verso prod-db e prod-web
+        env:
+          CHIAVE: ${{ secrets.PROD_SSH_KEY }}
+          IMPRONTA_DB: ${{ vars.PROD_DB_HOST_FINGERPRINT }}
+          IMPRONTA_WEB: ${{ vars.PROD_HOST_FINGERPRINT }}
+        run: |
+          test -n "$DB_HOST" && test -n "$WEB_HOST" && test -n "$CHIAVE" || { echo "mancano PROD_DB_HOST/PROD_HOST/PROD_SSH_KEY"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$CHIAVE" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          # Accetta gli host solo se l'impronta ED25519 coincide con quella registrata
+          for coppia in "$DB_HOST $IMPRONTA_DB" "$WEB_HOST $IMPRONTA_WEB"; do
+            set -- $coppia
+            ssh-keyscan -t ed25519 "$1" 2>/dev/null > /tmp/kh
+            ssh-keygen -lf /tmp/kh | grep -qF "$2" || { echo "impronta host diversa per $1"; exit 1; }
+            cat /tmp/kh >> ~/.ssh/known_hosts
+          done
+          printf 'Host *\n  User ubuntu\n  ServerAliveInterval 30\n' > ~/.ssh/config
+
+      # 1) Database (Postgres nel container supabase-db, via beachin-psql sulla VM)
+      - name: Migrazioni
+        env:
+          PSQL_CMD: ssh ${{ vars.PROD_DB_HOST }} sudo beachin-psql
+        run: bash scripts/migra.sh
+
+      - name: Segreti del Vault
+        env:
+          VAPID: ${{ secrets.VAPID_PRIVATE_KEY }}
+          BREVO: ${{ secrets.BREVO_API_KEY }}
+          MITTENTE: ${{ vars.EMAIL_MITTENTE }}
+        run: |
+          segreto() {
+            [ -n "$2" ] || { echo "salto $1 (vuoto)"; return; }
+            printf "select vault.create_secret(\$v\$%s\$v\$, '%s') where not exists (select 1 from vault.secrets where name = '%s');
+          select vault.update_secret(id, \$v\$%s\$v\$) from vault.secrets where name = '%s';\n" "$2" "$1" "$1" "$2" "$1" \
+              | ssh "$DB_HOST" sudo beachin-psql -v ON_ERROR_STOP=1 -q -X -f - >/dev/null
+            echo "ok $1"
+          }
+          # Il trigger push chiama le funzioni dall'interno della rete Docker
+          segreto beachin_functions_url "http://api-gw:8000/functions/v1"
+          segreto beachin_anon_key "${{ vars.VITE_SUPABASE_ANON_KEY }}"
+          segreto beachin_vapid_private "$VAPID"
+          segreto beachin_brevo_key "$BREVO"
+          segreto beachin_email_mittente "$MITTENTE"
+
+      # 2) Edge Functions (cartelle in volumes/functions, servite da edge-runtime)
+      - name: Edge Functions
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          tar czf /tmp/funzioni.tgz -C supabase/functions .
+          scp -q /tmp/funzioni.tgz "$DB_HOST:/tmp/"
+          ssh "$DB_HOST" "sudo tar xzf /tmp/funzioni.tgz -C /opt/supabase/docker/volumes/functions && rm /tmp/funzioni.tgz"
+          if [ -n "$GROQ_API_KEY" ]; then
+            printf '%s' "$GROQ_API_KEY" | ssh "$DB_HOST" 'k=$(cat); sudo sed -i "s|^GROQ_API_KEY=.*|GROQ_API_KEY=$k|" /opt/supabase/docker/.env'
+          fi
+          ssh "$DB_HOST" "cd /opt/supabase/docker && sudo docker compose up -d --force-recreate functions"
+
+      # 3) Web
+      - uses: actions/setup-node@v4
+        if: inputs.web
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Build
+        if: inputs.web
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          npm ci
+          npm run build
+          tar czf beachin.tgz -C dist .
+
+      - name: Pubblica su prod-web
+        if: inputs.web
+        run: |
+          VERSIONE="$(date -u +%Y%m%d-%H%M)-$(git rev-parse --short HEAD)"
+          scp -q beachin.tgz deploy/rilascio.sh "$WEB_HOST:/tmp/"
+          ssh "$WEB_HOST" "sudo install -m 755 /tmp/rilascio.sh /usr/local/bin/beachin-rilascio && sudo beachin-rilascio /tmp/beachin.tgz '$VERSIONE'"
+          curl -fsS -o /dev/null "https://$(echo "$WEB_HOST" | tr . -).sslip.io/" && echo "online: $VERSIONE"
