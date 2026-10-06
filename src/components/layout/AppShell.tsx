@@ -1,3 +1,4 @@
+import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
@@ -67,6 +68,7 @@ export function AppShell() {
       </div>
 
       <DemoPlayer />
+      <AnteprimaWhatsApp />
     </div>
   )
 }

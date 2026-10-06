@@ -181,6 +181,13 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `beachin.prenotazioni_ristorante`. Seed già caricati nel DB. Con Supabase il `reset()` non tocca la sala e l'effect
   "richiesta confermata → PR-<id>" è spento (la crea `confermaRistorante`; le vecchie sono state riportate nel DB via SQL).
 
+## Risposta WhatsApp simulata (ott 2026)
+- Ogni conferma/rifiuto (ombrellone, tavolo ristorante, evento) chiama `pushWa` nel `DemoDataContext` → stato `whatsapp`
+  (`MessaggioWhatsApp`: nome, telefono, testo con `*grassetto*`, esito) + `chiudiWhatsapp`.
+- `src/components/AnteprimaWhatsApp.tsx` (montato in `AppShell` e `AdminApp`): telefono in basso a destra con chat,
+  "sta scrivendo…", messaggio, `ding()`, spunte grigie → blu. Pulsante "Invia davvero su WhatsApp" = link `wa.me`
+  con numero (prefisso 39 se manca) e testo già compilati. Nessun invio automatico reale (servirebbe WhatsApp Business API).
+
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
   upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`
