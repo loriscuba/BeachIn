@@ -199,6 +199,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `PrenotazioneRistorante` alla conferma; orario in mail locali, Edge Function `beachin-email` (v3) e WhatsApp.
 - App admin `Disponibilita`: se manca un tavolo adatto propone i tavoli da unire.
 - WhatsApp simulato anche alla **ricevuta** della richiesta (ombrellone, tavolo, evento; `esito:'richiesta'`), anteprima montata anche in `SitoAnteprima`.
+- Sito pubblico: tolta la casella "La mia posta" (pulsante + drawer); i messaggi di conferma rimandano a email e WhatsApp. `postaCliente` resta nel context.
 
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di

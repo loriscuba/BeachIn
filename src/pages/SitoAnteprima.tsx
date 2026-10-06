@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowLeft, ArrowDown, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Star, Phone, Mail, MapPin,
-  Clock, Check, Inbox, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa, Waves,
+  Clock, Check, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa, Waves,
 } from 'lucide-react'
 import type { Evento, FilaId, Periodo, StatoSito, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
 import { getDisponibilitaSito, getListinoPubblicato, getStatoSito } from '@/data/api'
@@ -10,9 +10,8 @@ import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { fotoSito, logoLido, videoHero } from '@/assets/sito'
 import { useModuli } from '@/context/ModuliContext'
-import { Drawer } from '@/components/ui/Drawer'
 import { Modal } from '@/components/ui/Modal'
-import { euro, dataEstesa, data as fmtData } from '@/lib/formatters'
+import { euro, dataEstesa } from '@/lib/formatters'
 import { etichettePeriodo, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
 import { statoGiorno, prenotabilita, descriviSistemazione } from '@/lib/disponibilita'
@@ -38,7 +37,7 @@ const temiRecensioni = [
 const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 
 export default function SitoAnteprima() {
-  const { eventi, postaCliente, canaliPrenotazione, galleria, menu, sezioniMenu } = useDemoData()
+  const { eventi, canaliPrenotazione, galleria, menu, sezioniMenu } = useDemoData()
   // Gestione ombrelloni (modulo Arenile): se spento, dal sito spariscono prenotazione, listino e disponibilità.
   const ombrelloni = useModuli().moduloAttivo('arenile')
   // Prenotazione ombrellone dal sito: doppio controllo, modulo Arenile attivo E canale "Ombrelloni" acceso (Sito → Prenotazioni).
@@ -49,7 +48,6 @@ export default function SitoAnteprima() {
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [listino, setListino] = useState<VoceTariffa[]>([])
-  const [postaAperta, setPostaAperta] = useState(false)
   const [menuMobile, setMenuMobile] = useState(false)
   const [toast, setToast] = useState<string>()
   const [eventoSel, setEventoSel] = useState<Evento>()
@@ -94,7 +92,6 @@ export default function SitoAnteprima() {
   }, [matrice])
 
 
-  const nonLette = postaCliente.filter((m) => !m.letto).length
   const oggi = config.stagione.oggi
   const eventiFuturi = [...eventi].filter((e) => e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data))
   const eventiPassati = [...eventi].filter((e) => e.data < oggi).sort((a, b) => b.data.localeCompare(a.data))
@@ -140,13 +137,6 @@ export default function SitoAnteprima() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPostaAperta(true)}
-              className="relative inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20"
-            >
-              <Inbox className="h-4 w-4" /> <span className="hidden sm:inline">La mia posta</span>
-              {nonLette > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-[20px] place-items-center rounded-full bg-boa px-1 text-[11px] font-bold text-white">{nonLette}</span>}
-            </button>
             <Link to="/sito" className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20 sm:inline-flex">
               <ArrowLeft className="h-4 w-4" /> Gestionale
             </Link>
@@ -347,7 +337,7 @@ export default function SitoAnteprima() {
             </ul>
             <div id="prenota-tavolo" className="reveal mt-10 scroll-mt-24">
               {canaliPrenotazione.ristorante
-                ? <FormRistorante onInviato={(nome) => { mostraToast(`Richiesta tavolo inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
+                ? <FormRistorante onInviato={(nome) => { mostraToast(`Richiesta tavolo inviata, ${nome}! Ti abbiamo scritto per email e WhatsApp.`) }} />
                 : <Sospese testo="Le prenotazioni del ristorante online sono momentaneamente sospese. Chiamaci per riservare un tavolo." />}
             </div>
           </div>
@@ -374,7 +364,7 @@ export default function SitoAnteprima() {
           <div className="reveal lg:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-tenda">Prenota</p>
             <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Il tuo posto al sole <em className="text-tenda">ti aspetta</em>.</h2>
-            <p className="mt-5 max-w-md leading-7 text-white/70">Invia la richiesta: la ricevi subito nella tua posta e ti confermiamo la postazione in pochi minuti.</p>
+            <p className="mt-5 max-w-md leading-7 text-white/70">Invia la richiesta: ricevi subito la ricevuta per email e WhatsApp e ti confermiamo la postazione in pochi minuti.</p>
             {disp && (
               <div className="mt-10 flex items-center gap-6">
                 <Anello percento={disp.occupazione} />
@@ -392,7 +382,7 @@ export default function SitoAnteprima() {
             </ul>
           </div>
           <div className="reveal lg:col-span-3">
-            <FormOmbrellone onInviato={(nome) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }} />
+            <FormOmbrellone onInviato={(nome) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Ti abbiamo scritto per email e WhatsApp.`) }} />
           </div>
         </div>
       </section>
@@ -580,15 +570,13 @@ export default function SitoAnteprima() {
         />
       )}
 
-      {/* La mia posta (cliente) */}
-      <PostaCliente aperta={postaAperta} onChiudi={() => setPostaAperta(false)} />
 
       {/* Dettaglio evento + prenotazione */}
       <EventoModal
         evento={eventoSel}
         prenotabile={canaliPrenotazione.eventi}
         onChiudi={() => setEventoSel(undefined)}
-        onPrenotato={(nome) => { setEventoSel(undefined); mostraToast(`Richiesta di partecipazione inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }}
+        onPrenotato={(nome) => { setEventoSel(undefined); mostraToast(`Richiesta di partecipazione inviata, ${nome}! Ti abbiamo scritto per email e WhatsApp.`) }}
       />
       <AnteprimaWhatsApp />
     </div>
@@ -791,7 +779,7 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
             <div className="rounded-2xl border border-acqua/40 bg-acqua/10 p-5">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-acqua text-white"><Check className="h-5 w-5" /></span>
-                <div><p className="font-semibold text-profondo">Richiesta inviata!</p><p className="text-sm text-profondo/60">Trovi la ricevuta ne “La mia posta”. Ti confermiamo la partecipazione dal gestionale.</p></div>
+                <div><p className="font-semibold text-profondo">Richiesta inviata!</p><p className="text-sm text-profondo/60">Ti abbiamo mandato la ricevuta per email e WhatsApp. Ti confermiamo la partecipazione dal gestionale.</p></div>
               </div>
             </div>
           ) : (
@@ -813,46 +801,6 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
   )
 }
 
-function PostaCliente({ aperta, onChiudi }: { aperta: boolean; onChiudi: () => void }) {
-  const { postaCliente, segnaEmailLetta } = useDemoData()
-  const [aperto, setAperto] = useState<string>()
-  return (
-    <Drawer aperto={aperta} onChiudi={onChiudi} titolo="La mia posta" sottotitolo={`${postaCliente.length} messaggi · casella cliente`}>
-      {postaCliente.length === 0 ? (
-        <div className="grid place-items-center py-16 text-center text-profondo/50">
-          <Inbox className="mb-2 h-8 w-8" />
-          <p className="text-sm">Nessun messaggio.</p>
-          <p className="text-xs">Invia una richiesta di prenotazione: qui arriveranno ricevute e conferme.</p>
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {postaCliente.map((m) => {
-            const open = aperto === m.id
-            return (
-              <li key={m.id} className="overflow-hidden rounded-lg border border-calce-200 bg-white">
-                <button
-                  onClick={() => { setAperto(open ? undefined : m.id); if (!m.letto) segnaEmailLetta(m.id) }}
-                  className="flex w-full items-start gap-2 px-3 py-2.5 text-left"
-                >
-                  <span className={cn('mt-1 h-2 w-2 shrink-0 rounded-full', m.letto ? 'bg-transparent' : 'bg-boa')} />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center justify-between gap-2">
-                      <span className={cn('truncate text-sm', m.letto ? 'font-medium text-profondo' : 'font-bold text-profondo')}>{m.oggetto}</span>
-                      <span className="num shrink-0 text-[11px] text-profondo/45">{fmtData(m.data)}</span>
-                    </span>
-                    <span className="truncate text-xs text-profondo/50">da {m.da}</span>
-                  </span>
-                </button>
-                {open && <div className="whitespace-pre-line border-t border-calce-200 bg-calce/40 px-3 py-2.5 text-sm text-profondo/80">{m.corpo}</div>}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </Drawer>
-  )
-}
-
 // ————————————————— Form di prenotazione —————————————————
 
 function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
@@ -863,7 +811,7 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
   const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy
 
-  if (inviato) return <Successo testo="La tua richiesta di ombrellone è partita. Trovi la ricevuta ne “La mia posta” — appena la confermiamo dal gestionale ricevi l’email di conferma." onAltro={() => setInviato(false)} />
+  if (inviato) return <Successo testo="La tua richiesta di ombrellone è partita. Ti abbiamo mandato la ricevuta per email e WhatsApp: appena la confermiamo dal gestionale ricevi l’email di conferma." onAltro={() => setInviato(false)} />
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaOmbrellone({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), dal: f.dal, al: f.al, tipologiaPostazione: f.tipologia, persone: Math.max(1, Number(f.persone) || 1) }); setInviato(true); onInviato(f.nome.trim().split(' ')[0]) }}
@@ -920,7 +868,7 @@ function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
     setF((p) => ({ ...p, data: d, ora: '', turno: st.pieno[p.turno] ? (p.turno === 'cena' ? 'pranzo' : 'cena') : p.turno }))
   }
 
-  if (inviato) return <Successo testo="La tua richiesta di tavolo è partita. Trovi la ricevuta ne “La mia posta”; ti confermiamo il tavolo dal gestionale." onAltro={() => setInviato(false)} />
+  if (inviato) return <Successo testo="La tua richiesta di tavolo è partita. Ti abbiamo mandato la ricevuta per email e WhatsApp; ti confermiamo il tavolo dal gestionale." onAltro={() => setInviato(false)} />
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, ora: f.ora, coperti: Math.max(1, nCoperti), note: f.note.trim() || undefined }); setInviato(true); onInviato(f.nome.trim().split(' ')[0]) }}
