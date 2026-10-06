@@ -114,7 +114,7 @@ jobs:
             echo "ok $1"
           }
           # Il trigger push chiama le funzioni dall'interno della rete Docker
-          segreto beachin_functions_url "http://kong:8000/functions/v1"
+          segreto beachin_functions_url "http://api-gw:8000/functions/v1"
           segreto beachin_anon_key "${{ vars.VITE_SUPABASE_ANON_KEY }}"
           segreto beachin_vapid_private "$VAPID"
 

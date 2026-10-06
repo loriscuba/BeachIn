@@ -309,7 +309,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Demo: baseline 0001 registrata il 5/10/2026. Migrazioni *compatibili all'indietro*: il DB va online prima del web.
 - **Workflow `.github/workflows/deploy.yml`** (solo manuale, sceglie ambiente + ref):
   demo → migrazioni + `supabase functions deploy`; produzione → SSH su prod-db: migrazioni, Vault (`beachin_functions_url`
-  = `http://kong:8000/functions/v1`, `beachin_anon_key`, `beachin_vapid_private`), copia funzioni in
+  = `http://api-gw:8000/functions/v1`, `beachin_anon_key`, `beachin_vapid_private`), copia funzioni in
   `volumes/functions` + `GROQ_API_KEY` nel `.env` + riavvio container `functions`; poi build + `deploy/rilascio.sh` su
   prod-web. `rollback.yml` = versione web precedente (sulla VM 5 versioni in `/var/www/rilasci`).
 - **Settings → Environments**:

@@ -49,6 +49,9 @@ valori = {
     'SECRET_KEY_BASE': secrets.token_hex(32),
     'VAULT_ENC_KEY': secrets.token_hex(16),
     'PG_META_CRYPTO_KEY': secrets.token_hex(16),
+    'REALTIME_DB_ENC_KEY': secrets.token_hex(8),
+    'S3_PROTOCOL_ACCESS_KEY_ID': secrets.token_hex(16),
+    'S3_PROTOCOL_ACCESS_KEY_SECRET': secrets.token_hex(32),
     'LOGFLARE_PUBLIC_ACCESS_TOKEN': secrets.token_hex(24),
     'LOGFLARE_PRIVATE_ACCESS_TOKEN': secrets.token_hex(24),
     'POOLER_TENANT_ID': 'beachin',
@@ -84,6 +87,9 @@ PW=$(grep '^POSTGRES_PASSWORD=' /opt/supabase/docker/.env | cut -d= -f2-)
 exec docker exec -i -e PGPASSWORD="$PW" supabase-db psql -h localhost -U postgres -d postgres "$@"
 SH
 chmod 755 /usr/local/bin/beachin-psql
+# PostgREST espone lo schema beachin: deve esistere già (le tabelle arrivano con le migrazioni del workflow)
+for i in $(seq 30); do echo 'create schema if not exists beachin;' | beachin-psql -q -f - && break; sleep 10; done
+docker compose restart rest
 
 # Backup notturno del database nel bucket prod-backup (db/AAAAMMGG-HHMM.dump), tiene le versioni del bucket
 cat > /usr/local/bin/beachin-backup <<SH
