@@ -674,6 +674,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const pushMail = useCallback(
     (casella: Email['casella'], tipo: Email['tipo'], da: string, a: string, oggetto: string, corpo: string) => {
+      if (casella === 'cliente' && !a?.includes('@')) return // niente email: niente mail al cliente
       const mail: Email = { id: nuovoId('MAIL'), casella, tipo, da, a, oggetto, corpo, data: config.oggi, letto: false }
       if (casella === 'cliente') setPostaCliente((p) => [mail, ...p])
       else setPostaAdmin((p) => [mail, ...p])
@@ -683,6 +684,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const [whatsapp, setWhatsapp] = useState<MessaggioWhatsApp | null>(null)
   const pushWa = useCallback((esito: MessaggioWhatsApp['esito'], nome: string, telefono: string, testo: string) => {
+    if ((telefono ?? '').replace(/\D/g, '').length < 9) return // niente cellulare: niente WhatsApp
     setWhatsapp({ id: nuovoId('WA'), nome, telefono, testo, esito })
   }, [])
   const chiudiWhatsapp = useCallback(() => setWhatsapp(null), [])
