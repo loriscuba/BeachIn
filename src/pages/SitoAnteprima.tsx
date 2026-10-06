@@ -337,7 +337,7 @@ export default function SitoAnteprima() {
             </ul>
             <div id="prenota-tavolo" className="reveal mt-10 scroll-mt-24">
               {canaliPrenotazione.ristorante
-                ? <FormRistorante onInviato={(nome) => { mostraToast(`Richiesta tavolo inviata, ${nome}! Ti abbiamo scritto per email e WhatsApp.`) }} />
+                ? <FormRistorante onInviato={(nome, dove) => { mostraToast(`Richiesta tavolo inviata, ${nome}! Ti abbiamo scritto ${dove}.`) }} />
                 : <Sospese testo="Le prenotazioni del ristorante online sono momentaneamente sospese. Chiamaci per riservare un tavolo." />}
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function SitoAnteprima() {
           <div className="reveal lg:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-tenda">Prenota</p>
             <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Il tuo posto al sole <em className="text-tenda">ti aspetta</em>.</h2>
-            <p className="mt-5 max-w-md leading-7 text-white/70">Invia la richiesta: ricevi subito la ricevuta per email e WhatsApp e ti confermiamo la postazione in pochi minuti.</p>
+            <p className="mt-5 max-w-md leading-7 text-white/70">Invia la richiesta: ricevi subito la ricevuta (per email, su WhatsApp o entrambi, secondo i recapiti che lasci) e ti confermiamo la postazione in pochi minuti.</p>
             {disp && (
               <div className="mt-10 flex items-center gap-6">
                 <Anello percento={disp.occupazione} />
@@ -382,7 +382,7 @@ export default function SitoAnteprima() {
             </ul>
           </div>
           <div className="reveal lg:col-span-3">
-            <FormOmbrellone onInviato={(nome) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Ti abbiamo scritto per email e WhatsApp.`) }} />
+            <FormOmbrellone onInviato={(nome, dove) => { mostraToast(`Richiesta ombrellone inviata, ${nome}! Ti abbiamo scritto ${dove}.`) }} />
           </div>
         </div>
       </section>
@@ -576,7 +576,7 @@ export default function SitoAnteprima() {
         evento={eventoSel}
         prenotabile={canaliPrenotazione.eventi}
         onChiudi={() => setEventoSel(undefined)}
-        onPrenotato={(nome) => { setEventoSel(undefined); mostraToast(`Richiesta di partecipazione inviata, ${nome}! Ti abbiamo scritto per email e WhatsApp.`) }}
+        onPrenotato={(nome, dove) => { setEventoSel(undefined); mostraToast(`Richiesta di partecipazione inviata, ${nome}! Ti abbiamo scritto ${dove}.`) }}
       />
       <AnteprimaWhatsApp />
     </div>
@@ -726,7 +726,7 @@ function Lightbox({ foto, indice, onCambia, onChiudi }: { foto: { src: string; t
   )
 }
 
-function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento?: Evento; prenotabile: boolean; onChiudi: () => void; onPrenotato: (nome: string) => void }) {
+function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento?: Evento; prenotabile: boolean; onChiudi: () => void; onPrenotato: (nome: string, dove: string) => void }) {
   const { inviaRichiestaEvento } = useDemoData()
   const [f, setF] = useState({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false })
   const [inviato, setInviato] = useState(false)
@@ -746,7 +746,7 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
       persone: Math.max(1, Number(f.persone) || 1), note: f.note.trim() || undefined,
     })
     setInviato(true)
-    onPrenotato(f.nome.trim().split(' ')[0])
+    onPrenotato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono))
   }
 
   return (
@@ -779,7 +779,7 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
             <div className="rounded-2xl border border-acqua/40 bg-acqua/10 p-5">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-acqua text-white"><Check className="h-5 w-5" /></span>
-                <div><p className="font-semibold text-profondo">Richiesta inviata!</p><p className="text-sm text-profondo/60">Ti abbiamo mandato la ricevuta per email e WhatsApp. Ti confermiamo la partecipazione dal gestionale.</p></div>
+                <div><p className="font-semibold text-profondo">Richiesta inviata!</p><p className="text-sm text-profondo/60">Ti abbiamo mandato la ricevuta {doveScritto(f.email, f.telefono)}. Ti confermiamo la partecipazione dal gestionale.</p></div>
               </div>
             </div>
           ) : (
@@ -803,7 +803,7 @@ function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento
 
 // ————————————————— Form di prenotazione —————————————————
 
-function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
+function FormOmbrellone({ onInviato }: { onInviato: (nome: string, dove: string) => void }) {
   const { inviaRichiestaOmbrellone } = useDemoData()
   const oggi = config.stagione.oggi
   const [f, setF] = useState({ nome: '', email: '', telefono: '', dal: oggi, al: oggi, tipologia: 'ombrellone_2_lettini' as TipologiaPostazione, persone: '2', privacy: false })
@@ -811,10 +811,10 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
   const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy
 
-  if (inviato) return <Successo testo="La tua richiesta di ombrellone è partita. Ti abbiamo mandato la ricevuta per email e WhatsApp: appena la confermiamo dal gestionale ricevi l’email di conferma." onAltro={() => setInviato(false)} />
+  if (inviato) return <Successo testo={`La tua richiesta di ombrellone è partita. Ti abbiamo mandato la ricevuta ${doveScritto(f.email, f.telefono)}: appena la confermiamo dal gestionale ti scriviamo di nuovo.`} onAltro={() => setInviato(false)} />
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaOmbrellone({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), dal: f.dal, al: f.al, tipologiaPostazione: f.tipologia, persone: Math.max(1, Number(f.persone) || 1) }); setInviato(true); onInviato(f.nome.trim().split(' ')[0]) }}
+    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaOmbrellone({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), dal: f.dal, al: f.al, tipologiaPostazione: f.tipologia, persone: Math.max(1, Number(f.persone) || 1) }); setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }}
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 text-profondo shadow-2xl shadow-profondo-900/30 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold">Richiedi il tuo ombrellone</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
@@ -839,7 +839,7 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
   )
 }
 
-function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
+function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: string) => void }) {
   const { inviaRichiestaRistorante, tavoliDelGiorno, prenotazioniRistorante, richiesteRistorante, giorniChiusi } = useDemoData()
   const oggi = config.stagione.oggi
   // richieste dal sito ancora da confermare: occupano già posti e orari
@@ -868,10 +868,10 @@ function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
     setF((p) => ({ ...p, data: d, ora: '', turno: st.pieno[p.turno] ? (p.turno === 'cena' ? 'pranzo' : 'cena') : p.turno }))
   }
 
-  if (inviato) return <Successo testo="La tua richiesta di tavolo è partita. Ti abbiamo mandato la ricevuta per email e WhatsApp; ti confermiamo il tavolo dal gestionale." onAltro={() => setInviato(false)} />
+  if (inviato) return <Successo testo={`La tua richiesta di tavolo è partita. Ti abbiamo mandato la ricevuta ${doveScritto(f.email, f.telefono)}; ti confermiamo il tavolo dal gestionale.`} onAltro={() => setInviato(false)} />
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, ora: f.ora, coperti: Math.max(1, nCoperti), note: f.note.trim() || undefined }); setInviato(true); onInviato(f.nome.trim().split(' ')[0]) }}
+    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, ora: f.ora, coperti: Math.max(1, nCoperti), note: f.note.trim() || undefined }); setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }}
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 shadow-xl shadow-profondo/10 ring-1 ring-calce-200 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold text-profondo">Prenota un tavolo</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
@@ -950,6 +950,13 @@ function Sospese({ testo, className }: { testo: string; className?: string }) {
       </div>
     </div>
   )
+}
+
+/** Dove abbiamo scritto al cliente: email se valida, WhatsApp se c'è il cellulare, entrambi se entrambi. */
+function doveScritto(email: string, telefono: string) {
+  const mail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const wa = telefono.replace(/\D/g, '').length >= 9
+  return mail && wa ? 'per email e su WhatsApp' : wa ? 'su WhatsApp' : 'per email'
 }
 
 /** Basta uno dei due recapiti: email valida oppure cellulare (almeno 9 cifre). */
