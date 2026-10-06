@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   Loader2, ExternalLink, CalendarCheck, MessageSquare, Star, BarChart3, Globe, Check, X as XIcon,
   Image, Newspaper, Tags, Umbrella, Search, FileText, UtensilsCrossed, Inbox, Mail, Ticket, Upload,
@@ -16,8 +16,10 @@ import { numero, percento, data as fmtData } from '@/lib/formatters'
 import { etichetteTipologia } from '@/lib/arenile'
 import { importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
+import Marketing from './sito/Marketing'
 
-type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni'
+type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni' | 'marketing'
+const SEZIONI: Sezione[] = ['panoramica', 'prenotazioni', 'posta', 'contenuti', 'interazioni', 'marketing']
 const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'Pranzo' : 'Cena')
 
 export default function Sito() {
@@ -33,7 +35,10 @@ export default function Sito() {
   const arenile = useModuli().moduloAttivo('arenile')
   const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
-  const [sez, setSez] = useState<Sezione>('panoramica')
+  // Sezione da `?tab=` (sottomenu laterale), default Panoramica.
+  const [q, setQ] = useSearchParams()
+  const sez = SEZIONI.find((x) => x === q.get('tab')) ?? 'panoramica'
+  const setSez = (v: Sezione) => setQ({ tab: v })
   const [home, setHome] = useState({ titolo: '', sottotitolo: '', testo: '' })
 
   useEffect(() => {
@@ -76,12 +81,15 @@ export default function Sito() {
             { valore: 'posta', etichetta: `Posta${postaNonLetta ? ` (${postaNonLetta})` : ''}` },
             { valore: 'contenuti', etichetta: 'Contenuti' },
             { valore: 'interazioni', etichetta: 'Recensioni e messaggi' },
+            { valore: 'marketing', etichetta: 'Sito e marketing' },
           ]}
         />
         <Link to="/sito/anteprima">
           <Button variante="primario" dimensione="sm"><ExternalLink className="h-4 w-4" /> Anteprima sito</Button>
         </Link>
       </div>
+
+      {sez === 'marketing' && <Marketing />}
 
       {sez === 'panoramica' && (
         <>

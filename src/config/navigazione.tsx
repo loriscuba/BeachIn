@@ -71,7 +71,13 @@ export const navigazione: VoceNav[] = [
   { percorso: '/personale', etichetta: 'Personale', icona: UserCog, modulo: 'personale', fase: 7, gruppo: 'Gestione' },
   { percorso: '/eventi', etichetta: 'Eventi', icona: CalendarDays, modulo: 'eventi', fase: 7, gruppo: 'Gestione' },
 
-  { percorso: '/sito', etichetta: 'Sito internet', icona: Globe, modulo: 'sito', fase: 8, gruppo: 'Presenza online' },
+  {
+    percorso: '/sito', etichetta: 'Sito internet', icona: Globe, modulo: 'sito', fase: 8, gruppo: 'Presenza online',
+    figli: [
+      { percorso: '/sito?tab=panoramica', etichetta: 'Panoramica', modulo: 'sito' },
+      { percorso: '/sito?tab=marketing', etichetta: 'Sito e marketing', modulo: 'sito' },
+    ],
+  },
 
   { percorso: '/impostazioni', etichetta: 'Impostazioni', icona: Settings, modulo: 'impostazioni', fase: 1, gruppo: 'Impostazioni' },
 ]
