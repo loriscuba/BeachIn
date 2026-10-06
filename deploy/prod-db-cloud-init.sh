@@ -3,7 +3,9 @@
 # Prima del lancio sostituire __DOMINIO__ (es. api-1-2-3-4.sslip.io) e __PAR_BACKUP__ (URL pre-autenticato
 # di sola scrittura sul bucket prod-backup, termina con /o/). I segreti si generano qui e restano sulla VM
 # (/opt/supabase/docker/.env); in console viene stampata solo la chiave anon, che è pubblica.
-set -eux
+# Niente set -x: stamperebbe segreti nella console seriale. I passi si vedono dalle righe BEACHIN-PASSO.
+set -eu
+passo() { echo "BEACHIN-PASSO $*"; }
 DOMINIO=__DOMINIO__
 PAR_BACKUP='__PAR_BACKUP__'
 DIR=/opt/supabase/docker
@@ -13,11 +15,13 @@ iptables -I INPUT 5 -p tcp --dport 80 -m state --state NEW -j ACCEPT
 iptables -I INPUT 5 -p tcp --dport 443 -m state --state NEW -j ACCEPT
 netfilter-persistent save
 
+passo pacchetti
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y caddy git curl unattended-upgrades
 curl -fsSL https://get.docker.com | sh
 
 # Supabase (docker compose ufficiale)
+passo supabase
 git clone --depth 1 https://github.com/supabase/supabase /tmp/supabase
 mkdir -p /opt/supabase && cp -r /tmp/supabase/docker "$DIR" && rm -rf /tmp/supabase
 cd "$DIR"
@@ -69,14 +73,15 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
 YML
 
+passo avvio-container
 docker compose pull -q
 docker compose up -d
 
 # psql dentro il container (usato dal workflow "Deploy" via SSH e dal backup)
 cat > /usr/local/bin/beachin-psql <<'SH'
 #!/bin/bash
-set -a; . /opt/supabase/docker/.env; set +a
-exec docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" supabase-db psql -h localhost -U postgres -d postgres "$@"
+PW=$(grep '^POSTGRES_PASSWORD=' /opt/supabase/docker/.env | cut -d= -f2-)
+exec docker exec -i -e PGPASSWORD="$PW" supabase-db psql -h localhost -U postgres -d postgres "$@"
 SH
 chmod 755 /usr/local/bin/beachin-psql
 
@@ -84,8 +89,8 @@ chmod 755 /usr/local/bin/beachin-psql
 cat > /usr/local/bin/beachin-backup <<SH
 #!/bin/bash
 set -euo pipefail
-set -a; . /opt/supabase/docker/.env; set +a
-docker exec -e PGPASSWORD="\$POSTGRES_PASSWORD" supabase-db pg_dump -h localhost -U supabase_admin -Fc postgres \
+PW=\$(grep '^POSTGRES_PASSWORD=' /opt/supabase/docker/.env | cut -d= -f2-)
+docker exec -e PGPASSWORD="\$PW" supabase-db pg_dump -h localhost -U supabase_admin -Fc postgres \
   | curl -fsS -X PUT --data-binary @- '${PAR_BACKUP}db/'"\$(date -u +%Y%m%d-%H%M)".dump
 SH
 chmod 700 /usr/local/bin/beachin-backup
@@ -108,7 +113,8 @@ systemctl enable caddy
 systemctl restart caddy
 
 # Attendi che l'API risponda, poi stampa lo stato in console (letto con "console-history")
-. "$DIR/.env"
+passo verifica
+ANON_KEY=$(grep '^ANON_KEY=' "$DIR/.env" | cut -d= -f2-)
 for i in $(seq 60); do
   curl -fsS -o /dev/null "http://localhost:8000/rest/v1/" -H "apikey: $ANON_KEY" && break
   sleep 10
