@@ -14,7 +14,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 
 type Richiesta = {
   id: string; nome: string; email: string; stato: string
-  data?: string; turno?: string; coperti?: number // ristorante
+  data?: string; turno?: string; ora?: string | null; coperti?: number // ristorante
   evento_nome?: string; evento_data?: string; persone?: number // eventi
 }
 
@@ -27,7 +27,7 @@ function testo(tabella: string, r: Richiesta): { oggetto: string; righe: string[
       return { oggetto: `Evento non disponibile — ${r.evento_nome}`, righe: [`ci dispiace, per ${ev} non ci sono più posti.`, 'Contattaci per altri eventi in programma.'] }
     return { oggetto: `Richiesta ricevuta — ${r.evento_nome}`, righe: [`abbiamo ricevuto la tua richiesta di partecipazione a ${ev} per ${r.persone} persone.`, 'Ti confermeremo a breve.'] }
   }
-  const quando = `${r.turno === 'pranzo' ? 'pranzo' : 'cena'} di ${dataIt(r.data ?? '')}`
+  const quando = `${r.turno === 'pranzo' ? 'pranzo' : 'cena'} di ${dataIt(r.data ?? '')}${r.ora ? ` alle <b>${esc(r.ora)}</b>` : ''}`
   if (r.stato === 'confermata')
     return { oggetto: 'Tavolo confermato ✓', righe: [`il tuo tavolo per ${r.coperti} persone a ${quando} è <b>confermato</b>.`, 'Ti aspettiamo!'] }
   if (r.stato === 'rifiutata')

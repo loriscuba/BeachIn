@@ -15,7 +15,8 @@ import { Modal } from '@/components/ui/Modal'
 import { euro, dataEstesa, data as fmtData } from '@/lib/formatters'
 import { etichettePeriodo, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
-import { statoGiorno } from '@/lib/disponibilita'
+import { statoGiorno, prenotabilita, descriviSistemazione } from '@/lib/disponibilita'
+import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 import { CalendarioDisponibilita } from '@/components/sito/CalendarioDisponibilita'
 
 const file: FilaId[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
@@ -589,6 +590,7 @@ export default function SitoAnteprima() {
         onChiudi={() => setEventoSel(undefined)}
         onPrenotato={(nome) => { setEventoSel(undefined); mostraToast(`Richiesta di partecipazione inviata, ${nome}! Controlla “La mia posta”.`); setPostaAperta(true) }}
       />
+      <AnteprimaWhatsApp />
     </div>
   )
 }
@@ -890,26 +892,38 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string) => void }) {
 }
 
 function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
-  const { inviaRichiestaRistorante, tavoliDelGiorno, prenotazioniRistorante, giorniChiusi } = useDemoData()
+  const { inviaRichiestaRistorante, tavoliDelGiorno, prenotazioniRistorante, richiesteRistorante, giorniChiusi } = useDemoData()
   const oggi = config.stagione.oggi
-  // disponibilità dal vivo: giorni chiusi (dall'app admin/gestionale) e turni al completo
-  const statoDi = (d: string) => statoGiorno(tavoliDelGiorno(d), prenotazioniRistorante, giorniChiusi, d)
-  const [f, setF] = useState({ nome: '', email: '', telefono: '', data: oggi, turno: 'cena' as Turno, coperti: '2', note: '', privacy: false })
+  // richieste dal sito ancora da confermare: occupano già posti e orari
+  const inAttesa = useMemo(() => richiesteRistorante.filter((r) => r.stato === 'da_confermare'), [richiesteRistorante])
+  const disp = (d: string, t: Turno) => prenotabilita(tavoliDelGiorno(d), prenotazioniRistorante, inAttesa, d, t)
+  // disponibilità dal vivo: giorni chiusi, turni al completo (nessun gruppo ci sta più, nemmeno unendo tavoli)
+  const statoDi = (d: string) => {
+    const st = statoGiorno(tavoliDelGiorno(d), prenotazioniRistorante, giorniChiusi, d)
+    if (st.stato === 'chiuso') return st
+    const pieno = { pranzo: st.pieno.pranzo || disp(d, 'pranzo').coperti.length === 0, cena: st.pieno.cena || disp(d, 'cena').coperti.length === 0 }
+    return { ...st, pieno, stato: pieno.pranzo && pieno.cena ? 'pieno' as const : pieno.pranzo || pieno.cena ? 'parziale' as const : 'libero' as const }
+  }
+  const [f, setF] = useState({ nome: '', email: '', telefono: '', data: oggi, turno: 'cena' as Turno, ora: '', coperti: '2', note: '', privacy: false })
   const [inviato, setInviato] = useState(false)
   const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const sel = statoDi(f.data)
   const turnoPieno = sel.pieno[f.turno]
-  const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy && !turnoPieno
+  const pren = disp(f.data, f.turno)
+  const nCoperti = Number(f.coperti) || 0
+  const sist = pren.coperti.find((c) => c.n === nCoperti)?.sistemazione
+  const oraOk = pren.orari.some((o) => o.ora === f.ora && o.postiLiberi >= nCoperti)
+  const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy && !turnoPieno && sist && oraOk
   const scegliData = (d: string) => {
     const st = statoDi(d)
     // se il turno scelto è al completo quel giorno, passa all'altro
-    setF((p) => ({ ...p, data: d, turno: st.pieno[p.turno] ? (p.turno === 'cena' ? 'pranzo' : 'cena') : p.turno }))
+    setF((p) => ({ ...p, data: d, ora: '', turno: st.pieno[p.turno] ? (p.turno === 'cena' ? 'pranzo' : 'cena') : p.turno }))
   }
 
   if (inviato) return <Successo testo="La tua richiesta di tavolo è partita. Trovi la ricevuta ne “La mia posta”; ti confermiamo il tavolo dal gestionale." onAltro={() => setInviato(false)} />
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, coperti: Math.max(1, Number(f.coperti) || 1), note: f.note.trim() || undefined }); setInviato(true); onInviato(f.nome.trim().split(' ')[0]) }}
+    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, ora: f.ora, coperti: Math.max(1, nCoperti), note: f.note.trim() || undefined }); setInviato(true); onInviato(f.nome.trim().split(' ')[0]) }}
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 shadow-xl shadow-profondo/10 ring-1 ring-calce-200 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold text-profondo">Prenota un tavolo</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
@@ -921,12 +935,40 @@ function FormRistorante({ onInviato }: { onInviato: (nome: string) => void }) {
         <CalendarioDisponibilita valore={f.data} minimo={oggi} onScegli={scegliData} stato={(d) => statoDi(d).stato} />
       </div>
       <Campo label="Turno">
-        <select className={pc} value={f.turno} onChange={(e) => set('turno', e.target.value)}>
+        <select className={pc} value={f.turno} onChange={(e) => setF((p) => ({ ...p, turno: e.target.value as Turno, ora: '' }))}>
           <option value="pranzo" disabled={sel.pieno.pranzo}>Pranzo{sel.pieno.pranzo ? ' — al completo' : ''}</option>
           <option value="cena" disabled={sel.pieno.cena}>Cena{sel.pieno.cena ? ' — al completo' : ''}</option>
         </select>
       </Campo>
-      <Campo label="Coperti"><input type="number" min={1} className={pc} value={f.coperti} onChange={(e) => set('coperti', e.target.value)} /></Campo>
+      <Campo label="Persone">
+        <select className={pc} value={sist ? f.coperti : ''} onChange={(e) => set('coperti', e.target.value)} disabled={turnoPieno}>
+          {!sist && <option value="">Scegli…</option>}
+          {pren.coperti.map((c) => <option key={c.n} value={c.n}>{c.n} {c.n === 1 ? 'persona' : 'persone'}</option>)}
+        </select>
+      </Campo>
+      {!turnoPieno && (
+        <div className="col-span-2">
+          <span className="mb-1 block text-xs font-medium text-profondo/60">Orario di arrivo</span>
+          <div className="flex flex-wrap gap-2">
+            {pren.orari.map((o) => {
+              const off = o.postiLiberi < Math.max(1, nCoperti)
+              return (
+                <button key={o.ora} type="button" disabled={off} onClick={() => set('ora', o.ora)}
+                  className={cn('num h-10 rounded-full px-4 text-sm font-semibold ring-1 transition-colors',
+                    f.ora === o.ora ? 'bg-cabina text-white ring-cabina' : off ? 'cursor-not-allowed bg-calce text-profondo/30 line-through ring-calce-200' : 'bg-white text-profondo ring-calce-200 hover:ring-cabina')}
+                  title={off ? 'Orario al completo' : `${o.postiLiberi} posti ancora in arrivo a quest'ora`}>
+                  {o.ora}
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-1.5 text-xs text-profondo/55">
+            {sist ? <>Per {nCoperti} {nCoperti === 1 ? 'persona' : 'persone'}: {descriviSistemazione(sist)}.</> : 'Scegli quante persone siete.'}
+            {pren.coperti.length > 0 && <> Online fino a {pren.coperti[pren.coperti.length - 1].n} persone; per gruppi più grandi chiamaci.</>}
+            {!f.ora && sist && <span className="font-medium text-[#9A6B00]"> Scegli un orario.</span>}
+          </p>
+        </div>
+      )}
       {(sel.stato === 'chiuso' || turnoPieno) && (
         <p className="col-span-2 rounded-xl bg-boa/10 px-3 py-2 text-sm font-medium text-boa">
           {sel.stato === 'chiuso' ? `Il ristorante è chiuso questo giorno${sel.nota ? ` (${sel.nota})` : ''}: scegli un’altra data.` : 'Questo turno è al completo: scegli un altro giorno o turno.'}

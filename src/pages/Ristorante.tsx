@@ -231,7 +231,7 @@ export default function Ristorante() {
                 {daConfermare.map((r) => (
                   <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
                     <button type="button" onClick={() => { setGiornoStato(r.data); setTurno(r.turno) }} className="min-w-0 text-left" title="Vai al giorno">
-                      <span className="mr-2 inline-block rounded-md bg-profondo px-2 py-0.5 text-xs font-semibold capitalize text-white">{format(parseISO(r.data), 'EEE d MMM', { locale: itLocale })} · {r.turno}</span>
+                      <span className="mr-2 inline-block rounded-md bg-profondo px-2 py-0.5 text-xs font-semibold capitalize text-white">{format(parseISO(r.data), 'EEE d MMM', { locale: itLocale })} · {r.turno}{r.ora ? ` ${r.ora}` : ''}</span>
                       <span className="text-profondo"><b>{r.nome}</b> · {r.coperti} pers.{r.telefono && <> · {r.telefono}</>}{r.note && <span className="text-profondo/55"> · {r.note}</span>}</span>
                     </button>
                     <span className="flex gap-1.5">

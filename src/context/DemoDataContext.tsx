@@ -96,6 +96,7 @@ export interface DatiRichiestaRistorante {
   telefono: string
   data: string
   turno: Turno
+  ora?: string
   coperti: number
   note?: string
 }
@@ -144,7 +145,7 @@ export interface MessaggioWhatsApp {
   nome: string
   telefono: string
   testo: string
-  esito: 'conferma' | 'rifiuto'
+  esito: 'richiesta' | 'conferma' | 'rifiuto'
 }
 
 interface DemoDataValue {
@@ -433,11 +434,11 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     tabella: 'richieste_ristorante', righe: richiesteRistorante, setRighe: setRichiesteRistorante,
     aRiga: (r) => ({
       id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, data: r.data,
-      turno: r.turno, coperti: r.coperti, stato: r.stato, note: r.note ?? null, ts: r.ts ?? 0,
+      turno: r.turno, ora: r.ora ?? null, coperti: r.coperti, stato: r.stato, note: r.note ?? null, ts: r.ts ?? 0,
     }),
     daRiga: (r) => ({
       id: r.id, ricevutaIl: r.ricevuta_il as string, nome: r.nome as string, email: r.email as string, telefono: r.telefono as string,
-      data: r.data as string, turno: r.turno as Turno, coperti: Number(r.coperti), stato: r.stato as RichiestaRistorante['stato'],
+      data: r.data as string, turno: r.turno as Turno, ora: (r.ora as string) ?? undefined, coperti: Number(r.coperti), stato: r.stato as RichiestaRistorante['stato'],
       note: (r.note as string) ?? undefined, ts: Number(r.ts),
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
@@ -488,7 +489,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setPrenotazioniRistorante((prev) => {
       const nuove = conf.filter((r) => !prev.some((p) => p.id === `PR-${r.id}`))
       return nuove.length
-        ? [...nuove.map((r): PrenotazioneRistorante => ({ id: `PR-${r.id}`, data: r.data, turno: r.turno, nome: r.nome, coperti: r.coperti, stato: 'confermata', note: r.note, telefono: r.telefono, origine: 'sito' })), ...prev]
+        ? [...nuove.map((r): PrenotazioneRistorante => ({ id: `PR-${r.id}`, data: r.data, turno: r.turno, ora: r.ora, nome: r.nome, coperti: r.coperti, stato: 'confermata', note: r.note, telefono: r.telefono, origine: 'sito' })), ...prev]
         : prev
     })
   }, [richiesteRistorante])
@@ -668,6 +669,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const gg = (iso?: string) => (iso ? iso.split('-').reverse().join('/') : '')
   const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'pranzo' : 'cena')
+  /** "cena alle 20:30" oppure solo "cena". */
+  const quandoTurno = (t: Turno, ora?: string) => `${turnoLabel(t)}${ora ? ` alle ${ora}` : ''}`
 
   const pushMail = useCallback(
     (casella: Email['casella'], tipo: Email['tipo'], da: string, a: string, oggetto: string, corpo: string) => {
@@ -694,18 +697,20 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di ombrellone per ${d.persone} persone dal ${gg(d.dal)} al ${gg(d.al)}.\nTi confermeremo la disponibilità a breve.\n\n${config.nome}`)
     pushMail('admin', 'notifica', `${d.nome} <${d.email || d.telefono}>`, config.email || 'gestione', 'Nuova richiesta ombrellone dal sito',
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nOmbrellone · ${d.persone} persone · dal ${gg(d.dal)} al ${gg(d.al)}${d.messaggio ? `\nNote: ${d.messaggio}` : ''}\n\nDa confermare in gestionale.`)
-  }, [pushMail])
+    pushWa('richiesta', d.nome, d.telefono, `Ciao ${nomeBreve(d.nome)} 👋\nabbiamo ricevuto la tua richiesta di ombrellone dal *${gg(d.dal)}* al *${gg(d.al)}* (${d.persone} persone).\nTi confermiamo a breve qui su WhatsApp ⏳\n${config.nome}`)
+  }, [pushMail, pushWa])
 
   const inviaRichiestaRistorante = useCallback((d: DatiRichiestaRistorante) => {
     setRichiesteRistorante((prev) => [
-      { id: nuovoId('RR'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, coperti: d.coperti, stato: 'da_confermare', note: d.note, ts: Date.now() },
+      { id: nuovoId('RR'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, ora: d.ora, coperti: d.coperti, stato: 'da_confermare', note: d.note, ts: Date.now() },
       ...prev,
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — tavolo ristorante',
-      `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di tavolo per ${d.coperti} coperti (${turnoLabel(d.turno)}) del ${gg(d.data)}.\nTi confermeremo a breve.\n\n${config.nome}`)
+      `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di tavolo per ${d.coperti} coperti (${quandoTurno(d.turno, d.ora)}) del ${gg(d.data)}.\nTi confermeremo a breve.\n\n${config.nome}`)
     pushMail('admin', 'notifica', `${d.nome} <${d.email || d.telefono}>`, config.email || 'gestione', 'Nuova richiesta tavolo dal sito',
-      `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nRistorante · ${d.coperti} coperti · ${turnoLabel(d.turno)} del ${gg(d.data)}${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
-  }, [pushMail])
+      `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nRistorante · ${d.coperti} coperti · ${quandoTurno(d.turno, d.ora)} del ${gg(d.data)}${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
+    pushWa('richiesta', d.nome, d.telefono, `Ciao ${nomeBreve(d.nome)} 👋\nabbiamo ricevuto la tua richiesta di tavolo per *${d.coperti}* a *${quandoTurno(d.turno, d.ora)}* del *${gg(d.data)}*.\nTi confermiamo a breve qui su WhatsApp ⏳\n${config.nome}`)
+  }, [pushMail, pushWa])
 
   const confermaPrenotazione = useCallback((id: string) => {
     const r = prenRef.current.find((p) => p.id === id)
@@ -735,17 +740,17 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
           : [{ id: `PR-${r.id}`, data: r.data, turno: r.turno, nome: r.nome, coperti: r.coperti, stato: 'confermata', note: r.note, telefono: r.telefono, origine: 'sito' }, ...prev]
       )
       pushMail('cliente', 'conferma', config.nome, r.email, 'Tavolo confermato ✓',
-        `Gentile ${r.nome},\nil tuo tavolo per ${r.coperti} coperti (${turnoLabel(r.turno)}) del ${gg(r.data)} è CONFERMATO.\nA presto!\n\n${config.nome}`)
+        `Gentile ${r.nome},\nil tuo tavolo per ${r.coperti} coperti (${quandoTurno(r.turno, r.ora)}) del ${gg(r.data)} è CONFERMATO.\nA presto!\n\n${config.nome}`)
     }
-    if (r) pushWa('conferma', r.nome, r.telefono, `Ciao ${nomeBreve(r.nome)} 👋\nil tuo tavolo per *${r.coperti}* a ${turnoLabel(r.turno)} del *${gg(r.data)}* è *confermato* ✅\nA presto al ${config.nome}! 🍽️🌊`)
+    if (r) pushWa('conferma', r.nome, r.telefono, `Ciao ${nomeBreve(r.nome)} 👋\nil tuo tavolo per *${r.coperti}* a *${quandoTurno(r.turno, r.ora)}* del *${gg(r.data)}* è *confermato* ✅\nA presto al ${config.nome}! 🍽️🌊`)
   }, [pushMail, pushWa])
 
   const rifiutaRistorante = useCallback((id: string) => {
     const r = richRef.current.find((p) => p.id === id)
     setRichiesteRistorante((prev) => prev.map((p) => (p.id === id ? { ...p, stato: 'rifiutata' } : p)))
     if (r) pushMail('cliente', 'rifiuto', config.nome, r.email, 'Tavolo non disponibile',
-      `Gentile ${r.nome},\nci dispiace, per ${turnoLabel(r.turno)} del ${gg(r.data)} siamo al completo.\nProva con un altro turno o data.\n\n${config.nome}`)
-    if (r) pushWa('rifiuto', r.nome, r.telefono, `Ciao ${nomeBreve(r.nome)},\nci dispiace 😔 a ${turnoLabel(r.turno)} del ${gg(r.data)} siamo al completo.\nVuoi provare un altro turno o un'altra data?\n${config.nome}`)
+      `Gentile ${r.nome},\nci dispiace, per ${quandoTurno(r.turno, r.ora)} del ${gg(r.data)} siamo al completo.\nProva con un altro turno o data.\n\n${config.nome}`)
+    if (r) pushWa('rifiuto', r.nome, r.telefono, `Ciao ${nomeBreve(r.nome)},\nci dispiace 😔 a ${quandoTurno(r.turno, r.ora)} del ${gg(r.data)} siamo al completo.\nVuoi provare un altro turno o un'altra data?\n${config.nome}`)
   }, [pushMail, pushWa])
 
   const inviaRichiestaEvento = useCallback((d: DatiRichiestaEvento) => {
@@ -757,7 +762,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di partecipazione a “${d.eventoNome}” del ${gg(d.eventoData)} per ${d.persone} persone.\nTi confermeremo a breve.\n\n${config.nome}`)
     pushMail('admin', 'notifica', `${d.nome} <${d.email || d.telefono}>`, config.email || 'gestione', `Nuova richiesta evento: ${d.eventoNome}`,
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nEvento: ${d.eventoNome} del ${gg(d.eventoData)} · ${d.persone} persone${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
-  }, [pushMail])
+    pushWa('richiesta', d.nome, d.telefono, `Ciao ${nomeBreve(d.nome)} 👋\nabbiamo ricevuto la tua richiesta per *${d.eventoNome}* del *${gg(d.eventoData)}* (${d.persone} persone).\nTi confermiamo a breve qui su WhatsApp ⏳\n${config.nome}`)
+  }, [pushMail, pushWa])
 
   const confermaEvento = useCallback((id: string) => {
     const r = evtRef.current.find((p) => p.id === id)
