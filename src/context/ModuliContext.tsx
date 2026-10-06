@@ -27,9 +27,14 @@ function carica(): ModuloId[] {
   return PIANI[PIANO_DEFAULT].moduli
 }
 
-/** Unisce i moduli richiesti con i core (sempre attivi), senza duplicati. */
+/**
+ * Unisce i moduli richiesti con i core (sempre attivi), senza duplicati.
+ * Comande usa il listino del Bar: con Comande attivo, il Bar resta attivo
+ * (altrimenti dal menu sparivano Listino e Conti lasciando solo Comande).
+ */
 function conCore(moduli: ModuloId[]): ModuloId[] {
-  return Array.from(new Set<ModuloId>([...MODULI_CORE, ...moduli]))
+  const dip: ModuloId[] = moduli.includes('comande') ? ['bar'] : []
+  return Array.from(new Set<ModuloId>([...MODULI_CORE, ...moduli, ...dip]))
 }
 
 interface ModuliValue {
@@ -57,7 +62,8 @@ export function ModuliProvider({ children }: { children: ReactNode }) {
 
   const attiva = useCallback((id: ModuloId) => salva([...attivi, id]), [attivi, salva])
   const disattiva = useCallback(
-    (id: ModuloId) => salva(attivi.filter((m) => m !== id)),
+    // spegnere il Bar spegne anche Comande, che ne usa il listino
+    (id: ModuloId) => salva(attivi.filter((m) => m !== id && !(id === 'bar' && m === 'comande'))),
     [attivi, salva]
   )
   const toggle = useCallback(
