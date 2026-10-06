@@ -1,3 +1,4 @@
+import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 /**
  * App admin (rotta pubblica `/adminapp`, mobile): il gestore conferma/rifiuta le richieste
  * di tavolo arrivate dal sito e modifica il menu a voce. Con Supabase i dati sono condivisi dal vivo.
@@ -39,6 +40,7 @@ export default function AdminApp() {
       <main className="mx-auto max-w-2xl px-4 py-4">
         {dentro ? <Area /> : <Login onEntra={() => { try { localStorage.setItem(CHIAVE, '1') } catch { /* */ } setDentro(true) }} />}
       </main>
+      <AnteprimaWhatsApp />
     </div>
   )
 }
