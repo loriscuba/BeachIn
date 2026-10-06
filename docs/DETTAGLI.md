@@ -154,6 +154,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Il menu mostra **solo i moduli attivi** (niente voci col lucchetto; si attivano da Impostazioni → Moduli e piano).
 - La `Sidebar` suona il `campanello()` a ogni richiesta tavolo nuova dal sito (non al primo caricamento; audio sbloccato al primo tocco).
 - `Bar.tsx`: solo schede Listino (giacenze) e Conti (per ombrellone); tolte vendite/KPI. Modulo `bar` aggiunto al piano `ristorante_web`.
+- Dipendenza moduli (`ModuliContext`): Comande usa il listino del Bar, quindi con `comande` attivo anche `bar` resta attivo; disattivare `bar` spegne anche `comande`.
 - **Listino bar condiviso** (ott 2026): `sezioniBar` + `articoliBar` nel context, sync Supabase `beachin.bar_sezioni` /
   `beachin.articoli_bar` (semina dai seed). Usati da Bar → Listino, ComandApp e Comande (non più `getArticoliBar`, che resta
   solo per il Cruscotto). Listino tutto modificabile: articolo (modal: nome, categoria, prezzo, costo, giacenza, soglia, unità,
