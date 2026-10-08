@@ -23,6 +23,7 @@ function valida(x: unknown): ComandoMenu | null {
     case 'rimuovi': return nome ? { azione: 'rimuovi', nome } : null
     case 'prezzo': { const p = numero(c.prezzo); return nome && p !== null ? { azione: 'prezzo', nome, prezzo: p } : null }
     case 'rinomina': { const n = testo(c.nuovoNome); return nome && n ? { azione: 'rinomina', nome, nuovoNome: n } : null }
+    case 'sostituisci': { const n = testo(c.nuovoNome); return nome && n ? { azione: 'sostituisci', nome, nuovoNome: n, prezzo: numero(c.prezzo) } : null }
     case 'leggi': case 'svuota': case 'aiuto': return { azione: c.azione }
     default: return null
   }
