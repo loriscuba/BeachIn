@@ -254,7 +254,7 @@ function Lavagna() {
 
 function Contatti() {
   const tel = config.telefono.replace(/\s/g, '')
-  const wa = tel.replace(/^\+/, '')
+  const wa = (config.whatsapp || config.telefono).replace(/[\s+]/g, '')
   const righe: { icona: LucideIcon; testo: string; sotto?: string; href: string }[] = [
     { icona: Phone, testo: config.telefono, sotto: 'Chiamaci', href: `tel:${tel}` },
     { icona: MessageCircle, testo: 'WhatsApp', sotto: 'Scrivici un messaggio', href: `https://wa.me/${wa}` },
@@ -286,7 +286,7 @@ function Contatti() {
           <dt className="text-profondo/55">Pranzo</dt><dd className="num">{o.ristorantePranzo}</dd>
           <dt className="text-profondo/55">Cena</dt><dd className="num">{o.ristoranteCena}</dd>
         </dl>
-        <p className="mt-2 text-xs text-profondo/45">Ristorante aperto tutto l'anno.</p>
+        {o.nota && <p className="mt-2 text-xs text-profondo/45">{o.nota}</p>}
       </div>
     </div>
   )

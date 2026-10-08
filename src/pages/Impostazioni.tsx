@@ -1,4 +1,5 @@
-import { Building2, Umbrella, CalendarRange, Percent, Users2, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check } from 'lucide-react'
+import { useState } from 'react'
+import { Settings2, Save, Umbrella, CalendarRange, Users2, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -6,7 +7,9 @@ import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { MODULI, PIANI, type InfoModulo } from '@/config/moduli'
 import { config, STATI_POSTAZIONE } from '@/data/config'
-import { data, percento } from '@/lib/formatters'
+import { data } from '@/lib/formatters'
+import { GRUPPI, valoriCorrenti, salvaImpostazioni, type Valori, type Campo } from '@/lib/impostazioni'
+import { supabaseAttivo } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
 
 function Riga({ etichetta, valore }: { etichetta: string; valore: React.ReactNode }) {
@@ -15,6 +18,79 @@ function Riga({ etichetta, valore }: { etichetta: string; valore: React.ReactNod
       <span className="text-sm text-profondo/60">{etichetta}</span>
       <span className="num text-sm font-medium text-profondo text-right">{valore}</span>
     </div>
+  )
+}
+
+/** Valore mostrato nel campo (percentuali in %, es. 0.22 → "22"). */
+const inCampo = (c: Campo, v: string | number) => (c.tipo === 'percento' ? String(Math.round(Number(v) * 10000) / 100) : String(v ?? ''))
+const daCampo = (c: Campo, t: string): string | number => {
+  if (c.tipo === 'numero') return Number(t.replace(',', '.'))
+  if (c.tipo === 'percento') return Number(t.replace(',', '.')) / 100
+  return t.trim()
+}
+
+function ParametriModificabili() {
+  const iniziali = () => {
+    const v = valoriCorrenti()
+    return Object.fromEntries(GRUPPI.flatMap((g) => g.campi.map((c) => [c.chiave, inCampo(c, v[c.chiave])])))
+  }
+  const [testi, setTesti] = useState<Record<string, string>>(iniziali)
+  const [base] = useState(iniziali)
+  const [stato, setStato] = useState<{ tipo: 'ok' | 'errore'; msg: string } | null>(null)
+  const [salvando, setSalvando] = useState(false)
+  const modificato = Object.keys(testi).some((k) => testi[k] !== base[k])
+
+  const salva = async () => {
+    const valori: Valori = {}
+    for (const g of GRUPPI) for (const c of g.campi) {
+      const v = daCampo(c, testi[c.chiave] ?? '')
+      if (typeof v === 'number' && !Number.isFinite(v)) { setStato({ tipo: 'errore', msg: `Valore non valido: ${c.etichetta}` }); return }
+      valori[c.chiave] = v
+    }
+    setSalvando(true)
+    const errore = await salvaImpostazioni(valori)
+    setSalvando(false)
+    // in caso di successo la pagina viene rimontata coi nuovi valori
+    if (errore) setStato({ tipo: 'errore', msg: `Salvataggio non riuscito: ${errore}` })
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        titolo={<span className="inline-flex items-center gap-2"><Settings2 className="h-4 w-4 text-cabina" /> Parametri dello stabilimento</span>}
+        sottotitolo={supabaseAttivo
+          ? 'Salvati nel database: valgono subito per gestionale, sito e app clienti.'
+          : 'Modalità demo locale (senza database): le modifiche valgono fino al ricaricamento.'}
+        azione={
+          <Button dimensione="sm" onClick={salva} disabled={!modificato || salvando}>
+            <Save className="h-4 w-4" /> {salvando ? 'Salvo…' : 'Salva'}
+          </Button>
+        }
+      />
+      <CardBody className="space-y-5 pt-1">
+        {stato && <p className={cn('text-sm', stato.tipo === 'errore' ? 'text-boa' : 'text-cabina')}>{stato.msg}</p>}
+        {GRUPPI.map((g) => (
+          <fieldset key={g.id}>
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-profondo/50">{g.titolo}</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {g.campi.map((c) => (
+                <label key={c.chiave} className="block">
+                  <span className="text-xs text-profondo/60">{c.etichetta}{c.tipo === 'percento' && ' (%)'}</span>
+                  <input
+                    type={c.tipo === 'ora' ? 'time' : 'text'}
+                    inputMode={c.tipo === 'numero' || c.tipo === 'percento' ? 'decimal' : undefined}
+                    value={testi[c.chiave] ?? ''}
+                    onChange={(e) => { setStato(null); setTesti((t) => ({ ...t, [c.chiave]: e.target.value })) }}
+                    className="mt-0.5 w-full rounded-lg border border-calce-300 bg-white px-3 py-1.5 text-sm text-profondo focus:border-cabina focus:outline-none"
+                  />
+                  {c.aiuto && <span className="mt-0.5 block text-[11px] text-profondo/45">{c.aiuto}</span>}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+      </CardBody>
+    </Card>
   )
 }
 
@@ -95,13 +171,7 @@ export default function Impostazioni() {
         </CardBody>
       </Card>
 
-      <p className="text-sm text-profondo/60">
-        I parametri qui sotto sono definiti in{' '}
-        <code className="rounded bg-calce-200 px-1.5 py-0.5 text-[13px] text-profondo">
-          src/data/config.ts
-        </code>{' '}
-        e vanno corretti prima della demo. Il resto dell’app li legge da lì.
-      </p>
+      <ParametriModificabili />
 
       {/* Dati dimostrativi */}
       <Card>
@@ -122,25 +192,6 @@ export default function Impostazioni() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Anagrafica */}
-        <Card>
-          <CardHeader
-            titolo={
-              <span className="inline-flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-cabina" /> Anagrafica stabilimento
-              </span>
-            }
-          />
-          <CardBody className="pt-1">
-            <Riga etichetta="Nome" valore={config.nome} />
-            <Riga etichetta="Località" valore={config.localita} />
-            <Riga etichetta="Indirizzo" valore={config.indirizzo} />
-            <Riga etichetta="Telefono" valore={config.telefono} />
-            <Riga etichetta="Email" valore={config.email || 'da comunicare'} />
-            <Riga etichetta="Partita IVA" valore={config.partitaIva || 'da comunicare'} />
-          </CardBody>
-        </Card>
-
         {/* Arenile */}
         <Card>
           <CardHeader
@@ -149,6 +200,7 @@ export default function Impostazioni() {
                 <Umbrella className="h-4 w-4 text-cabina" /> Configurazione arenile
               </span>
             }
+            sottotitolo="Struttura fissa: da qui dipendono pianta e dati generati"
           />
           <CardBody className="pt-1">
             <Riga etichetta="File" valore={`${config.arenile.file.length} (${config.arenile.file[0]}–${config.arenile.file.at(-1)})`} />
@@ -178,22 +230,6 @@ export default function Impostazioni() {
           </CardBody>
         </Card>
 
-        {/* Aliquote */}
-        <Card>
-          <CardHeader
-            titolo={
-              <span className="inline-flex items-center gap-2">
-                <Percent className="h-4 w-4 text-cabina" /> Aliquote IVA
-              </span>
-            }
-          />
-          <CardBody className="pt-1">
-            <Riga etichetta="IVA ordinaria" valore={percento(config.aliquote.ivaOrdinaria)} />
-            <Riga etichetta="IVA ridotta (somministrazione)" valore={percento(config.aliquote.ivaRidotta)} />
-            <Riga etichetta="IVA super ridotta" valore={percento(config.aliquote.ivaSuperRidotta)} />
-            <Riga etichetta="Imposta reg. concessione" valore={percento(config.aliquote.impostaRegionaleConcessione)} />
-          </CardBody>
-        </Card>
       </div>
 
       {/* Stati postazione */}
