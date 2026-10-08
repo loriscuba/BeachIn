@@ -84,3 +84,25 @@ gestire chiavi e costi.
 ## 5. Idee / sviluppi futuri
 - Risposte dell'admin al cliente dalla casella di posta
 - Modifica di una prenotazione prima della conferma
+
+## 6. App su App Store / Google Play (Capacitor)
+**Costi**: Apple Developer 99 €/anno (per l'azienda serve D-U-N-S, gratis) · Google Play 25 $ una tantum.
+Commissioni 15–30% solo su beni digitali; prenotazioni e cibo sono servizi fisici → Stripe/SumUp/Nexi (~1,5–3%).
+Per iOS serve un Mac (o Codemagic/EAS in cloud). Google: account personali nuovi → test chiuso 12 tester × 14 giorni.
+Apple rifiuta le app "sito impacchettato" (linea guida 4.2) → servono funzioni native (push, QR, fotocamera).
+
+**Capacitor** (Ionic, gratis): impacchetta `dist/` di Vite in app iOS/Android native con WebView + plugin.
+```
+npm i @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
+npx cap init "Lido dei Pini" it.lidodeipini.app --web-dir dist
+npx cap add ios && npx cap add android
+npm run build && npx cap sync && npx cap open ios
+```
+- [ ] Build app con `VITE_BASE=./` e `VITE_ROUTER=hash`
+- [ ] Push native: `@capacitor/push-notifications` + FCM (le push web VAPID non vanno in WebView iOS) → adattare Edge Function
+- [ ] Tasto indietro Android con `@capacitor/app`
+- [ ] Plugin utili: scanner QR ombrellone → menu/ordine, camera, geolocation (check-in), haptics/status-bar/splash
+- [ ] Live update (Capgo ~14 €/mese o Capawesome) per aggiornare JS/HTML senza revisione store
+- [ ] Solo app clienti pubblica; ComandApp/AdminApp via TestFlight/distribuzione unlisted e test interno Google (o PWA)
+- [ ] Scheda store: icone, screenshot, privacy policy
+- Stima: prototipo su telefono 1–2 giorni; più lunghe push native e scheda store.
