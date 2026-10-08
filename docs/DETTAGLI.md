@@ -76,6 +76,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **News** (`notizie`: `pubblicaNotizia/modificaNotizia/eliminaNotizia`, `fissata` = in evidenza, foto data URI) e
   **Lavagnetta** (`lavagnetta`: `aggiungi/modifica/rimuovi/spostaVoceLavagnetta`, prezzo `null` = senza prezzo) nel context,
   seed `src/data/seed/app.ts`, sync Supabase `beachin.notizie` / `beachin.lavagnetta` (migrazione `0002_app_clienti.sql`).
+  Client Supabase senza sessione Auth (`persistSession:false`, `storageKey` proprio): su github.io altre demo dello stesso
+  progetto lasciano un login in localStorage che faceva partire le richieste come `authenticated` (policy solo anon → tutto vuoto).
   Il gestore li scrive da **Sito → App clienti** (`?tab=app`, con QR dell'app) e dall'**app admin** (tab "App"), componenti
   `src/components/app/GestioneAppClienti.tsx`. Lavagna in stile ardesia con font Caveat (`font-gesso`).
 - **Contatti**: da `config` (telefono, WhatsApp, email se c'è, indirizzo/Maps, Facebook, orari).
