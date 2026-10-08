@@ -106,3 +106,13 @@ npm run build && npx cap sync && npx cap open ios
 - [ ] Solo app clienti pubblica; ComandApp/AdminApp via TestFlight/distribuzione unlisted e test interno Google (o PWA)
 - [ ] Scheda store: icone, screenshot, privacy policy
 - Stima: prototipo su telefono 1–2 giorni; più lunghe push native e scheda store.
+
+### Download diretto (senza store)
+- **Android**: APK scaricabile dal sito (utente abilita "installa app sconosciute", avviso di sicurezza; aggiornamenti
+  da gestire con avviso in-app o live update). Dal 2026–27 Google richiede verifica sviluppatore anche fuori Play: da ricontrollare.
+- **iPhone**: Web Distribution UE (DMA) solo con 2+ anni di account e >1 milione di installazioni/anno in UE → non fattibile.
+  Alternative: TestFlight (link pubblico, build 90 gg, per test), Ad Hoc (100 dispositivi/anno), app *unlisted* sull'App Store
+  (solo con link), Enterprise (299 $/anno, solo dipendenti, difficile).
+- **PWA** = vero "download dal sito" su iPhone (Condividi → Aggiungi a Home): gratis, push, aggiornamenti immediati.
+- [ ] Clienti: PWA con QR all'ingresso/ombrelloni (app store più avanti se serve)
+- [ ] Staff Android: APK dal sito · Staff iPhone: app unlisted / Ad Hoc / PWA
