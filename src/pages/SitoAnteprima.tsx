@@ -726,7 +726,7 @@ function Lightbox({ foto, indice, onCambia, onChiudi }: { foto: { src: string; t
   )
 }
 
-function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento?: Evento; prenotabile: boolean; onChiudi: () => void; onPrenotato: (nome: string, dove: string) => void }) {
+export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: { evento?: Evento; prenotabile: boolean; onChiudi: () => void; onPrenotato: (nome: string, dove: string) => void }) {
   const { inviaRichiestaEvento } = useDemoData()
   const [f, setF] = useState({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false })
   const [inviato, setInviato] = useState(false)
@@ -839,9 +839,9 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string, dove: string)
   )
 }
 
-function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: string) => void }) {
+export function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: string) => void }) {
   const { inviaRichiestaRistorante, tavoliDelGiorno, prenotazioniRistorante, richiesteRistorante, giorniChiusi } = useDemoData()
-  const oggi = config.stagione.oggi
+  const oggi = config.oggi // ristorante aperto tutto l'anno: data reale, non limitata alla stagione
   // richieste dal sito ancora da confermare: occupano già posti e orari
   const inAttesa = useMemo(() => richiesteRistorante.filter((r) => r.stato === 'da_confermare'), [richiesteRistorante])
   const disp = (d: string, t: Turno) => prenotabilita(tavoliDelGiorno(d), prenotazioniRistorante, inAttesa, d, t)
@@ -940,7 +940,7 @@ function Successo({ testo, onAltro }: { testo: string; onAltro: () => void }) {
   )
 }
 
-function Sospese({ testo, className }: { testo: string; className?: string }) {
+export function Sospese({ testo, className }: { testo: string; className?: string }) {
   return (
     <div className={cn('flex items-start gap-3 rounded-3xl border border-tenda/50 bg-[#FFF8E6] p-5 text-profondo', className)}>
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-tenda/30 text-[#7A5A12]"><Clock className="h-5 w-5" /></span>

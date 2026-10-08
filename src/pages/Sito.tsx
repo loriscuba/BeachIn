@@ -17,9 +17,12 @@ import { etichetteTipologia } from '@/lib/arenile'
 import { importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 import Marketing from './sito/Marketing'
+import { GestioneLavagnetta, GestioneNews } from '@/components/app/GestioneAppClienti'
+import { QrCodice } from '@/components/QrCodice'
+import { urlComandApp } from '@/lib/comandapp'
 
-type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni' | 'marketing'
-const SEZIONI: Sezione[] = ['panoramica', 'prenotazioni', 'posta', 'contenuti', 'interazioni', 'marketing']
+type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni' | 'marketing' | 'app'
+const SEZIONI: Sezione[] = ['panoramica', 'prenotazioni', 'posta', 'contenuti', 'interazioni', 'marketing', 'app']
 const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'Pranzo' : 'Cena')
 
 export default function Sito() {
@@ -82,6 +85,7 @@ export default function Sito() {
             { valore: 'contenuti', etichetta: 'Contenuti' },
             { valore: 'interazioni', etichetta: 'Recensioni e messaggi' },
             { valore: 'marketing', etichetta: 'Sito e marketing' },
+            { valore: 'app', etichetta: 'App clienti' },
           ]}
         />
         <Link to="/sito/anteprima">
@@ -90,6 +94,31 @@ export default function Sito() {
       </div>
 
       {sez === 'marketing' && <Marketing />}
+
+      {sez === 'app' && (
+        <div className="space-y-4">
+          <Card>
+            <CardBody className="flex items-center gap-4">
+              <QrCodice url={urlComandApp()} className="w-24 shrink-0" />
+              <div className="min-w-0 text-sm text-profondo/70">
+                <p className="font-semibold text-profondo">App del Lido per i clienti</p>
+                <p>Ombrellone (ordini al bar), prenotazioni ristorante ed eventi, news, eventi, lavagnetta e contatti. Si installa dal browser (PWA).</p>
+                <a href={urlComandApp()} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 font-medium text-cabina hover:underline"><ExternalLink className="h-3.5 w-3.5" /> Apri l'app</a>
+              </div>
+            </CardBody>
+          </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader titolo="News" sottotitolo="Il feed che i clienti vedono nell'app" />
+              <CardBody className="pt-2"><GestioneNews /></CardBody>
+            </Card>
+            <Card>
+              <CardHeader titolo="Lavagnetta" sottotitolo="Le proposte di oggi, come sulla lavagna all'ingresso" />
+              <CardBody className="pt-2"><GestioneLavagnetta /></CardBody>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {sez === 'panoramica' && (
         <>

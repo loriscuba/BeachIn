@@ -1,7 +1,7 @@
 {
-  "name": "ComandApp — Lido dei Pini",
-  "short_name": "ComandApp",
-  "description": "Ordina dall'ombrellone: bar e cucina del Lido dei Pini",
+  "name": "Lido dei Pini",
+  "short_name": "Lido dei Pini",
+  "description": "L'app del Lido dei Pini: ordini dall'ombrellone, prenotazioni, news, eventi e lavagnetta",
   "start_url": "./#/comandapp",
   "scope": "./",
   "display": "standalone",

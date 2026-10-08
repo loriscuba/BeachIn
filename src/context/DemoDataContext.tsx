@@ -39,6 +39,8 @@ import type {
   TipologiaPostazione,
   Turno,
   VoceCosto,
+  Notizia,
+  VoceLavagnetta,
 } from '@/data/types'
 
 import { postazioni as seedPostazioni } from '@/data/seed/spiaggia'
@@ -56,6 +58,7 @@ const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
+import { notizie as seedNotizie, lavagnetta as seedLavagnetta } from '@/data/seed/app'
 import { config } from '@/data/config'
 import { posInZona, zonaDaPos } from '@/lib/zoneTavoli'
 
@@ -288,6 +291,17 @@ interface DemoDataValue {
   rimuoviFoto: (id: string) => void
   rinominaFoto: (id: string, titolo: string) => void
 
+  // App clienti (/comandapp): news del gestore e lavagnetta del giorno
+  notizie: Notizia[]
+  pubblicaNotizia: (dati: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata'>) => void
+  modificaNotizia: (id: string, patch: Partial<Omit<Notizia, 'id'>>) => void
+  eliminaNotizia: (id: string) => void
+  lavagnetta: VoceLavagnetta[]
+  aggiungiVoceLavagnetta: (dati: Omit<VoceLavagnetta, 'id'>) => void
+  modificaVoceLavagnetta: (id: string, patch: Partial<Omit<VoceLavagnetta, 'id'>>) => void
+  rimuoviVoceLavagnetta: (id: string) => void
+  spostaVoceLavagnetta: (id: string, verso: -1 | 1) => void
+
   // Demo guidata
   incassoDemo: number
   demoInCorso: boolean
@@ -361,6 +375,24 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
+  // App clienti: news e lavagnetta, condivise via Supabase (il gestore pubblica, i telefoni dei clienti leggono)
+  const [notizie, setNotizie] = useState<Notizia[]>(() => clona(seedNotizie))
+  const [lavagnetta, setLavagnetta] = useState<VoceLavagnetta[]>(() => clona(seedLavagnetta))
+  useSyncSupabase({
+    tabella: 'notizie', righe: notizie, setRighe: setNotizie, semina: true,
+    aRiga: (n) => ({ id: n.id, titolo: n.titolo, testo: n.testo, data: n.data, ts: n.ts, foto: n.foto ?? null, fissata: !!n.fissata }),
+    daRiga: (r) => ({
+      id: r.id, titolo: r.titolo as string, testo: r.testo as string, data: r.data as string, ts: Number(r.ts),
+      foto: (r.foto as string) ?? undefined, fissata: !!r.fissata,
+    }),
+    ordina: (a, b) => Number(b.ts) - Number(a.ts),
+  })
+  useSyncSupabase({
+    tabella: 'lavagnetta', righe: lavagnetta, setRighe: setLavagnetta, semina: true,
+    aRiga: (v, i) => ({ id: v.id, nome: v.nome, descrizione: v.descrizione ?? null, prezzo: v.prezzo, ordine: i }),
+    daRiga: (r) => ({ id: r.id, nome: r.nome as string, descrizione: (r.descrizione as string) ?? undefined, prezzo: r.prezzo == null ? null : Number(r.prezzo) }),
+    ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
+  })
   // Comande condivise tra le schede dello stesso browser (ComandApp ↔ cruscotto bar) via localStorage.
   // Con Supabase configurato le comande vivono nel DB (condivise tra dispositivi, vedi useSyncSupabase più sotto).
   const [comande, setComande] = useState<Comanda[]>(() => {
@@ -893,6 +925,36 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setGalleria((prev) => prev.map((f) => (f.id === id ? { ...f, titolo } : f)))
   }, [])
 
+  // — App clienti: news e lavagnetta —
+  const pubblicaNotizia = useCallback((d: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata'>) => {
+    setNotizie((prev) => [{ id: nuovoId('NW'), data: config.oggi, ts: Date.now(), ...d }, ...prev])
+  }, [])
+  const modificaNotizia = useCallback((id: string, patch: Partial<Omit<Notizia, 'id'>>) => {
+    setNotizie((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)))
+  }, [])
+  const eliminaNotizia = useCallback((id: string) => {
+    setNotizie((prev) => prev.filter((n) => n.id !== id))
+  }, [])
+  const aggiungiVoceLavagnetta = useCallback((d: Omit<VoceLavagnetta, 'id'>) => {
+    setLavagnetta((prev) => [...prev, { id: nuovoId('LV'), ...d }])
+  }, [])
+  const modificaVoceLavagnetta = useCallback((id: string, patch: Partial<Omit<VoceLavagnetta, 'id'>>) => {
+    setLavagnetta((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)))
+  }, [])
+  const rimuoviVoceLavagnetta = useCallback((id: string) => {
+    setLavagnetta((prev) => prev.filter((v) => v.id !== id))
+  }, [])
+  const spostaVoceLavagnetta = useCallback((id: string, verso: -1 | 1) => {
+    setLavagnetta((prev) => {
+      const i = prev.findIndex((v) => v.id === id)
+      const j = i + verso
+      if (i < 0 || j < 0 || j >= prev.length) return prev
+      const n = [...prev]
+      ;[n[i], n[j]] = [n[j], n[i]]
+      return n
+    })
+  }, [])
+
   // — Ristorante: tavoli e prenotazioni —
   // Standard = `tavoli`; un giorno modificato ha la sua copia in `tavoliGiorno` (stessi id,
   // così le prenotazioni restano sui loro tavoli).
@@ -1005,6 +1067,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     // con Supabase menu e sezioni sono dati reali condivisi: il reset demo non li tocca
     if (!supabaseAttivo) { setMenu(clona(seedMenu)); setSezioniMenu(clona(seedSezioni)) }
     setGalleria(clona(statoSito.galleria))
+    // con Supabase news e lavagnetta sono contenuti reali del gestore: il reset demo non li tocca
+    if (!supabaseAttivo) { setNotizie(clona(seedNotizie)); setLavagnetta(clona(seedLavagnetta)) }
     if (!supabaseAttivo) setComande([])
     // con Supabase la sala è un dato reale condiviso: il reset demo non la tocca
     if (!supabaseAttivo) {
@@ -1179,6 +1243,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiFoto,
       rimuoviFoto,
       rinominaFoto,
+      notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia,
+      lavagnetta, aggiungiVoceLavagnetta, modificaVoceLavagnetta, rimuoviVoceLavagnetta, spostaVoceLavagnetta,
       tavoli,
       tavoliGiorno,
       tavoliDelGiorno,
@@ -1277,6 +1343,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       aggiungiFoto,
       rimuoviFoto,
       rinominaFoto,
+      notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia,
+      lavagnetta, aggiungiVoceLavagnetta, modificaVoceLavagnetta, rimuoviVoceLavagnetta, spostaVoceLavagnetta,
       tavoli,
       tavoliGiorno,
       tavoliDelGiorno,
