@@ -642,3 +642,22 @@ export interface KpiCruscotto {
   presenze: number
   ultimi30: GiornoStagione[]
 }
+
+/** News pubblicata dal gestore e mostrata nell'app clienti (/comandapp). */
+export interface Notizia {
+  id: string
+  titolo: string
+  testo: string
+  data: string // ISO yyyy-mm-dd
+  ts: number
+  foto?: string // data URI
+  fissata?: boolean // in cima al feed
+}
+
+/** Riga della lavagnetta (piatti/proposte del giorno scritti dal gestore). */
+export interface VoceLavagnetta {
+  id: string
+  nome: string
+  descrizione?: string
+  prezzo: number | null
+}

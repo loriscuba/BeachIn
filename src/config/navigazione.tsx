@@ -76,6 +76,7 @@ export const navigazione: VoceNav[] = [
     figli: [
       { percorso: '/sito?tab=panoramica', etichetta: 'Panoramica', modulo: 'sito' },
       { percorso: '/sito?tab=marketing', etichetta: 'Sito e marketing', modulo: 'sito' },
+      { percorso: '/sito?tab=app', etichetta: 'App clienti', modulo: 'sito' },
     ],
   },
 

@@ -65,6 +65,20 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Tocco notifica con app aperta → SW `postMessage({tipo:"aggiorna"})` → reload; `useSyncSupabase` rilegge anche su visibilitychange/online/pageshow e alla (ri)sottoscrizione del canale (app sospesa su telefono = canale live caduto).
   iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `main.tsx` converte `#/percorso` in path con BrowserRouter.
 
+## App clienti (`/comandapp`, ott 2026)
+- `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
+  sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,
+  `ristorante`, `eventi`). Default: Ombrellone se loggato, altrimenti News; pallino sulle news non viste (`comandapp.news.vista`).
+- **Ombrellone** = vecchia ComandApp (login demo, ordini, stato); la barra "Ordina" sta sopra la nav.
+- **Prenota** Ristorante/Eventi riusa `FormRistorante`, `EventoModal`, `Sospese` esportati da `SitoAnteprima` (stessi flussi
+  del sito, rispetta `canaliPrenotazione`). `FormRistorante` ora parte da `config.oggi` (ristorante aperto tutto l'anno).
+- **News** (`notizie`: `pubblicaNotizia/modificaNotizia/eliminaNotizia`, `fissata` = in evidenza, foto data URI) e
+  **Lavagnetta** (`lavagnetta`: `aggiungi/modifica/rimuovi/spostaVoceLavagnetta`, prezzo `null` = senza prezzo) nel context,
+  seed `src/data/seed/app.ts`, sync Supabase `beachin.notizie` / `beachin.lavagnetta` (migrazione `0002_app_clienti.sql`).
+  Il gestore li scrive da **Sito → App clienti** (`?tab=app`, con QR dell'app) e dall'**app admin** (tab "App"), componenti
+  `src/components/app/GestioneAppClienti.tsx`. Lavagna in stile ardesia con font Caveat (`font-gesso`).
+- **Contatti**: da `config` (telefono, WhatsApp, email se c'è, indirizzo/Maps, Facebook, orari).
+
 ## Assistente vocale (menu a voce)
 - iPhone con app aggiunta alla Home (e browser senza Web Speech): **Whisper su Groq** (piano free). `src/lib/trascrizione.ts`
   (`useRegistrazione`: MediaRecorder, tap per iniziare/inviare, max 12 s) → Edge Function `beachin-trascrivi`
