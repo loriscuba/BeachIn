@@ -312,6 +312,14 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   "sospendi prenotazioni" (mostra l'avviso) quando il modulo è attivo.
 - Video hero opzionale: `src/assets/sito/hero.mp4|webm` (via `import.meta.glob`, export `videoHero`); se manca → foto.
 
+## Impostazioni stabilimento (DB)
+- `config.ts` = **predefiniti**; i parametri modificabili (anagrafica, WhatsApp, orari + nota, servizi arenile, aliquote,
+  prezzo medio, Tripadvisor) sono in `src/lib/impostazioni.ts` (`GRUPPI`, chiavi "a.b") e salvati in
+  `beachin.impostazioni` (riga `id='stabilimento'`, `valori` jsonb piatto; migrazione `0003`). Senza riga = predefiniti.
+- `main.tsx` aspetta `caricaImpostazioni()` (max 2,5 s) prima del render; il salvataggio (Impostazioni → "Parametri
+  dello stabilimento") e il Realtime mutano `config` e **rimontano il router** (`key=versione`): le pagine leggono `config` diretto.
+- Non modificabili (strutturali, da loro dipendono i seed): file/postazioni/gazebo dell'arenile e date di stagione.
+
 ## Cliente reale: Lido dei Pini (Savona)
 - `config.ts` ha i dati reali da fonti pubbliche (Tripadvisor/spiagge.it/TheFork): Via Nizza 85/R Savona,
   tel +39 349 574 5156 (online compare anche +39 340 159 9851), ristorante 12:00–14:30 / 19:00–22:00 tutto l'anno,

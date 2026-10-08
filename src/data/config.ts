@@ -1,6 +1,7 @@
 /**
- * Parametri dello stabilimento — TUTTO in un solo file.
- * Cambia questi valori prima della demo: il resto dell'app li legge da qui.
+ * Parametri dello stabilimento — valori predefiniti.
+ * Quelli modificabili (anagrafica, orari, aliquote, servizi…) vengono sovrascritti all'avvio
+ * dalla tabella `beachin.impostazioni` (vedi `src/lib/impostazioni.ts`) e si cambiano da Impostazioni.
  *
  * Nota: in Fase 1 sono definiti i parametri di anagrafica e arenile usati
  * dallo shell e dalle intestazioni. I numeri di scala economici (incassi,
@@ -32,6 +33,7 @@ export const config = {
   localita: 'Savona (SV)',
   indirizzo: 'Via Nizza, 85/R — 17100',
   telefono: '+39 349 574 5156',
+  whatsapp: '+39 349 574 5156',
   // Da farsi comunicare dal cliente (non pubblicati online): se vuoti non compaiono sul sito.
   email: '',
   sito: '',
@@ -69,6 +71,7 @@ export const config = {
     ristoranteCena: '19:00 – 22:00',
     // Spiaggia da maggio a settembre, ristorante aperto tutto l'anno.
     stagioneSpiaggia: 'maggio – settembre',
+    nota: "Ristorante aperto tutto l'anno.",
   },
 
   // — Arenile —
@@ -110,7 +113,7 @@ export const config = {
   // — Valuta / locale —
   locale: 'it-IT',
   valuta: 'EUR',
-} as const
+}
 
 export type Config = typeof config
 
