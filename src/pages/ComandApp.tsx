@@ -18,7 +18,7 @@ import { dataEstesa, euro, euroCent } from '@/lib/formatters'
 import { PASSI_COMANDA, UTENTI_COMANDAPP, etichettaStatoComanda } from '@/lib/comandapp'
 import { ding, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
-import { impostaManifest } from '@/lib/notifichePush'
+import { impostaManifest, isInstallata } from '@/lib/notifichePush'
 import { urlPubblico } from '@/lib/urlPubblico'
 import PulsanteInstalla from '@/components/PulsanteInstalla'
 import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
@@ -71,9 +71,31 @@ export default function ComandApp() {
     setVista(ultimaNews)
   }, [sez, ultimaNews])
 
+  // App aperta dalla Home: barra sezioni in basso. Nel browser la barra fissa in basso finisce sotto la toolbar
+  // di Safari/Chrome (iOS), quindi lì le sezioni stanno in alto, sotto l'intestazione.
+  const [app] = useState(isInstallata)
+  const barra = (
+    <nav className={cn('bg-white', app ? 'fixed inset-x-0 bottom-0 z-20 border-t border-calce-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.05)]' : 'border-b border-calce-200 shadow-sm')}>
+      <div className="mx-auto flex max-w-md">
+        {voci.map((v) => {
+          const Icona = v.icona
+          const attiva = v.id === sez
+          return (
+            <button key={v.id} onClick={() => vai(v.id)} className={cn('relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-semibold', app ? 'h-16' : 'h-14', attiva ? 'text-cabina' : 'text-profondo/45', !app && attiva && 'shadow-[inset_0_-2px_0_currentColor]')}>
+              <Icona className={cn('h-5 w-5', attiva && 'scale-110')} />
+              <span className="truncate">{v.etichetta}</span>
+              {v.id === 'news' && ultimaNews > vista && <span className={cn('absolute right-[calc(50%-14px)] h-2 w-2 rounded-full bg-boa', app ? 'top-3' : 'top-2')} />}
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+
   return (
-    <div className="min-h-screen bg-calce text-profondo">
-      <header className="sticky top-0 z-20 bg-profondo px-4 py-2.5 text-white shadow">
+    <div className="min-h-screen bg-calce text-profondo" style={{ ['--barra' as string]: app ? 'calc(4rem + env(safe-area-inset-bottom))' : '0px' }}>
+      <div className="sticky top-0 z-20">
+      <header className="bg-profondo px-4 py-2.5 text-white shadow">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <img src={logoLido} alt="" className="h-9 w-9 shrink-0 rounded-full bg-white object-contain p-0.5" />
@@ -90,7 +112,9 @@ export default function ComandApp() {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-md px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      {!app && barra}
+      </div>
+      <main className="mx-auto max-w-md px-4 py-4 pb-[calc(var(--barra)+1.5rem)]">
         <PulsanteInstalla nome={config.nome} />
         {sez === 'news' && <News />}
         {sez === 'ombrellone' && (utente ? <Area utente={utente} /> : <Login onEntra={(u) => { try { localStorage.setItem(CHIAVE, u.utente) } catch { /* */ } setUtente(u) }} />)}
@@ -99,21 +123,7 @@ export default function ComandApp() {
         {sez === 'lavagna' && <Lavagna />}
         {sez === 'contatti' && <Contatti />}
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-calce-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
-        <div className="mx-auto flex max-w-md">
-          {voci.map((v) => {
-            const Icona = v.icona
-            const attiva = v.id === sez
-            return (
-              <button key={v.id} onClick={() => vai(v.id)} className={cn('relative flex h-16 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-semibold', attiva ? 'text-cabina' : 'text-profondo/45')}>
-                <Icona className={cn('h-5 w-5', attiva && 'scale-110')} />
-                <span className="truncate">{v.etichetta}</span>
-                {v.id === 'news' && ultimaNews > vista && <span className="absolute right-[calc(50%-14px)] top-3 h-2 w-2 rounded-full bg-boa" />}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
+      {app && barra}
       <AnteprimaWhatsApp />
     </div>
   )
@@ -384,7 +394,7 @@ function Area({ utente }: { utente: Utente }) {
             ))}
           </ul>
           {pezzi > 0 && (
-            <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-calce-200 bg-white p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+            <div className="fixed inset-x-0 bottom-[var(--barra)] z-10 border-t border-calce-200 bg-white p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
               <div className="mx-auto max-w-md space-y-2">
                 <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (es. senza ghiaccio)" className="h-10 w-full rounded-lg border border-calce-200 px-3 text-sm" />
                 <button onClick={invia} className="flex h-12 w-full items-center justify-between rounded-xl bg-boa px-4 font-semibold text-white">

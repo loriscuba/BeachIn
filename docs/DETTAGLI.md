@@ -67,7 +67,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
-  sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,
+  sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (barra in basso solo da Home/standalone; nel
+  browser sta in alto sotto l'intestazione, perché in basso finiva sotto la toolbar di Safari; altezza in `--barra`) (nascoste se il modulo è spento: `comande`,
   `ristorante`, `eventi`). Default: Ombrellone se loggato, altrimenti News; pallino sulle news non viste (`comandapp.news.vista`).
 - **Ombrellone** = vecchia ComandApp (login demo, ordini, stato); la barra "Ordina" sta sopra la nav.
 - **Prenota** Ristorante/Eventi riusa `FormRistorante`, `EventoModal`, `Sospese` esportati da `SitoAnteprima` (stessi flussi
