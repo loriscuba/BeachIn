@@ -82,6 +82,7 @@ const ESEMPI = [
   'Aggiungi spaghetti allo scoglio a 18 euro',
   'Aggiungi tiramisù categoria dolci a 6,50',
   'Cambia il prezzo della carbonara a 13 euro',
+  'Sostituisci la tartare di tonno con una poké al curry a 24 euro',
   'Rinomina calamari fritti in calamari alla griglia',
   'Togli il branzino al forno',
   'Leggi il menu',
@@ -198,6 +199,16 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
         rispondi(`Rinominato «${vecchio}» in «${c.nuovoNome}».`)
         break
       }
+      case 'sostituisci': {
+        const { piatto, suggerimento } = risolviPiatto(menu, nomiDaAlternative(alts, 'sostituisci', c.nome))
+        if (!piatto) { nonTrovato(c.nome, suggerimento); break }
+        const vecchio = piatto.nome
+        rinominaPiatto(piatto.id, c.nuovoNome)
+        if (c.prezzo !== null) modificaPrezzoPiatto(piatto.id, c.prezzo)
+        setUltimoId(piatto.id)
+        rispondi(`Ho sostituito «${vecchio}» con «${c.nuovoNome}»` + (c.prezzo !== null ? ` a ${prezzoParlato(c.prezzo)}.` : '.'))
+        break
+      }
       case 'leggi': {
         if (menu.length === 0) { rispondi('Il menu è vuoto.'); break }
         const parti = menu.map((p) => `${p.nome}${p.prezzo > 0 ? ` a ${prezzoParlato(p.prezzo)}` : ''}`)
@@ -211,7 +222,7 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
       }
       case 'aiuto':
         rispondi(
-          'Puoi dire per esempio: aggiungi spaghetti allo scoglio a 18 euro; cambia il prezzo della carbonara a 13; togli il tiramisù; rinomina pizza in pizza margherita; leggi il menu; svuota il menu.'
+          'Puoi dire per esempio: aggiungi spaghetti allo scoglio a 18 euro; cambia il prezzo della carbonara a 13; togli il tiramisù; sostituisci la tartare con la poké a 24 euro; rinomina pizza in pizza margherita; leggi il menu; svuota il menu.'
         )
         break
       default:
