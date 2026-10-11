@@ -1,4 +1,5 @@
-import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning } from 'lucide-react'
+import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
+import { useTema } from '@/hooks/useTema'
 import type { Meteo } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { config } from '@/data/config'
@@ -8,17 +9,20 @@ interface TopbarProps {
   titolo: string
   sottotitolo?: string
   onApriMenu: () => void
+  /** Mostra l'interruttore chiaro/scuro (per ora solo sul Cruscotto). */
+  mostraTema?: boolean
 }
 
 const meteoIcona: Record<Meteo, typeof Sun> = {
   sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
 }
 
-export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
+export function Topbar({ titolo, sottotitolo, onApriMenu, mostraTema }: TopbarProps) {
   const meteo = useMeteoOggi()
+  const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-calce-200 bg-calce/85 px-4 backdrop-blur lg:px-6">
+    <header className="shell-bar sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-calce-200 bg-calce/85 px-4 backdrop-blur lg:px-6">
       <button
         className="-ml-1 rounded-lg p-2 text-profondo hover:bg-profondo/5"
         onClick={onApriMenu}
@@ -49,6 +53,21 @@ export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
           {meteo.temp ?? meteo.max}°
         </span>
       </div>
+
+      {mostraTema && (
+        <button
+          onClick={cambiaTema}
+          className="relative flex h-9 w-16 shrink-0 items-center rounded-full border border-calce-200 bg-white p-1 transition-colors"
+          aria-label={tema === 'scuro' ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
+          title={tema === 'scuro' ? 'Tema chiaro' : 'Tema scuro'}
+        >
+          <span
+            className={`grid h-7 w-7 place-items-center rounded-full shadow transition-transform duration-300 ${tema === 'scuro' ? 'translate-x-7 bg-profondo-600 text-tenda' : 'bg-tenda text-profondo'}`}
+          >
+            {tema === 'scuro' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </span>
+        </button>
+      )}
 
       {/* Badge dati dimostrativi — sempre visibile */}
       <div

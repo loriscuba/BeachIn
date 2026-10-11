@@ -118,3 +118,75 @@
     to { opacity: 1; transform: none; }
   }
 }
+
+/* ── Cruscotto "wow": token di tema (chiaro / scuro con un clic) ─────────── */
+.cz {
+  --cz-bg: #edf1f2;
+  --cz-card: rgba(255, 255, 255, 0.78);
+  --cz-bordo: rgba(15, 59, 76, 0.09);
+  --cz-testo: #0f3b4c;
+  --cz-tenue: rgba(15, 59, 76, 0.62);
+  --cz-debole: rgba(15, 59, 76, 0.07);
+  --cz-ombra: 0 1px 2px rgba(15, 59, 76, 0.05), 0 12px 32px -16px rgba(15, 59, 76, 0.22);
+  --cz-griglia: rgba(15, 59, 76, 0.08);
+  --cz-su: #2f6e5f;
+  --cz-su-bg: rgba(127, 183, 168, 0.18);
+  color: var(--cz-testo);
+}
+[data-tema='scuro'] .cz {
+  --cz-bg: #06161d;
+  --cz-card: rgba(255, 255, 255, 0.045);
+  --cz-bordo: rgba(255, 255, 255, 0.08);
+  --cz-testo: #eaf3f5;
+  --cz-tenue: rgba(234, 243, 245, 0.6);
+  --cz-debole: rgba(255, 255, 255, 0.07);
+  --cz-ombra: 0 24px 48px -24px rgba(0, 0, 0, 0.7);
+  --cz-griglia: rgba(255, 255, 255, 0.07);
+  --cz-su: #8fd6c2;
+  --cz-su-bg: rgba(127, 183, 168, 0.14);
+}
+.cz-card {
+  background: var(--cz-card);
+  border: 1px solid var(--cz-bordo);
+  box-shadow: var(--cz-ombra);
+  border-radius: 1.5rem;
+  backdrop-filter: blur(14px);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s, background-color 0.3s;
+}
+.cz-card:hover { border-color: rgba(46, 125, 154, 0.35); }
+.cz-tenue { color: var(--cz-tenue); }
+.cz-orb { position: absolute; border-radius: 9999px; filter: blur(70px); pointer-events: none; }
+
+/* Shell in tema scuro (solo dove il tema è attivo) */
+.shell-bg { transition: background-color 0.4s; }
+[data-tema='scuro'].shell-bg { background: #06161d; color-scheme: dark; }
+[data-tema='scuro'] .shell-side { background: #081e27; border-right: 1px solid rgba(255, 255, 255, 0.06); }
+[data-tema='scuro'] .shell-bar { background: rgba(6, 22, 29, 0.72); border-color: rgba(255, 255, 255, 0.07); }
+[data-tema='scuro'] .shell-bar .text-profondo { color: #eaf3f5; }
+[data-tema='scuro'] .shell-bar .text-profondo\/55 { color: rgba(234, 243, 245, 0.55); }
+[data-tema='scuro'] .shell-bar .bg-white { background: rgba(255, 255, 255, 0.06); }
+[data-tema='scuro'] .shell-bar .border-calce-200 { border-color: rgba(255, 255, 255, 0.1); }
+[data-tema='scuro'] .shell-bar .hover\:bg-profondo\/5:hover { background: rgba(255, 255, 255, 0.08); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cz-in { animation: cz-su 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+  @keyframes cz-su {
+    from { opacity: 0; transform: translateY(14px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+  }
+  .cz-card:hover { transform: translateY(-2px); }
+  .cz-orb { animation: cz-galleggia 16s ease-in-out infinite alternate; }
+  @keyframes cz-galleggia {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(40px, -20px, 0) scale(1.15); }
+  }
+  .cz-onda { animation: cz-onda 9s linear infinite; }
+  @keyframes cz-onda { to { transform: translateX(-50%); } }
+  .cz-punto { transition: transform 0.2s, background-color 0.5s; }
+  .cz-punto:hover { transform: scale(1.6); }
+  .cz-pulsa { animation: cz-pulsa 2.4s ease-out infinite; }
+  @keyframes cz-pulsa {
+    0% { box-shadow: 0 0 0 0 rgba(242, 193, 78, 0.55); }
+    100% { box-shadow: 0 0 0 10px rgba(242, 193, 78, 0); }
+  }
+}

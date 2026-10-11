@@ -68,7 +68,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white',
+          'shell-side fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white',
           // mobile: pannello sopra i contenuti; desktop: colonna che scorre fuori a sinistra
           'transition-all duration-200 lg:static',
           aperta ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
