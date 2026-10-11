@@ -241,6 +241,13 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - QR (menu, tavoli, ComandApp, AdminApp) usano `urlPubblico()` (`src/lib/urlPubblico.ts`): fuori da GitHub Pages/Vercel
   (artifact, localhost) puntano a GitHub Pages, altrimenti il telefono riceveva un indirizzo non apribile.
 
+## Cruscotto completo (ott 2026)
+- `src/pages/Cruscotto.tsx`: riga di 4 `KpiTile` (incasso, occupazione, coperti, scontrino bar) con numero grande, `Sparkline`
+  SVG degli ultimi 30 giorni (`kpi.ultimi30`, ultimo punto = valore dal vivo) e badge di variazione: occupazione in punti vs
+  anno scorso, gli altri vs media dei 7 giorni prima (`media7`/`variazione`). Incasso con barra di ripartizione per centro.
+- Testi minimi `text-xs` (niente più 10–11 px). **Alert operativi** cliccabili (`Link`): fuori servizio → Arenile,
+  scorte → Bar listino, saldi → Clienti, prenotazioni → Sito prenotazioni.
+
 ## Sito → Sito e marketing (ott 2026)
 - Tab `marketing` di `Sito.tsx` (le sezioni di Sito ora stanno in `?tab=`; sottomenu Panoramica / Sito e marketing).
   UI `src/pages/sito/Marketing.tsx` (Recharts `ComposedChart`, gauge SVG, bolle SVG), dati `src/data/marketing.ts`.

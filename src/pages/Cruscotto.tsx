@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Sun, CloudSun, Cloud, CloudRain, CloudLightning, Loader2,
-  TrendingUp, TrendingDown, Umbrella, UtensilsCrossed, Coffee, Users,
-  Wrench, PackageOpen, Wallet, CalendarCheck,
+  TrendingUp, TrendingDown, Umbrella, UtensilsCrossed, Coffee,
+  Wrench, PackageOpen, Wallet, CalendarCheck, ChevronRight,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import type { ArticoloBar, Cliente, GiornoStagione, KpiCruscotto, Meteo } from '@/data/types'
 import { getArticoliBar, getClienti, getGiorni, getKpiCruscotto } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -106,52 +107,71 @@ export default function Cruscotto() {
     ...(incassoDemo > 0 ? [{ label: 'In demo (simulato)', valore: incassoDemo, colore: '#0F3B4C' }] : []),
   ]
 
+  const coperti = kpi.copertiPranzo + kpi.copertiCena
+  // Serie degli ultimi 30 giorni; l'ultimo punto (oggi) usa il valore dal vivo.
+  const conOggi = (f: (g: GiornoStagione) => number, live: number) =>
+    kpi.ultimi30.map((g) => (g.data === oggi.data ? live : f(g)))
+  const serieIncasso = conOggi((g) => g.incassoSpiaggia + g.incassoBar + g.incassoRistorante + g.incassoNoleggi, incassoTotale)
+  const serieOccupazione = conOggi((g) => g.occupazione, occupazioneOggi)
+  const serieCoperti = conOggi((g) => g.copertiPranzo + g.copertiCena, coperti)
+  const serieScontrino = conOggi((g) => g.scontrinoMedioBar, kpi.scontrinoMedioBar)
+
   return (
     <div className="space-y-4">
-      {/* Riga KPI */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {/* Incasso oggi con ripartizione */}
-        <Card className="col-span-2 lg:col-span-1">
-          <CardBody>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-profondo/50">
-              Incasso di oggi
-            </p>
-            <p className="num mt-0.5 text-3xl font-bold text-profondo">{euro(incassoTotale)}</p>
-            <div className="mt-2 space-y-1">
-              {areeIncasso.map((a) => (
-                <div key={a.label} className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 text-profondo/65">
-                    <span className="h-2 w-2 rounded-full" style={{ background: a.colore }} />
-                    {a.label}
-                  </span>
-                  <span className="num font-medium text-profondo">{euro(a.valore)}</span>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-
-        <StatTile
+      {/* Riga KPI: 4 numeri chiave con andamento 30 giorni e confronto */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiTile
+          icona={Wallet}
+          etichetta="Incasso di oggi"
+          valore={euro(incassoTotale)}
+          serie={serieIncasso}
+          colore="#2E7D9A"
+          delta={variazione(incassoTotale, media7(serieIncasso))}
+          rispetto="vs media 7 giorni"
+        >
+          <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-calce-200" aria-label="Ripartizione incasso per centro">
+            {areeIncasso.map((a) => (
+              <div key={a.label} title={`${a.label}: ${euro(a.valore)}`} style={{ width: `${(a.valore / (incassoTotale || 1)) * 100}%`, background: a.colore }} />
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-profondo/60">
+            {areeIncasso.slice(0, 3).map((a) => `${a.label} ${euro(a.valore)}`).join(' · ')}
+          </p>
+        </KpiTile>
+        <KpiTile
           icona={Umbrella}
           etichetta="Occupazione arenile"
           valore={percento(occupazioneOggi)}
-          sotto={
-            <span className={cn('inline-flex items-center gap-1 font-medium', deltaOcc >= 0 ? 'text-acqua' : 'text-boa')}>
-              {deltaOcc >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-              {deltaOcc >= 0 ? '+' : ''}{percento(deltaOcc)} vs anno scorso
-            </span>
-          }
-        />
-        <StatTile
+          serie={serieOccupazione}
+          colore="#7FB7A8"
+          delta={deltaOcc}
+          deltaPunti
+          rispetto="vs anno scorso"
+        >
+          <p className="mt-3 text-sm text-profondo/60">{numero(kpi.presenze)} presenze in spiaggia</p>
+        </KpiTile>
+        <KpiTile
           icona={UtensilsCrossed}
           etichetta="Coperti oggi"
-          valore={numero(kpi.copertiPranzo + kpi.copertiCena)}
-          sotto={<span className="text-profondo/55">{kpi.copertiPranzo} pranzo · {kpi.copertiCena} cena</span>}
-        />
-        <div className="grid grid-cols-2 gap-3 lg:col-span-1 lg:grid-cols-1 lg:gap-3">
-          <StatTile compatto icona={Coffee} etichetta="Scontrino bar" valore={euroCent(kpi.scontrinoMedioBar)} />
-          <StatTile compatto icona={Users} etichetta="Presenze" valore={numero(kpi.presenze)} />
-        </div>
+          valore={numero(coperti)}
+          serie={serieCoperti}
+          colore="#E4572E"
+          delta={variazione(coperti, media7(serieCoperti))}
+          rispetto="vs media 7 giorni"
+        >
+          <p className="mt-3 text-sm text-profondo/60">{kpi.copertiPranzo} a pranzo · {kpi.copertiCena} a cena</p>
+        </KpiTile>
+        <KpiTile
+          icona={Coffee}
+          etichetta="Scontrino medio bar"
+          valore={euroCent(kpi.scontrinoMedioBar)}
+          serie={serieScontrino}
+          colore="#C99A2E"
+          delta={variazione(kpi.scontrinoMedioBar, media7(serieScontrino))}
+          rispetto="vs media 7 giorni"
+        >
+          <p className="mt-3 text-sm text-profondo/60">Media per scontrino, oggi</p>
+        </KpiTile>
       </div>
 
       {/* Grafico incassi + meteo/occupazione */}
@@ -177,17 +197,17 @@ export default function Cruscotto() {
                       i === 0 ? 'border-cabina/40 bg-cabina/5' : 'border-calce-200'
                     )}
                   >
-                    <p className="text-[10px] font-medium uppercase text-profondo/50">
+                    <p className="text-xs font-medium uppercase text-profondo/50">
                       {i === 0 ? 'Oggi' : giornoSettimana(g.data).slice(0, 3)}
                     </p>
                     <Icona className="mx-auto my-1 h-5 w-5 text-cabina" />
                     <p className="num text-sm font-bold text-profondo">{g.tempMax}°</p>
-                    <p className="num text-[10px] text-profondo/50">{percento(g.occupazione)}</p>
+                    <p className="num text-sm text-profondo/60">{percento(g.occupazione)}</p>
                   </div>
                 )
               })}
             </div>
-            <div className="rounded-lg bg-calce px-3 py-2 text-xs text-profondo/70">
+            <div className="rounded-lg bg-calce px-3 py-2 text-sm text-profondo/70">
               Oggi: <span className="font-medium text-profondo">{meteoLabel[oggi.meteo]}</span>, occupazione{' '}
               <span className="num font-medium text-profondo">{percento(oggi.occupazione)}</span>.
             </div>
@@ -209,7 +229,7 @@ export default function Cruscotto() {
           <CardBody className="space-y-3 pt-3">
             {mixRicavi.map((m) => (
               <div key={m.centro}>
-                <div className="mb-1 flex items-center justify-between text-xs">
+                <div className="mb-1 flex items-center justify-between text-sm">
                   <span className="flex items-center gap-1.5 font-medium text-profondo">
                     <span className="h-2.5 w-2.5 rounded-sm" style={{ background: coloriCentro[m.centro] }} />
                     {etichetteCentro[m.centro]}
@@ -240,7 +260,7 @@ export default function Cruscotto() {
                 <li key={c.id} className="flex items-center justify-between gap-3 py-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-profondo">{c.sottocategoria}</p>
-                    <p className="truncate text-xs text-profondo/55">{c.fornitore} · scad. {fmtData(c.scadenza!)}</p>
+                    <p className="truncate text-sm text-profondo/60">{c.fornitore} · scad. {fmtData(c.scadenza!)}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="num text-sm font-semibold text-profondo">
@@ -257,32 +277,35 @@ export default function Cruscotto() {
         </Card>
 
         <Card>
-          <CardHeader titolo="Alert operativi" sottotitolo="Cosa richiede attenzione oggi" />
+          <CardHeader titolo="Alert operativi" sottotitolo="Cosa richiede attenzione oggi · tocca per aprire" />
           <CardBody className="grid grid-cols-2 gap-2 pt-1">
             <Alert
               icona={Wrench}
               tono="boa"
               valore={contatori.fuoriServizio}
               testo="postazioni fuori servizio"
+              a="/arenile"
             />
             <Alert
               icona={PackageOpen}
               tono="tenda"
               valore={scorteBasse.length}
               testo="scorte bar sotto soglia"
+              a="/bar?tab=listino"
             />
             <Alert
               icona={Wallet}
               tono="tenda"
               valore={saldiAperti.length}
               testo={`saldi aperti · ${euro(saldiAperti.reduce((s, c) => s + c.saldoAperto, 0))}`}
+              a="/clienti"
             />
             <Alert
               icona={CalendarCheck}
               tono="cabina"
               valore={prenotazioniDaConfermare.length}
-              testo="prenotazioni dal sito"
-              azione="Vai al sito"
+              testo="prenotazioni dal sito da confermare"
+              a="/sito?tab=prenotazioni"
             />
           </CardBody>
         </Card>
@@ -291,29 +314,94 @@ export default function Cruscotto() {
   )
 }
 
-function StatTile({
+/** Media dei 7 giorni prima di oggi (l'ultimo punto della serie è oggi). */
+function media7(serie: number[]) {
+  const prima = serie.slice(Math.max(0, serie.length - 8), -1)
+  return prima.length ? prima.reduce((s, v) => s + v, 0) / prima.length : 0
+}
+
+/** Variazione relativa (0,12 = +12%). */
+function variazione(valore: number, riferimento: number) {
+  return riferimento ? valore / riferimento - 1 : 0
+}
+
+function KpiTile({
   icona: Icona,
   etichetta,
   valore,
-  sotto,
-  compatto,
+  serie,
+  colore,
+  delta,
+  deltaPunti,
+  rispetto,
+  children,
 }: {
   icona: typeof Umbrella
   etichetta: string
   valore: string
-  sotto?: React.ReactNode
-  compatto?: boolean
+  serie: number[]
+  colore: string
+  delta: number
+  /** true = delta in punti percentuali (es. occupazione), altrimenti variazione relativa. */
+  deltaPunti?: boolean
+  rispetto: string
+  children?: React.ReactNode
 }) {
+  const su = delta >= 0
+  const testoDelta = deltaPunti
+    ? `${su ? '+' : '−'}${Math.abs(Math.round(delta * 100))} punti`
+    : `${su ? '+' : '−'}${percento(Math.abs(delta))}`
   return (
     <Card>
-      <CardBody className={compatto ? 'py-3' : undefined}>
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-profondo/50">
-          <Icona className="h-3.5 w-3.5 text-cabina" /> {etichetta}
+      <CardBody>
+        <p className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-profondo/55">
+          <Icona className="h-4 w-4 text-cabina" /> {etichetta}
         </p>
-        <p className={cn('num mt-0.5 font-bold text-profondo', compatto ? 'text-xl' : 'text-2xl')}>{valore}</p>
-        {sotto && <p className="mt-0.5 text-xs">{sotto}</p>}
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <p className="num text-4xl font-bold leading-none text-profondo">{valore}</p>
+          <Sparkline valori={serie} colore={colore} etichetta={`${etichetta}, ultimi 30 giorni`} />
+        </div>
+        <p className="mt-2 flex items-center gap-1.5 text-sm">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold',
+              su ? 'bg-acqua/15 text-[#2F6E5F]' : 'bg-boa/10 text-boa'
+            )}
+          >
+            {su ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+            {testoDelta}
+          </span>
+          <span className="text-profondo/55">{rispetto}</span>
+        </p>
+        {children}
       </CardBody>
     </Card>
+  )
+}
+
+/** Mini grafico a linea (SVG, niente assi): l'andamento, non i valori. */
+function Sparkline({ valori, colore, etichetta }: { valori: number[]; colore: string; etichetta: string }) {
+  const L = 112
+  const A = 40
+  if (valori.length < 2) return null
+  const min = Math.min(...valori)
+  const max = Math.max(...valori)
+  const passo = L / (valori.length - 1)
+  const y = (v: number) => (max === min ? A / 2 : A - 3 - ((v - min) / (max - min)) * (A - 6))
+  const punti = valori.map((v, i) => `${(i * passo).toFixed(1)},${y(v).toFixed(1)}`)
+  const id = `spark-${colore.slice(1)}`
+  return (
+    <svg width={L} height={A} viewBox={`0 0 ${L} ${A}`} role="img" aria-label={etichetta} className="shrink-0 overflow-visible">
+      <defs>
+        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={colore} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={colore} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={`0,${A} ${punti.join(' ')} ${L},${A}`} fill={`url(#${id})`} />
+      <polyline points={punti.join(' ')} fill="none" stroke={colore} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={L} cy={y(valori[valori.length - 1])} r="3.5" fill={colore} />
+    </svg>
   )
 }
 
@@ -322,13 +410,14 @@ function Alert({
   tono,
   valore,
   testo,
-  azione,
+  a,
 }: {
   icona: typeof Wrench
   tono: 'boa' | 'tenda' | 'cabina'
   valore: number
   testo: string
-  azione?: string
+  /** Pagina da aprire al clic. */
+  a: string
 }) {
   const toni = {
     boa: 'bg-boa/10 text-boa',
@@ -336,19 +425,18 @@ function Alert({
     cabina: 'bg-cabina/10 text-cabina',
   }
   return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-calce-200 bg-white px-3 py-2.5">
-      <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', toni[tono])}>
-        <Icona className="h-4 w-4" />
+    <Link
+      to={a}
+      className="group flex items-center gap-3 rounded-lg border border-calce-200 bg-white px-3 py-3 transition hover:border-cabina/40 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-cabina"
+    >
+      <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg', toni[tono])}>
+        <Icona className="h-5 w-5" />
       </span>
-      <div className="min-w-0">
-        <p className="num text-lg font-bold leading-none text-profondo">{valore}</p>
-        <p className="mt-0.5 text-xs text-profondo/60">{testo}</p>
-        {azione && (
-          <span className="mt-1 inline-block text-[11px] font-medium text-cabina underline-offset-2 hover:underline">
-            {azione}
-          </span>
-        )}
+      <div className="min-w-0 flex-1">
+        <p className="num text-2xl font-bold leading-none text-profondo">{valore}</p>
+        <p className="mt-1 text-sm text-profondo/65">{testo}</p>
       </div>
-    </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-profondo/30 transition group-hover:translate-x-0.5 group-hover:text-cabina" />
+    </Link>
   )
 }
