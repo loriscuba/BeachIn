@@ -1,0 +1,5 @@
+# Cloudflare Pages (https://beachin.pages.dev): pubblica la build Vite, non la radice del repo.
+# Comando di build da impostare nel pannello Pages: npm run build
+name = "beachin"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-01-01"
