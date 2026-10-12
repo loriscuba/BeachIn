@@ -7,6 +7,15 @@ Aggiornare qui quando cambia un modulo.
 - `Sidebar` a scomparsa anche su desktop: hamburger nella `Topbar` sempre visibile (apre/chiude), su desktop la colonna
   scorre fuori (`lg:-ml-64`) e la scelta è ricordata in localStorage `beachin.menu.v1`; su telefono resta pannello sopra i contenuti.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
+- (ott 2026) **Nuovo look + tema chiaro/scuro**: interruttore sole/luna nella `Topbar` (hook `useTema`, localStorage
+  `beachin.tema.v1`, default scuro) → `data-tema` sulla radice di `AppShell`. In `styles/index.css`: sfondo a luci sfumate
+  (`.shell-bg`), menu (`.shell-side`, in chiaro vetro bianco), topbar in vetro (`.shell-bar`), card `.bi-card`; in scuro le
+  classi chiare più usate dentro `main` sono rimappate (testi, bordi, sfondi, badge, Recharts). QR sempre su bianco (`.bi-qr`).
+- **Palette "Riviera"** (`src/config/accenti.ts`): un accento per area (sole, agrume, corallo, mare, acqua, glicine,
+  bouganville) usato solo su icone del menu (`IconaVoce`), tessera icona accanto al titolo pagina e barretta `.bi-tacca`
+  dei titoli card (variabile CSS `--accento` impostata da `AppShell`). Pulsanti/schede restano nel blu del marchio.
+- **Cruscotto** ridisegnato (hero incasso+meteo, KPI con anello, mappa spiaggia dal vivo, "Da fare oggi", area incassi,
+  ciambella mix ricavi, scadenze a card); token propri `.cz`. Ingresso pagine animato (`.bi-pagina`), rispetta reduced-motion.
 
 ## Architettura dati
 - `src/context/DemoDataContext.tsx`: unico store mutabile in memoria. Le azioni
