@@ -7,7 +7,7 @@ const opz = { type: 'svg' as const, margin: 1, color: { dark: '#0F3B4C', light: 
 export function QrCodice({ url, className }: { url: string; className?: string }) {
   const [svg, setSvg] = useState('')
   useEffect(() => { QRCode.toString(url, opz).then(setSvg) }, [url])
-  return <div className={className} dangerouslySetInnerHTML={{ __html: svg }} />
+  return <div className={`bi-qr ${className ?? ''}`} dangerouslySetInnerHTML={{ __html: svg }} />
 }
 
 /** Apre una pagina stampabile con un cartoncino per ogni QR (es. uno per tavolo). */

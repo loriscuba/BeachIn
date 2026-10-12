@@ -9,20 +9,18 @@ interface TopbarProps {
   titolo: string
   sottotitolo?: string
   onApriMenu: () => void
-  /** Mostra l'interruttore chiaro/scuro (per ora solo sul Cruscotto). */
-  mostraTema?: boolean
 }
 
 const meteoIcona: Record<Meteo, typeof Sun> = {
   sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
 }
 
-export function Topbar({ titolo, sottotitolo, onApriMenu, mostraTema }: TopbarProps) {
+export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
   const meteo = useMeteoOggi()
   const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
   return (
-    <header className="shell-bar sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-calce-200 bg-calce/85 px-4 backdrop-blur lg:px-6">
+    <header className="shell-bar sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-calce-200 px-4 backdrop-blur-xl lg:px-6">
       <button
         className="-ml-1 rounded-lg p-2 text-profondo hover:bg-profondo/5"
         onClick={onApriMenu}
@@ -33,7 +31,7 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, mostraTema }: TopbarPr
       </button>
 
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-lg font-bold leading-tight text-profondo">{titolo}</h1>
+        <h1 className="truncate font-display text-xl font-semibold leading-tight text-profondo">{titolo}</h1>
         {sottotitolo && (
           <p className="truncate text-xs text-profondo/55">{sottotitolo}</p>
         )}
@@ -54,7 +52,7 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, mostraTema }: TopbarPr
         </span>
       </div>
 
-      {mostraTema && (
+      {(
         <button
           onClick={cambiaTema}
           className="relative flex h-9 w-16 shrink-0 items-center rounded-full border border-calce-200 bg-white p-1 transition-colors"

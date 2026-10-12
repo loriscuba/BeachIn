@@ -108,7 +108,7 @@ export default function Cruscotto() {
   const IconaOggi = meteoIcona[oggi.meteo]
 
   return (
-    <div className="cz -mx-4 -my-5 min-h-full space-y-4 bg-[var(--cz-bg)] px-4 py-5 transition-colors duration-500 lg:-mx-6 lg:-my-6 lg:space-y-5 lg:px-6 lg:py-6">
+    <div className="cz space-y-4 lg:space-y-5">
       {/* ── Hero: saluto, incasso del giorno, meteo ─────────────────────────── */}
       <section className="cz-in relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[#0B2C39] via-[#0F3B4C] to-[#1B5A6E] p-5 text-white shadow-[0_30px_60px_-30px_rgba(11,44,57,0.8)] sm:p-7">
         <div className="cz-orb -left-16 -top-24 h-72 w-72 bg-[#2E7D9A]/60" />

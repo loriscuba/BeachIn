@@ -43,8 +43,6 @@ export function AppShell() {
   }
   const { pathname } = useLocation()
   const [tema] = useTema()
-  // Prototipo: il tema (chiaro/scuro) per ora vale solo sul Cruscotto.
-  const conTema = pathname.startsWith('/cruscotto')
 
   const voce = navigazione.find((v) =>
     v.percorso === '/' ? pathname === '/' : pathname.startsWith(v.percorso)
@@ -55,7 +53,7 @@ export function AppShell() {
   const sottotitolo = sottotitoli[voce?.percorso ?? figlio?.percorso ?? ''] ?? undefined
 
   return (
-    <div className="shell-bg flex h-screen overflow-hidden bg-calce" data-tema={conTema ? tema : 'chiaro'}>
+    <div className="shell-bg flex h-screen overflow-hidden" data-tema={tema}>
       <Sidebar aperta={menuAperto} onChiudi={() => impostaMenu(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -63,10 +61,9 @@ export function AppShell() {
           titolo={titolo}
           sottotitolo={sottotitolo}
           onApriMenu={() => impostaMenu(!menuAperto)}
-          mostraTema={conTema}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1400px] px-4 py-5 lg:px-6 lg:py-6">
+          <div key={pathname} className="bi-pagina mx-auto max-w-[1400px] px-4 py-5 lg:px-6 lg:py-6">
             <Outlet />
           </div>
         </main>

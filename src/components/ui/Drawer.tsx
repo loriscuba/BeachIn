@@ -36,7 +36,7 @@ export function Drawer({
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-profondo-900/40 transition-opacity',
+          'fixed inset-0 z-40 bg-profondo-900/50 backdrop-blur-sm transition-opacity',
           aperto ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
         onClick={onChiudi}
@@ -44,7 +44,7 @@ export function Drawer({
       />
       <aside
         className={cn(
-          'fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-calce shadow-drawer transition-transform duration-200',
+          'fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-white shadow-drawer transition-transform duration-200',
           larghezza,
           aperto ? 'translate-x-0' : 'translate-x-full'
         )}
@@ -55,7 +55,7 @@ export function Drawer({
           <div className="min-w-0">
             {intestazione ?? (
               <>
-                <h2 className="text-base font-bold text-profondo">{titolo}</h2>
+                <h2 className="font-display text-lg font-semibold text-profondo">{titolo}</h2>
                 {sottotitolo && <p className="text-xs text-profondo/55">{sottotitolo}</p>}
               </>
             )}
