@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { ArrowDown, ArrowUp, ImagePlus, Pin, PinOff, Plus, Trash2, X } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
-import { ridimensionaImmagine } from '@/lib/immagini'
+import { fileAImmagine } from '@/lib/immagini'
 import { data as fmtData, euro, euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 
@@ -26,7 +26,7 @@ export function GestioneNews() {
   }
   const caricaFoto = async (file?: File) => {
     if (!file) return
-    try { const uri = await ridimensionaImmagine(file, 1024); setF((p) => ({ ...p, foto: uri })) } catch { alert('Immagine non valida.') }
+    try { const uri = await fileAImmagine(file, 'notizie', 1024); setF((p) => ({ ...p, foto: uri })) } catch { alert('Immagine non valida.') }
   }
 
   return (

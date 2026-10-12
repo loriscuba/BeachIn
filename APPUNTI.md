@@ -59,6 +59,8 @@ gestire chiavi e costi.
 - [ ] Sostituire le immagini ancora generate: tramonto (fascia recensioni), famiglia, pineta, mare tra i pini
 - [ ] Foto delle cabine (il riquadro "Cabine" ha solo l'icona)
 - [ ] Video per lo sfondo dell'hero: versione leggera (< 10 MB) su Drive, oppure `src/assets/sito/hero.mp4`
+- [x] Foto caricate dall'app nello Storage Supabase (bucket `beachin`) invece che come data URI nel database
+- [ ] Salvare su DB eventi e galleria del sito (oggi le foto sono su Storage ma eventi/galleria restano solo in memoria)
 - Le foto di Tripadvisor non si possono scaricare in automatico (protezione anti-bot): salvarle a mano
   e metterle su Drive, cartella **BeachIN**. Preferire quelle pubblicate dal locale.
 

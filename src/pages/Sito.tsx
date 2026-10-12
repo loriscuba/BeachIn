@@ -67,7 +67,7 @@ export default function Sito() {
   }
 
   const caricaFotoGalleria = async (files: FileList | null) => {
-    const falliti = await importaImmagini(files, (uri, file) => aggiungiFoto(uri, file.name.replace(/\.[^.]+$/, '')))
+    const falliti = await importaImmagini(files, (uri, file) => aggiungiFoto(uri, file.name.replace(/\.[^.]+$/, '')), 'sito')
     if (falliti.length) alert(messaggioFileFalliti(falliti))
   }
 

@@ -134,7 +134,7 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina
   const Icona = e ? iconaTipo[e.tipo] : Trophy
   const caricaAlbum = async (files: FileList | null) => {
     if (!e) return
-    const falliti = await importaImmagini(files, (uri) => onAggiungiFoto(e.id, uri))
+    const falliti = await importaImmagini(files, (uri) => onAggiungiFoto(e.id, uri), 'eventi')
     if (falliti.length) alert(messaggioFileFalliti(falliti))
   }
   const margine = e ? e.ricavi - e.costiSostenuti : 0
@@ -300,7 +300,7 @@ function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, on
   const caricaFoto = async (file?: File) => {
     if (!file) return
     setCaricando(true)
-    try { set('foto', await fileAImmagine(file)) }
+    try { set('foto', await fileAImmagine(file, 'eventi')) }
     catch { alert(messaggioFileFalliti([file.name])) }
     finally { setCaricando(false) }
   }

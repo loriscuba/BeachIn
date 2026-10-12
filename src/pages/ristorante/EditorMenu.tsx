@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowUp, ArrowDown, Trash2, Plus, Camera, X, Loader2 } from 'lucide-react'
 import type { LinguaMenu } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
-import { ridimensionaImmagine } from '@/lib/immagini'
+import { fileAImmagine } from '@/lib/immagini'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 
@@ -36,7 +36,7 @@ export function EditorMenu({ lingua }: { lingua: Exclude<LinguaMenu, 'it'> }) {
   const [nuovaSez, setNuovaSez] = useState('')
 
   const caricaFoto = async (id: string, file?: File) => {
-    if (file) modificaPiatto(id, { foto: await ridimensionaImmagine(file, 480, 0.8) })
+    if (file) modificaPiatto(id, { foto: await fileAImmagine(file, 'menu', 480, 0.8) })
   }
   const aggiungi = (sez: string) => {
     const n = nuovi[sez]

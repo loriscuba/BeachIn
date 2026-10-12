@@ -22,6 +22,10 @@ Aggiornare qui quando cambia un modulo.
   stabili (useCallback) leggono lo stato fresco tramite ref sincronizzate in
   useEffect (`prenRef`/`richRef`/`evtRef`), non dentro gli updater di setState
   (StrictMode-safe). `nuovoId(p)` per gli id.
+- **Foto** (`src/lib/immagini.ts`, `fileAImmagine(file, cartella)` → `salvaFoto`): ridimensionate e caricate nello
+  Storage Supabase, bucket pubblico `beachin` (cartelle `menu/`, `notizie/`, `eventi/`, `sito/`; migrazione 0004,
+  anon può solo inserire). Nei dati resta l'URL; senza Supabase o se l'upload fallisce resta il data URI.
+  Eventi e galleria del sito non sono ancora sincronizzati su DB (le foto restano su Storage, i riferimenti in memoria).
 - `src/data/api.ts`: getter async (150–300ms simulati) per i dati read-only.
 - `src/data/types.ts`: tipi. `src/data/seed/*`: dati iniziali.
 - Palette: NAVY `#0F3B4C`, CABINA `#2E7D9A`, ACQUA `#7FB7A8`, TENDA `#F2C14E`,
