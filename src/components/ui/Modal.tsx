@@ -25,14 +25,14 @@ export function Modal({ aperto, onChiudi, titolo, children, piede, larghezza = '
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
-      <div className="absolute inset-0 bg-profondo-900/40" onClick={onChiudi} aria-hidden />
+      <div className="absolute inset-0 bg-profondo-900/50 backdrop-blur-sm" onClick={onChiudi} aria-hidden />
       <div
-        className={cn('anim-pop relative w-full rounded-card border border-calce-200 bg-calce shadow-pop', larghezza)}
+        className={cn('anim-pop relative w-full overflow-hidden rounded-3xl border border-calce-200 bg-white shadow-[0_40px_80px_-30px_rgba(6,22,29,0.6)]', larghezza)}
         role="dialog"
         aria-modal="true"
       >
         <div className="flex items-center justify-between border-b border-calce-200 bg-white px-4 py-3">
-          <h2 className="text-base font-bold text-profondo">{titolo}</h2>
+          <h2 className="font-display text-lg font-semibold text-profondo">{titolo}</h2>
           <button className="-mr-1 rounded-lg p-1.5 text-profondo/60 hover:bg-profondo/5 hover:text-profondo" onClick={onChiudi} aria-label="Chiudi">
             <X className="h-5 w-5" />
           </button>

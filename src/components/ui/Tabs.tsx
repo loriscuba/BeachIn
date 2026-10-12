@@ -10,14 +10,14 @@ interface TabsProps<T extends string> {
 /** Segmented control sobrio. */
 export function Tabs<T extends string>({ opzioni, valore, onChange, className }: TabsProps<T>) {
   return (
-    <div className={cn('inline-flex max-w-full overflow-x-auto rounded-lg border border-calce-200 bg-white p-0.5', className)}>
+    <div className={cn('inline-flex max-w-full overflow-x-auto rounded-full border border-calce-200 bg-white p-1', className)}>
       {opzioni.map((o) => (
         <button
           key={o.valore}
           onClick={() => onChange(o.valore)}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-            valore === o.valore ? 'bg-profondo text-white' : 'text-profondo/60 hover:text-profondo'
+            'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300',
+            valore === o.valore ? 'bg-gradient-to-br from-profondo to-cabina text-white shadow-[0_6px_16px_-8px_rgba(46,125,154,0.9)]' : 'text-profondo/60 hover:text-profondo'
           )}
         >
           {o.etichetta}

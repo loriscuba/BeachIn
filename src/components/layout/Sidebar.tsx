@@ -6,6 +6,7 @@ import { useModuli } from '@/context/ModuliContext'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Logo } from './Logo'
+import { accento } from '@/config/accenti'
 import { cn } from '@/lib/cn'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 
@@ -68,7 +69,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white',
+          'shell-side fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white',
           // mobile: pannello sopra i contenuti; desktop: colonna che scorre fuori a sinistra
           'transition-all duration-200 lg:static',
           aperta ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
@@ -115,11 +116,11 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
                             onClick={() => setAperti({ ...aperti, [v.percorso]: !espanso })}
                             aria-expanded={espanso}
                             className={cn(
-                              'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                              'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                               qui ? 'text-white' : bloccato ? 'text-white/35 hover:bg-white/6' : 'text-white/70 hover:bg-white/6 hover:text-white'
                             )}
                           >
-                            <v.icona className={cn('h-[18px] w-[18px] shrink-0', qui && 'text-tenda')} />
+                            <IconaVoce icona={v.icona} colore={accento(v.percorso)} attiva={qui} spenta={bloccato} />
                             <span className="truncate">{v.etichetta}</span>
                             <span className="ml-auto flex items-center gap-2">
                               {!espanso && <BadgeConta n={totBadge} />}
@@ -139,7 +140,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
                                       onClick={chiudiSeMobile}
                                       className={cn(
                                         'flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors',
-                                        att ? 'bg-white/12 font-semibold text-white' : blocc ? 'text-white/35 hover:bg-white/6' : 'text-white/65 hover:bg-white/6 hover:text-white'
+                                        att ? 'bg-white/[0.09] font-semibold text-white' : blocc ? 'text-white/35 hover:bg-white/6' : 'text-white/65 hover:bg-white/6 hover:text-white'
                                       )}
                                     >
                                       <span className="truncate">{f.etichetta}</span>
@@ -166,9 +167,9 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
                           title={bloccato ? 'Modulo non incluso nel piano — attivalo' : undefined}
                           className={({ isActive }) =>
                             cn(
-                              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                               isActive
-                                ? 'bg-white/12 text-white'
+                                ? 'bg-white/[0.09] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
                                 : bloccato
                                   ? 'text-white/35 hover:bg-white/6 hover:text-white/60'
                                   : 'text-white/70 hover:bg-white/6 hover:text-white'
@@ -177,9 +178,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
                         >
                           {({ isActive }) => (
                             <>
-                              <v.icona
-                                className={cn('h-[18px] w-[18px] shrink-0', isActive && 'text-tenda')}
-                              />
+                              <IconaVoce icona={v.icona} colore={accento(v.percorso)} attiva={isActive} spenta={bloccato} />
                               <span className="truncate">{v.etichetta}</span>
                               {bloccato && <Lock className="ml-auto h-3.5 w-3.5 shrink-0 opacity-70" />}
                             </>
@@ -201,5 +200,17 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
         </div>
       </aside>
     </>
+  )
+}
+
+/** Icona di menu nel colore della sua area: tenue a riposo, piena (su tessera) se attiva. */
+function IconaVoce({ icona: Icona, colore, attiva, spenta }: { icona: typeof Lock; colore: string; attiva: boolean; spenta: boolean }) {
+  return (
+    <span
+      className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-all duration-300', !attiva && 'bi-icona-voce')}
+      style={attiva ? { background: colore, color: '#0B2C39', boxShadow: `0 6px 16px -6px ${colore}` } : { ['--c' as string]: colore, opacity: spenta ? 0.45 : 0.9 }}
+    >
+      <Icona className="h-[17px] w-[17px]" strokeWidth={attiva ? 2.25 : 2} />
+    </span>
   )
 }

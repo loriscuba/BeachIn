@@ -6,6 +6,8 @@ import { Topbar } from './Topbar'
 import { DemoPlayer } from '@/components/demo/DemoPlayer'
 import { navigazione } from '@/config/navigazione'
 import { config } from '@/data/config'
+import { useTema } from '@/hooks/useTema'
+import { accento } from '@/config/accenti'
 
 /** Sottotitoli per pagina mostrati nella topbar. */
 const sottotitoli: Record<string, string> = {
@@ -41,6 +43,7 @@ export function AppShell() {
     }
   }
   const { pathname } = useLocation()
+  const [tema] = useTema()
 
   const voce = navigazione.find((v) =>
     v.percorso === '/' ? pathname === '/' : pathname.startsWith(v.percorso)
@@ -48,20 +51,22 @@ export function AppShell() {
   // pagine raggiungibili solo da un sottomenu (es. Comande sotto Bar)
   const figlio = voce ? undefined : navigazione.flatMap((v) => v.figli ?? []).find((f) => f.percorso === pathname)
   const titolo = voce?.etichetta ?? figlio?.etichetta ?? 'BeachIn'
+  const coloreArea = accento(figlio?.percorso ?? voce?.percorso)
   const sottotitolo = sottotitoli[voce?.percorso ?? figlio?.percorso ?? ''] ?? undefined
 
   return (
-    <div className="flex h-screen overflow-hidden bg-calce">
+    <div className="shell-bg flex h-screen overflow-hidden" data-tema={tema} style={{ ['--accento' as string]: coloreArea }}>
       <Sidebar aperta={menuAperto} onChiudi={() => impostaMenu(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           titolo={titolo}
+          icona={voce?.icona}
           sottotitolo={sottotitolo}
           onApriMenu={() => impostaMenu(!menuAperto)}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1400px] px-4 py-5 lg:px-6 lg:py-6">
+          <div key={pathname} className="bi-pagina mx-auto max-w-[1400px] px-4 py-5 lg:px-6 lg:py-6">
             <Outlet />
           </div>
         </main>

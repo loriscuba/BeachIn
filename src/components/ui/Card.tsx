@@ -9,7 +9,7 @@ export function Card({ className, children, ...rest }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-white border border-calce-200 rounded-card shadow-card',
+        'bi-card',
         className
       )}
       {...rest}
@@ -28,9 +28,12 @@ interface CardHeaderProps {
 
 export function CardHeader({ titolo, sottotitolo, azione, className }: CardHeaderProps) {
   return (
-    <div className={cn('flex items-start justify-between gap-3 px-4 pt-4', className)}>
+    <div className={cn('flex items-start justify-between gap-3 px-5 pt-5', className)}>
       <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-profondo leading-tight">{titolo}</h3>
+        <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-profondo leading-tight">
+          <span className="bi-tacca" aria-hidden />
+          {titolo}
+        </h3>
         {sottotitolo && (
           <p className="text-xs text-profondo/55 mt-0.5">{sottotitolo}</p>
         )}
@@ -42,7 +45,7 @@ export function CardHeader({ titolo, sottotitolo, azione, className }: CardHeade
 
 export function CardBody({ className, children, ...rest }: CardProps) {
   return (
-    <div className={cn('p-4', className)} {...rest}>
+    <div className={cn('p-5', className)} {...rest}>
       {children}
     </div>
   )
