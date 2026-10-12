@@ -207,8 +207,8 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
 function IconaVoce({ icona: Icona, colore, attiva, spenta }: { icona: typeof Lock; colore: string; attiva: boolean; spenta: boolean }) {
   return (
     <span
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-all duration-300"
-      style={attiva ? { background: colore, color: '#0B2C39', boxShadow: `0 6px 16px -6px ${colore}` } : { color: colore, opacity: spenta ? 0.45 : 0.9 }}
+      className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-all duration-300', !attiva && 'bi-icona-voce')}
+      style={attiva ? { background: colore, color: '#0B2C39', boxShadow: `0 6px 16px -6px ${colore}` } : { ['--c' as string]: colore, opacity: spenta ? 0.45 : 0.9 }}
     >
       <Icona className="h-[17px] w-[17px]" strokeWidth={attiva ? 2.25 : 2} />
     </span>
