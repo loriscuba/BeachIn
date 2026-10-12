@@ -7,6 +7,7 @@ import { DemoPlayer } from '@/components/demo/DemoPlayer'
 import { navigazione } from '@/config/navigazione'
 import { config } from '@/data/config'
 import { useTema } from '@/hooks/useTema'
+import { accento } from '@/config/accenti'
 
 /** Sottotitoli per pagina mostrati nella topbar. */
 const sottotitoli: Record<string, string> = {
@@ -50,15 +51,17 @@ export function AppShell() {
   // pagine raggiungibili solo da un sottomenu (es. Comande sotto Bar)
   const figlio = voce ? undefined : navigazione.flatMap((v) => v.figli ?? []).find((f) => f.percorso === pathname)
   const titolo = voce?.etichetta ?? figlio?.etichetta ?? 'BeachIn'
+  const coloreArea = accento(figlio?.percorso ?? voce?.percorso)
   const sottotitolo = sottotitoli[voce?.percorso ?? figlio?.percorso ?? ''] ?? undefined
 
   return (
-    <div className="shell-bg flex h-screen overflow-hidden" data-tema={tema}>
+    <div className="shell-bg flex h-screen overflow-hidden" data-tema={tema} style={{ ['--accento' as string]: coloreArea }}>
       <Sidebar aperta={menuAperto} onChiudi={() => impostaMenu(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           titolo={titolo}
+          icona={voce?.icona}
           sottotitolo={sottotitolo}
           onApriMenu={() => impostaMenu(!menuAperto)}
         />

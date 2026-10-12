@@ -7,6 +7,8 @@ import { dataEstesa } from '@/lib/formatters'
 
 interface TopbarProps {
   titolo: string
+  /** Icona della sezione, mostrata su una tessera nel colore d'area. */
+  icona?: typeof Sun
   sottotitolo?: string
   onApriMenu: () => void
 }
@@ -15,7 +17,7 @@ const meteoIcona: Record<Meteo, typeof Sun> = {
   sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
 }
 
-export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
+export function Topbar({ titolo, sottotitolo, onApriMenu, icona: IconaPagina }: TopbarProps) {
   const meteo = useMeteoOggi()
   const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
@@ -29,6 +31,16 @@ export function Topbar({ titolo, sottotitolo, onApriMenu }: TopbarProps) {
       >
         <Menu className="h-5 w-5" />
       </button>
+
+      {IconaPagina && (
+        <span
+          className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl text-[#0B2C39] sm:grid"
+          style={{ background: 'linear-gradient(135deg, var(--accento), color-mix(in srgb, var(--accento) 70%, #ffffff))', boxShadow: '0 8px 20px -10px var(--accento)' }}
+          aria-hidden
+        >
+          <IconaPagina className="h-5 w-5" strokeWidth={2.25} />
+        </span>
+      )}
 
       <div className="min-w-0 flex-1">
         <h1 className="truncate font-display text-xl font-semibold leading-tight text-profondo">{titolo}</h1>

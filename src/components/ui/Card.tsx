@@ -30,7 +30,10 @@ export function CardHeader({ titolo, sottotitolo, azione, className }: CardHeade
   return (
     <div className={cn('flex items-start justify-between gap-3 px-5 pt-5', className)}>
       <div className="min-w-0">
-        <h3 className="font-display text-lg font-semibold text-profondo leading-tight">{titolo}</h3>
+        <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-profondo leading-tight">
+          <span className="bi-tacca" aria-hidden />
+          {titolo}
+        </h3>
         {sottotitolo && (
           <p className="text-xs text-profondo/55 mt-0.5">{sottotitolo}</p>
         )}

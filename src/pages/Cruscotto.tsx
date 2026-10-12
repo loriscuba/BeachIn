@@ -315,7 +315,7 @@ function TitoloCard({ titolo, sotto, azione }: { titolo: string; sotto?: string;
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
-        <h3 className="font-display text-xl font-semibold leading-tight">{titolo}</h3>
+        <h3 className="flex items-center gap-2 font-display text-xl font-semibold leading-tight"><span className="bi-tacca" aria-hidden />{titolo}</h3>
         {sotto && <p className="cz-tenue mt-0.5 text-xs">{sotto}</p>}
       </div>
       {azione}
