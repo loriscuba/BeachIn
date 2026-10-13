@@ -85,11 +85,16 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Ombrellone** = vecchia ComandApp (login demo, ordini, stato); la barra "Ordina" sta sopra la nav.
 - **Prenota** Ristorante/Eventi riusa `FormRistorante`, `EventoModal`, `Sospese` esportati da `SitoAnteprima` (stessi flussi
   del sito, rispetta `canaliPrenotazione`). `FormRistorante` ora parte da `config.oggi` (ristorante aperto tutto l'anno).
-- **News** (`notizie`: `pubblicaNotizia/modificaNotizia/eliminaNotizia`, `fissata` = in evidenza, foto data URI) e
+- **News** (`notizie`: `pubblicaNotizia/modificaNotizia/eliminaNotizia`, `fissata` = in evidenza, foto su Storage) e
   **Lavagnetta** (`lavagnetta`: `aggiungi/modifica/rimuovi/spostaVoceLavagnetta`, prezzo `null` = senza prezzo) nel context,
   seed `src/data/seed/app.ts`, sync Supabase `beachin.notizie` / `beachin.lavagnetta` (migrazione `0002_app_clienti.sql`).
   Client Supabase senza sessione Auth (`persistSession:false`, `storageKey` proprio): su github.io altre demo dello stesso
   progetto lasciano un login in localStorage che faceva partire le richieste come `authenticated` (policy solo anon → tutto vuoto).
+- **Notifiche push clienti** (migrazione `0005_push_clienti.sql`): finestra `InvitoNotifiche` all'entrata dell'app
+  (`src/components/AttivaNotifiche.tsx`; "Non ora" la nasconde 3 giorni, `beachin.push.clienti.rimandata`). `push_iscrizioni` ha colonna `app` (PK endpoint+app:
+  stesso telefono = stesso SW per le due app), RPC `registra_push(..., p_app)`. Trigger `notifica_app_clienti`: insert su `notizie`
+  → "📰 titolo"; insert/modifica di nome/descrizione/prezzo su `lavagnetta` → "Lavagna del giorno aggiornata", max 1 ogni 15 min
+  (`beachin.push_invii`). `beachin-push` riceve `tipo` e filtra le iscrizioni per app; SW apre/porta in primo piano la pagina giusta.
   Il gestore li scrive da **Sito → App clienti** (`?tab=app`, con QR dell'app) e dall'**app admin** (tab "App"), componenti
   `src/components/app/GestioneAppClienti.tsx`. Lavagna in stile ardesia con font Caveat (`font-gesso`).
 - **Contatti**: da `config` (telefono, WhatsApp, email se c'è, indirizzo/Maps, Facebook, orari).
