@@ -21,6 +21,7 @@ import { cn } from '@/lib/cn'
 import { impostaManifest } from '@/lib/notifichePush'
 import { urlPubblico } from '@/lib/urlPubblico'
 import PulsanteInstalla from '@/components/PulsanteInstalla'
+import AttivaNotifiche from '@/components/AttivaNotifiche'
 import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 import { prezzoLavagna } from '@/components/app/GestioneAppClienti'
 import { EventoModal, FormRistorante, Sospese } from '@/pages/SitoAnteprima'
@@ -92,6 +93,7 @@ export default function ComandApp() {
       </header>
       <main className="mx-auto max-w-md px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         <PulsanteInstalla nome={config.nome} />
+        {(sez === 'news' || sez === 'lavagna') && <AttivaNotifiche app="clienti" descrizione="Avvisami quando escono nuove news o cambia la lavagna del giorno." />}
         {sez === 'news' && <News />}
         {sez === 'ombrellone' && (utente ? <Area utente={utente} /> : <Login onEntra={(u) => { try { localStorage.setItem(CHIAVE, u.utente) } catch { /* */ } setUtente(u) }} />)}
         {sez === 'prenota' && <Prenota ristorante={ristorante} eventiOn={eventiOn} />}

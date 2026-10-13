@@ -1,12 +1,19 @@
 /**
- * Notifiche push dell'app admin (Web Push + service worker `public/sw-admin.js`).
- * L'iscrizione del telefono viene salvata su Supabase (RPC `beachin.registra_push`); a ogni nuova
- * richiesta tavolo un trigger chiama la Edge Function `beachin-push` che invia la notifica.
+ * Notifiche push delle app admin e clienti (Web Push + service worker `public/sw-admin.js`, unico per le due app).
+ * L'iscrizione del telefono viene salvata su Supabase (RPC `beachin.registra_push`, con l'app di provenienza); i trigger
+ * chiamano la Edge Function `beachin-push`: nuova richiesta tavolo → admin, nuova news o lavagna aggiornata → clienti.
  */
 import { supabase } from '@/lib/supabase'
 
 /** Chiave pubblica VAPID (la privata è nel Vault di Supabase). */
 const VAPID_PUBBLICA = 'BKCQla4JMqnJkbo21hLm_4czvgZK6zPnH6xYFU0CLOea0wBc-BweE9rvi6OD-xAqyK4IiMI9H2_TA8cAOuSBCMU'
+
+/** App che riceve le notifiche: stesso telefono può avere entrambe (stessa iscrizione, due righe su DB). */
+export type AppPush = 'admin' | 'clienti'
+const chiaveAttiva = (app: AppPush) => `beachin.push.${app}`
+const segnaAttiva = (app: AppPush) => { try { localStorage.setItem(chiaveAttiva(app), '1') } catch { /* */ } }
+// admin: iscrizioni fatte prima della distinzione per app valgono già
+const eraAttiva = (app: AppPush) => { try { return app === 'admin' || localStorage.getItem(chiaveAttiva(app)) === '1' } catch { return app === 'admin' } }
 
 export type StatoPush = 'non-supportato' | 'serve-installazione' | 'negato' | 'attivo' | 'da-attivare' | 'senza-server'
 
@@ -21,18 +28,18 @@ async function registrazione() {
   return navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw-admin.js`, { scope: import.meta.env.BASE_URL })
 }
 
-export async function statoPush(): Promise<StatoPush> {
+export async function statoPush(app: AppPush = 'admin'): Promise<StatoPush> {
   if (!supabase) return 'senza-server'
   if (isIos() && !isInstallata()) return 'serve-installazione'
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'non-supportato'
   if (Notification.permission === 'denied') return 'negato'
   const reg = await navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL)
   const sub = await reg?.pushManager.getSubscription()
-  return sub && Notification.permission === 'granted' ? 'attivo' : 'da-attivare'
+  return sub && Notification.permission === 'granted' && eraAttiva(app) ? 'attivo' : 'da-attivare'
 }
 
 /** Chiede il permesso, iscrive il telefono e salva l'iscrizione su Supabase. */
-export async function attivaPush(): Promise<StatoPush> {
+export async function attivaPush(app: AppPush = 'admin'): Promise<StatoPush> {
   if (!supabase) return 'senza-server'
   const permesso = await Notification.requestPermission()
   if (permesso !== 'granted') return permesso === 'denied' ? 'negato' : 'da-attivare'
@@ -42,9 +49,10 @@ export async function attivaPush(): Promise<StatoPush> {
     ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64ToBytes(VAPID_PUBBLICA) }))
   const j = sub.toJSON()
   const { error } = await supabase.rpc('registra_push', {
-    p_endpoint: sub.endpoint, p_p256dh: j.keys?.p256dh ?? '', p_auth: j.keys?.auth ?? '', p_url: window.location.href,
+    p_endpoint: sub.endpoint, p_p256dh: j.keys?.p256dh ?? '', p_auth: j.keys?.auth ?? '', p_url: window.location.href, p_app: app,
   })
   if (error) throw new Error(error.message)
+  segnaAttiva(app)
   return 'attivo'
 }
 
