@@ -4,6 +4,9 @@ Riferimento completo spostato da `CLAUDE.md` (che resta snello). Leggere solo la
 Aggiornare qui quando cambia un modulo.
 
 ## Shell (menu laterale)
+- **Accesso**: `AppShell` mostra `LoginGestore` (`src/components/LoginGestore.tsx`) finché non c'è la sessione del gestore
+  (`sessioneGestore/entraGestore/esciGestore` in `src/lib/adminapp.ts`, stessa chiave dell'app admin); pulsante Esci nella Topbar.
+  Solo lato app: credenziali nel codice e policy DB aperte ad anon. Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`) libere.
 - `Sidebar` a scomparsa anche su desktop: hamburger nella `Topbar` sempre visibile (apre/chiude), su desktop la colonna
   scorre fuori (`lg:-ml-64`) e la scelta è ricordata in localStorage `beachin.menu.v1`; su telefono resta pannello sopra i contenuti.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.

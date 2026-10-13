@@ -67,6 +67,9 @@ gestire chiavi e costi.
 ---
 
 ## 4. Produzione / infrastruttura
+- [x] Login sul gestionale (solo lato app, stesse credenziali dell'app admin)
+- [ ] **Prima della produzione**: login vero con Supabase Auth (gestore) e policy DB che lasciano ad anon solo le azioni dei clienti
+  (leggere menu/news/lavagna, inviare ordini e prenotazioni). Oggi credenziali nel codice e tabelle scrivibili da chiunque.
 - [ ] **Menu QR condiviso tra dispositivi**: oggi il menu vive nel browser del gestore; chi scansiona il QR vede il
   menu iniziale. In produzione serve un database (es. Supabase) da cui leggono gestionale e `/menu`.
 - [ ] **Traduzioni**: oggi servizio gratuito MyMemory (limite ~5.000 caratteri/giorno) + glossario di riserva.

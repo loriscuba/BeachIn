@@ -8,6 +8,8 @@ import { navigazione } from '@/config/navigazione'
 import { config } from '@/data/config'
 import { useTema } from '@/hooks/useTema'
 import { accento } from '@/config/accenti'
+import { LoginGestore } from '@/components/LoginGestore'
+import { entraGestore, esciGestore, sessioneGestore } from '@/lib/adminapp'
 
 /** Sottotitoli per pagina mostrati nella topbar. */
 const sottotitoli: Record<string, string> = {
@@ -30,7 +32,24 @@ const sottotitoli: Record<string, string> = {
 
 const CHIAVE_MENU = 'beachin.menu.v1'
 
+/** Gestionale accessibile solo dopo l'accesso del gestore (stessa sessione dell'app admin). */
 export function AppShell() {
+  const [dentro, setDentro] = useState(sessioneGestore)
+  if (!dentro) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-calce px-4">
+        <div className="w-full max-w-md">
+          <p className="text-center font-display text-3xl font-semibold text-profondo">BeachIn</p>
+          <p className="text-center text-sm text-profondo/60">{config.nome} · gestionale</p>
+          <LoginGestore onEntra={() => { entraGestore(); setDentro(true) }} />
+        </div>
+      </div>
+    )
+  }
+  return <Gestionale onEsci={() => { esciGestore(); setDentro(false) }} />
+}
+
+function Gestionale({ onEsci }: { onEsci: () => void }) {
   // Menu laterale a scomparsa: su telefono parte chiuso; su desktop si ricorda la scelta.
   const [menuAperto, setMenuAperto] = useState(() => {
     if (!window.matchMedia('(min-width: 1024px)').matches) return false
@@ -64,6 +83,7 @@ export function AppShell() {
           icona={voce?.icona}
           sottotitolo={sottotitolo}
           onApriMenu={() => impostaMenu(!menuAperto)}
+          onEsci={onEsci}
         />
         <main className="flex-1 overflow-y-auto">
           <div key={pathname} className="bi-pagina mx-auto max-w-[1400px] px-4 py-5 lg:px-6 lg:py-6">
