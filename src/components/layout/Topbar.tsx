@@ -1,4 +1,4 @@
-import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
+import { LogOut, Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
 import { useTema } from '@/hooks/useTema'
 import type { Meteo } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
@@ -11,13 +11,14 @@ interface TopbarProps {
   icona?: typeof Sun
   sottotitolo?: string
   onApriMenu: () => void
+  onEsci: () => void
 }
 
 const meteoIcona: Record<Meteo, typeof Sun> = {
   sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
 }
 
-export function Topbar({ titolo, sottotitolo, onApriMenu, icona: IconaPagina }: TopbarProps) {
+export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPagina }: TopbarProps) {
   const meteo = useMeteoOggi()
   const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
@@ -78,6 +79,15 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, icona: IconaPagina }: 
           </span>
         </button>
       )}
+
+      <button
+        onClick={onEsci}
+        className="grid h-9 w-9 shrink-0 place-content-center rounded-full border border-calce-200 bg-white text-profondo/70 hover:text-profondo"
+        aria-label="Esci"
+        title="Esci"
+      >
+        <LogOut className="h-4 w-4" />
+      </button>
 
       {/* Badge dati dimostrativi — sempre visibile */}
       <div

@@ -4,6 +4,9 @@ Riferimento completo spostato da `CLAUDE.md` (che resta snello). Leggere solo la
 Aggiornare qui quando cambia un modulo.
 
 ## Shell (menu laterale)
+- **Accesso**: `AppShell` mostra `LoginGestore` (`src/components/LoginGestore.tsx`) finché non c'è la sessione del gestore
+  (`sessioneGestore/entraGestore/esciGestore` in `src/lib/adminapp.ts`, stessa chiave dell'app admin); pulsante Esci nella Topbar.
+  Solo lato app: credenziali nel codice e policy DB aperte ad anon. Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`) libere.
 - `Sidebar` a scomparsa anche su desktop: hamburger nella `Topbar` sempre visibile (apre/chiude), su desktop la colonna
   scorre fuori (`lg:-ml-64`) e la scelta è ricordata in localStorage `beachin.menu.v1`; su telefono resta pannello sopra i contenuti.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
@@ -76,7 +79,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `beachin.registra_push`). Trigger `notifica_nuova_richiesta` su `richieste_ristorante` → `pg_net` → Edge Function
   `beachin-push` (`supabase/functions/beachin-push`, legge DB via `SUPABASE_DB_URL`, rimuove iscrizioni 404/410).
   Tocco notifica con app aperta → SW `postMessage({tipo:"aggiorna"})` → reload; `useSyncSupabase` rilegge anche su visibilitychange/online/pageshow e alla (ri)sottoscrizione del canale (app sospesa su telefono = canale live caduto).
-  iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `main.tsx` converte `#/percorso` in path con BrowserRouter.
+  iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `src/lib/hashInPercorso.ts` (primo import di `main.tsx`, prima che il router legga l'indirizzo) converte `#/percorso` in path con BrowserRouter: start_url delle app installate.
 
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a

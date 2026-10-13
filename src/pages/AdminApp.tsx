@@ -12,7 +12,8 @@ import { disponibilitaTurno, sistemazionePer } from '@/lib/disponibilita'
 import { GiorniChiusi } from '@/components/GiorniChiusi'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
-import { UTENTI_ADMIN } from '@/lib/adminapp'
+import { entraGestore, esciGestore, sessioneGestore } from '@/lib/adminapp'
+import { LoginGestore } from '@/components/LoginGestore'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { supabaseAttivo } from '@/lib/supabase'
 import AssistenteVocale from '@/pages/AssistenteVocale'
@@ -21,12 +22,11 @@ import { cn } from '@/lib/cn'
 import { preparaInstallazione } from '@/lib/notifichePush'
 import AttivaNotifiche from '@/components/AttivaNotifiche'
 
-const CHIAVE = 'adminapp.sessione.v1'
 const dataIt = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 
 export default function AdminApp() {
-  const [dentro, setDentro] = useState(() => { try { return localStorage.getItem(CHIAVE) === '1' } catch { return false } })
-  const esci = () => { try { localStorage.removeItem(CHIAVE) } catch { /* */ } setDentro(false) }
+  const [dentro, setDentro] = useState(sessioneGestore)
+  const esci = () => { esciGestore(); setDentro(false) }
   useEffect(() => { preparaInstallazione() }, [])
   return (
     <div className="min-h-screen bg-calce text-profondo">
@@ -40,32 +40,13 @@ export default function AdminApp() {
         </div>
       </header>
       <main className="mx-auto max-w-2xl px-4 py-4">
-        {dentro ? <Area /> : <Login onEntra={() => { try { localStorage.setItem(CHIAVE, '1') } catch { /* */ } setDentro(true) }} />}
+        {dentro ? <Area /> : <LoginGestore onEntra={() => { sbloccaAudio(); entraGestore(); setDentro(true) }} />}
       </main>
       <AnteprimaWhatsApp />
     </div>
   )
 }
 
-function Login({ onEntra }: { onEntra: () => void }) {
-  const [utente, setUtente] = useState('')
-  const [password, setPassword] = useState('')
-  const [errore, setErrore] = useState(false)
-  const campo = 'h-12 w-full rounded-xl border border-calce-200 bg-white px-4 text-base focus-visible:focus-ring'
-  return (
-    <form
-      onSubmit={(e) => { e.preventDefault(); sbloccaAudio(); if (UTENTI_ADMIN.some((u) => u.utente === utente.trim().toLowerCase() && u.password === password)) onEntra(); else setErrore(true) }}
-      className="mx-auto mt-6 max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-sm"
-    >
-      <h1 className="text-center font-display text-2xl font-semibold">Area gestore</h1>
-      <input value={utente} onChange={(e) => { setUtente(e.target.value); setErrore(false) }} placeholder="Utente" autoCapitalize="none" autoComplete="username" className={campo} />
-      <input value={password} onChange={(e) => { setPassword(e.target.value); setErrore(false) }} type="password" placeholder="Password" autoComplete="current-password" className={campo} />
-      {errore && <p className="text-sm text-boa">Utente o password non corretti.</p>}
-      <button className="h-12 w-full rounded-xl bg-cabina text-base font-semibold text-white hover:bg-profondo">Entra</button>
-      <p className="text-center text-xs text-profondo/45">Demo: {UTENTI_ADMIN[0].utente} / {UTENTI_ADMIN[0].password}</p>
-    </form>
-  )
-}
 
 function Area() {
   const { richiesteRistorante, confermaRistorante, rifiutaRistorante, assegnaTavolo, giorniChiusi } = useDemoData()
