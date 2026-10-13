@@ -86,6 +86,9 @@ gestire chiavi e costi.
 ## 5. Idee / sviluppi futuri
 - Risposte dell'admin al cliente dalla casella di posta
 - Modifica di una prenotazione prima della conferma
+- [ ] Spazio foto esterno se Supabase Storage (1 GB free) non basta; si cambia solo `src/lib/immagini.ts`:
+  - **Cloudflare R2**: ~10 GB free, traffico gratis, account già attivo; serve carta e un Worker per caricare dal telefono
+  - **Cloudinary**: ~25 crediti/mese free, caricamento diretto dall'app (upload preset), ottimizza le foto da solo
 
 ## 6. App su App Store / Google Play (Capacitor)
 **Costi**: Apple Developer 99 €/anno (per l'azienda serve D-U-N-S, gratis) · Google Play 25 $ una tantum.
