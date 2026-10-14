@@ -98,6 +98,8 @@ gestire chiavi e costi.
 Commissioni 15–30% solo su beni digitali; prenotazioni e cibo sono servizi fisici → Stripe/SumUp/Nexi (~1,5–3%).
 Per iOS serve un Mac (o Codemagic/EAS in cloud). Google: account personali nuovi → test chiuso 12 tester × 14 giorni.
 Apple rifiuta le app "sito impacchettato" (linea guida 4.2) → servono funzioni native (push, QR, fotocamera).
+Lavoro extra: icone, screenshot e privacy policy per le schede store.
+**Totale indicativo 1° anno**: ~125 € di sole quote (99 € + 25 $), + eventuale Mac/servizio cloud. La PWA attuale resta gratis.
 
 **Capacitor** (Ionic, gratis): impacchetta `dist/` di Vite in app iOS/Android native con WebView + plugin.
 ```
