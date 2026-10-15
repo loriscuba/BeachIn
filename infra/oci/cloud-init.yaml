@@ -1,0 +1,71 @@
+#cloud-config
+# Oracle Linux 9. __BUNDLE_URL__ viene sostituito da provision.py (PAR in sola lettura).
+write_files:
+  - path: /etc/nginx/conf.d/beachin.conf
+    content: |
+      server {
+        listen 80 default_server;
+        root /opt/beachin/site;
+        index index.html;
+        location /api/ { proxy_pass http://127.0.0.1:3000; }
+        location / { try_files $uri $uri/ /index.html; }
+      }
+  - path: /opt/beachin/update.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Scarica il bundle dal bucket; se cambiato, aggiorna sito e API.
+      set -e
+      cd /opt/beachin
+      curl -fsS -o bundle.new '__BUNDLE_URL__'
+      if [ -f bundle.tar.gz ] && cmp -s bundle.new bundle.tar.gz; then rm bundle.new; exit 0; fi
+      mv bundle.new bundle.tar.gz
+      rm -rf tmp && mkdir -p tmp && tar -xzf bundle.tar.gz -C tmp
+      rm -rf site && mv tmp/site site
+      if ! cmp -s tmp/api/package.json api/package.json 2>/dev/null; then
+        rm -rf api && mv tmp/api api && (cd api && npm install --omit=dev)
+      else
+        cp tmp/api/*.js api/
+      fi
+      rm -rf tmp
+      restorecon -R /opt/beachin || true
+      systemctl restart beachin-api || true
+  - path: /etc/systemd/system/beachin-api.service
+    content: |
+      [Unit]
+      Description=BeachIn API
+      After=network-online.target
+      [Service]
+      WorkingDirectory=/opt/beachin/api
+      ExecStart=/usr/bin/node server.js
+      Restart=always
+      User=nobody
+      [Install]
+      WantedBy=multi-user.target
+  - path: /etc/systemd/system/beachin-update.service
+    content: |
+      [Unit]
+      Description=BeachIn aggiornamento bundle
+      [Service]
+      Type=oneshot
+      ExecStart=/opt/beachin/update.sh
+  - path: /etc/systemd/system/beachin-update.timer
+    content: |
+      [Unit]
+      Description=BeachIn controllo bundle ogni 5 minuti
+      [Timer]
+      OnBootSec=1min
+      OnUnitActiveSec=5min
+      [Install]
+      WantedBy=timers.target
+runcmd:
+  - dnf -y module enable nodejs:20
+  - dnf -y install nginx nodejs
+  - sed -i 's/^\(\s*\)listen\(.*\)default_server/\1listen\2/' /etc/nginx/nginx.conf
+  - firewall-cmd --permanent --add-service=http --add-service=https
+  - firewall-cmd --reload
+  - setsebool -P httpd_can_network_connect 1
+  - semanage fcontext -a -t httpd_sys_content_t '/opt/beachin/site(/.*)?' || true
+  - /opt/beachin/update.sh
+  - systemctl daemon-reload
+  - systemctl enable --now nginx beachin-api beachin-update.timer
