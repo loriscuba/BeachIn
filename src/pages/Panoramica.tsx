@@ -4,8 +4,8 @@
  * aggregare i centri della suite completa (quello è il Cruscotto completo).
  */
 import { Link } from 'react-router-dom'
-import { differenceInCalendarDays, parseISO } from 'date-fns'
-import { Users, Inbox, Globe, Sun, CloudSun, Cloud, CloudRain, CloudLightning, PartyPopper } from 'lucide-react'
+import { differenceInCalendarDays, format, lastDayOfMonth, parseISO, previousSunday, isSunday } from 'date-fns'
+import { Users, Inbox, Globe, Sun, CloudSun, Cloud, CloudRain, CloudLightning } from 'lucide-react'
 import type { Meteo, StatoPrenotazione } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -47,8 +47,9 @@ export default function Panoramica() {
   const media7 = Math.round(visite.slice(-8, -1).reduce((s, d) => s + d.visite, 0) / Math.max(1, visite.slice(-8, -1).length))
   const deltaVisite = media7 ? Math.round(((ieri - media7) / media7) * 100) : 0
 
-  // Stagione: giorni alla chiusura
-  const giorniAllaFine = differenceInCalendarDays(parseISO(config.stagione.fine), parseISO(oggi))
+  // Stagione: giorni alla prossima chiusura estiva (ultima domenica di settembre)
+  const chiusura = prossimaChiusuraEstiva(oggi)
+  const giorniAllaFine = differenceInCalendarDays(parseISO(chiusura), parseISO(oggi))
 
   // Eventi: il prossimo in calendario (countdown)
   const prossimo = [...eventi].filter((e) => e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data))[0]
@@ -61,23 +62,17 @@ export default function Panoramica() {
   return (
     <div className="space-y-4">
       {/* KPI dei moduli attivi */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Kpi
           icona={meteoIcona[meteo.meteo]}
           etichetta="Meteo oggi"
           valore={`${meteo.temp ?? meteo.max}°`}
           sotto={`${meteoLabel[meteo.meteo]} · ${meteo.min != null ? `${meteo.min}°/` : 'max '}${meteo.max}°${meteo.vento != null ? ` · vento ${meteo.vento} km/h` : ''}`}
         />
-        <Kpi
-          icona={PartyPopper}
-          etichetta="Prossimo evento"
-          valore={prossimo ? (traGiorni === 0 ? 'Oggi' : `${traGiorni} gg`) : '—'}
-          sotto={prossimo ? prossimo.nome : 'nessuno in programma'}
-        />
         <Kpi icona={Users} etichetta="Coperti oggi" valore={numero(kpi.pranzo + kpi.cena)} sotto={`${kpi.pranzo} pranzo · ${kpi.cena} cena`} />
         <Kpi icona={Inbox} etichetta="Dal sito da confermare" valore={numero(daConfermareSito)} />
         <Kpi icona={Globe} etichetta="Visite sito ieri" valore={numero(ieri)} sotto={`${deltaVisite >= 0 ? '+' : ''}${deltaVisite}% sulla media 7 gg`} />
-        <Kpi icona={Sun} etichetta="Stagione" valore={giorniAllaFine > 0 ? `${giorniAllaFine} gg` : 'Ultimo giorno'} sotto={giorniAllaFine > 0 ? `alla chiusura (${dataEstesa(config.stagione.fine)})` : 'buona chiusura!'} />
+        <Kpi icona={Sun} etichetta="Stagione" valore={giorniAllaFine > 0 ? `${giorniAllaFine} gg` : 'Ultimo giorno'} sotto={giorniAllaFine > 0 ? `alla chiusura (${dataEstesa(chiusura)})` : 'buona chiusura!'} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -203,4 +198,15 @@ function Kpi({ icona: Icona, etichetta, valore, sotto }: { icona: typeof Users; 
       </CardBody>
     </Card>
   )
+}
+
+/** Ultima domenica di settembre dell'anno di `oggi`; se è già passata, quella dell'anno dopo. */
+function prossimaChiusuraEstiva(oggi: string) {
+  const ultimaDomenica = (anno: number) => {
+    const fine = lastDayOfMonth(new Date(anno, 8, 1))
+    return format(isSunday(fine) ? fine : previousSunday(fine), 'yyyy-MM-dd')
+  }
+  const anno = parseISO(oggi).getFullYear()
+  const questa = ultimaDomenica(anno)
+  return questa >= oggi ? questa : ultimaDomenica(anno + 1)
 }
