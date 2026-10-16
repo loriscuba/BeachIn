@@ -15,6 +15,7 @@ export type ComandoMenu =
   | { azione: 'rimuovi'; nome: string }
   | { azione: 'prezzo'; nome: string; prezzo: number }
   | { azione: 'rinomina'; nome: string; nuovoNome: string }
+  | { azione: 'sostituisci'; nome: string; nuovoNome: string; prezzo: number | null }
   | { azione: 'leggi' }
   | { azione: 'svuota' }
   | { azione: 'aiuto' }
@@ -78,10 +79,10 @@ function pulisciNome(t: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 }
 
-const VERBI = 'aggiungi|aggiungere|inserisci|inserire|annulla|annullare|togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+const VERBI = 'sostituisci|sostituire|rimpiazza|rimpiazzare|aggiungi|aggiungere|inserisci|inserire|annulla|annullare|togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare|leva|levare|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
 
 /** Imperativi a cui il parlato attacca un pronome: «toglimi», «inseriscimi», «toglimelo», «leggimi il menu». */
-const IMPERATIVI = 'aggiungi|inserisci|annulla|sposta|togli|rimuovi|elimina|cancella|leva|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
+const IMPERATIVI = 'sostituisci|rimpiazza|scambia|aggiungi|inserisci|annulla|sposta|togli|rimuovi|elimina|cancella|leva|cambia|modifica|metti|imposta|porta|aggiorna|rinomina|leggi|svuota'
 
 /**
  * Riporta il parlato alla forma base prima del parsing: stacca i pronomi dai verbi
@@ -123,6 +124,20 @@ export function parseComandoMenu(raw: string): ComandoMenu {
   if (/\b(leggi|elenca|elencami|mostra|mostrami|dimmi|ripeti|quali sono)\b/.test(lower) &&
       /\b(menu|men[uù]|piatti)\b/.test(lower)) {
     return { azione: 'leggi' }
+  }
+
+  // Sostituisci "X con Y [a 24 euro]" (anche «rimpiazza», «cambia X con Y», «metti Y al posto di X»):
+  // il nuovo piatto prende il posto del vecchio (stessa sezione), con l'eventuale nuovo prezzo.
+  const so = testo.match(/\b(?:sostituisci|sostituire|rimpiazza|rimpiazzare|scambia|cambia|cambiare)\s+(.+?)\s+con\s+(.+)$/i)
+  const ap = testo.match(/\b(?:metti|mettere|inserisci|inserire|aggiungi|aggiungere)\s+(.+?)\s+al posto\s+(?:di|del|dello|della|dei|degli|delle|dell')\s*(.+)$/i)
+  const sost = so && !/\bprezzo\b/i.test(so[1]) ? { vecchio: so[1], nuovo: so[2] } : ap ? { vecchio: ap[2], nuovo: ap[1] } : null
+  if (sost) {
+    // il prezzo può stare in coda a una delle due parti; nella parte del vecchio piatto solo se con «euro»
+    const pr = estraiPrezzo(sost.nuovo)
+    const pv = pr.prezzo === null && /\d\s*(?:€|euro|eur)\b/i.test(sost.vecchio) ? estraiPrezzo(sost.vecchio) : { prezzo: null, resto: sost.vecchio }
+    const nome = pulisciNome(pv.resto.replace(/\bda(?:l|i|llo|lla|gli|lle)?\s+men[uù]\b/gi, ' '))
+    const nuovoNome = pulisciNome(pr.resto)
+    if (nome && nuovoNome) return { azione: 'sostituisci', nome, nuovoNome, prezzo: pr.prezzo ?? pv.prezzo }
   }
 
   // Rinomina "X in Y"
