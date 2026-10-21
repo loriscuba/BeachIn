@@ -79,7 +79,7 @@ function pagina(tabella: string, r: Richiesta, t: Omit<Testo, 'oggetto'>, app: s
 <tr><td align="center" style="background:#0F3B4C;padding:22px 24px 18px">
 <img src="${img}logo.png" width="74" height="90" alt="${NOME}" style="display:block;border:0">
 <p style="margin:10px 0 0;color:#7FB7A8;font-size:11px;letter-spacing:.3em;text-transform:uppercase">Savona</p></td></tr>
-<tr><td style="padding:0;line-height:0"><img src="${foto}" width="560" alt="" style="display:block;width:100%;height:auto;border:0"></td></tr>
+<tr><td style="padding:0;line-height:0"><img src="${esc(foto)}" width="560" alt="" style="display:block;width:100%;height:auto;border:0"></td></tr>
 <tr><td style="height:5px;background:${t.colore};line-height:5px;font-size:0">&nbsp;</td></tr>
 <tr><td style="padding:28px 28px 8px">
 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.2;color:#0F3B4C">${t.titolo}</h1>
