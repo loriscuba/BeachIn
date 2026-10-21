@@ -67,6 +67,12 @@ gestire chiavi e costi.
 ---
 
 ## 4. Produzione / infrastruttura
+
+**Dove va la produzione** (annotato 21/10/2026): due VM Oracle Cloud (Amsterdam).
+- Sito e app (**prod-web**): https://158-178-144-127.sslip.io — gestionale, sito pubblico, `/adminapp`, `/comandapp`, `/menu`, `/invito`.
+- Database (**prod-db**): Supabase self-hosted, API https://api-141-148-241-169.sslip.io (dati veri, funzioni mail/notifiche/voce).
+- Si aggiorna **solo** dal workflow manuale **Deploy** su GitHub (ambiente `produzione`, va approvato); `rollback` rimette il web precedente.
+- Solo demo (Supabase Demo, si aggiornano da soli a ogni merge su `main`): https://beachin.pages.dev/ e https://loriscuba.github.io/BeachIn/
 - [x] Login sul gestionale (solo lato app, stesse credenziali dell'app admin)
 - [ ] **Prima della produzione**: login vero con Supabase Auth (gestore) e policy DB che lasciano ad anon solo le azioni dei clienti
   (leggere menu/news/lavagna, inviare ordini e prenotazioni). Oggi credenziali nel codice e tabelle scrivibili da chiunque.
