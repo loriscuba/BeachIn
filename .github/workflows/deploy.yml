@@ -65,8 +65,17 @@ jobs:
             supabase functions deploy "$(basename "$f")" --project-ref "$REF_PROGETTO" --use-api
           done
 
+  # Deploy in produzione SOSPESO finché la variabile di repository PRODUZIONE_ATTIVA non vale "si"
+  # (Settings → Secrets and variables → Actions → Variables). Per riattivarlo basta crearla con valore: si
+  produzione-sospesa:
+    if: inputs.ambiente == 'produzione' && vars.PRODUZIONE_ATTIVA != 'si'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::warning::Deploy in produzione sospeso: nessuna modifica a prod-web/prod-db. Per riattivarlo imposta la variabile PRODUZIONE_ATTIVA = si."
+
   produzione:
-    if: inputs.ambiente == 'produzione'
+    if: inputs.ambiente == 'produzione' && vars.PRODUZIONE_ATTIVA == 'si'
     runs-on: ubuntu-latest
     # Settings → Environments → produzione → Required reviewers = approvazione prima di partire.
     environment: produzione

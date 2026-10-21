@@ -72,6 +72,8 @@ gestire chiavi e costi.
 - Sito e app (**prod-web**): https://158-178-144-127.sslip.io — gestionale, sito pubblico, `/adminapp`, `/comandapp`, `/menu`, `/invito`.
 - Database (**prod-db**): Supabase self-hosted, API https://api-141-148-241-169.sslip.io (dati veri, funzioni mail/notifiche/voce).
 - Si aggiorna **solo** dal workflow manuale **Deploy** su GitHub (ambiente `produzione`, va approvato); `rollback` rimette il web precedente.
+- [ ] **Deploy in produzione SOSPESO** (21/10/2026): il workflow Deploy salta la produzione finché la variabile di repository
+  `PRODUZIONE_ATTIVA` non vale `si` (Settings → Secrets and variables → Actions → Variables). Riattivare quando si riparte.
 - Solo demo (Supabase Demo, si aggiornano da soli a ogni merge su `main`): https://beachin.pages.dev/ e https://loriscuba.github.io/BeachIn/
 - [x] Login sul gestionale (solo lato app, stesse credenziali dell'app admin)
 - [ ] **Prima della produzione**: login vero con Supabase Auth (gestore) e policy DB che lasciano ad anon solo le azioni dei clienti
