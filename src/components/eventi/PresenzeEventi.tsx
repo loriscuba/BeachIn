@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, RotateCcw, Users, UserCheck, Clock, Ticket, ExternalLink, Smartphone } from 'lucide-react'
+import { Check, RotateCcw, Users, UserCheck, Clock, Ticket, ExternalLink, Smartphone, Mail } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -12,7 +12,13 @@ import { urlPubblico } from '@/lib/urlPubblico'
 
 /** Eventi → Presenze: chi ha l'invito confermato e chi è già entrato (ingressi registrati dall'app admin col QR). */
 export function PresenzeEventi() {
-  const { eventi, richiesteEventi, segnaArrivoEvento } = useDemoData()
+  const { eventi, richiesteEventi, segnaArrivoEvento, reinviaInvito } = useDemoData()
+  const [inviati, setInviati] = useState<Record<string, boolean>>({})
+  const reinvia = (id: string) => {
+    reinviaInvito(id)
+    setInviati((m) => ({ ...m, [id]: true }))
+    setTimeout(() => setInviati((m) => ({ ...m, [id]: false })), 4000)
+  }
   const ordinati = useMemo(() => [...eventi].sort((a, b) => a.data.localeCompare(b.data)), [eventi])
   const [eventoId, setEventoId] = useState(() => eventoPredefinito(eventi, config.oggi)?.id ?? '')
   const evento = eventi.find((e) => e.id === eventoId)
@@ -65,7 +71,11 @@ export function PresenzeEventi() {
                           ? <a href={urlInvito(r.codice)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono tracking-wider text-cabina hover:underline">{r.codice} <ExternalLink className="h-3.5 w-3.5" /></a>
                           : <span className="text-profondo/40">—</span>}</td>
                         <td className="py-2.5 pr-3">{arr >= r.persone ? <Badge tono="verde">Entrati {oraDa(r.arrivoTs)}</Badge> : arr > 0 ? <Badge tono="giallo">In parte · {oraDa(r.arrivoTs)}</Badge> : <Badge tono="tenda">Atteso</Badge>}</td>
-                        <td className="py-2.5 text-right">{arr >= r.persone
+                        <td className="space-x-2 whitespace-nowrap py-2.5 text-right">
+                          {r.email.includes('@') && (inviati[r.id]
+                            ? <span className="inline-flex items-center gap-1 text-sm font-medium text-[#2F6E5F]"><Check className="h-4 w-4" /> Invito inviato</span>
+                            : <Button variante="secondario" dimensione="sm" onClick={() => reinvia(r.id)} title={`Rimanda la mail con il QR a ${r.email}`}><Mail className="h-4 w-4" /> Reinvia invito</Button>)}
+                          {arr >= r.persone
                           ? <Button variante="secondario" dimensione="sm" onClick={() => segnaArrivoEvento(r.id, 0)}><RotateCcw className="h-4 w-4" /> Annulla</Button>
                           : <Button variante="primario" dimensione="sm" onClick={() => segnaArrivoEvento(r.id, r.persone)}><Check className="h-4 w-4" /> Segna entrati</Button>}</td>
                       </tr>

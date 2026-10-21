@@ -151,11 +151,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Pagina pubblica** `/invito?c=` (`src/pages/InvitoEvento.tsx`): QR grande + codice + dettagli; dice se l'ingresso è registrato.
 - **App admin → Ingressi** (tab visibile col modulo `eventi`, `src/components/eventi/IngressiEventi.tsx`): scelta evento (default
   oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore `ideal`, ripiego `video:true`; errore spiegato per tipo
-  con Riprova; ripiego senza permessi **Fotografa il QR** = `<input capture>` decodificato con jsQR) o codice a
-  mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento / non confermata / sconosciuto
+  con Riprova) o codice a mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento / non confermata / sconosciuto
   (campanello). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
 - **Gestionale Eventi** a sottomenu `?tab=calendario|presenze`: Presenze (`src/components/eventi/PresenzeEventi.tsx`) con KPI
   (inviti, attese, entrate, mancanti) e tabella invitati: codice (link all'invito), stato, segna/annulla a mano.
+  **Reinvia invito** (se c'è l'email): `reinviaInvito(id)` imposta `invioTs` → colonna `invio_ts` (migrazione `0007_reinvia_invito.sql`),
+  trigger `email_reinvio_invito` → `beachin-email` manda "Il tuo invito — evento" con lo stesso blocco QR.
 
 ## Ristorante a sottosezioni (tab `?tab=`)
 - `Ristorante.tsx`: KPI + Tabs **Prenotazioni | Menu | Magazzino** (default Prenotazioni; il vecchio `?tab=tavoli` porta lì; componenti in `src/pages/ristorante/`).

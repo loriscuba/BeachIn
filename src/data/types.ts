@@ -578,6 +578,8 @@ export interface RichiestaEvento {
   arrivati?: number
   /** Ora dell'ingresso (ms). */
   arrivoTs?: number
+  /** Ultimo "Reinvia invito" (ms): sul DB fa ripartire la mail con il QR. */
+  invioTs?: number
 }
 
 // ————————————————————————————————————————————————————————————

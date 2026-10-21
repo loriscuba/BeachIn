@@ -220,6 +220,8 @@ interface DemoDataValue {
   aggiungiPartecipanteEvento: (dati: DatiPartecipanteEvento) => void
   /** Ingresso all'evento: quante persone dell'invito sono entrate (0 = annulla). */
   segnaArrivoEvento: (id: string, arrivati: number) => void
+  /** Rimanda al cliente la mail con l'invito e il QR (solo prenotazioni confermate). */
+  reinviaInvito: (id: string) => void
   // Risposta WhatsApp simulata all'ultima prenotazione confermata/rifiutata
   whatsapp: MessaggioWhatsApp | null
   chiudiWhatsapp: () => void
@@ -485,13 +487,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, evento_id: r.eventoId,
       evento_nome: r.eventoNome, evento_data: r.eventoData, persone: r.persone, stato: r.stato, note: r.note ?? null, origine: r.origine ?? null,
       // senza codice lo genera il DB (default della colonna): non sovrascrivere con null
-      ...(r.codice ? { codice: r.codice } : {}), arrivati: r.arrivati ?? 0, arrivo_ts: r.arrivoTs ?? null,
+      ...(r.codice ? { codice: r.codice } : {}), arrivati: r.arrivati ?? 0, arrivo_ts: r.arrivoTs ?? null, invio_ts: r.invioTs ?? null,
     }),
     daRiga: (r) => ({
       id: r.id, ricevutaIl: r.ricevuta_il as string, nome: r.nome as string, email: r.email as string, telefono: r.telefono as string,
       eventoId: r.evento_id as string, eventoNome: r.evento_nome as string, eventoData: r.evento_data as string, persone: Number(r.persone),
       stato: r.stato as RichiestaEvento['stato'], note: (r.note as string) ?? undefined, origine: (r.origine as RichiestaEvento['origine']) ?? undefined,
       codice: (r.codice as string) ?? undefined, arrivati: Number(r.arrivati ?? 0), arrivoTs: r.arrivo_ts != null ? Number(r.arrivo_ts) : undefined,
+      invioTs: r.invio_ts != null ? Number(r.invio_ts) : undefined,
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
@@ -835,6 +838,15 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       ? { ...p, arrivati: Math.max(0, Math.min(p.persone, arrivati)), arrivoTs: arrivati > 0 ? p.arrivoTs ?? Date.now() : undefined }
       : p)))
   }, [])
+
+  const reinviaInvito = useCallback((id: string) => {
+    const r = evtRef.current.find((p) => p.id === id)
+    if (!r || r.stato !== 'confermata') return
+    const codice = r.codice ?? nuovoCodiceInvito()
+    setRichiesteEventi((prev) => prev.map((p) => (p.id === id ? { ...p, codice, invioTs: Date.now() } : p)))
+    pushMail('cliente', 'conferma', config.nome, r.email, `Il tuo invito — ${r.eventoNome}`,
+      `Gentile ${r.nome},\necco il tuo invito per “${r.eventoNome}” del ${gg(r.eventoData)} (${r.persone} persone).\nAll'ingresso mostra il QR:\n${urlInvito(codice)}\nCodice: ${codice}\n\nTi aspettiamo!\n${config.nome}`)
+  }, [pushMail])
 
   const rimuoviPartecipanteEvento = useCallback((id: string) => {
     setRichiesteEventi((prev) => prev.filter((p) => p.id !== id))
@@ -1233,6 +1245,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       inviaRichiestaEvento,
       aggiungiPartecipanteEvento,
       segnaArrivoEvento,
+      reinviaInvito,
       whatsapp,
       chiudiWhatsapp,
       rimuoviPartecipanteEvento,
@@ -1334,6 +1347,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       inviaRichiestaEvento,
       aggiungiPartecipanteEvento,
       segnaArrivoEvento,
+      reinviaInvito,
       whatsapp,
       chiudiWhatsapp,
       rimuoviPartecipanteEvento,
