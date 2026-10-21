@@ -139,6 +139,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Edge Function `supabase/functions/beachin-email`, chiamata da 2 trigger su `beachin.richieste_ristorante` e
   `beachin.richieste_eventi` (il body porta `tabella`; insert `da_confermare` → "richiesta ricevuta"; cambio stato → "confermata"/"rifiutata"). Salta se manca l'email.
 - Segreti nel Vault: `beachin_brevo_key`, `beachin_email_mittente` (mittente verificato su Brevo). Senza: nessun invio.
+- **Grafica** (ott 2026): testata blu col logo bianco, foto grande, barra colorata per stato (acqua confermata, tenda in attesa,
+  boa rifiutata), titolo, testo, scheda riepilogo (data/ora/coperti o evento/persone), firma e piè di pagina col link al sito.
+  Immagini in `public/email/` (`logo.png`, `ristorante.jpg` dal sito, `evento.jpg` di riserva) servite da `<app>/email/`;
+  Vault `beachin_email_img` (facoltativo) sostituisce la cartella. Foto evento: `RichiestaEvento.eventoFoto` → colonna
+  `evento_foto` (migrazione `0008_foto_evento_mail.sql`), URL assoluto della foto dell'evento preso alla creazione della
+  richiesta (`fotoEvento` nel context; le foto in data URI sono scartate → si usa `evento.jpg`).
 - La "posta" simulata in app (`pushMail` nel context) resta per la demo locale. Eventi sincronizzati su `richieste_eventi`; ombrellone non è su Supabase → niente mail reali.
 
 ## Eventi: invito con QR e presenze (ott 2026)

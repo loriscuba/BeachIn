@@ -89,6 +89,8 @@ gestire chiavi e costi.
   - [x] Edge Function `beachin-email` (Brevo) + trigger su `richieste_ristorante`: mail al cliente su richiesta ricevuta / confermata / rifiutata
   - [x] Account Brevo + segreti nel Vault (prova inviata e arrivata)
   - [ ] Mittente sul dominio del cliente (oggi Gmail → rischio spam)
+  - [x] Grafica mail (logo, foto ristorante / foto evento, riepilogo)
+  - [ ] Dopo il merge: togliere dal Vault del Demo `beachin_email_img` (punta temporaneamente al branch su GitHub)
   - [x] Eventi: tabella `richieste_eventi` su Supabase + mail
   - [ ] Ombrellone: oggi solo in memoria, serve tabella Supabase per mandare mail anche lì
 
