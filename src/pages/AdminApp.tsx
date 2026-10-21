@@ -4,7 +4,7 @@ import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
  * di tavolo arrivate dal sito e modifica il menu a voce. Con Supabase i dati sono condivisi dal vivo.
  */
 import { useEffect, useRef, useState } from 'react'
-import { LogOut, Check, X, Users, Phone, CalendarDays, Mic, Inbox, Bell, BellOff, CalendarX2, ChevronDown, CircleCheck, TriangleAlert, OctagonX, RotateCw, Sun, Moon, Clock, Newspaper } from 'lucide-react'
+import { LogOut, Check, X, Users, Phone, CalendarDays, Mic, Inbox, Bell, BellOff, CalendarX2, ChevronDown, CircleCheck, TriangleAlert, OctagonX, RotateCw, Sun, Moon, Clock, Newspaper, ScanLine } from 'lucide-react'
 import type { PrenotazioneRistorante, RichiestaRistorante, StatoPrenotazione, Turno } from '@/data/types'
 import { PiantaTavoli } from '@/pages/ristorante/ScegliTavolo'
 import { nomeZona } from '@/lib/zoneTavoli'
@@ -21,6 +21,8 @@ import { GestioneLavagnetta, GestioneNews } from '@/components/app/GestioneAppCl
 import { cn } from '@/lib/cn'
 import { preparaInstallazione } from '@/lib/notifichePush'
 import AttivaNotifiche from '@/components/AttivaNotifiche'
+import { IngressiEventi } from '@/components/eventi/IngressiEventi'
+import { useModuli } from '@/context/ModuliContext'
 
 const dataIt = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 
@@ -53,7 +55,9 @@ function Area() {
   const [daConfermareTavolo, setDaConfermareTavolo] = useState<RichiestaRistorante>()
   const [chiusureAperte, setChiusureAperte] = useState(false)
   const chiusureFuture = giorniChiusi.filter((g) => g.data >= config.oggi).length
-  const [tab, setTab] = useState<'prenotazioni' | 'menu' | 'app'>('prenotazioni')
+  const [tab, setTab] = useState<'prenotazioni' | 'menu' | 'app' | 'ingressi'>('prenotazioni')
+  const { moduloAttivo } = useModuli()
+  const conEventi = moduloAttivo('eventi')
   const [suoni, setSuoni] = useState(true)
   const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
 
@@ -68,12 +72,13 @@ function Area() {
   return (
     <div>
       <div className="mb-4 flex gap-2">
-        <div className="grid flex-1 grid-cols-[1.4fr_1fr_1fr] rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm">
+        <div className={cn('grid flex-1 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm', conEventi ? 'grid-cols-[1.5fr_1fr_1fr_1.2fr]' : 'grid-cols-[1.4fr_1fr_1fr]')}>
           <button onClick={() => setTab('prenotazioni')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'prenotazioni' ? 'bg-profondo text-white' : 'text-profondo/60')}>
             <Inbox className="h-4 w-4" /> Prenotazioni {daConfermare.length > 0 && <span className="rounded-full bg-boa px-1.5 text-xs text-white">{daConfermare.length}</span>}
           </button>
           <button onClick={() => setTab('menu')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'menu' ? 'bg-profondo text-white' : 'text-profondo/60')}><Mic className="h-4 w-4" /> Menu</button>
           <button onClick={() => setTab('app')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'app' ? 'bg-profondo text-white' : 'text-profondo/60')}><Newspaper className="h-4 w-4" /> App</button>
+          {conEventi && <button onClick={() => setTab('ingressi')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'ingressi' ? 'bg-profondo text-white' : 'text-profondo/60')}><ScanLine className="h-4 w-4" /> Ingressi</button>}
         </div>
         <button onClick={() => { sbloccaAudio(); setSuoni(!suoni) }} className="grid w-11 place-content-center rounded-xl bg-white text-profondo/60 shadow-sm" aria-label={suoni ? 'Disattiva suoni' : 'Attiva suoni'}>
           {suoni ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
@@ -133,6 +138,7 @@ function Area() {
       )}
 
       {tab === 'menu' && <AssistenteVocale />}
+      {tab === 'ingressi' && <IngressiEventi />}
       {tab === 'app' && (
         <div className="space-y-5">
           <section><h2 className="mb-2 font-display text-lg font-semibold">News per i clienti</h2><GestioneNews /></section>

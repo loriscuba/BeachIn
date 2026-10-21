@@ -69,7 +69,13 @@ export const navigazione: VoceNav[] = [
   { percorso: '/costi', etichetta: 'Costi', icona: Receipt, modulo: 'costi', fase: 6, gruppo: 'Gestione' },
   { percorso: '/conto-economico', etichetta: 'Conto economico', icona: Calculator, modulo: 'conto-economico', fase: 6, gruppo: 'Gestione' },
   { percorso: '/personale', etichetta: 'Personale', icona: UserCog, modulo: 'personale', fase: 7, gruppo: 'Gestione' },
-  { percorso: '/eventi', etichetta: 'Eventi', icona: CalendarDays, modulo: 'eventi', fase: 7, gruppo: 'Gestione' },
+  {
+    percorso: '/eventi', etichetta: 'Eventi', icona: CalendarDays, modulo: 'eventi', fase: 7, gruppo: 'Gestione',
+    figli: [
+      { percorso: '/eventi?tab=calendario', etichetta: 'Calendario', modulo: 'eventi' },
+      { percorso: '/eventi?tab=presenze', etichetta: 'Presenze', modulo: 'eventi' },
+    ],
+  },
 
   {
     percorso: '/sito', etichetta: 'Sito internet', icona: Globe, modulo: 'sito', fase: 8, gruppo: 'Presenza online',
