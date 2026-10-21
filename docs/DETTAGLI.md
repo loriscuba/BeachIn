@@ -390,6 +390,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Migrazioni**: `supabase/migrations/NNNN_*.sql`, applicate in ordine da `scripts/migra.sh` (tabella `beachin.migrazioni`,
   una transazione per file, `--baseline` = registra senza eseguire; `DB_URL` per Supabase Cloud, `PSQL_CMD` per prod-db).
   Demo: baseline 0001 registrata il 5/10/2026. Migrazioni *compatibili all'indietro*: il DB va online prima del web.
+- **Produzione sospesa** (21/10/2026): il job `produzione` parte solo se la variabile di repository `PRODUZIONE_ATTIVA` = `si`;
+  altrimenti gira `produzione-sospesa`, che lascia solo un avviso.
 - **Workflow `.github/workflows/deploy.yml`** (solo manuale, sceglie ambiente + ref):
   demo → migrazioni + `supabase functions deploy`; produzione → SSH su prod-db: migrazioni, Vault (`beachin_functions_url`
   = `http://api-gw:8000/functions/v1`, `beachin_anon_key`, `beachin_vapid_private`, `beachin_brevo_key`, `beachin_email_mittente`), copia funzioni in
