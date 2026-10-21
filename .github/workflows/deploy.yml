@@ -121,6 +121,8 @@ jobs:
           segreto beachin_vapid_private "$VAPID"
           segreto beachin_brevo_key "$BREVO"
           segreto beachin_email_mittente "$MITTENTE"
+          # Link dell'invito agli eventi (QR nella mail di conferma): la web app di produzione
+          segreto beachin_app_url "https://${WEB_HOST//./-}.sslip.io/"
 
       # 2) Edge Functions (cartelle in volumes/functions, servite da edge-runtime)
       - name: Edge Functions

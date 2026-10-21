@@ -572,6 +572,12 @@ export interface RichiestaEvento {
   note?: string
   /** Origine della richiesta: dal sito o inserita a mano (prenotazione in loco). */
   origine?: 'sito' | 'manuale'
+  /** Codice dell'invito (nel QR della mail di conferma), unico. */
+  codice?: string
+  /** Persone già entrate all'evento (0 = nessuno). */
+  arrivati?: number
+  /** Ora dell'ingresso (ms). */
+  arrivoTs?: number
 }
 
 // ————————————————————————————————————————————————————————————

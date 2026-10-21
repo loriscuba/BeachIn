@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Trophy, Music, PartyPopper, UtensilsCrossed, Flower2, Gift, CalendarDays, Users, TrendingUp, Wallet,
   Plus, Pencil, Trash2, ImagePlus, X, Ticket,
@@ -16,6 +17,8 @@ import { euro, numero, dataEstesa, giornoMese } from '@/lib/formatters'
 import { etichetteTipoEvento } from '@/lib/etichette'
 import { fileAImmagine, importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
+import { Tabs } from '@/components/ui/Tabs'
+import { PresenzeEventi } from '@/components/eventi/PresenzeEventi'
 
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
   sport: Trophy, musica: Music, festa: PartyPopper, gastronomia: UtensilsCrossed, benessere: Flower2, privato: Gift,
@@ -26,6 +29,9 @@ export default function Eventi() {
   const { eventi, aggiungiEvento, modificaEvento, eliminaEvento, richiesteEventi, aggiungiPartecipanteEvento, rimuoviPartecipanteEvento, aggiungiFotoEvento, rimuoviFotoEvento } = useDemoData()
   const [sel, setSel] = useState<Evento>()
   const [form, setForm] = useState<{ open: boolean; evento?: Evento }>({ open: false })
+  // Sottosezione da `?tab=` (sottomenu laterale): calendario (default) o presenze.
+  const [q, setQ] = useSearchParams()
+  const tab = q.get('tab') === 'presenze' ? 'presenze' : 'calendario'
 
   const ordinati = useMemo(() => [...eventi].sort((a, b) => a.data.localeCompare(b.data)), [eventi])
   const sintesi = useMemo(() => {
@@ -45,8 +51,15 @@ export default function Eventi() {
   // Versione "viva" dell'evento selezionato: si aggiorna quando cambia l'album.
   const selLive = sel ? eventi.find((x) => x.id === sel.id) ?? sel : undefined
 
+  const schede = (
+    <Tabs opzioni={[{ valore: 'calendario', etichetta: 'Calendario' }, { valore: 'presenze', etichetta: 'Presenze' }]}
+      valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />
+  )
+  if (tab === 'presenze') return <div className="space-y-4">{schede}<PresenzeEventi /></div>
+
   return (
     <div className="space-y-4">
+      {schede}
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi icona={CalendarDays} etichetta="Eventi in stagione" valore={String(eventi.length)} />

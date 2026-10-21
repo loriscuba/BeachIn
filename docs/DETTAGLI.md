@@ -141,6 +141,21 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Segreti nel Vault: `beachin_brevo_key`, `beachin_email_mittente` (mittente verificato su Brevo). Senza: nessun invio.
 - La "posta" simulata in app (`pushMail` nel context) resta per la demo locale. Eventi sincronizzati su `richieste_eventi`; ombrellone non è su Supabase → niente mail reali.
 
+## Eventi: invito con QR e presenze (ott 2026)
+- Ogni `RichiestaEvento` ha `codice` (8 caratteri senza ambigui, `nuovoCodiceInvito` in `src/lib/invitiEventi.ts`; sul DB default
+  `beachin.nuovo_codice_invito()`), `arrivati` e `arrivoTs`. Migrazione `0006_inviti_eventi.sql` (indice unico sul codice).
+- **Mail di conferma** (`beachin-email`): per gli eventi confermati blocco "Il tuo invito" con QR (immagine da api.qrserver.com,
+  le immagini `data:` sono bloccate dai client di posta), codice e bottone. Il QR contiene `<app>/invito?c=CODICE`; base da Vault
+  `beachin_app_url` (default https://beachin.pages.dev/; in produzione lo imposta il workflow Deploy). Posta/WhatsApp simulati
+  in app portano lo stesso link.
+- **Pagina pubblica** `/invito?c=` (`src/pages/InvitoEvento.tsx`): QR grande + codice + dettagli; dice se l'ingresso è registrato.
+- **App admin → Ingressi** (tab visibile col modulo `eventi`, `src/components/eventi/IngressiEventi.tsx`): scelta evento (default
+  oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore) o codice a
+  mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento / non confermata / sconosciuto
+  (campanello). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
+- **Gestionale Eventi** a sottomenu `?tab=calendario|presenze`: Presenze (`src/components/eventi/PresenzeEventi.tsx`) con KPI
+  (inviti, attese, entrate, mancanti) e tabella invitati: codice (link all'invito), stato, segna/annulla a mano.
+
 ## Ristorante a sottosezioni (tab `?tab=`)
 - `Ristorante.tsx`: KPI + Tabs **Prenotazioni | Menu | Magazzino** (default Prenotazioni; il vecchio `?tab=tavoli` porta lì; componenti in `src/pages/ristorante/`).
 - **Menu** (`PannelloMenu`): traduzioni 5 lingue (it/en/fr/de/es, `src/lib/menuLingue.ts`: seed curato, poi MyMemory
