@@ -90,7 +90,7 @@ ${evento && r.stato === 'confermata' && r.codice ? bloccoInvito(r.codice, app) :
 </td></tr>
 <tr><td style="padding:16px 28px 28px;font-size:15px;line-height:1.6">A presto,<br><b>${NOME}</b></td></tr>
 <tr><td align="center" style="background:#0F3B4C;padding:16px 24px;color:#BFD6DE;font-size:12px;line-height:1.6">
-${NOME} · Savona<br><a href="${app}" style="color:#F2C14E;text-decoration:none">Visita il nostro sito</a></td></tr>
+${NOME} · Savona<br><a href="${app.replace(/\/?$/, '/')}sito/anteprima" style="color:#F2C14E;text-decoration:none">Visita il nostro sito</a></td></tr>
 </table></td></tr></table></body></html>`
 }
 
