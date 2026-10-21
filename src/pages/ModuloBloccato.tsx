@@ -52,11 +52,13 @@ export default function ModuloBloccato({ id }: { id: ModuloId }) {
           )}
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <a href={`mailto:${config.email}?subject=${oggetto}&body=${corpo}`}>
-              <Button variante="primario">
-                <Mail className="h-4 w-4" /> Richiedi attivazione
-              </Button>
-            </a>
+            {config.emailBeachIn && (
+              <a href={`mailto:${config.emailBeachIn}?subject=${oggetto}&body=${corpo}`}>
+                <Button variante="primario">
+                  <Mail className="h-4 w-4" /> Richiedi attivazione
+                </Button>
+              </a>
+            )}
             <Button variante="secondario" onClick={() => attiva(id)}>
               <Sparkles className="h-4 w-4" /> Attiva ora (demo)
             </Button>

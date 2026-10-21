@@ -92,7 +92,7 @@ export default function SitoAnteprima() {
   }, [matrice])
 
 
-  const oggi = config.stagione.oggi
+  const oggi = config.oggi // eventi: data reale (anche a stagione chiusa), come nel gestionale
   const eventiFuturi = [...eventi].filter((e) => e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data))
   const eventiPassati = [...eventi].filter((e) => e.data < oggi).sort((a, b) => b.data.localeCompare(a.data))
   // In vetrina: prima i prossimi eventi, poi quelli appena conclusi (con foto/recap).
@@ -732,7 +732,7 @@ export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: {
   const [inviato, setInviato] = useState(false)
   const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy
-  const passato = !!e && e.data < config.stagione.oggi
+  const passato = !!e && e.data < config.oggi
 
   // reset del form quando cambia l'evento selezionato
   useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false }); setInviato(false) }, [e?.id])

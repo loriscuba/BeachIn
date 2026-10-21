@@ -1,5 +1,5 @@
 /**
- * 8 eventi della stagione con budget, costi sostenuti, ricavi e partecipanti.
+ * Eventi della stagione (più uno sempre 10 giorni avanti, per la demo) con budget, costi sostenuti, ricavi e partecipanti.
  * La somma dei ricavi è nell'ordine del target eventi (config.scala).
  */
 import type { Evento, TipoEvento } from '../types'
@@ -18,6 +18,13 @@ interface DefE {
   galleria?: string[]
 }
 
+/** Data reale di oggi + n giorni (YYYY-MM-DD): la demo ha sempre un evento in programma da prenotare. */
+function fraGiorni(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + n)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const def: DefE[] = [
   { nome: 'Torneo di beach volley', tipo: 'sport', data: '2026-06-20', budget: 1500, costi: 1320, ricavi: 2100, partecipanti: 64, descrizione: 'Torneo a coppie con premiazione e aperitivo finale.', foto: fotoSito.beachVolley, galleria: [fotoSito.torneo, fotoSito.beachVolley] },
   { nome: 'Aperitivo in musica', tipo: 'musica', data: '2026-06-28', budget: 1800, costi: 1650, ricavi: 2450, partecipanti: 140, descrizione: 'DJ set al tramonto con drink e finger food.', foto: fotoSito.tramonto },
@@ -28,6 +35,7 @@ const def: DefE[] = [
   { nome: 'Aperitivo in musica', tipo: 'musica', data: '2026-08-22', budget: 1800, costi: 1500, ricavi: 0, partecipanti: 0, descrizione: 'Secondo appuntamento con DJ set (in programma).', foto: fotoSito.barDistillati },
   { nome: 'Torneo di racchettoni', tipo: 'sport', data: '2026-09-05', budget: 900, costi: 0, ricavi: 0, partecipanti: 0, descrizione: 'Chiusura di stagione con torneo e merenda (in programma).', foto: fotoSito.ombrelloniCielo },
   { nome: 'Cena d’autunno', tipo: 'gastronomia', data: '2026-10-17', budget: 1200, costi: 0, ricavi: 0, partecipanti: 0, descrizione: 'Il ristorante resta aperto: menù di pesce e castagne, a lido chiuso (in programma).', foto: fotoSito.ristorante },
+  { nome: 'Degustazione al tramonto', tipo: 'gastronomia', data: fraGiorni(10), budget: 800, costi: 0, ricavi: 0, partecipanti: 0, descrizione: 'Vini liguri e crudi di mare in terrazza, con posti limitati (in programma).', foto: fotoSito.tramonto },
 ]
 
 export const eventi: Evento[] = def.map((d, i) => ({

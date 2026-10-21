@@ -142,6 +142,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - La "posta" simulata in app (`pushMail` nel context) resta per la demo locale. Eventi sincronizzati su `richieste_eventi`; ombrellone non è su Supabase → niente mail reali.
 
 ## Eventi: invito con QR e presenze (ott 2026)
+- Futuri/passati ovunque (gestionale, sito, app clienti) con la data **reale** `config.oggi`, non `config.stagione.oggi`
+  (quella resta solo per i dati spiaggia). Seed: "Degustazione al tramonto" sempre a oggi+10 giorni (`fraGiorni`), così la demo
+  ha sempre un evento prenotabile.
 - Ogni `RichiestaEvento` ha `codice` (8 caratteri senza ambigui, `nuovoCodiceInvito` in `src/lib/invitiEventi.ts`; sul DB default
   `beachin.nuovo_codice_invito()`), `arrivati` e `arrivoTs`. Migrazione `0006_inviti_eventi.sql` (indice unico sul codice).
 - **Mail di conferma** (`beachin-email`): per gli eventi confermati blocco "Il tuo invito" con QR (immagine da api.qrserver.com,
@@ -259,6 +262,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
   upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`
   (in memoria + localStorage `beachin.moduli.v1`; domani = campo per-cliente dal DB).
+- "Richiedi attivazione" (`ModuloBloccato`) scrive a `config.emailBeachIn` (contatto commerciale BeachIn); vuoto = pulsante nascosto.
 - Core sempre attivi: `panoramica` (home ridotta, rotta `/`) e `impostazioni`.
 - **Panoramica** (`src/pages/Panoramica.tsx`): KPI meteo oggi (reale da Open-Meteo per Savona, hook
   `src/hooks/useMeteoOggi.ts`, riserva = `giornoOggi` della demo) · coperti oggi · dal sito da confermare · visite sito ieri
