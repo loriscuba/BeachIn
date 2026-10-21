@@ -16,7 +16,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 type Richiesta = {
   id: string; nome: string; email: string; stato: string
   data?: string; turno?: string; ora?: string | null; coperti?: number // ristorante
-  evento_nome?: string; evento_data?: string; persone?: number; codice?: string | null // eventi
+  evento_nome?: string; evento_data?: string; persone?: number; codice?: string | null; invio_ts?: number | null // eventi
 }
 
 /** Blocco invito con QR (solo eventi confermati): il QR contiene il link alla pagina dell'invito, letto all'ingresso dall'app admin. */
@@ -35,6 +35,9 @@ function bloccoInvito(codice: string, base: string): string {
 function testo(tabella: string, r: Richiesta): { oggetto: string; righe: string[] } {
   if (tabella === 'richieste_eventi') {
     const ev = `“${esc(r.evento_nome ?? 'evento')}” di ${dataIt(r.evento_data ?? '')}`
+    // "Reinvia invito" dalle Presenze: stessa mail col QR, testo da promemoria
+    if (r.stato === 'confermata' && r.invio_ts)
+      return { oggetto: `Il tuo invito — ${r.evento_nome}`, righe: [`ecco il tuo invito per ${ev} per ${r.persone} persone.`, 'All’ingresso mostra il QR qui sotto.'] }
     if (r.stato === 'confermata')
       return { oggetto: `Evento confermato ✓ — ${r.evento_nome}`, righe: [`la tua partecipazione a ${ev} per ${r.persone} persone è <b>confermata</b>.`, 'Ti aspettiamo!'] }
     if (r.stato === 'rifiutata')
