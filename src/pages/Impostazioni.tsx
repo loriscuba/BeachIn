@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { Settings2, Save, Umbrella, CalendarRange, Users2, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { useSessione } from '@/context/SessioneContext'
+import { AccessoNegato } from '@/components/AccessoNegato'
+import { SolaLettura } from '@/components/SolaLettura'
+import UtentiRuoli from '@/pages/impostazioni/UtentiRuoli'
+import { Settings2, Save, Umbrella, CalendarRange, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -94,14 +99,19 @@ function ParametriModificabili() {
   )
 }
 
-const ruoli = [
-  { nome: 'Titolare', permessi: 'Accesso completo a tutti i moduli', tono: 'mare' as const },
-  { nome: 'Cassa / Reception', permessi: 'Arenile, clienti, incassi, prenotazioni', tono: 'stagionale' as const },
-  { nome: 'Bagnino', permessi: 'Arenile in sola lettura, stati postazioni', tono: 'acqua' as const },
-  { nome: 'Ristorazione', permessi: 'Bar, ristorante, magazzino', tono: 'tenda' as const },
-]
-
+/** Impostazioni: scheda Generali (permesso "impostazioni") e Utenti e ruoli (permesso "utenti"). */
 export default function Impostazioni() {
+  const { livello } = useSessione()
+  const [params] = useSearchParams()
+  const lGen = livello('impostazioni')
+  const lUt = livello('utenti')
+  const tab = params.get('tab') ?? (lGen > 0 ? 'generali' : 'utenti')
+  if (tab === 'utenti') return lUt > 0 ? <UtentiRuoli /> : <AccessoNegato />
+  if (lGen === 0) return <AccessoNegato />
+  return lGen === 1 ? <SolaLettura><Generali /></SolaLettura> : <Generali />
+}
+
+function Generali() {
   const { reset } = useDemoData()
   const { moduloAttivo, toggle, applicaPiano, pianoCorrente } = useModuli()
   const moduliVendibili = (Object.values(MODULI) as InfoModulo[]).filter((m) => !m.core)
@@ -258,31 +268,6 @@ export default function Impostazioni() {
         </CardBody>
       </Card>
 
-      {/* Utenti e ruoli */}
-      <Card>
-        <CardHeader
-          titolo={
-            <span className="inline-flex items-center gap-2">
-              <Users2 className="h-4 w-4 text-cabina" /> Utenti e ruoli
-            </span>
-          }
-          sottotitolo="Permessi dimostrativi, non ancora applicati"
-        />
-        <CardBody className="pt-1">
-          {ruoli.map((r) => (
-            <div
-              key={r.nome}
-              className="flex items-center justify-between gap-4 border-b border-calce-200 py-3 last:border-0"
-            >
-              <div>
-                <p className="text-sm font-medium text-profondo">{r.nome}</p>
-                <p className="text-xs text-profondo/55">{r.permessi}</p>
-              </div>
-              <Badge tono={r.tono}>Ruolo</Badge>
-            </div>
-          ))}
-        </CardBody>
-      </Card>
     </div>
   )
 }

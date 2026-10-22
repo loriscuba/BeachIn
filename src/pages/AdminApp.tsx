@@ -12,7 +12,7 @@ import { disponibilitaTurno, sistemazionePer } from '@/lib/disponibilita'
 import { GiorniChiusi } from '@/components/GiorniChiusi'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
-import { entraGestore, esciGestore, sessioneGestore } from '@/lib/adminapp'
+import { useSessione } from '@/context/SessioneContext'
 import { LoginGestore } from '@/components/LoginGestore'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { supabaseAttivo } from '@/lib/supabase'
@@ -27,8 +27,8 @@ import { useModuli } from '@/context/ModuliContext'
 const dataIt = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 
 export default function AdminApp() {
-  const [dentro, setDentro] = useState(sessioneGestore)
-  const esci = () => { esciGestore(); setDentro(false) }
+  const { profilo, esci } = useSessione()
+  const dentro = !!profilo
   useEffect(() => { preparaInstallazione() }, [])
   return (
     <div className="min-h-screen bg-calce text-profondo">
@@ -38,11 +38,11 @@ export default function AdminApp() {
             <p className="font-display text-xl font-semibold leading-none">BeachIn Admin</p>
             <p className="text-[11px] text-white/60">{config.nome} · {supabaseAttivo ? 'dati condivisi (Supabase)' : 'modalità demo locale'}</p>
           </div>
-          {dentro && <button onClick={esci} className="grid h-8 w-8 place-content-center rounded-full hover:bg-white/10" aria-label="Esci"><LogOut className="h-4 w-4" /></button>}
+          {dentro && <button onClick={() => void esci()} className="grid h-8 w-8 place-content-center rounded-full hover:bg-white/10" aria-label="Esci"><LogOut className="h-4 w-4" /></button>}
         </div>
       </header>
       <main className="mx-auto max-w-2xl px-4 py-4">
-        {dentro ? <Area /> : <LoginGestore onEntra={() => { sbloccaAudio(); entraGestore(); setDentro(true) }} />}
+        {dentro ? <Area /> : <LoginGestore onEntra={sbloccaAudio} />}
       </main>
       <AnteprimaWhatsApp />
     </div>
@@ -55,9 +55,14 @@ function Area() {
   const [daConfermareTavolo, setDaConfermareTavolo] = useState<RichiestaRistorante>()
   const [chiusureAperte, setChiusureAperte] = useState(false)
   const chiusureFuture = giorniChiusi.filter((g) => g.data >= config.oggi).length
-  const [tab, setTab] = useState<'prenotazioni' | 'menu' | 'app' | 'ingressi'>('prenotazioni')
   const { moduloAttivo } = useModuli()
-  const conEventi = moduloAttivo('eventi')
+  const { puo } = useSessione()
+  // schede secondo il ruolo: l'app admin è operativa, serve il permesso di modifica
+  const conRistorante = puo('ristorante', 2)
+  const conApp = puo('sito', 2)
+  const conEventi = moduloAttivo('eventi') && puo('eventi', 2)
+  const [tab, setTab] = useState<'prenotazioni' | 'menu' | 'app' | 'ingressi'>(conRistorante ? 'prenotazioni' : conApp ? 'app' : 'ingressi')
+  const colonne = [conRistorante && '1.5fr', conRistorante && '1fr', conApp && '1fr', conEventi && '1.2fr'].filter(Boolean).join('_')
   const [suoni, setSuoni] = useState(true)
   const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
 
@@ -72,12 +77,12 @@ function Area() {
   return (
     <div>
       <div className="mb-4 flex gap-2">
-        <div className={cn('grid flex-1 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm', conEventi ? 'grid-cols-[1.5fr_1fr_1fr_1.2fr]' : 'grid-cols-[1.4fr_1fr_1fr]')}>
-          <button onClick={() => setTab('prenotazioni')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'prenotazioni' ? 'bg-profondo text-white' : 'text-profondo/60')}>
+        <div className="grid flex-1 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm" style={{ gridTemplateColumns: colonne.replace(/_/g, ' ') }}>
+          {conRistorante && <button onClick={() => setTab('prenotazioni')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'prenotazioni' ? 'bg-profondo text-white' : 'text-profondo/60')}>
             <Inbox className="h-4 w-4" /> Prenotazioni {daConfermare.length > 0 && <span className="rounded-full bg-boa px-1.5 text-xs text-white">{daConfermare.length}</span>}
-          </button>
-          <button onClick={() => setTab('menu')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'menu' ? 'bg-profondo text-white' : 'text-profondo/60')}><Mic className="h-4 w-4" /> Menu</button>
-          <button onClick={() => setTab('app')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'app' ? 'bg-profondo text-white' : 'text-profondo/60')}><Newspaper className="h-4 w-4" /> App</button>
+          </button>}
+          {conRistorante && <button onClick={() => setTab('menu')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'menu' ? 'bg-profondo text-white' : 'text-profondo/60')}><Mic className="h-4 w-4" /> Menu</button>}
+          {conApp && <button onClick={() => setTab('app')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'app' ? 'bg-profondo text-white' : 'text-profondo/60')}><Newspaper className="h-4 w-4" /> App</button>}
           {conEventi && <button onClick={() => setTab('ingressi')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'ingressi' ? 'bg-profondo text-white' : 'text-profondo/60')}><ScanLine className="h-4 w-4" /> Ingressi</button>}
         </div>
         <button onClick={() => { sbloccaAudio(); setSuoni(!suoni) }} className="grid w-11 place-content-center rounded-xl bg-white text-profondo/60 shadow-sm" aria-label={suoni ? 'Disattiva suoni' : 'Attiva suoni'}>
@@ -87,7 +92,10 @@ function Area() {
 
       <AttivaNotifiche app="admin" descrizione="Ricevi le nuove prenotazioni come notifica, anche a telefono bloccato." />
 
-      {tab === 'prenotazioni' && (
+      {!conRistorante && !conApp && !conEventi && (
+        <p className="rounded-2xl bg-white p-4 text-sm text-profondo/70 shadow-sm">Il tuo ruolo non ha sezioni operative nell'app admin. Chiedi all'amministratore.</p>
+      )}
+      {tab === 'prenotazioni' && conRistorante && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-profondo/50">Da confermare</h2>
           {daConfermare.length === 0 && <p className="rounded-xl bg-white p-6 text-center text-sm text-profondo/50 shadow-sm">Nessuna richiesta in attesa.</p>}
@@ -137,9 +145,9 @@ function Area() {
         />
       )}
 
-      {tab === 'menu' && <AssistenteVocale />}
-      {tab === 'ingressi' && <IngressiEventi />}
-      {tab === 'app' && (
+      {tab === 'menu' && conRistorante && <AssistenteVocale />}
+      {tab === 'ingressi' && conEventi && <IngressiEventi />}
+      {tab === 'app' && conApp && (
         <div className="space-y-5">
           <section><h2 className="mb-2 font-display text-lg font-semibold">News per i clienti</h2><GestioneNews /></section>
           <section><h2 className="mb-2 font-display text-lg font-semibold">Lavagnetta di oggi</h2><GestioneLavagnetta /></section>
