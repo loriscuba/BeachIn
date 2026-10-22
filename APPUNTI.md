@@ -106,6 +106,11 @@ gestire chiavi e costi.
   - **Cloudflare R2**: ~10 GB free, traffico gratis, account già attivo; serve carta e un Worker per caricare dal telefono
   - **Cloudinary**: ~25 crediti/mese free, caricamento diretto dall'app (upload preset), ottimizza le foto da solo
 
+### Nuova grafica app clienti (ott 2026)
+- [x] Benchmark 5 app (Spiaggia.it, SunEasy, Starbucks, Sweetgreen, TheFork) e 3 direzioni grafiche: scelta **A · Riviera editoriale** con più colore (niente mappa ombrelloni)
+- [ ] Provare sulla demo e decidere se estenderla a sito/menu pubblico
+- [ ] Foto vere del lido per le news (lo stile editoriale rende molto con foto grandi)
+
 ## 6. App su App Store / Google Play (Capacitor)
 **Costi**: Apple Developer 99 €/anno (per l'azienda serve D-U-N-S, gratis) · Google Play 25 $ una tantum.
 Commissioni 15–30% solo su beni digitali; prenotazioni e cibo sono servizi fisici → Stripe/SumUp/Nexi (~1,5–3%).
