@@ -1,7 +1,7 @@
 // Edge Function "beachin-utenti": gestione degli account dello staff (Impostazioni → Utenti e ruoli).
 // Chi chiama deve essere collegato con permesso "utenti" in modifica (beachin.ha_permesso('utenti', 2)).
 // Body JSON { azione, ... }:
-//   crea     { email, nome, ruolo_id, password }  → account Auth confermato + profilo beachin.utenti
+//   crea     { username, nome, ruolo_id, password } → account Auth confermato (email sintetica <username>@utenti.beachin.local) + profilo
 //   aggiorna { id, nome?, ruolo_id?, attivo? }    → disattivare = profilo non attivo + account bloccato (niente nuovi token)
 //   password { id, password }                     → nuova password
 //   elimina  { id }                               → solo utenti già disattivati
@@ -20,6 +20,7 @@ const URL = Deno.env.get('SUPABASE_URL')!
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!
 const SERVIZIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const BLOCCO = '876000h' // ~100 anni
+const DOMINIO_UTENTI = 'utenti.beachin.local' // come src/lib/permessi.ts
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
@@ -39,14 +40,18 @@ Deno.serve(async (req) => {
     const { azione } = corpo as { azione: string }
 
     if (azione === 'crea') {
-      const email = String(corpo.email ?? '').trim().toLowerCase()
+      const username = String(corpo.username ?? '').trim().toLowerCase()
       const nome = String(corpo.nome ?? '').trim()
       const password = String(corpo.password ?? '')
-      if (!email.includes('@') || !nome || !corpo.ruolo_id) return errore('Servono email, nome e ruolo')
+      if (!/^[a-z0-9._-]{3,30}$/.test(username)) return errore('Nome utente: 3–30 caratteri tra lettere minuscole, numeri, punto e trattino')
+      if (!nome || !corpo.ruolo_id) return errore('Servono nome e ruolo')
+      const { data: doppio } = await admin.from('utenti').select('id').eq('username', username).maybeSingle()
+      if (doppio) return errore(`Il nome utente ${username} è già usato`)
+      const email = `${username}@${DOMINIO_UTENTI}`
       if (password.length < 8) return errore('La password deve avere almeno 8 caratteri')
       const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { nome, app: 'beachin' } })
-      if (error) return errore(/already|registered|exists/i.test(error.message) ? 'Esiste già un account con questa email' : error.message)
-      const { error: e2 } = await admin.from('utenti').insert({ id: data.user.id, email, nome, ruolo_id: corpo.ruolo_id, attivo: true })
+      if (error) return errore(/already|registered|exists/i.test(error.message) ? `Il nome utente ${username} è già usato` : error.message)
+      const { error: e2 } = await admin.from('utenti').insert({ id: data.user.id, email, username, nome, ruolo_id: corpo.ruolo_id, attivo: true })
       if (e2) { await admin.auth.admin.deleteUser(data.user.id); return errore(e2.message) }
       return json({ id: data.user.id })
     }

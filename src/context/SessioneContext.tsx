@@ -1,6 +1,6 @@
 /**
  * Sessione dello staff (gestionale e app admin).
- * - Con Supabase: login email + password (Supabase Auth); il profilo (ruolo e permessi) arriva da `beachin.mio_profilo()`.
+ * - Con Supabase: login nome utente (o email) + password (Supabase Auth); il profilo (ruolo e permessi) arriva da `beachin.mio_profilo()`.
  *   Chi ha un account Auth ma nessun profilo attivo in `beachin.utenti` non entra.
  * - Senza Supabase: credenziali demo nel codice (`src/lib/adminapp.ts`), profilo amministratore.
  * Il profilo si ricarica quando la finestra torna in primo piano e quando cambia la propria riga (Realtime):
@@ -9,7 +9,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { credenzialiValide, entraGestore, esciGestore, sessioneGestore } from '@/lib/adminapp'
-import { PROFILO_DEMO, livelloDi, sezioneDi, type Livello, type Profilo, type Sezione } from '@/lib/permessi'
+import { PROFILO_DEMO, emailAccesso, livelloDi, sezioneDi, type Livello, type Profilo, type Sezione } from '@/lib/permessi'
 import type { ModuloId } from '@/config/moduli'
 
 interface Sessione {
@@ -77,8 +77,8 @@ export function SessioneProvider({ children }: { children: ReactNode }) {
       setProfilo(PROFILO_DEMO)
       return null
     }
-    const { error } = await supabase.auth.signInWithPassword({ email: utente.trim().toLowerCase(), password })
-    if (error) return error.message.includes('banned') ? 'Utente disattivato.' : 'Email o password non corretti.'
+    const { error } = await supabase.auth.signInWithPassword({ email: emailAccesso(utente), password })
+    if (error) return error.message.includes('banned') ? 'Utente disattivato.' : 'Utente o password non corretti.'
     const p = await leggiProfilo()
     if (!p) { await supabase.auth.signOut(); return 'Utente non abilitato al gestionale o disattivato.' }
     setProfilo(p)

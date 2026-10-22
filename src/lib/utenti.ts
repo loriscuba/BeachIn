@@ -28,7 +28,7 @@ async function funzione(corpo: Record<string, unknown>): Promise<string | null> 
   return (data as { errore?: string } | null)?.errore ?? null
 }
 
-export const creaUtente = (u: { email: string; nome: string; ruolo_id: string; password: string }) => funzione({ azione: 'crea', ...u })
+export const creaUtente = (u: { username: string; nome: string; ruolo_id: string; password: string }) => funzione({ azione: 'crea', ...u })
 export const aggiornaUtente = (id: string, m: { nome?: string; ruolo_id?: string; attivo?: boolean }) => funzione({ azione: 'aggiorna', id, ...m })
 export const cambiaPassword = (id: string, password: string) => funzione({ azione: 'password', id, password })
 export const eliminaUtente = (id: string) => funzione({ azione: 'elimina', id })

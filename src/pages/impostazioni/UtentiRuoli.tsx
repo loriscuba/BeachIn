@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { useSessione } from '@/context/SessioneContext'
 import { supabase, supabaseAttivo } from '@/lib/supabase'
-import { SEZIONI, LIVELLI, type Livello, type Permessi, type Ruolo, type Utente } from '@/lib/permessi'
+import { SEZIONI, LIVELLI, USERNAME_VALIDO, proponiUsername, type Livello, type Permessi, type Ruolo, type Utente } from '@/lib/permessi'
 import {
   leggiUtentiRuoli, creaUtente, aggiornaUtente, cambiaPassword, eliminaUtente, salvaRuolo, eliminaRuolo, idDaNome,
 } from '@/lib/utenti'
@@ -105,7 +105,7 @@ function ElencoUtenti({ utenti, ruoli, io, modifica, esegui }: { utenti: Utente[
               <p className={cn('text-sm font-medium', u.attivo ? 'text-profondo' : 'text-profondo/45 line-through')}>
                 {u.nome} {u.id === io && <span className="text-xs font-normal text-profondo/50">(tu)</span>}
               </p>
-              <p className="truncate text-xs text-profondo/55">{u.email} · ultimo accesso {quando(u.ultimo_accesso)}</p>
+              <p className="truncate text-xs text-profondo/55">{u.username ?? u.email} · ultimo accesso {quando(u.ultimo_accesso)}</p>
             </div>
             <Badge tono="mare">{nomeRuolo(u.ruolo_id)}</Badge>
             <Badge tono={u.attivo ? 'verde' : 'rosso'} puntino>{u.attivo ? 'Attivo' : 'Disattivato'}</Badge>
@@ -160,12 +160,13 @@ function CampoPassword({ valore, onChange }: { valore: string; onChange: (v: str
 }
 
 function ModaleNuovoUtente({ ruoli, onChiudi, esegui }: { ruoli: Ruolo[]; onChiudi: () => void; esegui: Esegui }) {
-  const [f, setF] = useState({ nome: '', email: '', ruolo_id: ruoli.find((r) => !r.amministratore)?.id ?? ruoli[0]?.id ?? '', password: generaPassword() })
+  const [f, setF] = useState({ nome: '', username: '', ruolo_id: ruoli.find((r) => !r.amministratore)?.id ?? ruoli[0]?.id ?? '', password: generaPassword() })
+  const [usernameToccato, setUsernameToccato] = useState(false)
   const [attesa, setAttesa] = useState(false)
-  const valido = f.nome.trim() && f.email.includes('@') && f.ruolo_id && f.password.length >= 8
+  const valido = f.nome.trim() && USERNAME_VALIDO.test(f.username) && f.ruolo_id && f.password.length >= 8
   const salva = async () => {
     setAttesa(true)
-    const ok = await esegui(creaUtente(f), `Utente ${f.nome} creato. Comunicagli email e password: ${f.password}`)
+    const ok = await esegui(creaUtente(f), `Utente ${f.nome} creato. Comunicagli nome utente ${f.username} e password ${f.password}`)
     setAttesa(false)
     if (ok) onChiudi()
   }
@@ -174,9 +175,10 @@ function ModaleNuovoUtente({ ruoli, onChiudi, esegui }: { ruoli: Ruolo[]; onChiu
       piede={<Button variante="primario" disabled={!valido || attesa} onClick={() => void salva()}>{attesa ? 'Creo…' : 'Crea utente'}</Button>}>
       <div className="space-y-3">
         <label className="block"><span className="text-xs text-profondo/60">Nome e cognome</span>
-          <input value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} className={campo} /></label>
-        <label className="block"><span className="text-xs text-profondo/60">Email (è il nome utente)</span>
-          <input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} className={campo} autoCapitalize="none" /></label>
+          <input value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value, username: usernameToccato ? f.username : proponiUsername(e.target.value) })} className={campo} /></label>
+        <label className="block"><span className="text-xs text-profondo/60">Nome utente (per entrare)</span>
+          <input value={f.username} onChange={(e) => { setUsernameToccato(true); setF({ ...f, username: e.target.value.toLowerCase().replace(/\s/g, '') }) }} placeholder="es. lorisc" className={campo} autoCapitalize="none" autoCorrect="off" />
+          {f.username && !USERNAME_VALIDO.test(f.username) && <span className="text-xs text-boa">3–30 caratteri: lettere minuscole, numeri, punto, trattino.</span>}</label>
         <label className="block"><span className="text-xs text-profondo/60">Ruolo</span>
           <SceltaRuolo ruoli={ruoli} valore={f.ruolo_id} onChange={(v) => setF({ ...f, ruolo_id: v })} /></label>
         <label className="block"><span className="text-xs text-profondo/60">Password provvisoria</span>
@@ -194,7 +196,7 @@ function ModaleModificaUtente({ utente, ruoli, onChiudi, esegui }: { utente: Ute
     <Modal aperto onChiudi={onChiudi} titolo={`Modifica ${utente.nome}`}
       piede={<Button variante="primario" disabled={!nome.trim()} onClick={() => void salva()}>Salva</Button>}>
       <div className="space-y-3">
-        <p className="text-sm text-profondo/60">{utente.email}</p>
+        <p className="text-sm text-profondo/60">Nome utente: {utente.username ?? utente.email}</p>
         <label className="block"><span className="text-xs text-profondo/60">Nome e cognome</span>
           <input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label>
         <label className="block"><span className="text-xs text-profondo/60">Ruolo</span>

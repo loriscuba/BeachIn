@@ -34,7 +34,9 @@ Aggiornare qui quando cambia un modulo.
   BOA `#E4572E`, CALCE `#EDF1F2` (usare le classi `profondo/cabina/acqua/tenda/boa/calce`).
 
 ## Utenti, ruoli e permessi (RBAC, ott 2026)
-- **Login**: con Supabase = Supabase Auth email+password (sessione in localStorage `beachin.auth`, separata dalle altre demo
+- **Login**: con Supabase = Supabase Auth con **nome utente** (es. `lorisc`, proposto come nome + iniziale del cognome) + password;
+  l'account Auth ha un'email sintetica `<nome utente>@utenti.beachin.local` (migrazione 0012, colonna `beachin.utenti.username`),
+  chi scrive un'email vera (con @) entra con quella. Prima: email+password (sessione in localStorage `beachin.auth`, separata dalle altre demo
   del progetto condiviso); senza Supabase = credenziali demo `admin/lido` (`src/lib/adminapp.ts`) → profilo amministratore.
 - **DB** (migrazione `0011_utenti_ruoli.sql`): `beachin.ruoli` (`permessi` jsonb sezione→livello 0 nessuno/1 lettura/2 modifica,
   `amministratore` = tutto, `di_sistema` non eliminabile) e `beachin.utenti` (id = `auth.users.id`, nome, ruolo, `attivo`,
@@ -45,7 +47,7 @@ Aggiornare qui quando cambia un modulo.
   ristorante, eventi, sito, impostazioni) + "clienti lettura/invio" (catalogo e invio comande/richieste anche da collegati).
   Ruoli/utenti: niente anon; scrittura ruoli con permesso `utenti`=2, utenti solo via Edge Function.
   **Fase 1**: le policy "demo anon" restano (sito, ComandApp, menu QR). Fase 2 = chiudere anon alle sole azioni dei clienti.
-- **Edge Function `beachin-utenti`**: crea (account confermato + profilo), aggiorna (nome/ruolo/attivo; disattivare = blocco
+- **Edge Function `beachin-utenti`**: crea (nome utente → account confermato con email sintetica + profilo), aggiorna (nome/ruolo/attivo; disattivare = blocco
   account Auth `ban_duration`), password, elimina (solo disattivati). Controlla `ha_permesso('utenti', 2)` di chi chiama.
 - **App**: `src/lib/permessi.ts` (sezioni, livelli, tipi), `src/context/SessioneContext.tsx` (`profilo`, `accedi`, `esci`,
   `livello`, `puo`; profilo ricaricato al ritorno in primo piano e via Realtime sulla propria riga), `DemoDataProvider` rimontato
