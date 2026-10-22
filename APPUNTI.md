@@ -107,7 +107,7 @@ gestire chiavi e costi.
   - **Cloudinary**: ~25 crediti/mese free, caricamento diretto dall'app (upload preset), ottimizza le foto da solo
 
 ### Nuova grafica app clienti (ott 2026)
-- [x] Benchmark 5 app (Spiaggia.it, SunEasy, Starbucks, Sweetgreen, TheFork) e 3 direzioni grafiche: scelta **A · Riviera editoriale** con più colore (niente mappa ombrelloni)
+- [x] Benchmark 5 app (Spiaggia.it, SunEasy, Starbucks, Sweetgreen, TheFork) e 3 direzioni grafiche: scelta **A · Riviera editoriale** con più colore (niente mappa ombrelloni), poi rivista sullo spunto Pinterest di Loris (app di viaggio: card bianche con foto, petrolio)
 - [ ] Provare sulla demo e decidere se estenderla a sito/menu pubblico
 - [ ] Foto vere del lido per le news (lo stile editoriale rende molto con foto grandi)
 

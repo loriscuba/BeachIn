@@ -26,7 +26,8 @@ export default {
         tenda: '#F2C14E', // giallo tenda
         boa: '#E4572E', // rosso boa
         corallo: '#C8421F', // boa scuro: testo bianco leggibile (app clienti)
-        carta: '#F6F3EC', // fondo crema dell'app clienti
+        laguna: '#0E6464', // verde petrolio: colore principale dell'app clienti
+        carta: '#F2F6F6', // fondo chiaro dell'app clienti
         rosa: '#F4C9B8', // pesca chiaro (app clienti)
         cielo: '#BFD8DF', // azzurro chiaro (app clienti)
         // Colori di stato postazione (derivati, leggibili in pieno sole)
