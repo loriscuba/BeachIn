@@ -25,7 +25,7 @@ import { InvitoNotifiche } from '@/components/AttivaNotifiche'
 import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 import { prezzoLavagna } from '@/components/app/GestioneAppClienti'
 import { EventoModal, FormRistorante, Sospese } from '@/pages/SitoAnteprima'
-import { logoLido } from '@/assets/sito'
+import { fotoSito, logoLido } from '@/assets/sito'
 
 type Utente = (typeof UTENTI_COMANDAPP)[number]
 type Sez = 'news' | 'ombrellone' | 'prenota' | 'eventi' | 'lavagna' | 'contatti'
@@ -56,10 +56,10 @@ export default function ComandApp() {
   const eventiOn = moduloAttivo('eventi')
   const voci = ([
     { id: 'news', etichetta: 'News', icona: Newspaper, on: true },
-    { id: 'ombrellone', etichetta: 'Ombrellone', icona: Umbrella, on: moduloAttivo('comande') },
-    { id: 'prenota', etichetta: 'Prenota', icona: CalendarCheck, on: (ristorante && canaliPrenotazione.ristorante) || (eventiOn && canaliPrenotazione.eventi) },
     { id: 'eventi', etichetta: 'Eventi', icona: PartyPopper, on: eventiOn },
     { id: 'lavagna', etichetta: 'Lavagna', icona: UtensilsCrossed, on: ristorante },
+    { id: 'prenota', etichetta: 'Prenota', icona: CalendarCheck, on: (ristorante && canaliPrenotazione.ristorante) || (eventiOn && canaliPrenotazione.eventi) },
+    { id: 'ombrellone', etichetta: 'Ombrellone', icona: Umbrella, on: moduloAttivo('comande') },
     { id: 'contatti', etichetta: 'Contatti', icona: Phone, on: true },
   ] satisfies { id: Sez; etichetta: string; icona: LucideIcon; on: boolean }[]).filter((v) => v.on)
   const [q, setQ] = useSearchParams()
@@ -142,7 +142,15 @@ function News({ scorciatoie, vai }: { scorciatoie: { id: Sez; etichetta: string;
   const lista = useMemo(() => [...notizie].sort((a, b) => Number(!!b.fissata) - Number(!!a.fissata) || b.ts - a.ts), [notizie])
   return (
     <div>
-      <Titolo sotto="Benvenuto al Lido" accento="oggi?">Cosa ti serve</Titolo>
+      {/* foto vera del lido in apertura, testo bianco su sfumatura scura */}
+      <div className="relative mb-5 mt-1 h-52 overflow-hidden rounded-3xl">
+        <img src={fotoSito.spiaggiaDrone} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-profondo/80 via-profondo/20 to-transparent" />
+        <div className="absolute inset-x-4 bottom-4 text-white">
+          <p className="text-sm text-white/85">Benvenuto al {config.nome}</p>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight">Cosa ti serve <span className="text-tenda">oggi?</span></h1>
+        </div>
+      </div>
       {scorciatoie.length > 0 && (
         <div className="mb-6 grid grid-cols-4 gap-2">
           {scorciatoie.map((v, i) => {
