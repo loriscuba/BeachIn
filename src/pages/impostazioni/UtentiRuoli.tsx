@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Users2, ShieldCheck, Plus, KeyRound, Pencil, Power, Trash2, Save, Wand2 } from 'lucide-react'
+import { Users2, ShieldCheck, Plus, KeyRound, Pencil, Power, Trash2, Save, Wand2, Camera } from 'lucide-react'
+import { Avatar } from '@/components/ui/Avatar'
+import { fileAImmagine } from '@/lib/immagini'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -101,6 +103,7 @@ function ElencoUtenti({ utenti, ruoli, io, modifica, esegui }: { utenti: Utente[
         {utenti.length === 0 && <p className="py-3 text-sm text-profondo/60">Nessun utente.</p>}
         {utenti.map((u) => (
           <div key={u.id} className="flex flex-wrap items-center gap-3 border-b border-calce-200 py-3 last:border-0">
+            <Avatar nome={u.nome} foto={u.foto} className={cn(!u.attivo && 'opacity-40 grayscale')} />
             <div className="min-w-0 flex-1">
               <p className={cn('text-sm font-medium', u.attivo ? 'text-profondo' : 'text-profondo/45 line-through')}>
                 {u.nome} {u.id === io && <span className="text-xs font-normal text-profondo/50">(tu)</span>}
@@ -150,6 +153,30 @@ function SceltaRuolo({ ruoli, valore, onChange }: { ruoli: Ruolo[]; valore: stri
   )
 }
 
+/** Foto profilo: tocco sul cerchio per sceglierla (fotocamera o galleria), ridotta e caricata nello Storage. */
+function SceltaFoto({ nome, foto, onChange }: { nome: string; foto: string | null; onChange: (f: string | null) => void }) {
+  const [carico, setCarico] = useState(false)
+  const scegli = async (file?: File) => {
+    if (!file) return
+    setCarico(true)
+    try { onChange(await fileAImmagine(file, 'utenti', 320)) } catch { alert('Immagine non valida.') }
+    setCarico(false)
+  }
+  return (
+    <div className="flex items-center gap-3">
+      <label className="relative cursor-pointer" title="Cambia foto">
+        <Avatar nome={nome} foto={foto} className={cn('h-16 w-16 text-base', carico && 'opacity-50')} />
+        <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-content-center rounded-full bg-cabina text-white shadow"><Camera className="h-3.5 w-3.5" /></span>
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => void scegli(e.target.files?.[0])} />
+      </label>
+      <div className="text-sm text-profondo/60">
+        {carico ? 'Carico la foto…' : 'Tocca il cerchio per scegliere una foto.'}
+        {foto && !carico && <button type="button" className="ml-2 text-boa hover:underline" onClick={() => onChange(null)}>Togli</button>}
+      </div>
+    </div>
+  )
+}
+
 function CampoPassword({ valore, onChange }: { valore: string; onChange: (v: string) => void }) {
   return (
     <div className="flex gap-2">
@@ -160,7 +187,7 @@ function CampoPassword({ valore, onChange }: { valore: string; onChange: (v: str
 }
 
 function ModaleNuovoUtente({ ruoli, onChiudi, esegui }: { ruoli: Ruolo[]; onChiudi: () => void; esegui: Esegui }) {
-  const [f, setF] = useState({ nome: '', username: '', ruolo_id: ruoli.find((r) => !r.amministratore)?.id ?? ruoli[0]?.id ?? '', password: generaPassword() })
+  const [f, setF] = useState({ nome: '', username: '', ruolo_id: ruoli.find((r) => !r.amministratore)?.id ?? ruoli[0]?.id ?? '', password: generaPassword(), foto: null as string | null })
   const [usernameToccato, setUsernameToccato] = useState(false)
   const [attesa, setAttesa] = useState(false)
   const valido = f.nome.trim() && USERNAME_VALIDO.test(f.username) && f.ruolo_id && f.password.length >= 8
@@ -174,6 +201,7 @@ function ModaleNuovoUtente({ ruoli, onChiudi, esegui }: { ruoli: Ruolo[]; onChiu
     <Modal aperto onChiudi={onChiudi} titolo="Nuovo utente"
       piede={<Button variante="primario" disabled={!valido || attesa} onClick={() => void salva()}>{attesa ? 'Creo…' : 'Crea utente'}</Button>}>
       <div className="space-y-3">
+        <SceltaFoto nome={f.nome || 'Nuovo utente'} foto={f.foto} onChange={(foto) => setF({ ...f, foto })} />
         <label className="block"><span className="text-xs text-profondo/60">Nome e cognome</span>
           <input value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value, username: usernameToccato ? f.username : proponiUsername(e.target.value) })} className={campo} /></label>
         <label className="block"><span className="text-xs text-profondo/60">Nome utente (per entrare)</span>
@@ -191,11 +219,13 @@ function ModaleNuovoUtente({ ruoli, onChiudi, esegui }: { ruoli: Ruolo[]; onChiu
 function ModaleModificaUtente({ utente, ruoli, onChiudi, esegui }: { utente: Utente; ruoli: Ruolo[]; onChiudi: () => void; esegui: Esegui }) {
   const [nome, setNome] = useState(utente.nome)
   const [ruolo, setRuolo] = useState(utente.ruolo_id)
-  const salva = async () => { if (await esegui(aggiornaUtente(utente.id, { nome, ruolo_id: ruolo }), `${nome} aggiornato`)) onChiudi() }
+  const [foto, setFoto] = useState(utente.foto)
+  const salva = async () => { if (await esegui(aggiornaUtente(utente.id, { nome, ruolo_id: ruolo, foto }), `${nome} aggiornato`)) onChiudi() }
   return (
     <Modal aperto onChiudi={onChiudi} titolo={`Modifica ${utente.nome}`}
       piede={<Button variante="primario" disabled={!nome.trim()} onClick={() => void salva()}>Salva</Button>}>
       <div className="space-y-3">
+        <SceltaFoto nome={nome} foto={foto} onChange={setFoto} />
         <p className="text-sm text-profondo/60">Nome utente: {utente.username ?? utente.email}</p>
         <label className="block"><span className="text-xs text-profondo/60">Nome e cognome</span>
           <input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} /></label>

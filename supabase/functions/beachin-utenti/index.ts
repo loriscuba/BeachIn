@@ -1,8 +1,8 @@
 // Edge Function "beachin-utenti": gestione degli account dello staff (Impostazioni → Utenti e ruoli).
 // Chi chiama deve essere collegato con permesso "utenti" in modifica (beachin.ha_permesso('utenti', 2)).
 // Body JSON { azione, ... }:
-//   crea     { username, nome, ruolo_id, password } → account Auth confermato (email sintetica <username>@utenti.beachin.local) + profilo
-//   aggiorna { id, nome?, ruolo_id?, attivo? }    → disattivare = profilo non attivo + account bloccato (niente nuovi token)
+//   crea     { username, nome, ruolo_id, password, foto? } → account Auth confermato (email sintetica <username>@utenti.beachin.local) + profilo
+//   aggiorna { id, nome?, ruolo_id?, attivo?, foto? } → disattivare = profilo non attivo + account bloccato (niente nuovi token)
 //   password { id, password }                     → nuova password
 //   elimina  { id }                               → solo utenti già disattivati
 // La regola "almeno un amministratore attivo" la fa rispettare il trigger beachin.verifica_amministratore.
@@ -21,6 +21,9 @@ const ANON = Deno.env.get('SUPABASE_ANON_KEY')!
 const SERVIZIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const BLOCCO = '876000h' // ~100 anni
 const DOMINIO_UTENTI = 'utenti.beachin.local' // come src/lib/permessi.ts
+// Foto profilo: URL https dello Storage o data URI immagine (riserva se l'upload non è riuscito), con un tetto di dimensione.
+const fotoValida = (f: unknown) =>
+  typeof f === 'string' && (/^https:\/\//.test(f) || /^data:image\//.test(f)) && f.length < 400_000 ? f : null
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
@@ -51,7 +54,7 @@ Deno.serve(async (req) => {
       if (password.length < 8) return errore('La password deve avere almeno 8 caratteri')
       const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { nome, app: 'beachin' } })
       if (error) return errore(/already|registered|exists/i.test(error.message) ? `Il nome utente ${username} è già usato` : error.message)
-      const { error: e2 } = await admin.from('utenti').insert({ id: data.user.id, email, username, nome, ruolo_id: corpo.ruolo_id, attivo: true })
+      const { error: e2 } = await admin.from('utenti').insert({ id: data.user.id, email, username, nome, ruolo_id: corpo.ruolo_id, attivo: true, foto: fotoValida(corpo.foto) })
       if (e2) { await admin.auth.admin.deleteUser(data.user.id); return errore(e2.message) }
       return json({ id: data.user.id })
     }
@@ -65,6 +68,7 @@ Deno.serve(async (req) => {
       const modifiche: Record<string, unknown> = {}
       if (typeof corpo.nome === 'string' && corpo.nome.trim()) modifiche.nome = corpo.nome.trim()
       if (typeof corpo.ruolo_id === 'string') modifiche.ruolo_id = corpo.ruolo_id
+      if ('foto' in corpo) modifiche.foto = fotoValida(corpo.foto)
       if (typeof corpo.attivo === 'boolean') {
         if (!corpo.attivo && id === io?.id) return errore('Non puoi disattivare te stesso')
         modifiche.attivo = corpo.attivo
