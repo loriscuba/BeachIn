@@ -1,4 +1,5 @@
 import { useSessione } from '@/context/SessioneContext'
+import { Avatar } from '@/components/ui/Avatar'
 import { LogOut, Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
 import { useTema } from '@/hooks/useTema'
 import type { Meteo } from '@/data/types'
@@ -83,9 +84,12 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
       )}
 
       {profilo && (
-        <div className="hidden text-right leading-tight md:block">
-          <p className="text-sm font-medium text-profondo">{profilo.nome}</p>
-          <p className="text-xs text-profondo/55">{profilo.ruolo}</p>
+        <div className="flex items-center gap-2">
+          <div className="hidden text-right leading-tight md:block">
+            <p className="text-sm font-medium text-profondo">{profilo.nome}</p>
+            <p className="text-xs text-profondo/55">{profilo.ruolo}</p>
+          </div>
+          <Avatar nome={profilo.nome} foto={profilo.foto} />
         </div>
       )}
       <button

@@ -38,6 +38,7 @@ export interface Profilo {
   email: string
   username: string | null
   nome: string
+  foto?: string | null
   ruolo_id: string
   ruolo: string
   amministratore: boolean
@@ -58,6 +59,7 @@ export interface Utente {
   email: string
   username: string | null
   nome: string
+  foto: string | null
   ruolo_id: string
   attivo: boolean
   creato_il: string
