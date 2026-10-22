@@ -64,9 +64,24 @@ export function similarita(query: string, target: string): number {
   return Math.max(dice, perToken, intero)
 }
 
+/**
+ * Stesso piatto detto in modo leggermente diverso (refuso, accento, plurale): confronto sull'intera
+ * stringa, senza il "contenimento" di `similarita`, così «Tiramisù al pistacchio» non è un doppione di «Tiramisù».
+ */
+export function quasiUguale(a: string, b: string): boolean {
+  const x = normalizzaTesto(a)
+  const y = normalizzaTesto(b)
+  return !!x && !!y && ratio(x, y) >= 0.85
+}
+
 export interface Corrispondenza<T> {
   item: T
   score: number
+}
+
+/** I candidati ordinati dal più simile, con il loro punteggio. */
+export function classifica<T>(query: string, items: T[], nome: (x: T) => string): Corrispondenza<T>[] {
+  return items.map((item) => ({ item, score: similarita(query, nome(item)) })).sort((a, b) => b.score - a.score)
 }
 
 /** Il candidato più simile alla query (con il suo punteggio), o null se lista vuota. */

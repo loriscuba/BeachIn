@@ -14,7 +14,7 @@ import { useDemoData } from '@/context/DemoDataContext'
 import { useVoce } from '@/hooks/useVoce'
 import { dividiComandi, parseComandoMenu, type ComandoMenu } from '@/lib/comandiMenu'
 import { interpretaConAI, interpretazioneDisponibile } from '@/lib/interpretaComando'
-import { trovaMigliore } from '@/lib/fuzzy'
+import { classifica, quasiUguale } from '@/lib/fuzzy'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -41,23 +41,30 @@ interface Messaggio {
 // Soglie di somiglianza: sopra OK agiamo, tra FORSE e OK proponiamo, sotto niente.
 const SOGLIA_OK = 0.6
 const SOGLIA_FORSE = 0.42
+// Due piatti con punteggi così vicini (es. «tartare» → due tartare) sono ambigui: si chiede quale.
+const SCARTO_AMBIGUO = 0.06
 
 /**
  * Trova il piatto dal menu partendo dai nomi candidati (uno per ogni alternativa
- * di trascrizione). Restituisce il piatto se la somiglianza è alta, altrimenti
- * il miglior "forse intendevi" o niente.
+ * di trascrizione). Restituisce il piatto se la somiglianza è alta e non ambigua,
+ * altrimenti i piatti tra cui scegliere, il miglior "forse intendevi" o niente.
  */
-function risolviPiatto(menu: Piatto[], nomi: string[]): { piatto: Piatto | null; suggerimento: Piatto | null } {
-  let best: { item: Piatto; score: number } | null = null
+function risolviPiatto(menu: Piatto[], nomi: string[]): { piatto: Piatto | null; suggerimento: Piatto | null; ambigui: Piatto[] } {
+  let best: { item: Piatto; score: number }[] = []
   for (const nome of nomi) {
     if (!nome) continue
-    const m = trovaMigliore(nome, menu, (p) => p.nome)
-    if (m && (!best || m.score > best.score)) best = m
+    const c = classifica(nome, menu, (p) => p.nome)
+    if (c.length && (!best.length || c[0].score > best[0].score)) best = c
   }
-  if (!best) return { piatto: null, suggerimento: null }
-  if (best.score >= SOGLIA_OK) return { piatto: best.item, suggerimento: best.item }
-  if (best.score >= SOGLIA_FORSE) return { piatto: null, suggerimento: best.item }
-  return { piatto: null, suggerimento: null }
+  const primo = best[0]
+  if (!primo) return { piatto: null, suggerimento: null, ambigui: [] }
+  if (primo.score >= SOGLIA_OK) {
+    const vicini = primo.score < 1 ? best.filter((m) => m.score >= SOGLIA_OK && primo.score - m.score < SCARTO_AMBIGUO) : [primo]
+    if (vicini.length > 1) return { piatto: null, suggerimento: null, ambigui: vicini.slice(0, 3).map((m) => m.item) }
+    return { piatto: primo.item, suggerimento: primo.item, ambigui: [] }
+  }
+  if (primo.score >= SOGLIA_FORSE) return { piatto: null, suggerimento: primo.item, ambigui: [] }
+  return { piatto: null, suggerimento: null, ambigui: [] }
 }
 
 /** Raccoglie i possibili nomi di piatto dalle alternative con la stessa azione. */
@@ -121,8 +128,10 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
     parla(t)
   }
 
-  const nonTrovato = (nome: string, suggerimento: Piatto | null) =>
-    suggerimento
+  const nonTrovato = (nome: string, suggerimento: Piatto | null, ambigui: Piatto[] = []) =>
+    ambigui.length > 1
+      ? rispondi(`«${nome}» può essere ${ambigui.map((p) => `«${p.nome}»`).join(' o ')}. Quale? Ripeti con il nome più completo.`, 'errore')
+      : suggerimento
       ? rispondi(`Non ho trovato «${nome}». Forse intendevi «${suggerimento.nome}»? Ripeti con il nome esatto.`, 'errore')
       : rispondi(`Non trovo «${nome}» nel menu.`, 'errore')
 
@@ -159,9 +168,9 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
 
     switch (c.azione) {
       case 'aggiungi': {
-        const simile = trovaMigliore(c.nome, menu, (p) => p.nome)
-        if (simile && simile.score >= 0.85) {
-          rispondi(`«${simile.item.nome}» sembra già nel menu. Per cambiare prezzo dì: «cambia il prezzo di ${simile.item.nome} a …».`)
+        const simile = menu.find((p) => quasiUguale(c.nome, p.nome))
+        if (simile) {
+          rispondi(`«${simile.nome}» sembra già nel menu. Per cambiare prezzo dì: «cambia il prezzo di ${simile.nome} a …».`)
           break
         }
         // la sezione riconosciuta dal parser potrebbe non esistere più (sezioni modificabili)
@@ -175,23 +184,23 @@ export default function AssistenteVocale({ compatto = false }: { compatto?: bool
         break
       }
       case 'rimuovi': {
-        const { piatto, suggerimento } = risolviPiatto(menu, nomiDaAlternative(alts, 'rimuovi', c.nome))
-        if (!piatto) { nonTrovato(c.nome, suggerimento); break }
+        const { piatto, suggerimento, ambigui } = risolviPiatto(menu, nomiDaAlternative(alts, 'rimuovi', c.nome))
+        if (!piatto) { nonTrovato(c.nome, suggerimento, ambigui); break }
         rimuoviPiatto(piatto.id)
         rispondi(`Ho tolto «${piatto.nome}» dal menu.`)
         break
       }
       case 'prezzo': {
-        const { piatto, suggerimento } = risolviPiatto(menu, nomiDaAlternative(alts, 'prezzo', c.nome))
-        if (!piatto) { nonTrovato(c.nome, suggerimento); break }
+        const { piatto, suggerimento, ambigui } = risolviPiatto(menu, nomiDaAlternative(alts, 'prezzo', c.nome))
+        if (!piatto) { nonTrovato(c.nome, suggerimento, ambigui); break }
         modificaPrezzoPiatto(piatto.id, c.prezzo)
         setUltimoId(piatto.id)
         rispondi(`Prezzo di «${piatto.nome}» aggiornato a ${prezzoParlato(c.prezzo)}.`)
         break
       }
       case 'rinomina': {
-        const { piatto, suggerimento } = risolviPiatto(menu, nomiDaAlternative(alts, 'rinomina', c.nome))
-        if (!piatto) { nonTrovato(c.nome, suggerimento); break }
+        const { piatto, suggerimento, ambigui } = risolviPiatto(menu, nomiDaAlternative(alts, 'rinomina', c.nome))
+        if (!piatto) { nonTrovato(c.nome, suggerimento, ambigui); break }
         const vecchio = piatto.nome
         rinominaPiatto(piatto.id, c.nuovoNome)
         setUltimoId(piatto.id)

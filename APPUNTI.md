@@ -109,6 +109,12 @@ gestire chiavi e costi.
   - **Cloudflare R2**: ~10 GB free, traffico gratis, account già attivo; serve carta e un Worker per caricare dal telefono
   - **Cloudinary**: ~25 crediti/mese free, caricamento diretto dall'app (upload preset), ottimizza le foto da solo
 
+### Dettatura menu (assistente vocale) — 22/10/2026
+- [x] Test con ~100 frasi realistiche: prima 36 su 66 giuste, ora tutte (`npm run test:dettatura`)
+- [x] Prezzi in lettere/«6 euro e 50»/«€12», «X costa N», piatti ambigui → chiede quale, niente falso doppione all'aggiunta
+- [ ] Provare a voce su beachin.pages.dev (Chrome e app iPhone/Whisper) dopo il merge
+- [ ] Facoltativo: nel prompt di `beachin-interpreta` dire che i prezzi possono essere in lettere
+
 ### Nuova grafica app clienti (ott 2026)
 - [x] Benchmark 5 app (Spiaggia.it, SunEasy, Starbucks, Sweetgreen, TheFork) e 3 direzioni grafiche: scelta **A · Riviera editoriale** con più colore (niente mappa ombrelloni), poi rivista sullo spunto Pinterest di Loris (app di viaggio: card bianche con foto, petrolio)
 - [ ] Provare sulla demo e decidere se estenderla a sito/menu pubblico
