@@ -62,6 +62,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `menu_sezioni`, `menu_piatti`, RLS aperta ad anon = solo demo, Realtime). Hook generico `src/hooks/useSyncSupabase.ts`:
   lettura iniziale (semina i seed se tabella vuota), upsert/delete delle differenze a ogni cambio di stato, ricarica su
   evento Realtime. Progetto: **Demo IPA** (`exchjppslwhbnbzuhfqs`, eu-west-1, condiviso tra demo), schema già creato via connettore MCP Supabase (migration `beachin_schema`). Senza env → tutto come prima (localStorage per le comande). Con Supabase il `reset()` non tocca menu/comande.
+- **IPA Monitor**: vista `beachin.monitor_riepilogo` (migrazione 0009, solo conteggi/date, nessun grant ad anon/authenticated) letta dal collettore `ipa-collect` del cruscotto IPA Monitor (schema `ipamonitor` nello stesso progetto Demo IPA).
 
 - **App admin** (rotta pubblica `/adminapp`, `src/pages/AdminApp.tsx`, mobile): login demo `admin/lido` (`src/lib/adminapp.ts`),
   tab **Prenotazioni** (richieste tavolo dal sito da confermare/rifiutare, campanello all'arrivo; **Conferma** apre
