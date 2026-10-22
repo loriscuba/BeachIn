@@ -1,3 +1,4 @@
+import { useSessione } from '@/context/SessioneContext'
 import { LogOut, Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
 import { useTema } from '@/hooks/useTema'
 import type { Meteo } from '@/data/types'
@@ -22,6 +23,7 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
   const meteo = useMeteoOggi()
   const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
+  const { profilo } = useSessione()
   return (
     <header className="shell-bar sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-calce-200 px-4 backdrop-blur-xl lg:px-6">
       <button
@@ -80,6 +82,12 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
         </button>
       )}
 
+      {profilo && (
+        <div className="hidden text-right leading-tight md:block">
+          <p className="text-sm font-medium text-profondo">{profilo.nome}</p>
+          <p className="text-xs text-profondo/55">{profilo.ruolo}</p>
+        </div>
+      )}
       <button
         onClick={onEsci}
         className="grid h-9 w-9 shrink-0 place-content-center rounded-full border border-calce-200 bg-white text-profondo/70 hover:text-profondo"

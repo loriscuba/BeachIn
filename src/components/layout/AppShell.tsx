@@ -9,7 +9,8 @@ import { config } from '@/data/config'
 import { useTema } from '@/hooks/useTema'
 import { accento } from '@/config/accenti'
 import { LoginGestore } from '@/components/LoginGestore'
-import { entraGestore, esciGestore, sessioneGestore } from '@/lib/adminapp'
+import { useSessione } from '@/context/SessioneContext'
+import { Caricamento } from '@/components/ui/Caricamento'
 
 /** Sottotitoli per pagina mostrati nella topbar. */
 const sottotitoli: Record<string, string> = {
@@ -32,21 +33,22 @@ const sottotitoli: Record<string, string> = {
 
 const CHIAVE_MENU = 'beachin.menu.v1'
 
-/** Gestionale accessibile solo dopo l'accesso del gestore (stessa sessione dell'app admin). */
+/** Gestionale accessibile solo dopo l'accesso dello staff (stessa sessione dell'app admin). */
 export function AppShell() {
-  const [dentro, setDentro] = useState(sessioneGestore)
-  if (!dentro) {
+  const { profilo, caricamento, esci } = useSessione()
+  if (caricamento) return <Caricamento />
+  if (!profilo) {
     return (
       <div className="grid min-h-screen place-items-center bg-calce px-4">
         <div className="w-full max-w-md">
           <p className="text-center font-display text-3xl font-semibold text-profondo">BeachIn</p>
           <p className="text-center text-sm text-profondo/60">{config.nome} · gestionale</p>
-          <LoginGestore onEntra={() => { entraGestore(); setDentro(true) }} />
+          <LoginGestore />
         </div>
       </div>
     )
   }
-  return <Gestionale onEsci={() => { esciGestore(); setDentro(false) }} />
+  return <Gestionale onEsci={() => { void esci() }} />
 }
 
 function Gestionale({ onEsci }: { onEsci: () => void }) {

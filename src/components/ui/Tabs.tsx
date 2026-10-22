@@ -14,6 +14,7 @@ export function Tabs<T extends string>({ opzioni, valore, onChange, className }:
       {opzioni.map((o) => (
         <button
           key={o.valore}
+          data-naviga
           onClick={() => onChange(o.valore)}
           className={cn(
             'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300',
