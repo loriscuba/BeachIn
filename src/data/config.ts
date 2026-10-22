@@ -38,6 +38,8 @@ export const config = {
   email: '',
   sito: '',
   partitaIva: '',
+  // Contatto commerciale di BeachIn per "Richiedi attivazione" dei moduli: se vuoto il pulsante non compare.
+  emailBeachIn: '',
   facebook: 'https://www.facebook.com/lidodeipinisavona/',
   mappa: 'https://www.google.com/maps/search/?api=1&query=Lido+dei+Pini+Via+Nizza+85R+Savona',
   // Reputazione online (Tripadvisor)

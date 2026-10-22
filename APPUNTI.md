@@ -44,6 +44,7 @@ gestire chiavi e costi.
   prezzo da confermare) + fritto misto. Il resto è dimostrativo: farsi dare il menu (foto o PDF) e sostituirlo.
 - [ ] Telefono: online compaiono **+39 349 574 5156** (usato ora) e **+39 340 159 9851** — quale è giusto?
 - [ ] Email, sito web, Partita IVA (ora vuoti: sul sito non compaiono)
+- [ ] Email commerciale di BeachIn per "Richiedi attivazione" dei moduli (`emailBeachIn` in `src/data/config.ts`; vuota = pulsante nascosto) — 21/10/2026
 - [ ] Orario di chiusura della spiaggia (ora 19:30, da confermare)
 - [ ] Menu e prezzi reali del ristorante (ora dimostrativi)
 - [ ] Listino ombrelloni reale (ora dimostrativo)
