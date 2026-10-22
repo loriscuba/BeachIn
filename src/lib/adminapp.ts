@@ -1,8 +1,8 @@
-/** Credenziali DEMO (finte) dell'app del gestore. Domani = Supabase Auth con ruolo "gestore". */
+/** Credenziali DEMO (finte), usate solo senza Supabase. Con Supabase: utenti e ruoli veri (`SessioneContext`). */
 import { urlPubblico } from '@/lib/urlPubblico'
 export const UTENTI_ADMIN = [{ utente: 'admin', password: 'lido', nome: 'Gestione Lido' }]
 
-// Sessione del gestore, condivisa tra gestionale e app admin (stesso sito). Solo lato app: non protegge i dati su Supabase.
+// Sessione demo locale (senza Supabase), condivisa tra gestionale e app admin.
 const CHIAVE_SESSIONE = 'adminapp.sessione.v1'
 export const sessioneGestore = () => { try { return localStorage.getItem(CHIAVE_SESSIONE) === '1' } catch { return false } }
 export const entraGestore = () => { try { localStorage.setItem(CHIAVE_SESSIONE, '1') } catch { /* */ } }

@@ -4,9 +4,8 @@ Riferimento completo spostato da `CLAUDE.md` (che resta snello). Leggere solo la
 Aggiornare qui quando cambia un modulo.
 
 ## Shell (menu laterale)
-- **Accesso**: `AppShell` mostra `LoginGestore` (`src/components/LoginGestore.tsx`) finché non c'è la sessione del gestore
-  (`sessioneGestore/entraGestore/esciGestore` in `src/lib/adminapp.ts`, stessa chiave dell'app admin); pulsante Esci nella Topbar.
-  Solo lato app: credenziali nel codice e policy DB aperte ad anon. Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`) libere.
+- **Accesso**: `AppShell` e `AdminApp` mostrano `LoginGestore` finché `SessioneContext` non ha un profilo; Esci nella Topbar
+  (con nome e ruolo dell'utente). Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
 - `Sidebar` a scomparsa anche su desktop: hamburger nella `Topbar` sempre visibile (apre/chiude), su desktop la colonna
   scorre fuori (`lg:-ml-64`) e la scelta è ricordata in localStorage `beachin.menu.v1`; su telefono resta pannello sopra i contenuti.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
@@ -33,6 +32,30 @@ Aggiornare qui quando cambia un modulo.
 - `src/data/types.ts`: tipi. `src/data/seed/*`: dati iniziali.
 - Palette: NAVY `#0F3B4C`, CABINA `#2E7D9A`, ACQUA `#7FB7A8`, TENDA `#F2C14E`,
   BOA `#E4572E`, CALCE `#EDF1F2` (usare le classi `profondo/cabina/acqua/tenda/boa/calce`).
+
+## Utenti, ruoli e permessi (RBAC, ott 2026)
+- **Login**: con Supabase = Supabase Auth email+password (sessione in localStorage `beachin.auth`, separata dalle altre demo
+  del progetto condiviso); senza Supabase = credenziali demo `admin/lido` (`src/lib/adminapp.ts`) → profilo amministratore.
+- **DB** (migrazione `0011_utenti_ruoli.sql`): `beachin.ruoli` (`permessi` jsonb sezione→livello 0 nessuno/1 lettura/2 modifica,
+  `amministratore` = tutto, `di_sistema` non eliminabile) e `beachin.utenti` (id = `auth.users.id`, nome, ruolo, `attivo`,
+  `ultimo_accesso`). Funzioni `beachin.livello(sezione)`, `beachin.ha_permesso(sezione, minimo)`, `beachin.e_staff()`,
+  `beachin.mio_profilo()` (security definer). Trigger `verifica_amministratore`: resta sempre un amministratore attivo.
+  auth.users è condiviso con altre demo: conta solo chi ha un profilo attivo in `beachin.utenti`.
+- **Policy**: per ogni tabella "staff lettura"/"staff modifica" per `authenticated` secondo la sezione (bar, comande,
+  ristorante, eventi, sito, impostazioni) + "clienti lettura/invio" (catalogo e invio comande/richieste anche da collegati).
+  Ruoli/utenti: niente anon; scrittura ruoli con permesso `utenti`=2, utenti solo via Edge Function.
+  **Fase 1**: le policy "demo anon" restano (sito, ComandApp, menu QR). Fase 2 = chiudere anon alle sole azioni dei clienti.
+- **Edge Function `beachin-utenti`**: crea (account confermato + profilo), aggiorna (nome/ruolo/attivo; disattivare = blocco
+  account Auth `ban_duration`), password, elimina (solo disattivati). Controlla `ha_permesso('utenti', 2)` di chi chiama.
+- **App**: `src/lib/permessi.ts` (sezioni, livelli, tipi), `src/context/SessioneContext.tsx` (`profilo`, `accedi`, `esci`,
+  `livello`, `puo`; profilo ricaricato al ritorno in primo piano e via Realtime sulla propria riga), `DemoDataProvider` rimontato
+  a login/logout (`main.tsx`, rilegge i dati col nuovo ruolo). `Sidebar` = modulo attivo **e** permesso; `ModuloGate` →
+  `AccessoNegato` (livello 0) o `SolaLettura` (livello 1: blocca clic/digitazione tranne schede `data-naviga`, select e filtri data).
+  Impostazioni a schede `?tab=generali|utenti`; **Utenti e ruoli** = `src/pages/impostazioni/UtentiRuoli.tsx` (elenco utenti,
+  nuovo/modifica/password/disattiva/elimina, griglia ruoli×sezioni modificabile, nuovo ruolo). `AdminApp`: schede secondo il
+  permesso di modifica (Prenotazioni/Menu = ristorante, App = sito, Ingressi = eventi).
+- **Primo amministratore** (DB nuovo, es. produzione): creare l'utente in Auth (Studio → Authentication → Add user) e poi
+  `insert into beachin.utenti (id, email, nome, ruolo_id) values ('<uuid>', '<email>', '<nome>', 'amministratore');`
 
 ## Moduli / pagine (`src/pages`)
 Cruscotto, Arenile, Clienti, **Comande**, Tariffe, Bar, Ristorante, **AssistenteVocale**, Costi, ContoEconomico,

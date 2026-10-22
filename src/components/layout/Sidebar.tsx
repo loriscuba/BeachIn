@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import { X, Lock, ChevronDown } from 'lucide-react'
+import { useSessione } from '@/context/SessioneContext'
+import type { ModuloId } from '@/config/moduli'
 import { navigazione, gruppiNav, type SottoVoce, type VoceNav } from '@/config/navigazione'
 import { useModuli } from '@/context/ModuliContext'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -34,6 +36,9 @@ function sottoAttivo(f: SottoVoce, fratelli: SottoVoce[], pathname: string, sear
 
 export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const { moduloAttivo } = useModuli()
+  const { puo } = useSessione()
+  // voce nel menu = modulo attivo nel piano + permesso del ruolo dell'utente
+  const visibile = (m: ModuloId, permesso?: 'utenti') => moduloAttivo(m) && puo(permesso ?? m)
   const { richiesteRistorante, comande } = useDemoData()
   const { pathname, search } = useLocation()
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
@@ -47,7 +52,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const viste = useRef<Set<string> | null>(null)
   const idRichieste = richiesteRistorante.filter((r) => r.stato === 'da_confermare').map((r) => r.id)
   useEffect(() => {
-    if (viste.current && moduloAttivo('ristorante') && idRichieste.some((id) => !viste.current!.has(id))) campanello()
+    if (viste.current && moduloAttivo('ristorante') && puo('ristorante') && idRichieste.some((id) => !viste.current!.has(id))) campanello()
     viste.current = new Set(idRichieste)
   }, [idRichieste.join()]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -94,8 +99,8 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
             // Si mostrano solo i moduli attivi (i bloccati restano raggiungibili da Impostazioni → Moduli)
             const voci = navigazione
               .filter((v) => v.gruppo === gruppo)
-              .map((v) => (v.figli ? { ...v, figli: v.figli.filter((f) => moduloAttivo(f.modulo)) } : v))
-              .filter((v) => (v.figli ? v.figli.length > 0 : moduloAttivo(v.modulo)))
+              .map((v) => (v.figli ? { ...v, figli: v.figli.filter((f) => visibile(f.modulo, f.permesso)) } : v))
+              .filter((v) => (v.figli ? v.figli.length > 0 : visibile(v.modulo)))
             if (voci.length === 0) return null
             return (
               <div key={gruppo}>
