@@ -567,6 +567,8 @@ export interface RichiestaEvento {
   eventoId: string
   eventoNome: string
   eventoData: string
+  /** URL pubblico della foto dell'evento (testata della mail al cliente). */
+  eventoFoto?: string
   persone: number
   stato: StatoPrenotazioneOnline
   note?: string

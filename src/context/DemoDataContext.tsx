@@ -485,13 +485,13 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     tabella: 'richieste_eventi', righe: richiesteEventi, setRighe: setRichiesteEventi,
     aRiga: (r) => ({
       id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, evento_id: r.eventoId,
-      evento_nome: r.eventoNome, evento_data: r.eventoData, persone: r.persone, stato: r.stato, note: r.note ?? null, origine: r.origine ?? null,
+      evento_nome: r.eventoNome, evento_data: r.eventoData, evento_foto: r.eventoFoto ?? null, persone: r.persone, stato: r.stato, note: r.note ?? null, origine: r.origine ?? null,
       // senza codice lo genera il DB (default della colonna): non sovrascrivere con null
       ...(r.codice ? { codice: r.codice } : {}), arrivati: r.arrivati ?? 0, arrivo_ts: r.arrivoTs ?? null, invio_ts: r.invioTs ?? null,
     }),
     daRiga: (r) => ({
       id: r.id, ricevutaIl: r.ricevuta_il as string, nome: r.nome as string, email: r.email as string, telefono: r.telefono as string,
-      eventoId: r.evento_id as string, eventoNome: r.evento_nome as string, eventoData: r.evento_data as string, persone: Number(r.persone),
+      eventoId: r.evento_id as string, eventoNome: r.evento_nome as string, eventoData: r.evento_data as string, eventoFoto: (r.evento_foto as string) ?? undefined, persone: Number(r.persone),
       stato: r.stato as RichiestaEvento['stato'], note: (r.note as string) ?? undefined, origine: (r.origine as RichiestaEvento['origine']) ?? undefined,
       codice: (r.codice as string) ?? undefined, arrivati: Number(r.arrivati ?? 0), arrivoTs: r.arrivo_ts != null ? Number(r.arrivo_ts) : undefined,
       invioTs: r.invio_ts != null ? Number(r.invio_ts) : undefined,
@@ -707,6 +707,13 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => { prenRef.current = prenotazioniOnline }, [prenotazioniOnline])
   useEffect(() => { richRef.current = richiesteRistorante }, [richiesteRistorante])
   useEffect(() => { evtRef.current = richiesteEventi }, [richiesteEventi])
+  const eventiRef = useRef(eventi)
+  useEffect(() => { eventiRef.current = eventi }, [eventi])
+  /** URL assoluto della foto dell'evento per la mail (le foto in data URI non si vedono nei client di posta). */
+  const fotoEvento = (eventoId: string) => {
+    const f = eventiRef.current.find((e) => e.id === eventoId)?.foto
+    return f && !f.startsWith('data:') ? new URL(f, window.location.href).href : undefined
+  }
 
   const gg = (iso?: string) => (iso ? iso.split('-').reverse().join('/') : '')
   const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'pranzo' : 'cena')
@@ -798,7 +805,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const inviaRichiestaEvento = useCallback((d: DatiRichiestaEvento) => {
     setRichiesteEventi((prev) => [
-      { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'da_confermare', note: d.note, origine: 'sito', codice: nuovoCodiceInvito() },
+      { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, eventoFoto: fotoEvento(d.eventoId), persone: d.persone, stato: 'da_confermare', note: d.note, origine: 'sito', codice: nuovoCodiceInvito() },
       ...prev,
     ])
     pushMail('cliente', 'richiesta', config.nome, d.email, `Richiesta ricevuta — ${d.eventoNome}`,
@@ -828,7 +835,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
 
   const aggiungiPartecipanteEvento = useCallback((d: DatiPartecipanteEvento) => {
     setRichiesteEventi((prev) => [
-      { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email ?? '', telefono: d.telefono ?? '', eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, persone: d.persone, stato: 'confermata', note: d.note, origine: 'manuale', codice: nuovoCodiceInvito() },
+      { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email ?? '', telefono: d.telefono ?? '', eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, eventoFoto: fotoEvento(d.eventoId), persone: d.persone, stato: 'confermata', note: d.note, origine: 'manuale', codice: nuovoCodiceInvito() },
       ...prev,
     ])
   }, [])

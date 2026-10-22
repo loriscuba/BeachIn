@@ -79,6 +79,11 @@ gestire chiavi e costi.
 - [x] Login sul gestionale (solo lato app, stesse credenziali dell'app admin)
 - [ ] **Prima della produzione**: login vero con Supabase Auth (gestore) e policy DB che lasciano ad anon solo le azioni dei clienti
   (leggere menu/news/lavagna, inviare ordini e prenotazioni). Oggi credenziali nel codice e tabelle scrivibili da chiunque.
+  - [x] (22/10/2026) Utenti, ruoli e permessi per sezione con Supabase Auth + policy per `authenticated` (migrazione 0011,
+    Edge Function `beachin-utenti`, Impostazioni → Utenti e ruoli). Dettagli in `docs/DETTAGLI.md`.
+  - [ ] Fase 2: togliere le policy "demo anon" e lasciare ad anon solo le azioni dei clienti (serve rivedere il sync del
+    `DemoDataContext` sulle pagine pubbliche, che oggi legge e scrive tutte le tabelle).
+  - [ ] Produzione: dopo il deploy creare il primo amministratore (procedura in `docs/DETTAGLI.md` → "Utenti, ruoli e permessi").
 - [ ] **Menu QR condiviso tra dispositivi**: oggi il menu vive nel browser del gestore; chi scansiona il QR vede il
   menu iniziale. In produzione serve un database (es. Supabase) da cui leggono gestionale e `/menu`.
 - [ ] **Traduzioni**: oggi servizio gratuito MyMemory (limite ~5.000 caratteri/giorno) + glossario di riserva.
@@ -90,6 +95,8 @@ gestire chiavi e costi.
   - [x] Edge Function `beachin-email` (Brevo) + trigger su `richieste_ristorante`: mail al cliente su richiesta ricevuta / confermata / rifiutata
   - [x] Account Brevo + segreti nel Vault (prova inviata e arrivata)
   - [ ] Mittente sul dominio del cliente (oggi Gmail → rischio spam)
+  - [x] Grafica mail (logo, foto ristorante / foto evento, riepilogo)
+  - [ ] Dopo il merge: togliere dal Vault del Demo `beachin_email_img` (punta temporaneamente al branch su GitHub)
   - [x] Eventi: tabella `richieste_eventi` su Supabase + mail
   - [ ] Ombrellone: oggi solo in memoria, serve tabella Supabase per mandare mail anche lì
 

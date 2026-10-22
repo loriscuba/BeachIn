@@ -35,6 +35,8 @@ export interface SottoVoce {
   modulo: ModuloId
   /** Contatore stile iPhone: 'richieste' = richieste tavolo dal sito da confermare; 'comande' = comande appena arrivate. */
   badge?: 'richieste' | 'comande'
+  /** Permesso diverso da quello del modulo (es. Impostazioni → Utenti e ruoli). */
+  permesso?: 'utenti'
 }
 
 /**
@@ -86,7 +88,13 @@ export const navigazione: VoceNav[] = [
     ],
   },
 
-  { percorso: '/impostazioni', etichetta: 'Impostazioni', icona: Settings, modulo: 'impostazioni', fase: 1, gruppo: 'Impostazioni' },
+  {
+    percorso: '/impostazioni', etichetta: 'Impostazioni', icona: Settings, modulo: 'impostazioni', fase: 1, gruppo: 'Impostazioni',
+    figli: [
+      { percorso: '/impostazioni?tab=generali', etichetta: 'Generali', modulo: 'impostazioni' },
+      { percorso: '/impostazioni?tab=utenti', etichetta: 'Utenti e ruoli', modulo: 'impostazioni', permesso: 'utenti' },
+    ],
+  },
 ]
 
 export const gruppiNav: VoceNav['gruppo'][] = [
