@@ -114,6 +114,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
   sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,
   `ristorante`, `eventi`). Default: Ombrellone se loggato, altrimenti News; pallino sulle news non viste (`comandapp.news.vista`).
+- **Grafica** (ott 2026, spunto da app di viaggio su Pinterest): fondo chiaro `carta`, header bianco con data, card bianche
+  `rounded-3xl` con ombra morbida, colore principale `laguna` (petrolio) per tasti, schede attive e voce attiva della barra.
+  Ordine barra: News · Eventi · Lavagna · Prenota · Ombrellone · Contatti. Home = foto vera del lido (`fotoSito.spiaggiaDrone`) + **scorciatoie** colorate alle sezioni (`tinta(i)`: tenda/acqua/rosa/cielo) e news in card (in evidenza su
+  petrolio). Eventi in card con foto grande e data in sovrimpressione. Titoli sans con parola `accento` in petrolio.
+  Colori `carta/laguna/corallo/rosa/cielo` in `tailwind.config.js`. Form ristorante ed EventoModal restano quelli di `SitoAnteprima`.
 - **Ombrellone** = vecchia ComandApp (login demo, ordini, stato); la barra "Ordina" sta sopra la nav.
 - **Prenota** Ristorante/Eventi riusa `FormRistorante`, `EventoModal`, `Sospese` esportati da `SitoAnteprima` (stessi flussi
   del sito, rispetta `canaliPrenotazione`). `FormRistorante` ora parte da `config.oggi` (ristorante aperto tutto l'anno).
