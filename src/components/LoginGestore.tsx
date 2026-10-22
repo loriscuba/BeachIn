@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useSessione } from '@/context/SessioneContext'
 import { cn } from '@/lib/cn'
 
@@ -9,6 +10,7 @@ export function LoginGestore({ onEntra, className }: { onEntra?: () => void; cla
   const [password, setPassword] = useState('')
   const [errore, setErrore] = useState<string | null>(null)
   const [attesa, setAttesa] = useState(false)
+  const [vedi, setVedi] = useState(false)
   const campo = 'h-12 w-full rounded-xl border border-calce-200 bg-white px-4 text-base focus-visible:focus-ring'
   return (
     <form
@@ -24,7 +26,12 @@ export function LoginGestore({ onEntra, className }: { onEntra?: () => void; cla
     >
       <h1 className="text-center font-display text-2xl font-semibold">Area gestore</h1>
       <input value={utente} onChange={(e) => { setUtente(e.target.value); setErrore(null) }} placeholder="Nome utente" type="text" autoCorrect="off" autoCapitalize="none" autoComplete="username" className={campo} />
-      <input value={password} onChange={(e) => { setPassword(e.target.value); setErrore(null) }} type="password" placeholder="Password" autoComplete="current-password" className={campo} />
+      <div className="relative">
+        <input value={password} onChange={(e) => { setPassword(e.target.value); setErrore(null) }} type={vedi ? 'text' : 'password'} placeholder="Password" autoComplete="current-password" className={cn(campo, 'pr-12')} />
+        <button type="button" onClick={() => setVedi(!vedi)} className="absolute inset-y-0 right-0 grid w-12 place-content-center text-profondo/50 hover:text-profondo" aria-label={vedi ? 'Nascondi password' : 'Mostra password'}>
+          {vedi ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </button>
+      </div>
       {errore && <p className="text-sm text-boa">{errore}</p>}
       <button disabled={attesa} className="h-12 w-full rounded-xl bg-cabina text-base font-semibold text-white hover:bg-profondo disabled:opacity-60">{attesa ? 'Accesso…' : 'Entra'}</button>
     </form>
