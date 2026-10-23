@@ -2,6 +2,7 @@
   "name": "BeachIn Sala — Lido dei Pini",
   "short_name": "BeachIn Sala",
   "description": "Comande del ristorante: cameriere, cucina e tablet al tavolo",
+  "id": "./?app=sala",
   "start_url": "./#/salaapp",
   "scope": "./",
   "display": "standalone",
