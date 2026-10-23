@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, etichettaStatoSala, nomeUscita, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi } from '@/lib/sala'
+import { aperteDelTavolo, etichettaStatoSala, nomeUscita, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi } from '@/lib/sala'
 
 // 16px su telefono: con meno iPhone ingrandisce la pagina quando si tocca il campo
 const campo = 'h-10 rounded-lg border border-calce-200 bg-white px-3 text-base text-profondo focus-visible:focus-ring sm:h-9 sm:text-sm'
@@ -294,20 +294,39 @@ function ComandaAperta({ c, onVia, onServita }: { c: ComandaSala; onVia: (n: num
         <Badge tono={tonoStatoSala[c.stato]} puntino className="ml-auto">{etichettaStatoSala[c.stato]}</Badge>
       </div>
       <div className="space-y-1.5">
-        {uscite.map((u) => (
-          <div key={u.n} className={cn('rounded-lg px-2 py-1.5', u.stato === 'servita' ? 'bg-calce/40 text-profondo/40' : u.stato === 'pronta' ? 'bg-acqua/15' : !u.chiamata ? 'bg-calce/30' : 'bg-tenda/10')}>
+        {uscite.map((u) => {
+          // piatti già pronti ma non serviti: il cameriere li porta subito o aspetta il resto dell'uscita
+          const pronti = u.righe.filter(({ r }) => statoRiga(c, r) === 'pronta').map(({ i }) => i)
+          const inParte = u.stato === 'attesa' && pronti.length > 0
+          return (
+          <div key={u.n} className={cn('rounded-lg px-2 py-1.5', u.stato === 'servita' ? 'bg-calce/40 text-profondo/40' : u.stato === 'pronta' || inParte ? 'bg-acqua/15' : !u.chiamata ? 'bg-calce/30' : 'bg-tenda/10')}>
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide">
               <span className="text-profondo/60">{nomeUscita(u.n)}</span>
-              <span className={cn('ml-auto', u.stato === 'pronta' ? 'text-acqua' : 'text-profondo/45')}>
-                {u.stato === 'servita' ? 'Servita' : u.stato === 'pronta' ? 'Pronta' : u.chiamata ? 'In cucina' : 'In attesa del via'}
+              <span className={cn('ml-auto', u.stato === 'pronta' || inParte ? 'text-acqua' : 'text-profondo/45')}>
+                {u.stato === 'servita' ? 'Servita' : u.stato === 'pronta' ? 'Pronta' : inParte ? `Pronti ${pronti.length} su ${u.righe.length}` : u.chiamata ? 'In cucina' : 'In attesa del via'}
               </span>
             </div>
-            <p className={cn('mt-0.5', u.stato !== 'servita' && 'text-profondo/75')}>{u.righe.map(({ r }) => `${r.quantita}× ${r.nome}`).join(' · ')}</p>
-            {u.stato === 'pronta' && (
-              <Button dimensione="sm" variante="primario" className="mt-1.5 w-full" onClick={() => onServita(u.righe.map(({ i }) => i))}><HandPlatter className="h-4 w-4" /> Servita</Button>
+            <ul className="mt-0.5 space-y-0.5">
+              {u.righe.map(({ r, i }) => {
+                const st = statoRiga(c, r)
+                return (
+                  <li key={i} className={cn('flex items-center gap-1.5', st === 'servita' ? 'text-profondo/40 line-through' : 'text-profondo/75')}>
+                    <span className={cn('h-2 w-2 shrink-0 rounded-full', st === 'pronta' ? 'bg-acqua' : st === 'servita' ? 'bg-calce-300' : 'bg-tenda')} />
+                    <span className="min-w-0 flex-1">{r.quantita}× {r.nome}</span>
+                    {st === 'pronta' && <span className="text-[11px] font-semibold text-acqua">pronto</span>}
+                  </li>
+                )
+              })}
+            </ul>
+            {pronti.length > 0 && (
+              <Button dimensione="sm" variante={inParte ? 'secondario' : 'primario'} className="mt-1.5 w-full" onClick={() => onServita(pronti)}>
+                <HandPlatter className="h-4 w-4" /> {inParte ? `Porta subito i pronti (${pronti.length})` : 'Servita'}
+              </Button>
             )}
+            {inParte && <p className="mt-1 text-center text-[11px] text-profondo/50">oppure aspetta che sia pronta tutta l’uscita</p>}
           </div>
-        ))}
+          )
+        })}
       </div>
       {prossima && (
         <Button dimensione="sm" className="mt-2 w-full" onClick={() => onVia(prossima.n)}><Play className="h-4 w-4" /> Dai il via: {nomeUscita(prossima.n).toLowerCase()}</Button>
