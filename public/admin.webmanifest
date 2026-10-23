@@ -2,7 +2,7 @@
   "name": "BeachIn Admin — Lido dei Pini",
   "short_name": "BeachIn Admin",
   "description": "Prenotazioni del ristorante e menu a voce",
-  "id": "./",
+  "id": "./?app=admin",
   "start_url": "./adminapp",
   "scope": "./adminapp",
   "display": "standalone",

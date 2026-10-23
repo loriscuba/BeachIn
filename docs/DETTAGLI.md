@@ -113,7 +113,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 ## Comande ristorante (sala → cucina, ott 2026)
 - Modulo **`sala`** "Comande ristorante" (dipende da `ristorante`: con `sala` attivo resta attivo il Ristorante; chi aveva già il
   Ristorante lo trova attivo una volta, flag `beachin.moduli.sala`). Permesso `sala` nella griglia ruoli; ruolo **Cucina** (`sala`=2).
-- Manifest: Sala `id` `./?app=sala`, start_url e scope `./salaapp`; Admin `id` `./` (stessa identità delle installazioni vecchie),
+- Manifest: Sala `id` `./?app=sala`, start_url e scope `./salaapp`; Admin `id` `./?app=admin` (con `./` coincideva con ComandApp, id `/`),
   start_url e scope `./adminapp`. Prima lo scope `./` dell'admin copriva tutto e Chrome diceva "già installata". Su GitHub Pages
   `404.html` = index e `hashInPercorso` converte il percorso in `#/…`. ComandApp resta `./#/comandapp` con scope `./`.
 - **App separata `/salaapp`** (`src/pages/SalaApp.tsx`, "BeachIn Sala", manifest `public/sala.webmanifest`, icone `sala-icon-*`):
