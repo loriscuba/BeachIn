@@ -78,7 +78,7 @@ export default function ComandApp() {
   return (
     <div className="min-h-screen bg-carta text-profondo">
       <header className="sticky top-0 z-20 border-b border-profondo/10 bg-white/95 px-4 py-2.5 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-md md:max-w-3xl lg:max-w-5xl items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <img src={logoLido} alt="" className="h-9 w-9 shrink-0 rounded-full bg-white object-contain p-0.5 ring-2 ring-tenda" />
             <div className="min-w-0">
@@ -94,7 +94,7 @@ export default function ComandApp() {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-md px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-md md:max-w-3xl lg:max-w-5xl px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         <PulsanteInstalla nome={config.nome} />
         <InvitoNotifiche app="clienti" titolo="Resta aggiornato" descrizione="Ricevi una notifica quando pubblichiamo una news o aggiorniamo la lavagna del giorno." />
         {sez === 'news' && <News scorciatoie={voci.filter((v) => v.id !== 'news' && v.id !== 'contatti')} vai={vai} />}
@@ -105,7 +105,7 @@ export default function ComandApp() {
         {sez === 'contatti' && <Contatti />}
       </main>
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-profondo/10 bg-white pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto flex max-w-md gap-1 px-1.5 py-1.5">
+        <div className="mx-auto flex max-w-md gap-1 px-1.5 py-1.5 md:max-w-xl">
           {voci.map((v) => {
             const Icona = v.icona
             const attiva = v.id === sez
@@ -152,7 +152,7 @@ function News({ scorciatoie, vai }: { scorciatoie: { id: Sez; etichetta: string;
         </div>
       </div>
       {scorciatoie.length > 0 && (
-        <div className="mb-6 grid grid-cols-4 gap-2">
+        <div className="mb-6 grid grid-cols-4 gap-2 md:mx-auto md:max-w-xl">
           {scorciatoie.map((v, i) => {
             const Icona = v.icona
             return (
@@ -169,7 +169,7 @@ function News({ scorciatoie, vai }: { scorciatoie: { id: Sez; etichetta: string;
         <span className="text-xs text-profondo/60">{lista.length} {lista.length === 1 ? 'notizia' : 'notizie'}</span>
       </div>
       {lista.length === 0 && <p className={vuoto}>Nessuna news per ora.</p>}
-      <div className="space-y-3">
+      <div className="grid items-start gap-3 md:grid-cols-2">
         {lista.map((n, i) => (
           <article key={n.id} className={cn('overflow-hidden rounded-3xl shadow-[0_4px_20px_rgba(15,59,76,0.07)]', n.fissata ? 'bg-laguna text-white' : 'bg-white')}>
             {n.foto && <img src={n.foto} alt="" className="max-h-64 w-full object-cover" />}
@@ -213,7 +213,7 @@ function Prenota({ ristorante, eventiOn }: { ristorante: boolean; eventiOn: bool
         ? <Sospese testo="Le prenotazioni online per gli eventi sono momentaneamente sospese. Contattaci per partecipare." />
         : prossimi.length === 0
           ? <p className={vuoto}>Nessun evento in programma al momento.</p>
-          : <div className="space-y-3">{prossimi.map((e, i) => <SchedaEvento key={e.id} evento={e} indice={i} onApri={() => setAperto(e)} azione="Prenota" />)}</div>)}
+          : <div className="grid items-start gap-3 md:grid-cols-2">{prossimi.map((e, i) => <SchedaEvento key={e.id} evento={e} indice={i} onApri={() => setAperto(e)} azione="Prenota" />)}</div>)}
       <EventoModal evento={aperto} prenotabile={canaliPrenotazione.eventi} onChiudi={() => setAperto(undefined)} onPrenotato={() => undefined} />
     </div>
   )
@@ -248,11 +248,11 @@ function Eventi() {
     <div>
       <Titolo sotto="Tornei, musica, cene sotto le stelle" accento="spiaggia">Eventi in</Titolo>
       {prossimi.length === 0 && <p className={cn(vuoto, 'mb-3')}>Nessun evento in programma: torna a trovarci presto!</p>}
-      <div className="space-y-3">{prossimi.map((e, i) => <SchedaEvento key={e.id} evento={e} indice={i} onApri={() => setAperto(e)} azione="Dettagli" />)}</div>
+      <div className="grid items-start gap-3 md:grid-cols-2">{prossimi.map((e, i) => <SchedaEvento key={e.id} evento={e} indice={i} onApri={() => setAperto(e)} azione="Dettagli" />)}</div>
       {passati.length > 0 && (
         <>
           <p className="mb-2 mt-6 text-sm text-profondo/60">Eventi passati</p>
-          <div className="space-y-3">{passati.map((e, i) => <SchedaEvento key={e.id} evento={e} indice={i + 1} onApri={() => setAperto(e)} azione="Foto" passato />)}</div>
+          <div className="grid items-start gap-3 md:grid-cols-2">{passati.map((e, i) => <SchedaEvento key={e.id} evento={e} indice={i + 1} onApri={() => setAperto(e)} azione="Foto" passato />)}</div>
         </>
       )}
       <EventoModal evento={aperto} prenotabile={canaliPrenotazione.eventi} onChiudi={() => setAperto(undefined)} onPrenotato={() => undefined} />
@@ -265,7 +265,7 @@ function Lavagna() {
   return (
     <div>
       {/* lavagna d'ardesia con cornice di legno, scritta a gesso */}
-      <div className="rounded-2xl bg-[#8B5E3C] p-2.5 shadow-lg">
+      <div className="mx-auto max-w-2xl rounded-2xl bg-[#8B5E3C] p-2.5 shadow-lg">
         <div className="rounded-xl bg-[#26352F] px-5 py-6 text-white shadow-[inset_0_0_40px_rgba(0,0,0,0.45)]">
           <p className="text-center font-gesso text-4xl font-bold leading-none">Oggi in cucina</p>
           <p className="mt-1 text-center font-gesso text-xl capitalize text-white/60">{dataEstesa(config.oggi)}</p>
@@ -345,7 +345,7 @@ function Login({ onEntra }: { onEntra: (u: Utente) => void }) {
   }
   const campo = 'h-12 w-full rounded-xl border border-calce-200 bg-white px-4 text-base focus-visible:focus-ring'
   return (
-    <form onSubmit={entra} className="mt-6 space-y-3 rounded-3xl bg-white shadow-[0_4px_20px_rgba(15,59,76,0.07)] p-5">
+    <form onSubmit={entra} className="mx-auto mt-6 max-w-md space-y-3 rounded-3xl bg-white shadow-[0_4px_20px_rgba(15,59,76,0.07)] p-5">
       <div className="mb-2 text-center">
         <span className="mx-auto grid h-14 w-14 place-content-center rounded-full bg-tenda"><Umbrella className="h-7 w-7" /></span>
         <h1 className="mt-3 font-bold text-3xl leading-tight">Ordina dal tuo <span className="text-laguna">ombrellone</span></h1>
@@ -412,7 +412,7 @@ function Area({ utente }: { utente: Utente }) {
               <button key={c.id} onClick={() => setCat(c.id)} className={cn('h-10 shrink-0 rounded-full px-4 text-sm font-semibold', cat === c.id ? 'bg-laguna text-white' : tinta(i))}>{c.nome}</button>
             ))}
           </div>
-          <ul className="divide-y divide-profondo/10 border-y border-profondo/10">
+          <ul className="divide-y divide-profondo/10 border-y border-profondo/10 md:grid md:grid-cols-2 md:gap-x-8 md:divide-y-0 md:[&>li]:border-b md:[&>li]:border-profondo/10">
             {articoli.filter((a) => a.categoria === cat).map((a, i) => (
               <li key={a.id} className="flex items-center gap-3 py-3">
                 <p className="min-w-0 flex-1 font-bold text-lg leading-tight">{a.nome}</p>
@@ -431,7 +431,7 @@ function Area({ utente }: { utente: Utente }) {
           </ul>
           {pezzi > 0 && (
             <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 border-t border-profondo/10 bg-carta p-3">
-              <div className="mx-auto max-w-md space-y-2">
+              <div className="mx-auto max-w-md space-y-2 md:max-w-xl">
                 <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (es. senza ghiaccio)" className="h-10 w-full rounded-full border border-profondo/15 bg-white px-4 text-sm" />
                 <button onClick={invia} className="flex h-12 w-full items-center justify-between rounded-full bg-laguna px-5 font-semibold text-white">
                   <span className="inline-flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Ordina {pezzi} {pezzi === 1 ? 'articolo' : 'articoli'}</span>
@@ -444,8 +444,8 @@ function Area({ utente }: { utente: Utente }) {
       ))}
 
       {tab === 'ordini' && (
-        <div className="space-y-3">
-          {mie.length === 0 && <p className="py-10 text-center text-sm text-profondo/60">Nessun ordine ancora.</p>}
+        <div className="grid items-start gap-3 md:grid-cols-2">
+          {mie.length === 0 && <p className="py-10 md:col-span-2 text-center text-sm text-profondo/60">Nessun ordine ancora.</p>}
           {mie.map((c) => {
             const passo = PASSI_COMANDA.indexOf(c.stato)
             return (
