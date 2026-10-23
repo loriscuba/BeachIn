@@ -21,10 +21,6 @@ import AvvioSelf, { leggiSelf, type StatoSelf } from './sala/AvvioSelf'
 import TabletSelf from './sala/TabletSelf'
 
 type Scheda = 'cameriere' | 'cucina' | 'self'
-const CHIAVE_SCHEDA = 'salaapp.scheda.v1'
-const leggiScheda = (): Scheda => {
-  try { const v = localStorage.getItem(CHIAVE_SCHEDA); return v === 'cucina' || v === 'self' ? v : 'cameriere' } catch { return 'cameriere' }
-}
 
 export default function SalaApp() {
   const { profilo, esci, puo } = useSessione()
@@ -32,8 +28,8 @@ export default function SalaApp() {
   useEffect(() => { impostaManifest('sala.webmanifest', 'sala-icon-192.png', 'BeachIn Sala') }, [])
   const ammesso = moduloAttivo('sala') && puo('sala', 1)
   return (
-    <div className="min-h-screen bg-calce text-profondo">
-      <header className="sticky top-0 z-20 bg-[#0E2A22] px-4 py-3 text-white shadow">
+    <div className="min-h-screen overflow-x-hidden bg-calce text-profondo">
+      <header className="sticky top-0 z-20 bg-[#0E2A22] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white shadow">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div>
             <p className="font-display text-xl font-semibold leading-none">BeachIn Sala</p>
@@ -55,9 +51,10 @@ export default function SalaApp() {
 
 function Area() {
   const { comandeSala } = useDemoData()
-  const [scheda, setScheda] = useState<Scheda>(leggiScheda)
+  // a ogni apertura si sceglie la funzione (un telefono fa da cameriere, un tablet da cucina o da self)
+  const [scheda, setScheda] = useState<Scheda | null>(null)
   const [self, setSelf] = useState<StatoSelf | null>(leggiSelf)
-  const vai = (s: Scheda) => { setScheda(s); try { localStorage.setItem(CHIAVE_SCHEDA, s) } catch { /* */ } window.scrollTo(0, 0) }
+  const vai = (s: Scheda) => { setScheda(s); window.scrollTo(0, 0) }
   const daFare = comandeSala.filter((c) => c.stato === 'inviata').length
 
   if (self) return <TabletSelf stato={self} onEsci={() => setSelf(null)} />
@@ -67,6 +64,7 @@ function Area() {
     { id: 'cucina', etichetta: 'Cucina', icona: ChefHat, badge: daFare },
     { id: 'self', etichetta: 'Tablet self', icona: Tablet },
   ]
+  if (!scheda) return <SceltaFunzione onScegli={vai} daFare={daFare} />
   return (
     <>
       {/* spazio in fondo per la barra delle schede (e la barra comanda del cameriere sopra) */}
@@ -89,5 +87,34 @@ function Area() {
         </div>
       </nav>
     </>
+  )
+}
+
+const FUNZIONI: { id: Scheda; titolo: string; testo: string; icona: typeof ChefHat; colore: string }[] = [
+  { id: 'cameriere', titolo: 'Cameriere', testo: 'Prendi le comande al tavolo e mandale in cucina', icona: ConciergeBell, colore: 'from-profondo to-cabina' },
+  { id: 'cucina', titolo: 'Cucina', testo: 'Vedi le comande in arrivo e segna i piatti pronti', icona: ChefHat, colore: 'from-[#B8401F] to-boa' },
+  { id: 'self', titolo: 'Tablet self', testo: 'Lascia il tablet al tavolo: il cliente ordina da solo', icona: Tablet, colore: 'from-[#0E2A22] to-[#2F5D4C]' },
+]
+
+/** Schermata d'apertura: quale funzione fa questo dispositivo. */
+function SceltaFunzione({ onScegli, daFare }: { onScegli: (s: Scheda) => void; daFare: number }) {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-6">
+      <h1 className="font-display text-2xl font-semibold text-profondo">Cosa fai con questo dispositivo?</h1>
+      <p className="mt-1 text-sm text-profondo/60">Puoi cambiare quando vuoi dalla barra in basso.</p>
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {FUNZIONI.map((f) => (
+          <button key={f.id} type="button" onClick={() => onScegli(f.id)}
+            className={cn('relative flex items-center gap-4 rounded-2xl bg-gradient-to-br p-5 text-left text-white shadow-md active:scale-[0.98] sm:flex-col sm:items-start', f.colore)}>
+            <span className="grid h-12 w-12 shrink-0 place-content-center rounded-xl bg-white/15"><f.icona className="h-6 w-6" /></span>
+            <span className="min-w-0">
+              <span className="block font-display text-xl font-semibold">{f.titolo}</span>
+              <span className="block text-sm text-white/75">{f.testo}</span>
+            </span>
+            {f.id === 'cucina' && daFare > 0 && <span className="absolute right-3 top-3 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-boa">{daFare} da fare</span>}
+          </button>
+        ))}
+      </div>
+    </main>
   )
 }

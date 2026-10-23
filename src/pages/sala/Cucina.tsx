@@ -59,12 +59,12 @@ export default function Cucina() {
           )
         })}
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {COLONNE.map((col) => {
           // in cucina si lavora dalla più vecchia
           const lista = comandeSala.filter((c) => c.stato === col.stato).sort((a, b) => a.ts - b.ts)
           return (
-            <section key={col.stato} className={cn('space-y-3', colonna !== col.stato && 'hidden md:block')}>
+            <section key={col.stato} className={cn('min-w-0 space-y-3', colonna !== col.stato && 'hidden md:block')}>
               <h3 className="hidden items-center gap-2 text-sm font-semibold text-profondo md:flex">
                 <span className={cn('h-2.5 w-2.5 rounded-full', col.colore)} /> {col.titolo}
                 <span className="num text-profondo/45">{lista.length}</span>

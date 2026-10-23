@@ -19,7 +19,8 @@ import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { aperteDelTavolo, etichettaStatoSala, nomeUscita, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi } from '@/lib/sala'
 
-const campo = 'h-9 rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring'
+// 16px su telefono: con meno iPhone ingrandisce la pagina quando si tocca il campo
+const campo = 'h-10 rounded-lg border border-calce-200 bg-white px-3 text-base text-profondo focus-visible:focus-ring sm:h-9 sm:text-sm'
 
 /** `app`: dentro l'app di sala (barra delle schede in fondo, la barra della comanda le sta sopra). */
 export default function Cameriere({ app = false }: { app?: boolean }) {
@@ -99,8 +100,8 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
   }
 
   return (
-    <div className={cn('grid gap-4 md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_380px]', !app && tavolo != null && 'pb-20 md:pb-0')}>
-      <div className="space-y-4">
+    <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_380px]', !app && tavolo != null && 'pb-20 md:pb-0')}>
+      <div className="min-w-0 space-y-4">
         {/* Tavoli */}
         {tavolo != null ? (
           <Card>
@@ -117,7 +118,7 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
         <Card>
           <CardHeader titolo="Tavolo" sottotitolo="Tocca il tavolo per cui prendi la comanda" />
           <CardBody className="pt-2">
-            <div className="grid grid-cols-5 gap-2 sm:grid-cols-8 lg:grid-cols-9">
+            <div className="grid grid-cols-4 gap-2 min-[400px]:grid-cols-5 sm:grid-cols-8 lg:grid-cols-9">
               {tavoli.map((t) => {
                 const n = aperteDelTavolo(comandeSala, t.numero).length
                 return (
@@ -140,11 +141,11 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
           <CardHeader titolo="Menu" sottotitolo="Lo stesso del Ristorante → Menu" />
           <CardBody className="space-y-3 pt-2">
             <div className="flex flex-wrap items-center gap-2">
-              <label className="relative min-w-[10rem] flex-1">
+              <label className="relative w-full min-w-0 sm:w-auto sm:min-w-[10rem] sm:flex-1">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-profondo/40" />
                 <input value={cerca} onChange={(e) => setCerca(e.target.value)} placeholder="Cerca piatto" className={cn(campo, 'w-full pl-8')} />
               </label>
-              <div className="flex max-w-full gap-1 overflow-x-auto">
+              <div className="-mx-1 flex w-full min-w-0 gap-1 overflow-x-auto px-1 pb-1">
                 {[{ id: 'tutte', nome: 'Tutto' }, ...sezioniMenu].map((s) => (
                   <button key={s.id} type="button" data-naviga onClick={() => setSezione(s.id)}
                     className={cn('whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium', sezione === s.id ? 'border-cabina bg-cabina text-white' : 'border-calce-200 text-profondo/70')}>
@@ -190,7 +191,7 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
       </div>
 
       {/* Comanda in corso + comande del tavolo */}
-      <div ref={rifComanda} className="scroll-mt-20 space-y-4 md:sticky md:top-4 md:self-start">
+      <div ref={rifComanda} className="scroll-mt-20 min-w-0 space-y-4 md:sticky md:top-4 md:self-start">
         <Card>
           <CardHeader titolo={tavolo == null ? 'Comanda' : `Comanda · tavolo ${tavolo}`} sottotitolo={pezzi ? `${pezzi} piatti · ${euroCent(totale)}` : 'Nessun piatto ancora'} />
           <CardBody className="space-y-3 pt-2">
