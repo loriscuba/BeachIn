@@ -67,6 +67,7 @@ export function impostaManifest(manifest: string, icona: string, titolo: string)
   metti('link', 'rel', 'manifest', 'href', `${base}${manifest}`)
   metti('link', 'rel', 'apple-touch-icon', 'href', `${base}${icona}`)
   metti('meta', 'name', 'apple-mobile-web-app-capable', 'content', 'yes')
+  metti('meta', 'name', 'mobile-web-app-capable', 'content', 'yes')
   metti('meta', 'name', 'apple-mobile-web-app-title', 'content', titolo)
 }
 

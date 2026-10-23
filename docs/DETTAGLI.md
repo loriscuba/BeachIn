@@ -122,8 +122,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (a ogni apertura schermata "Cosa fai con questo dispositivo?": Cameriere / Cucina / Tablet self). Link + QR in cima alla pagina Comande sala (`urlSalaApp()` in `lib/sala.ts`).
 - Telefono/tablet: dal `md` cameriere su due colonne; su telefono tavolo scelto compresso ("Cambia tavolo") e barra fissa in
   basso con riepilogo + Invia (prop `app` la alza sopra le schede); cucina su telefono una colonna alla volta (selettore).
-- Trascinamento piatti (cameriere): pointerdown sul piatto, poi pointermove/up su `window` + `touchmove` non passivo che blocca lo
-  scorrimento (Safari iPhone perdeva il capture). Tocco: piatto scelto, poi tocco su un'uscita (anche sopra un suo piatto).
+- Uscita dei piatti (cameriere): su ogni riga i bottoni S·1·2·3 (affidabili su iPhone/Android); il trascinamento resta solo
+  col mouse (`pointerType === 'mouse'`, ascolto su `window`). Su iPhone il tutto schermo c'è solo aprendo l'app dalla Home.
+  GitHub Pages (HashRouter): `pages.yml` riscrive i manifest a start_url `./#/app` e scope `./`, altrimenti iPhone apriva l'app
+  fuori scope (barra di Safari visibile).
 - Piatti pronti uno per uno: la cucina tocca il singolo piatto (o "Uscita pronta" per tutta l'uscita); il cameriere vede
   "Pronti n su m" e sceglie "Porta subito i pronti" (segna servite solo quelle righe) o aspetta il resto.
   Campi a 16px su telefono (niente zoom di iPhone), colonne grid `minmax(0,1fr)`/`min-w-0` per non uscire dallo schermo.

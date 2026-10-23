@@ -52,6 +52,15 @@ jobs:
       - name: Fallback SPA
         run: cp dist/index.html dist/404.html
 
+      # HashRouter: l'app vive su "/BeachIn/#/…", quindi uno scope "/BeachIn/salaapp" la farebbe aprire su iPhone come scheda
+      # di Safari (fuori scope). Qui i manifest tornano a start_url "./#/app" e scope "./".
+      - name: Manifest per HashRouter
+        run: |
+          for app in adminapp salaapp comandapp; do
+            sed -i "s#\"start_url\": \"./$app\"#\"start_url\": \"./\#/$app\"#; s#\"scope\": \"./$app\"#\"scope\": \"./\"#" dist/*.webmanifest
+          done
+          grep -h '"start_url"\|"scope"' dist/*.webmanifest
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
