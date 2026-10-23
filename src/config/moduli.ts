@@ -20,6 +20,7 @@ export type ModuloId =
   | 'ristorante'
   | 'assistente-vocale'
   | 'comande'
+  | 'sala'
   | 'costi'
   | 'conto-economico'
   | 'personale'
@@ -70,6 +71,12 @@ export const MODULI: Record<ModuloId, InfoModulo> = {
     nome: 'Comande ombrellone',
     sottotitolo: 'Ordini al bar direttamente dall’ombrellone.',
     vantaggi: ['Ordini bar per numero di ombrellone', 'Coda comande al bar con stato (nuova → presa in carico → pronta), ComandApp per il bagnante con campanello', 'Servizio in spiaggia più rapido'],
+  },
+  sala: {
+    id: 'sala',
+    nome: 'Comande ristorante',
+    sottotitolo: 'Dal tavolo alla cucina: cameriere col palmare o tablet self-service.',
+    vantaggi: ['Il cameriere prende la comanda per tavolo e la manda subito in cucina', 'Tablet al tavolo: il cliente sfoglia il menu con foto e ordina da solo', 'Monitor cucina con stati (inviata → in preparazione → pronta → servita) e campanello'],
   },
   sito: {
     id: 'sito',
@@ -151,7 +158,7 @@ export const PIANI: Record<string, Piano> = {
     id: 'ristorante_web',
     nome: 'Ristorante & Web',
     descrizione: 'Menù, prenotazioni ristorante, comande, eventi e presenza online.',
-    moduli: ['panoramica', 'ristorante', 'assistente-vocale', 'bar', 'comande', 'eventi', 'sito', 'impostazioni'],
+    moduli: ['panoramica', 'ristorante', 'assistente-vocale', 'bar', 'comande', 'sala', 'eventi', 'sito', 'impostazioni'],
   },
   completo: {
     id: 'completo',

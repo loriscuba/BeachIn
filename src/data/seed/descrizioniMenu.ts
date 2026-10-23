@@ -1,0 +1,38 @@
+/**
+ * Descrizioni brevi dei piatti del menu (tablet self al tavolo). Dimostrative: da sostituire con quelle del cliente
+ * dal Ristorante → Menu. Le stesse frasi riempiono le righe già nel DB (migrazione 0015, solo dove manca la descrizione).
+ */
+export const descrizioniMenu: Record<string, string> = {
+  'Flan di zucchine, fiore croccante e crema al grana': 'Sformato soffice di zucchine dell’orto, fiore di zucca in pastella leggera e crema di Grana Padano.',
+  'Tartare di fassona con stracciatella affumicata e pesto': 'Fassona piemontese battuta al coltello, stracciatella affumicata e pesto genovese al basilico.',
+  'Guazzetto di mare': 'Cozze, vongole, gamberi e pescato del giorno in un brodetto di pomodorini, aglio e prezzemolo, con crostini.',
+  'Frittino del contadino': 'Verdure di stagione in pastella croccante, servite con salsa allo yogurt e erba cipollina.',
+  'Tartare di tonno al naturale': 'Tonno rosso tagliato al coltello, olio extravergine ligure, sale in fiocchi e scorza di limone.',
+  'Duetto di acciughe e verdurine': 'Acciughe del Mar Ligure fritte e marinate, con verdurine croccanti in agrodolce.',
+  'Penne con porri e salsiccia': 'Penne mantecate con porri stufati e salsiccia sbriciolata, profumo di salvia.',
+  'Gnocchi di patate con crema di gorgonzola e gherigli di noci': 'Gnocchi fatti a mano, crema di gorgonzola dolce e noci tostate.',
+  'Spaghetto Lido': 'Il nostro classico: spaghetti con frutti di mare, gamberoni e pomodorino fresco.',
+  'Tagliatelle al ragù di fassona piemontese': 'Tagliatelle all’uovo tirate a mano con ragù di fassona cotto lentamente.',
+  'Cappellacci bianchi e neri al profumo di mare': 'Pasta fresca bicolore ripiena di pesce, in un sugo leggero di crostacei.',
+  'Tagliatelle al nero di seppia, tartare di gambero e stracciatella affumicata': 'Tagliatelle al nero, tartare di gambero rosa e stracciatella affumicata.',
+  'Pasta allo scoglio': 'Pasta con cozze, vongole, calamari e gamberi, saltata nel sugo di pomodoro fresco.',
+  'Insalata di mare': 'Polpo, seppie, gamberi e cozze con sedano, limone e olio extravergine.',
+  'Orata alla griglia': 'Orata intera alla brace con erbe aromatiche, servita con verdure grigliate.',
+  'Fritto royale': 'Gran frittura di calamari, gamberi, scampi e pesciolini, da condividere.',
+  'Trancio di spada alla griglia con aromi di Provenza': 'Pesce spada alla brace, timo, rosmarino e lavanda, olio al limone.',
+  'Filetto di fassona con burro aromatizzato alle erbe liguri': 'Filetto di fassona alla griglia con burro alle erbe del nostro entroterra.',
+  "Tagliata di fassona spadellata con burro aromatizzato e salsa di soia (all'etto)": 'Fassona tagliata e spadellata, burro aromatizzato e un tocco di salsa di soia. Prezzo all’etto.',
+  'Costine di maiale, coppa di vitello, pollo e arrosticini': 'Grigliata mista del lido: costine, coppa di vitello, pollo e arrosticini.',
+  "Colomba pasquale con crema al latte all'arancia": 'Colomba artigianale con crema al latte profumata all’arancia.',
+  'Pavlova con frutti di bosco freschi': 'Meringa croccante fuori e morbida dentro, panna montata e frutti di bosco.',
+  'Bunetto al cioccolato e amaretto di Saronno': 'Il bunet piemontese al cacao con amaretti e un goccio di Saronno.',
+  'Pastiera napoletana al cioccolato': 'La pastiera della tradizione in versione al cioccolato.',
+  'Panna cotta ai frutti di bosco con meringa alla mandorla': 'Panna cotta vellutata, coulis di frutti di bosco e meringa alla mandorla.',
+  'Crostatina con panna cotta ai mirtilli': 'Frolla friabile, panna cotta e mirtilli freschi.',
+  'Gelato al fior di latte con Chartreuse francese': 'Fior di latte mantecato con un filo di Chartreuse.',
+  'Acqua minerale 1L': 'Naturale o frizzante.',
+  'Vino della casa (calice)': 'Bianco o rosso dei colli liguri.',
+  'Vino della casa (bottiglia)': 'Bianco o rosso dei colli liguri, 0,75 L.',
+  'Birra artigianale': 'Birra chiara non filtrata, 33 cl.',
+  'Caffè': 'Espresso.',
+}

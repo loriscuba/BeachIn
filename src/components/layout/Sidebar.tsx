@@ -39,12 +39,13 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const { puo } = useSessione()
   // voce nel menu = modulo attivo nel piano + permesso del ruolo dell'utente
   const visibile = (m: ModuloId, permesso?: 'utenti') => moduloAttivo(m) && puo(permesso ?? m)
-  const { richiesteRistorante, comande } = useDemoData()
+  const { richiesteRistorante, comande, comandeSala } = useDemoData()
   const { pathname, search } = useLocation()
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
   const conta = {
     richieste: richiesteRistorante.filter((r) => r.stato === 'da_confermare').length,
     comande: moduloAttivo('comande') ? comande.filter((c) => c.stato === 'in_attesa').length : 0,
+    cucina: moduloAttivo('sala') ? comandeSala.filter((c) => c.stato === 'inviata').length : 0,
   }
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
   // Suono a ogni richiesta nuova dal sito (non al primo caricamento). Il browser

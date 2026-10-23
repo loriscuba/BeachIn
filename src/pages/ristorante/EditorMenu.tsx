@@ -26,7 +26,7 @@ function Modificabile({ valore, mostra, onSalva, className, titolo }: {
 
 const prezzoDa = (v: string) => { const n = Number(v.replace(',', '.').replace('€', '').trim()); return n > 0 ? Math.round(n * 100) / 100 : null }
 
-/** Menu diviso per sezioni, tutto modificabile: sezioni (nome, ordine, aggiungi/elimina), piatti (nome, prezzo, sezione, foto), traduzioni. */
+/** Menu diviso per sezioni, tutto modificabile: sezioni (nome, ordine, aggiungi/elimina), piatti (nome, prezzo, sezione, foto, descrizione), traduzioni. */
 export function EditorMenu({ lingua }: { lingua: Exclude<LinguaMenu, 'it'> }) {
   const {
     menu, sezioniMenu, aggiungiPiatto, rimuoviPiatto, rinominaPiatto, modificaPiatto, impostaTraduzione,
@@ -76,6 +76,12 @@ export function EditorMenu({ lingua }: { lingua: Exclude<LinguaMenu, 'it'> }) {
                       mostra={p.traduzioni?.[lingua] ?? (p.traduzioni ? <span className="inline-flex items-center gap-1 text-tenda"><Loader2 className="h-3 w-3 animate-spin" /> in traduzione</span> : '—')}
                       onSalva={(v) => impostaTraduzione(p.id, lingua, v)} titolo="Correggi traduzione"
                       className="block w-full truncate text-xs text-profondo/55"
+                    />
+                    <Modificabile
+                      valore={p.descrizione ?? ''}
+                      mostra={p.descrizione || <span className="italic text-profondo/35">+ descrizione (tablet self)</span>}
+                      onSalva={(v) => modificaPiatto(p.id, { descrizione: v })} titolo="Descrizione per il tablet self al tavolo"
+                      className="block w-full truncate text-xs text-profondo/70"
                     />
                   </div>
                   <select value={p.categoria} onChange={(e) => modificaPiatto(p.id, { categoria: e.target.value })} className={cn(campo, 'hidden w-28 px-1 text-xs sm:block')} title="Sposta in un'altra sezione">

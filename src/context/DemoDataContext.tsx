@@ -16,6 +16,9 @@ import type {
   LinguaMenu,
   Cliente,
   Comanda,
+  ComandaSala,
+  RigaComandaSala,
+  StatoComandaSala,
   ContoOmbrellone,
   ArticoloBar,
   SezioneBar,
@@ -54,6 +57,10 @@ import { useSyncSupabase } from '@/hooks/useSyncSupabase'
 const CHIAVE_COMANDE = 'beachin.comande.v1'
 const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
   in_attesa: 'presa_in_carico', presa_in_carico: 'in_preparazione', in_preparazione: 'pronta', pronta: 'pronta',
+}
+const CHIAVE_COMANDE_SALA = 'beachin.comandesala.v1'
+const SUCCESSIVO_SALA: Record<StatoComandaSala, StatoComandaSala> = {
+  inviata: 'in_preparazione', in_preparazione: 'pronta', pronta: 'servita', servita: 'servita',
 }
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
@@ -191,6 +198,13 @@ interface DemoDataValue {
   avanzaComanda: (id: string) => void
   annullaComanda: (id: string) => void
 
+  // Comande del ristorante: dal cameriere o dal tablet al tavolo → cucina
+  comandeSala: ComandaSala[]
+  inviaComandaSala: (tavolo: number, righe: RigaComandaSala[], extra: Pick<ComandaSala, 'origine'> & Partial<Pick<ComandaSala, 'cameriere' | 'coperti' | 'note'>>) => ComandaSala
+  /** inviata → in preparazione → pronta → servita. */
+  avanzaComandaSala: (id: string) => void
+  annullaComandaSala: (id: string) => void
+
   // Clienti aggiunti in demo (si affiancano a quelli caricati da api)
   clientiAggiunti: Cliente[]
   aggiungiCliente: (cliente: Cliente) => void
@@ -251,7 +265,7 @@ interface DemoDataValue {
   modificaPrezzoPiatto: (id: string, prezzo: number) => void
   rinominaPiatto: (id: string, nome: string) => void
   /** Modifica libera di un piatto (sezione, foto…); per il nome usare `rinominaPiatto` (ritraduce). */
-  modificaPiatto: (id: string, dati: Partial<Pick<Piatto, 'categoria' | 'foto' | 'prezzo'>>) => void
+  modificaPiatto: (id: string, dati: Partial<Pick<Piatto, 'categoria' | 'foto' | 'prezzo' | 'descrizione'>>) => void
   sezioniMenu: SezioneMenu[]
   aggiungiSezione: (nome: string) => void
   rinominaSezione: (id: string, nome: string) => void
@@ -370,12 +384,13 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     tabella: 'menu_piatti', righe: menu, setRighe: setMenu, semina: true,
     aRiga: (p, i) => ({
       id: p.id, nome: p.nome, categoria: p.categoria, prezzo: p.prezzo, food_cost: p.foodCost, allergeni: p.allergeni,
-      venduti_stagione: p.vendutiStagione, traduzioni: p.traduzioni ?? null, foto: p.foto ?? null, ordine: i,
+      venduti_stagione: p.vendutiStagione, traduzioni: p.traduzioni ?? null, foto: p.foto ?? null, descrizione: p.descrizione ?? null, ordine: i,
     }),
     daRiga: (r) => ({
       id: r.id, nome: r.nome as string, categoria: r.categoria as string, prezzo: Number(r.prezzo), foodCost: Number(r.food_cost),
       allergeni: (r.allergeni as Piatto['allergeni']) ?? [], vendutiStagione: Number(r.venduti_stagione),
       traduzioni: (r.traduzioni as Piatto['traduzioni']) ?? undefined, foto: (r.foto as string) ?? undefined,
+      descrizione: (r.descrizione as string) ?? undefined,
     }),
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
@@ -428,6 +443,38 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       stato: r.stato as StatoComanda, ora: r.ora as string, note: (r.note as string) ?? undefined,
       origine: (r.origine as Comanda['origine']) ?? undefined, cliente: (r.cliente as string) ?? undefined, ts: Number(r.ts),
       pagata: !!r.pagata,
+    }),
+    ordina: (a, b) => Number(b.ts) - Number(a.ts),
+  })
+  // Comande del ristorante (sala → cucina): come le comande del bar, localStorage tra schede o Supabase tra dispositivi.
+  const [comandeSala, setComandeSala] = useState<ComandaSala[]>(() => {
+    if (supabaseAttivo) return []
+    try { return JSON.parse(localStorage.getItem(CHIAVE_COMANDE_SALA) ?? '[]') as ComandaSala[] } catch { return [] }
+  })
+  useEffect(() => {
+    if (supabaseAttivo) return
+    try { localStorage.setItem(CHIAVE_COMANDE_SALA, JSON.stringify(comandeSala)) } catch { /* storage non disponibile */ }
+  }, [comandeSala])
+  useEffect(() => {
+    if (supabaseAttivo) return
+    const suCambio = (e: StorageEvent) => {
+      if (e.key !== CHIAVE_COMANDE_SALA) return
+      try { setComandeSala(JSON.parse(e.newValue ?? '[]') as ComandaSala[]) } catch { /* ignora */ }
+    }
+    window.addEventListener('storage', suCambio)
+    return () => window.removeEventListener('storage', suCambio)
+  }, [])
+  useSyncSupabase({
+    tabella: 'comande_sala', righe: comandeSala, setRighe: setComandeSala,
+    aRiga: (c) => ({
+      id: c.id, tavolo: c.tavolo, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora, ts: c.ts, origine: c.origine,
+      cameriere: c.cameriere ?? null, coperti: c.coperti ?? null, note: c.note ?? null,
+    }),
+    daRiga: (r) => ({
+      id: r.id, tavolo: Number(r.tavolo), righe: (r.righe as RigaComandaSala[]) ?? [], totale: Number(r.totale),
+      stato: r.stato as StatoComandaSala, ora: r.ora as string, ts: Number(r.ts), origine: r.origine as ComandaSala['origine'],
+      cameriere: (r.cameriere as string) ?? undefined, coperti: r.coperti == null ? undefined : Number(r.coperti),
+      note: (r.note as string) ?? undefined,
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
@@ -692,6 +739,31 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setComande((prev) => prev.filter((c) => c.id !== id))
   }, [])
 
+  // — Comande del ristorante (sala → cucina) —
+  const inviaComandaSala = useCallback((tavolo: number, righe: RigaComandaSala[], extra: Pick<ComandaSala, 'origine'> & Partial<Pick<ComandaSala, 'cameriere' | 'coperti' | 'note'>>) => {
+    const comanda: ComandaSala = {
+      id: nuovoId('CS'),
+      tavolo,
+      righe,
+      totale: righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0),
+      stato: 'inviata',
+      ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+      ts: Date.now(),
+      origine: extra.origine,
+      cameriere: extra.cameriere,
+      coperti: extra.coperti,
+      note: extra.note?.trim() || undefined,
+    }
+    setComandeSala((prev) => [comanda, ...prev])
+    return comanda
+  }, [])
+  const avanzaComandaSala = useCallback((id: string) => {
+    setComandeSala((prev) => prev.map((c) => (c.id === id ? { ...c, stato: SUCCESSIVO_SALA[c.stato] } : c)))
+  }, [])
+  const annullaComandaSala = useCallback((id: string) => {
+    setComandeSala((prev) => prev.filter((c) => c.id !== id))
+  }, [])
+
   const aggiungiCosto = useCallback((voce: VoceCosto) => {
     setCosti((prev) => [voce, ...prev])
   }, [])
@@ -915,7 +987,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, nome: nome.trim(), traduzioni: {} } : p)))
     traduci(id, nome.trim())
   }, [traduci])
-  const modificaPiatto = useCallback((id: string, dati: Partial<Pick<Piatto, 'categoria' | 'foto' | 'prezzo'>>) => {
+  const modificaPiatto = useCallback((id: string, dati: Partial<Pick<Piatto, 'categoria' | 'foto' | 'prezzo' | 'descrizione'>>) => {
     setMenu((prev) => prev.map((p) => (p.id === id ? { ...p, ...dati } : p)))
   }, [])
   // — Sezioni del menu —
@@ -1102,7 +1174,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setGalleria(clona(statoSito.galleria))
     // con Supabase news e lavagnetta sono contenuti reali del gestore: il reset demo non li tocca
     if (!supabaseAttivo) { setNotizie(clona(seedNotizie)); setLavagnetta(clona(seedLavagnetta)) }
-    if (!supabaseAttivo) setComande([])
+    if (!supabaseAttivo) { setComande([]); setComandeSala([]) }
     // con Supabase la sala è un dato reale condiviso: il reset demo non la tocca
     if (!supabaseAttivo) {
       setTavoli(clona(seedTavoli))
@@ -1233,6 +1305,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       inviaComanda,
       avanzaComanda,
       annullaComanda,
+      comandeSala,
+      inviaComandaSala,
+      avanzaComandaSala,
+      annullaComandaSala,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,
@@ -1335,6 +1411,10 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       inviaComanda,
       avanzaComanda,
       annullaComanda,
+      comandeSala,
+      inviaComandaSala,
+      avanzaComandaSala,
+      annullaComandaSala,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,

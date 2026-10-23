@@ -13,13 +13,21 @@ import type { ReactNode } from 'react'
 import { MODULI_CORE, PIANI, PIANO_DEFAULT, type ModuloId } from '@/config/moduli'
 
 const CHIAVE = 'beachin.moduli.v1'
+const CHIAVE_SALA = 'beachin.moduli.sala'
 
 function carica(): ModuloId[] {
   try {
     const raw = localStorage.getItem(CHIAVE)
     if (raw) {
       const arr = JSON.parse(raw)
-      if (Array.isArray(arr)) return arr as ModuloId[]
+      if (Array.isArray(arr)) {
+        // Comande ristorante (ott 2026) è nato dopo: chi aveva già il Ristorante lo trova attivo una volta, poi decide lui
+        if (!localStorage.getItem(CHIAVE_SALA)) {
+          localStorage.setItem(CHIAVE_SALA, '1')
+          if (arr.includes('ristorante') && !arr.includes('sala')) arr.push('sala')
+        }
+        return arr as ModuloId[]
+      }
     }
   } catch {
     /* localStorage non disponibile: si parte dal piano di default */
@@ -31,9 +39,10 @@ function carica(): ModuloId[] {
  * Unisce i moduli richiesti con i core (sempre attivi), senza duplicati.
  * Comande usa il listino del Bar: con Comande attivo, il Bar resta attivo
  * (altrimenti dal menu sparivano Listino e Conti lasciando solo Comande).
+ * Allo stesso modo Comande ristorante usa il menu del Ristorante.
  */
 function conCore(moduli: ModuloId[]): ModuloId[] {
-  const dip: ModuloId[] = moduli.includes('comande') ? ['bar'] : []
+  const dip: ModuloId[] = [...(moduli.includes('comande') ? ['bar' as const] : []), ...(moduli.includes('sala') ? ['ristorante' as const] : [])]
   return Array.from(new Set<ModuloId>([...MODULI_CORE, ...moduli, ...dip]))
 }
 
@@ -63,7 +72,7 @@ export function ModuliProvider({ children }: { children: ReactNode }) {
   const attiva = useCallback((id: ModuloId) => salva([...attivi, id]), [attivi, salva])
   const disattiva = useCallback(
     // spegnere il Bar spegne anche Comande, che ne usa il listino
-    (id: ModuloId) => salva(attivi.filter((m) => m !== id && !(id === 'bar' && m === 'comande'))),
+    (id: ModuloId) => salva(attivi.filter((m) => m !== id && !(id === 'bar' && m === 'comande') && !(id === 'ristorante' && m === 'sala'))),
     [attivi, salva]
   )
   const toggle = useCallback(

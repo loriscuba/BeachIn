@@ -33,8 +33,8 @@ export interface SottoVoce {
   percorso: string
   etichetta: string
   modulo: ModuloId
-  /** Contatore stile iPhone: 'richieste' = richieste tavolo dal sito da confermare; 'comande' = comande appena arrivate. */
-  badge?: 'richieste' | 'comande'
+  /** Contatore stile iPhone: 'richieste' = richieste tavolo dal sito da confermare; 'comande' = comande appena arrivate; 'cucina' = comande del ristorante non ancora prese dalla cucina. */
+  badge?: 'richieste' | 'comande' | 'cucina'
   /** Permesso diverso da quello del modulo (es. Impostazioni → Utenti e ruoli). */
   permesso?: 'utenti'
 }
@@ -58,6 +58,9 @@ export const navigazione: VoceNav[] = [
     figli: [
       { percorso: '/ristorante?tab=prenotazioni', etichetta: 'Prenotazioni', modulo: 'ristorante', badge: 'richieste' },
       { percorso: '/ristorante?tab=tavoli', etichetta: 'Tavoli', modulo: 'ristorante' },
+      { percorso: '/sala?tab=cameriere', etichetta: 'Comande sala', modulo: 'sala' },
+      { percorso: '/sala?tab=cucina', etichetta: 'Cucina', modulo: 'sala', badge: 'cucina' },
+      { percorso: '/sala?tab=self', etichetta: 'Tablet self', modulo: 'sala' },
       { percorso: '/ristorante?tab=menu', etichetta: 'Menu', modulo: 'ristorante' },
       { percorso: '/ristorante?tab=magazzino', etichetta: 'Magazzino', modulo: 'ristorante' },
       { percorso: '/ristorante?tab=giorni', etichetta: 'Gestione giorni', modulo: 'ristorante' },
