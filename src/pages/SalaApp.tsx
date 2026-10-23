@@ -43,7 +43,7 @@ export default function SalaApp() {
         </div>
       </header>
       {!profilo ? (
-        <main className="px-4 py-4"><PulsanteInstalla nome="BeachIn Sala" /><LoginGestore onEntra={sbloccaAudio} /></main>
+        <main className="px-4 py-4"><PulsanteInstalla nome="BeachIn Sala" icona="sala-icon-192.png" perche="per prendere le comande e seguire la cucina" /><LoginGestore onEntra={sbloccaAudio} /></main>
       ) : !ammesso ? (
         <main className="mx-auto max-w-md px-4 py-10 text-center text-sm text-profondo/70">
           {moduloAttivo('sala') ? 'Il tuo ruolo non ha accesso alle comande del ristorante.' : 'Il modulo Comande ristorante non è attivo (Impostazioni → Moduli e piano).'}
