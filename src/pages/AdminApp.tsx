@@ -33,7 +33,7 @@ export default function AdminApp() {
   return (
     <div className="min-h-screen bg-calce text-profondo">
       <header className="sticky top-0 z-10 bg-profondo px-4 py-3 text-white shadow">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div>
             <p className="font-display text-xl font-semibold leading-none">BeachIn Admin</p>
             <p className="text-[11px] text-white/60">{config.nome} · {supabaseAttivo ? 'dati condivisi (Supabase)' : 'modalità demo locale'}</p>
@@ -41,7 +41,7 @@ export default function AdminApp() {
           {dentro && <button onClick={() => void esci()} className="grid h-8 w-8 place-content-center rounded-full hover:bg-white/10" aria-label="Esci"><LogOut className="h-4 w-4" /></button>}
         </div>
       </header>
-      <main className="mx-auto max-w-2xl px-4 py-4">
+      <main className="mx-auto max-w-6xl px-4 py-4 lg:px-6">
         {dentro ? <Area /> : <LoginGestore onEntra={sbloccaAudio} />}
       </main>
       <AnteprimaWhatsApp />
@@ -96,7 +96,9 @@ function Area() {
         <p className="rounded-2xl bg-white p-4 text-sm text-profondo/70 shadow-sm">Il tuo ruolo non ha sezioni operative nell'app admin. Chiedi all'amministratore.</p>
       )}
       {tab === 'prenotazioni' && conRistorante && (
-        <div className="space-y-3">
+        // su tablet/desktop: richieste a sinistra, oggi e giorni chiusi a destra
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
+          <div className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-profondo/50">Da confermare</h2>
           {daConfermare.length === 0 && <p className="rounded-xl bg-white p-6 text-center text-sm text-profondo/50 shadow-sm">Nessuna richiesta in attesa.</p>}
           {daConfermare.map((r) => (
@@ -115,6 +117,8 @@ function Area() {
               </div>
             </div>
           ))}
+          </div>
+          <div className="space-y-3">
           <OggiRistorante />
           <div className="rounded-2xl bg-white shadow-sm">
             <button onClick={() => setChiusureAperte(!chiusureAperte)} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left">
@@ -123,6 +127,7 @@ function Area() {
               <ChevronDown className={cn('h-5 w-5 text-profondo/50 transition-transform', chiusureAperte && 'rotate-180')} />
             </button>
             {chiusureAperte && <div className="border-t border-calce-200 p-4"><GiorniChiusi grande /></div>}
+          </div>
           </div>
         </div>
       )}
@@ -148,7 +153,7 @@ function Area() {
       {tab === 'menu' && conRistorante && <AssistenteVocale />}
       {tab === 'ingressi' && conEventi && <IngressiEventi />}
       {tab === 'app' && conApp && (
-        <div className="space-y-5">
+        <div className="grid items-start gap-5 lg:grid-cols-2">
           <section><h2 className="mb-2 font-display text-lg font-semibold">News per i clienti</h2><GestioneNews /></section>
           <section><h2 className="mb-2 font-display text-lg font-semibold">Lavagnetta di oggi</h2><GestioneLavagnetta /></section>
         </div>
