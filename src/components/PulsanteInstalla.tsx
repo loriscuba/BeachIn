@@ -12,7 +12,8 @@ const inApp = () => /FBAN|FBAV|Instagram|Line\/|Twitter|TikTok|GSA\//i.test(navi
 
 type EventoInstalla = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
 
-export default function PulsanteInstalla({ nome }: { nome: string }) {
+/** `icona` e `perche`: per le altre app (es. BeachIn Sala); di base quelle di ComandApp. */
+export default function PulsanteInstalla({ nome, icona = 'comandapp-icon-192.png', perche = "per ordinare dall'ombrellone" }: { nome: string; icona?: string; perche?: string }) {
   const [evento, setEvento] = useState<EventoInstalla | null>(null)
   const [installata, setInstallata] = useState(isInstallata)
   const [chiuso, setChiuso] = useState(false)
@@ -27,7 +28,7 @@ export default function PulsanteInstalla({ nome }: { nome: string }) {
 
   const ios = isIos()
   if (installata || chiuso || (!evento && !ios)) return null
-  if (ios) return <ModalIos nome={nome} onSalta={() => setChiuso(true)} />
+  if (ios) return <ModalIos nome={nome} icona={icona} perche={perche} onSalta={() => setChiuso(true)} />
 
   const installa = async () => {
     if (!evento) return
@@ -49,18 +50,18 @@ export default function PulsanteInstalla({ nome }: { nome: string }) {
   )
 }
 
-function ModalIos({ nome, onSalta }: { nome: string; onSalta: () => void }) {
+function ModalIos({ nome, icona: file, perche, onSalta }: { nome: string; icona: string; perche: string; onSalta: () => void }) {
   const [saltato] = useState(() => { try { return sessionStorage.getItem(CHIAVE_SALTA) === '1' } catch { return false } })
   const [copiato, setCopiato] = useState(false)
   if (saltato) return null
   const salta = () => { try { sessionStorage.setItem(CHIAVE_SALTA, '1') } catch { /* */ } onSalta() }
   const copia = async () => { try { await navigator.clipboard.writeText(window.location.href); setCopiato(true) } catch { /* */ } }
-  const icona = `${import.meta.env.BASE_URL}comandapp-icon-192.png`
+  const icona = `${import.meta.env.BASE_URL}${file}`
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center bg-profondo px-6 pb-6 pt-12 text-center text-white">
       <img src={icona} alt="" className="h-20 w-20 rounded-2xl shadow-lg" />
       <h2 className="mt-4 font-display text-2xl font-semibold">Installa {nome}</h2>
-      <p className="mt-1 text-sm text-white/70">Aggiungila alla schermata Home per ordinare dall'ombrellone come una vera app.</p>
+      <p className="mt-1 text-sm text-white/70">Aggiungila alla schermata Home {perche} come una vera app.</p>
       {inApp() ? (
         <div className="mt-8 w-full max-w-xs rounded-xl bg-white/10 p-4 text-sm">
           <p>Questo browser non permette l'installazione. Apri il link in <b>Safari</b>.</p>
