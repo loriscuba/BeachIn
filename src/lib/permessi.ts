@@ -18,6 +18,7 @@ export const SEZIONI: { id: Sezione; nome: string }[] = [
   { id: 'bar', nome: 'Bar' },
   { id: 'comande', nome: 'Comande' },
   { id: 'ristorante', nome: 'Ristorante' },
+  { id: 'sala', nome: 'Comande ristorante' },
   { id: 'eventi', nome: 'Eventi' },
   { id: 'sito', nome: 'Sito e app clienti' },
   { id: 'costi', nome: 'Costi' },

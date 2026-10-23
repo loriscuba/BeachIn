@@ -19,6 +19,7 @@ const Cruscotto = lazyRiprova(() => import('@/pages/Cruscotto'))
 const Arenile = lazyRiprova(() => import('@/pages/Arenile'))
 const Clienti = lazyRiprova(() => import('@/pages/Clienti'))
 const Comande = lazyRiprova(() => import('@/pages/Comande'))
+const Sala = lazyRiprova(() => import('@/pages/Sala'))
 const Tariffe = lazyRiprova(() => import('@/pages/Tariffe'))
 const Bar = lazyRiprova(() => import('@/pages/Bar'))
 const Ristorante = lazyRiprova(() => import('@/pages/Ristorante'))
@@ -49,6 +50,7 @@ export const router = creaRouter([
       { path: 'arenile', element: g('arenile', <Arenile />) },
       { path: 'clienti', element: g('clienti', <Clienti />) },
       { path: 'comande', element: g('comande', <Comande />) },
+      { path: 'sala', element: g('sala', <Sala />) },
       { path: 'tariffe', element: g('tariffe', <Tariffe />) },
       { path: 'bar', element: g('bar', <Bar />) },
       { path: 'ristorante', element: g('ristorante', <Ristorante />) },

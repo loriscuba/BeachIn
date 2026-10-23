@@ -63,7 +63,7 @@ Aggiornare qui quando cambia un modulo.
   `insert into beachin.utenti (id, email, nome, ruolo_id) values ('<uuid>', '<email>', '<nome>', 'amministratore');`
 
 ## Moduli / pagine (`src/pages`)
-Cruscotto, Arenile, Clienti, **Comande**, Tariffe, Bar, Ristorante, **AssistenteVocale**, Costi, ContoEconomico,
+Cruscotto, Arenile, Clienti, **Comande**, **Sala** (comande ristorante), Tariffe, Bar, Ristorante, **AssistenteVocale**, Costi, ContoEconomico,
 Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico), Impostazioni.
 
 ## Comande dall'ombrellone (servizio in spiaggia)
@@ -109,6 +109,21 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `beachin-push` (`supabase/functions/beachin-push`, legge DB via `SUPABASE_DB_URL`, rimuove iscrizioni 404/410).
   Tocco notifica con app aperta → SW `postMessage({tipo:"aggiorna"})` → reload; `useSyncSupabase` rilegge anche su visibilitychange/online/pageshow e alla (ri)sottoscrizione del canale (app sospesa su telefono = canale live caduto).
   iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `src/lib/hashInPercorso.ts` (primo import di `main.tsx`, prima che il router legga l'indirizzo) converte `#/percorso` in path con BrowserRouter: start_url delle app installate.
+
+## Comande ristorante (sala → cucina, ott 2026)
+- Modulo **`sala`** "Comande ristorante" (dipende da `ristorante`: con `sala` attivo resta attivo il Ristorante; chi aveva già il
+  Ristorante lo trova attivo una volta, flag `beachin.moduli.sala`). Permesso `sala` nella griglia ruoli; ruolo **Cucina** (`sala`=2).
+- Pagina `src/pages/Sala.tsx` (rotta `/sala`, schede `?tab=cameriere|cucina|self`, voci sotto Ristorante nel menu laterale,
+  badge `cucina` = comande `inviata`). Componenti in `src/pages/sala/`: `Cameriere` (tavoli del giorno → piatti del menu del
+  Ristorante → Invia in cucina, coperti/note, comande già aperte del tavolo e conto), `Cucina` (colonne Da fare / In preparazione /
+  Pronte, minuti di attesa, campanello), `AvvioSelf` (tavolo + PIN 4 cifre, salvati in localStorage `beachin.self.v1`) e
+  `TabletSelf` (menu a tutto schermo in portale su body, verde bosco/crema/oro, foto rotonde, descrizioni, allergeni,
+  carrello, "Già ordinato" con stato; si esce col PIN dal lucchetto).
+- Context: `comandeSala` + `inviaComandaSala(tavolo, righe, {origine, cameriere?, coperti?, note?})` / `avanzaComandaSala`
+  (inviata→in_preparazione→pronta→servita) / `annullaComandaSala`. Senza Supabase localStorage `beachin.comandesala.v1` tra schede.
+- DB (migrazione `0015_comande_sala.sql`): `beachin.comande_sala` (Realtime, policy demo anon + staff secondo `sala`),
+  colonna `menu_piatti.descrizione` (modificabile in Ristorante → Menu, riempita per i piatti dimostrativi da
+  `src/data/seed/descrizioniMenu.ts`). Foto copertina del tablet da Unsplash (`fotoCopertinaSala` in `src/lib/sala.ts`).
 
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a

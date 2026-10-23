@@ -252,6 +252,36 @@ export interface Comanda {
   pagata?: boolean
 }
 
+// — Comande del ristorante (sala → cucina) —
+/** Flusso in cucina: inviata → in preparazione → pronta → servita. */
+export type StatoComandaSala = 'inviata' | 'in_preparazione' | 'pronta' | 'servita'
+
+export interface RigaComandaSala {
+  piattoId: string
+  nome: string
+  /** Sezione del menu (Antipasti, Primi…): la cucina raggruppa per uscita. */
+  sezione: string
+  quantita: number
+  prezzoUnitario: number
+  note?: string
+}
+
+export interface ComandaSala {
+  id: string
+  tavolo: number
+  righe: RigaComandaSala[]
+  totale: number
+  stato: StatoComandaSala
+  ora: string // HH:mm di invio
+  ts: number
+  /** 'cameriere' = presa in sala; 'self' = ordinata dal tablet al tavolo. */
+  origine: 'cameriere' | 'self'
+  /** Nome di chi l'ha presa (utente collegato). */
+  cameriere?: string
+  coperti?: number
+  note?: string
+}
+
 // ————————————————————————————————————————————————————————————
 // Ristorante
 // ————————————————————————————————————————————————————————————
@@ -291,6 +321,8 @@ export interface Piatto {
   traduzioni?: Partial<Record<LinguaMenu, string>>
   /** Foto del piatto (data URI ridimensionato). */
   foto?: string
+  /** Descrizione breve per il menu (tablet self al tavolo). */
+  descrizione?: string
 }
 
 export type LinguaMenu = 'it' | 'en' | 'fr' | 'de' | 'es'
