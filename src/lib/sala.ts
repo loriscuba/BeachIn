@@ -1,5 +1,6 @@
 /** Comande del ristorante (sala → cucina): etichette, colori e foto di riserva per il tablet self. */
 import type { ComandaSala, RigaComandaSala, StatoComandaSala, StatoRigaSala } from '@/data/types'
+import { urlPubblico } from '@/lib/urlPubblico'
 
 export const etichettaStatoSala: Record<StatoComandaSala, string> = {
   inviata: 'Inviata', in_preparazione: 'In preparazione', pronta: 'Pronta', servita: 'Servita',
@@ -68,3 +69,6 @@ export function ricalcolaStato(c: ComandaSala): ComandaSala {
     : 'in_preparazione'
   return { ...c, stato }
 }
+
+/** Link pubblico dell'app di sala (cameriere, cucina, tablet), da aprire su telefono o tablet. */
+export const urlSalaApp = () => urlPubblico('salaapp')

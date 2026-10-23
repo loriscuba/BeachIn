@@ -39,7 +39,7 @@ lucide-react + date-fns (locale it). `noUnusedLocals` ON: rimuovi import/variabi
   Moduli attivi: `src/context/ModuliContext.tsx` + `src/config/moduli.ts`.
 - Dati: `src/data/types.ts` (tipi), `src/data/seed/*` (dati iniziali), `src/data/api.ts` (getter read-only async).
 - Pagine: `src/pages` (Ristorante con sottocartella `ristorante/`; pagine pubbliche fuori dallo shell:
-  `SitoAnteprima`, `MenuPubblico` `/menu`, `ComandApp` `/comandapp`, `AdminApp` `/adminapp`).
+  `SitoAnteprima`, `MenuPubblico` `/menu`, `ComandApp` `/comandapp`, `AdminApp` `/adminapp`, `SalaApp` `/salaapp`).
 - Supabase: `src/lib/supabase.ts`, hook `src/hooks/useSyncSupabase.ts`, migrazioni `supabase/migrations/`,
   funzioni `supabase/functions/`. Senza env `VITE_SUPABASE_*` tutto funziona in locale.
 - Config cliente: `src/config.ts`.
