@@ -18,7 +18,7 @@ import type {
   Turno,
 } from '../types'
 import { traduzioniSeed, traduzioniSezioneSeed } from '@/lib/menuLingue'
-import { descrizioniMenu } from './descrizioniMenu'
+import { descrizioniMenu, fotoMenu } from './descrizioniMenu'
 import { creaRng, intero, scegli, scegliPesato, forse, type Rng } from './_rng'
 import { giorni } from './giornaliero'
 
@@ -94,6 +94,7 @@ function costruisciMenu(rng: Rng): Piatto[] {
     vendutiStagione: Math.round(intero(rng, 60, 900) * ((popolarita[d.categoria] ?? 3) / 5)),
     traduzioni: traduzioniSeed(d.nome),
     descrizione: descrizioniMenu[d.nome],
+    foto: fotoMenu[d.nome],
   }))
 }
 

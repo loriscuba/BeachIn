@@ -36,3 +36,36 @@ export const descrizioniMenu: Record<string, string> = {
   'Birra artigianale': 'Birra chiara non filtrata, 33 cl.',
   'Caffè': 'Espresso.',
 }
+
+/** Foto libere (Unsplash) scelte su nome e descrizione: segnaposto finché il locale non carica le sue (migrazione 0016). */
+const u = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&h=600&q=70`
+export const fotoMenu: Record<string, string> = {
+  'Tartare di tonno al naturale': u('1779635593350-47a648e174ce'),
+  'Duetto di acciughe e verdurine': u('1780823231663-6f08dde9b54c'),
+  'Penne con porri e salsiccia': u('1621996346565-e3dbc646d9a9'),
+  'Gnocchi di patate con crema di gorgonzola e gherigli di noci': u('1755677617146-9d69ea16b199'),
+  'Spaghetto Lido': u('1635475556713-8d3ff880d9ba'),
+  'Tagliatelle al ragù di fassona piemontese': u('1734356959885-54fe2e99c1cd'),
+  'Cappellacci bianchi e neri al profumo di mare': u('1636475735446-bfc801fa6f2c'),
+  'Tagliatelle al nero di seppia, tartare di gambero e stracciatella affumicata': u('1765100778802-f684a4b7fd20'),
+  'Pasta allo scoglio': u('1775634018153-51e9884dbf7c'),
+  'Insalata di mare': u('1771342755991-9a731f18e1f1'),
+  'Orata alla griglia': u('1773417461034-75e751de40ba'),
+  'Fritto royale': u('1682264895449-f75b342cbab6'),
+  'Trancio di spada alla griglia con aromi di Provenza': u('1551014700-0ca41391f312'),
+  'Filetto di fassona con burro aromatizzato alle erbe liguri': u('1588168333986-5078d3ae3976'),
+  "Tagliata di fassona spadellata con burro aromatizzato e salsa di soia (all'etto)": u('1504973960431-1c467e159aa4'),
+  'Costine di maiale, coppa di vitello, pollo e arrosticini': u('1555939594-58d7cb561ad1'),
+  "Colomba pasquale con crema al latte all'arancia": u('1604850723811-35d9702ee794'),
+  'Pavlova con frutti di bosco freschi': u('1634324040880-63dbf9a4e5ac'),
+  'Bunetto al cioccolato e amaretto di Saronno': u('1673551494277-92204546b504'),
+  'Pastiera napoletana al cioccolato': u('1777013486317-6defcbf4b2d4'),
+  'Panna cotta ai frutti di bosco con meringa alla mandorla': u('1787550275377-9f54a07c68c8'),
+  'Crostatina con panna cotta ai mirtilli': u('1644158774412-ee92bcab0a2f'),
+  'Gelato al fior di latte con Chartreuse francese': u('1618581260815-9371027b9516'),
+  'Acqua minerale 1L': u('1553564552-02656d6a2390'),
+  'Vino della casa (calice)': u('1585553616435-2dc0a54e271d'),
+  'Vino della casa (bottiglia)': u('1544776527-68e63addedf7'),
+  'Birra artigianale': u('1632173517757-1e87c79de596'),
+  'Caffè': u('1572286258217-40142c1c6a70'),
+}
