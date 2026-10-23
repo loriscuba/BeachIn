@@ -100,6 +100,7 @@ const FUNZIONI: { id: Scheda; titolo: string; testo: string; icona: typeof ChefH
 function SceltaFunzione({ onScegli, daFare }: { onScegli: (s: Scheda) => void; daFare: number }) {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
+      <PulsanteInstalla nome="BeachIn Sala" icona="sala-icon-192.png" perche="per prendere le comande e seguire la cucina" />
       <h1 className="font-display text-2xl font-semibold text-profondo">Cosa fai con questo dispositivo?</h1>
       <p className="mt-1 text-sm text-profondo/60">Puoi cambiare quando vuoi dalla barra in basso.</p>
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">

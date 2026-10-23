@@ -48,7 +48,8 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
   // Safari su iPhone perde gli eventi pointer sull'elemento (capture) e scorre la pagina: si ascolta su window
   // e si blocca lo scorrimento (touchmove non passivo) finché il dito tiene il piatto.
   const giu = (e: PE, id: string, nome: string) => {
-    if ((e.target as HTMLElement).closest('button')) return
+    // col dito (telefono/tablet) niente trascinamento: si usano i bottoni S·1·2·3, che vanno sempre
+    if (e.pointerType !== 'mouse' || (e.target as HTMLElement).closest('button')) return
     presa.current = { id, nome, x0: e.clientX, y0: e.clientY, mossa: false }
     const blocca = (ev: TouchEvent) => { if (presa.current) ev.preventDefault() }
     const muovi = (ev: PointerEvent) => {
@@ -213,7 +214,7 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
           <CardBody className="space-y-3 pt-2">
             {righe.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-profondo/50">{scelto ? 'Ora tocca l’uscita dove spostarlo.' : 'Trascina i piatti nell’uscita giusta, oppure tocca il piatto e poi l’uscita.'}</p>
+                <p className="text-xs text-profondo/50">{scelto ? 'Ora clicca l’uscita dove spostarlo.' : 'Scegli l’uscita di ogni piatto: S = subito, 1ª, 2ª, 3ª (col mouse puoi anche trascinarli).'}</p>
                 {USCITE.map((n) => {
                   const qui = righe.filter((r) => r.uscita === n)
                   return (
@@ -221,20 +222,26 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
                       onClick={() => { if (scelto) sposta(scelto, n) }}
                       className={cn('cursor-pointer rounded-xl border border-dashed p-2 transition', sopra === n ? 'border-cabina bg-cabina/10' : scelto ? 'cursor-pointer border-cabina/50' : qui.length ? 'border-calce-300' : 'border-calce-200 opacity-60')}>
                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-profondo/50">{nomeUscita(n)}</p>
-                      {!qui.length && <p className="py-1 text-center text-xs text-profondo/35">{scelto ? 'Tocca per spostare qui' : 'Trascina qui'}</p>}
+                      {!qui.length && <p className="py-1 text-center text-xs text-profondo/35">{scelto ? 'Clicca per spostare qui' : 'Nessun piatto'}</p>}
                       <ul className="space-y-1 text-sm">
                         {qui.map((r) => (
                           <li key={r.piattoId}
                             onPointerDown={(e) => giu(e, r.piattoId, r.nome)}
                             style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
                             onClick={(e) => e.stopPropagation()}
-                            className={cn('flex touch-none select-none items-center gap-1.5 rounded-lg bg-white px-1.5 py-1.5 shadow-sm cursor-grab active:cursor-grabbing',
+                            className={cn('flex select-none items-center gap-1.5 rounded-lg bg-white px-1.5 py-1.5 shadow-sm [@media(pointer:fine)]:cursor-grab',
                               scelto === r.piattoId && 'ring-2 ring-cabina', fantasma && presa.current?.id === r.piattoId && 'opacity-40')}>
-                            <GripVertical className="h-4 w-4 shrink-0 text-profondo/30" />
+                            <GripVertical className="hidden h-4 w-4 shrink-0 text-profondo/30 [@media(pointer:fine)]:block" />
                             <span className="num w-6 font-bold text-cabina">{r.quantita}×</span>
                             <span className="min-w-0 flex-1 truncate text-profondo">{r.nome}</span>
-                            <button type="button" title="Sposta all'uscita successiva" onClick={() => setUsc((m) => ({ ...m, [r.piattoId]: ((r.uscita ?? 1) + 1) % USCITE.length }))}
-                              className="num grid h-7 min-w-7 place-content-center rounded-full border border-calce-200 px-1.5 text-xs font-semibold text-profondo/70 hover:border-cabina">{n === 0 ? 'S' : n}</button>
+                            <span className="flex shrink-0 gap-1" role="group" aria-label="Uscita">
+                              {USCITE.map((u) => (
+                                <button key={u} type="button" title={nomeUscita(u)} onClick={() => sposta(r.piattoId, u)}
+                                  className={cn('num grid h-8 w-8 place-content-center rounded-full text-xs font-bold', u === n ? 'bg-cabina text-white' : 'border border-calce-200 text-profondo/60')}>
+                                  {u === 0 ? 'S' : u}
+                                </button>
+                              ))}
+                            </span>
                           </li>
                         ))}
                       </ul>
