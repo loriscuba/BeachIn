@@ -7,7 +7,7 @@
  */
 import { useMemo, useRef, useState, type PointerEvent as PE } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp } from 'lucide-react'
+import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp, X } from 'lucide-react'
 import type { ComandaSala, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useSessione } from '@/context/SessioneContext'
@@ -229,12 +229,18 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
                             onPointerDown={(e) => giu(e, r.piattoId, r.nome)}
                             style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
                             onClick={(e) => e.stopPropagation()}
-                            className={cn('flex select-none items-center gap-1.5 rounded-lg bg-white px-1.5 py-1.5 shadow-sm [@media(pointer:fine)]:cursor-grab',
+                            className={cn('flex select-none flex-wrap items-center gap-1.5 rounded-lg bg-white px-1.5 py-1.5 shadow-sm [@media(pointer:fine)]:cursor-grab',
                               scelto === r.piattoId && 'ring-2 ring-cabina', fantasma && presa.current?.id === r.piattoId && 'opacity-40')}>
                             <GripVertical className="hidden h-4 w-4 shrink-0 text-profondo/30 [@media(pointer:fine)]:block" />
                             <span className="num w-6 font-bold text-cabina">{r.quantita}×</span>
                             <span className="min-w-0 flex-1 truncate text-profondo">{r.nome}</span>
-                            <span className="flex shrink-0 gap-1" role="group" aria-label="Uscita">
+                            <button type="button" aria-label={`Togli ${r.nome}`} title="Togli dalla comanda"
+                              onClick={() => { setQta((m) => { const c = { ...m }; delete c[r.piattoId]; return c }); if (scelto === r.piattoId) setScelto(null) }}
+                              className="grid h-8 w-8 shrink-0 place-content-center rounded-full text-profondo/40 hover:bg-boa/10 hover:text-boa sm:order-last">
+                              <X className="h-4 w-4" />
+                            </button>
+                            {/* su telefono i bottoni dell'uscita vanno a capo, sotto il nome */}
+                            <span className="flex w-full shrink-0 justify-end gap-1 sm:w-auto" role="group" aria-label="Uscita">
                               {USCITE.map((u) => (
                                 <button key={u} type="button" title={nomeUscita(u)} onClick={() => sposta(r.piattoId, u)}
                                   className={cn('num grid h-8 w-8 place-content-center rounded-full text-xs font-bold', u === n ? 'bg-cabina text-white' : 'border border-calce-200 text-profondo/60')}>
