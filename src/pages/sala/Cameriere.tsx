@@ -1,10 +1,12 @@
 /**
  * Modalità cameriere: tavolo → piatti dal menu del Ristorante → «Invia in cucina».
  * Pensata per telefono/palmare: tavoli a tessere grandi, piatti per sezione con + e −.
+ * I piatti si dividono in uscite (Subito, 1ª, 2ª…) trascinandoli o toccando la loro uscita;
+ * poi il cameriere dà il «via» alle uscite successive e segna quelle servite.
  */
 import { useMemo, useState } from 'react'
-import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet } from 'lucide-react'
-import type { RigaComandaSala } from '@/data/types'
+import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter } from 'lucide-react'
+import type { ComandaSala, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useSessione } from '@/context/SessioneContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -13,18 +15,21 @@ import { Button } from '@/components/ui/Button'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, etichettaStatoSala, tonoStatoSala } from '@/lib/sala'
+import { aperteDelTavolo, etichettaStatoSala, nomeUscita, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi } from '@/lib/sala'
 
 const campo = 'h-9 rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring'
 
 export default function Cameriere() {
-  const { menu, sezioniMenu, tavoliDelGiorno, comandeSala, inviaComandaSala } = useDemoData()
+  const { menu, sezioniMenu, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala } = useDemoData()
   const { profilo } = useSessione()
   const tavoli = useMemo(() => [...tavoliDelGiorno(config.oggi)].sort((a, b) => a.numero - b.numero), [tavoliDelGiorno])
   const [tavolo, setTavolo] = useState<number | null>(null)
   const [coperti, setCoperti] = useState('')
   const [note, setNote] = useState('')
   const [qta, setQta] = useState<Record<string, number>>({})
+  // uscita scelta a mano per piatto (altrimenti quella proposta dalla sezione)
+  const [usc, setUsc] = useState<Record<string, number>>({})
+  const [sopra, setSopra] = useState<number | null>(null)
   const [sezione, setSezione] = useState<string>('tutte')
   const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
@@ -32,9 +37,9 @@ export default function Cameriere() {
   const q = cerca.trim().toLowerCase()
   const righe: RigaComandaSala[] = useMemo(
     () => sezioniMenu.flatMap((s) => menu.filter((p) => p.categoria === s.id && (qta[p.id] ?? 0) > 0).map((p) => ({
-      piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo,
+      piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo, uscita: usc[p.id] ?? uscitaPredefinita(s.id),
     }))),
-    [menu, sezioniMenu, qta]
+    [menu, sezioniMenu, qta, usc]
   )
   const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
@@ -50,7 +55,7 @@ export default function Cameriere() {
   const invia = () => {
     if (tavolo == null || !righe.length) return
     inviaComandaSala(tavolo, righe, { origine: 'cameriere', cameriere: profilo?.nome, coperti: Number(coperti) || undefined, note })
-    setQta({}); setNote('')
+    setQta({}); setUsc({}); setNote('')
     setInviata(true)
     window.setTimeout(() => setInviata(false), 3000)
   }
@@ -139,15 +144,35 @@ export default function Cameriere() {
           <CardHeader titolo={tavolo == null ? 'Comanda' : `Comanda · tavolo ${tavolo}`} sottotitolo={pezzi ? `${pezzi} piatti · ${euroCent(totale)}` : 'Nessun piatto ancora'} />
           <CardBody className="space-y-3 pt-2">
             {righe.length > 0 && (
-              <ul className="space-y-1 text-sm">
-                {righe.map((r) => (
-                  <li key={r.piattoId} className="flex gap-2">
-                    <span className="num w-6 font-bold text-cabina">{r.quantita}×</span>
-                    <span className="min-w-0 flex-1 truncate text-profondo">{r.nome}</span>
-                    <span className="num text-profondo/60">{euroCent(r.quantita * r.prezzoUnitario)}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2">
+                <p className="text-xs text-profondo/50">Trascina i piatti nell'uscita giusta (o tocca il numero dell'uscita).</p>
+                {USCITE.map((n) => {
+                  const qui = righe.filter((r) => r.uscita === n)
+                  return (
+                    <div key={n}
+                      onDragOver={(e) => { e.preventDefault(); setSopra(n) }}
+                      onDragLeave={() => setSopra((x) => (x === n ? null : x))}
+                      onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); if (id) setUsc((m) => ({ ...m, [id]: n })); setSopra(null) }}
+                      className={cn('rounded-xl border border-dashed p-2 transition', sopra === n ? 'border-cabina bg-cabina/10' : qui.length ? 'border-calce-300' : 'border-calce-200 opacity-60')}>
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-profondo/50">{nomeUscita(n)}</p>
+                      {!qui.length && <p className="py-1 text-center text-xs text-profondo/35">Trascina qui</p>}
+                      <ul className="space-y-1 text-sm">
+                        {qui.map((r) => (
+                          <li key={r.piattoId} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', r.piattoId); e.dataTransfer.effectAllowed = 'move' }}
+                            className="flex cursor-grab items-center gap-1.5 rounded-lg bg-white px-1.5 py-1 shadow-sm active:cursor-grabbing">
+                            <GripVertical className="h-4 w-4 shrink-0 text-profondo/30" />
+                            <span className="num w-6 font-bold text-cabina">{r.quantita}×</span>
+                            <span className="min-w-0 flex-1 truncate text-profondo">{r.nome}</span>
+                            <button type="button" title="Sposta all'uscita successiva" onClick={() => setUsc((m) => ({ ...m, [r.piattoId]: ((r.uscita ?? 1) + 1) % USCITE.length }))}
+                              className="num grid h-7 min-w-7 place-content-center rounded-full border border-calce-200 px-1.5 text-xs font-semibold text-profondo/70 hover:border-cabina">{n === 0 ? 'S' : n}</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })}
+                <p className="num text-right text-sm font-semibold text-profondo">{euroCent(totale)}</p>
+              </div>
             )}
             <div className="flex gap-2">
               <label className="relative w-24">
@@ -167,21 +192,46 @@ export default function Cameriere() {
             <CardHeader titolo={`Tavolo ${tavolo}: già ordinato`} sottotitolo={aperte.length ? `Conto finora ${euroCent(contoTavolo)}` : 'Nessuna comanda aperta'} />
             {aperte.length > 0 && (
               <CardBody className="space-y-2 pt-2">
-                {aperte.map((c) => (
-                  <div key={c.id} className="rounded-xl border border-calce-200 p-2.5 text-sm">
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="num font-semibold text-profondo">{c.ora}</span>
-                      {c.origine === 'self' ? <Badge tono="mare"><Tablet className="h-3 w-3" /> Tablet</Badge> : <Badge tono="neutro"><ChefHat className="h-3 w-3" /> {c.cameriere ?? 'Sala'}</Badge>}
-                      <Badge tono={tonoStatoSala[c.stato]} puntino className="ml-auto">{etichettaStatoSala[c.stato]}</Badge>
-                    </div>
-                    <p className="text-profondo/70">{c.righe.map((r) => `${r.quantita}× ${r.nome}`).join(' · ')}</p>
-                  </div>
-                ))}
+                {aperte.map((c) => <ComandaAperta key={c.id} c={c} onVia={(n) => chiamaUscitaSala(c.id, n)} onServita={(indici) => segnaRigheSala(c.id, indici, 'servita')} />)}
               </CardBody>
             )}
           </Card>
         )}
       </div>
+    </div>
+  )
+}
+
+/** Comanda già inviata: uscite con il loro stato, «Dai il via» alla prossima e «Servita» quando è pronta. */
+function ComandaAperta({ c, onVia, onServita }: { c: ComandaSala; onVia: (n: number) => void; onServita: (indici: number[]) => void }) {
+  const uscite = usciteDi(c)
+  const prossima = uscite.find((u) => !u.chiamata)
+  return (
+    <div className="rounded-xl border border-calce-200 p-2.5 text-sm">
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="num font-semibold text-profondo">{c.ora}</span>
+        {c.origine === 'self' ? <Badge tono="mare"><Tablet className="h-3 w-3" /> Tablet</Badge> : <Badge tono="neutro"><ChefHat className="h-3 w-3" /> {c.cameriere ?? 'Sala'}</Badge>}
+        <Badge tono={tonoStatoSala[c.stato]} puntino className="ml-auto">{etichettaStatoSala[c.stato]}</Badge>
+      </div>
+      <div className="space-y-1.5">
+        {uscite.map((u) => (
+          <div key={u.n} className={cn('rounded-lg px-2 py-1.5', u.stato === 'servita' ? 'bg-calce/40 text-profondo/40' : u.stato === 'pronta' ? 'bg-acqua/15' : !u.chiamata ? 'bg-calce/30' : 'bg-tenda/10')}>
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide">
+              <span className="text-profondo/60">{nomeUscita(u.n)}</span>
+              <span className={cn('ml-auto', u.stato === 'pronta' ? 'text-acqua' : 'text-profondo/45')}>
+                {u.stato === 'servita' ? 'Servita' : u.stato === 'pronta' ? 'Pronta' : u.chiamata ? 'In cucina' : 'In attesa del via'}
+              </span>
+            </div>
+            <p className={cn('mt-0.5', u.stato !== 'servita' && 'text-profondo/75')}>{u.righe.map(({ r }) => `${r.quantita}× ${r.nome}`).join(' · ')}</p>
+            {u.stato === 'pronta' && (
+              <Button dimensione="sm" variante="primario" className="mt-1.5 w-full" onClick={() => onServita(u.righe.map(({ i }) => i))}><HandPlatter className="h-4 w-4" /> Servita</Button>
+            )}
+          </div>
+        ))}
+      </div>
+      {prossima && (
+        <Button dimensione="sm" className="mt-2 w-full" onClick={() => onVia(prossima.n)}><Play className="h-4 w-4" /> Dai il via: {nomeUscita(prossima.n).toLowerCase()}</Button>
+      )}
     </div>
   )
 }

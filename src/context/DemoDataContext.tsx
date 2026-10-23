@@ -19,6 +19,7 @@ import type {
   ComandaSala,
   RigaComandaSala,
   StatoComandaSala,
+  StatoRigaSala,
   ContoOmbrellone,
   ArticoloBar,
   SezioneBar,
@@ -53,15 +54,13 @@ import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, pre
 import { traduciNome } from '@/lib/menuLingue'
 import { supabaseAttivo } from '@/lib/supabase'
 import { useSyncSupabase } from '@/hooks/useSyncSupabase'
+import { ricalcolaStato } from '@/lib/sala'
 
 const CHIAVE_COMANDE = 'beachin.comande.v1'
 const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
   in_attesa: 'presa_in_carico', presa_in_carico: 'in_preparazione', in_preparazione: 'pronta', pronta: 'pronta',
 }
 const CHIAVE_COMANDE_SALA = 'beachin.comandesala.v1'
-const SUCCESSIVO_SALA: Record<StatoComandaSala, StatoComandaSala> = {
-  inviata: 'in_preparazione', in_preparazione: 'pronta', pronta: 'servita', servita: 'servita',
-}
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
@@ -201,8 +200,12 @@ interface DemoDataValue {
   // Comande del ristorante: dal cameriere o dal tablet al tavolo → cucina
   comandeSala: ComandaSala[]
   inviaComandaSala: (tavolo: number, righe: RigaComandaSala[], extra: Pick<ComandaSala, 'origine'> & Partial<Pick<ComandaSala, 'cameriere' | 'coperti' | 'note'>>) => ComandaSala
-  /** inviata → in preparazione → pronta → servita. */
+  /** Inviata → inizia la preparazione; pronta → i piatti pronti diventano serviti. */
   avanzaComandaSala: (id: string) => void
+  /** Segna dei piatti (indici in `righe`) come in attesa, pronti o serviti; lo stato della comanda si ricalcola. */
+  segnaRigheSala: (id: string, indici: number[], stato: StatoRigaSala) => void
+  /** Il cameriere dà il via all'uscita `n` (e alle precedenti). */
+  chiamaUscitaSala: (id: string, n: number) => void
   annullaComandaSala: (id: string) => void
 
   // Clienti aggiunti in demo (si affiancano a quelli caricati da api)
@@ -468,13 +471,13 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     tabella: 'comande_sala', righe: comandeSala, setRighe: setComandeSala,
     aRiga: (c) => ({
       id: c.id, tavolo: c.tavolo, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora, ts: c.ts, origine: c.origine,
-      cameriere: c.cameriere ?? null, coperti: c.coperti ?? null, note: c.note ?? null,
+      cameriere: c.cameriere ?? null, coperti: c.coperti ?? null, note: c.note ?? null, uscita_via: c.uscitaVia ?? null,
     }),
     daRiga: (r) => ({
       id: r.id, tavolo: Number(r.tavolo), righe: (r.righe as RigaComandaSala[]) ?? [], totale: Number(r.totale),
       stato: r.stato as StatoComandaSala, ora: r.ora as string, ts: Number(r.ts), origine: r.origine as ComandaSala['origine'],
       cameriere: (r.cameriere as string) ?? undefined, coperti: r.coperti == null ? undefined : Number(r.coperti),
-      note: (r.note as string) ?? undefined,
+      note: (r.note as string) ?? undefined, uscitaVia: r.uscita_via == null ? undefined : Number(r.uscita_via),
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
@@ -744,7 +747,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     const comanda: ComandaSala = {
       id: nuovoId('CS'),
       tavolo,
-      righe,
+      righe: righe.map((r) => ({ ...r, uscita: r.uscita ?? 1, stato: 'attesa' as const })),
+      uscitaVia: 1,
       totale: righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0),
       stato: 'inviata',
       ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
@@ -757,9 +761,24 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setComandeSala((prev) => [comanda, ...prev])
     return comanda
   }, [])
-  const avanzaComandaSala = useCallback((id: string) => {
-    setComandeSala((prev) => prev.map((c) => (c.id === id ? { ...c, stato: SUCCESSIVO_SALA[c.stato] } : c)))
+  const cambiaComandaSala = useCallback((id: string, fn: (c: ComandaSala) => ComandaSala) => {
+    setComandeSala((prev) => prev.map((c) => (c.id === id ? ricalcolaStato(fn(c)) : c)))
   }, [])
+  const avanzaComandaSala = useCallback((id: string) => {
+    cambiaComandaSala(id, (c) => c.stato === 'inviata'
+      ? { ...c, stato: 'in_preparazione' }
+      : { ...c, righe: c.righe.map((r) => (r.stato === 'pronta' || (!r.stato && c.stato === 'pronta') ? { ...r, stato: 'servita' } : r)) })
+  }, [cambiaComandaSala])
+  const segnaRigheSala = useCallback((id: string, indici: number[], stato: StatoRigaSala) => {
+    // le righe senza stato (comande vecchie) partono dallo stato della comanda
+    cambiaComandaSala(id, (c) => ({
+      ...c,
+      righe: c.righe.map((r, i) => (indici.includes(i) ? { ...r, stato } : { ...r, stato: r.stato ?? (c.stato === 'servita' ? 'servita' : c.stato === 'pronta' ? 'pronta' : 'attesa') })),
+    }))
+  }, [cambiaComandaSala])
+  const chiamaUscitaSala = useCallback((id: string, n: number) => {
+    cambiaComandaSala(id, (c) => ({ ...c, uscitaVia: Math.max(c.uscitaVia ?? 1, n) }))
+  }, [cambiaComandaSala])
   const annullaComandaSala = useCallback((id: string) => {
     setComandeSala((prev) => prev.filter((c) => c.id !== id))
   }, [])
@@ -1308,6 +1327,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       comandeSala,
       inviaComandaSala,
       avanzaComandaSala,
+      segnaRigheSala,
+      chiamaUscitaSala,
       annullaComandaSala,
       clientiAggiunti,
       aggiungiCliente,
@@ -1414,6 +1435,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       comandeSala,
       inviaComandaSala,
       avanzaComandaSala,
+      segnaRigheSala,
+      chiamaUscitaSala,
       annullaComandaSala,
       clientiAggiunti,
       aggiungiCliente,
