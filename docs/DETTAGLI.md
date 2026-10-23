@@ -115,7 +115,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Ristorante lo trova attivo una volta, flag `beachin.moduli.sala`). Permesso `sala` nella griglia ruoli; ruolo **Cucina** (`sala`=2).
 - Manifest: Sala `id` `./?app=sala`, start_url e scope `./salaapp`; Admin `id` `./?app=admin` (con `./` coincideva con ComandApp, id `/`),
   start_url e scope `./adminapp`. Prima lo scope `./` dell'admin copriva tutto e Chrome diceva "già installata". Su GitHub Pages
-  `404.html` = index e `hashInPercorso` converte il percorso in `#/…`. ComandApp resta `./#/comandapp` con scope `./`.
+  `404.html` = index e `hashInPercorso` converte il percorso in `#/…`. ComandApp `id` `./` (identità delle installazioni dei clienti), start_url e scope `./comandapp`.
+  Un'app installata col vecchio scope `./` copre tutto il sito: va disinstallata e reinstallata.
 - **App separata `/salaapp`** (`src/pages/SalaApp.tsx`, "BeachIn Sala", manifest `public/sala.webmanifest`, icone `sala-icon-*`):
   login staff (`LoginGestore`), serve modulo `sala` attivo + permesso `sala`≥1; schede in basso Cameriere/Cucina/Tablet self
   (a ogni apertura schermata "Cosa fai con questo dispositivo?": Cameriere / Cucina / Tablet self). Link + QR in cima alla pagina Comande sala (`urlSalaApp()` in `lib/sala.ts`).
