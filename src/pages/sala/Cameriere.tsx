@@ -1,10 +1,12 @@
 /**
  * Modalità cameriere: tavolo → piatti dal menu del Ristorante → «Invia in cucina».
  * Pensata per telefono/palmare: tavoli a tessere grandi, piatti per sezione con + e −.
- * I piatti si dividono in uscite (Subito, 1ª, 2ª…) trascinandoli o toccando la loro uscita;
+ * I piatti si dividono in uscite (Subito, 1ª, 2ª…) trascinandoli col dito/mouse (eventi pointer, così funziona anche
+ * su telefono e iPad, dove il drag&drop HTML5 non va) oppure toccando il piatto e poi l'uscita;
  * poi il cameriere dà il «via» alle uscite successive e segna quelle servite.
  */
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState, type PointerEvent as PE } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter } from 'lucide-react'
 import type { ComandaSala, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -30,6 +32,40 @@ export default function Cameriere() {
   // uscita scelta a mano per piatto (altrimenti quella proposta dalla sezione)
   const [usc, setUsc] = useState<Record<string, number>>({})
   const [sopra, setSopra] = useState<number | null>(null)
+  // piatto scelto con un tocco (poi si tocca l'uscita) e trascinamento in corso
+  const [scelto, setScelto] = useState<string | null>(null)
+  const [fantasma, setFantasma] = useState<{ nome: string; x: number; y: number } | null>(null)
+  const presa = useRef<{ id: string; nome: string; x0: number; y0: number; mossa: boolean } | null>(null)
+  const zonaSotto = (x: number, y: number) => {
+    const el = document.elementFromPoint(x, y)?.closest('[data-uscita]')
+    return el ? Number(el.getAttribute('data-uscita')) : null
+  }
+  const sposta = (id: string, n: number) => { setUsc((m) => ({ ...m, [id]: n })); setScelto(null) }
+  const giu = (e: PE, id: string, nome: string) => {
+    if ((e.target as HTMLElement).closest('button')) return
+    presa.current = { id, nome, x0: e.clientX, y0: e.clientY, mossa: false }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const muovi = (e: PE) => {
+    const p = presa.current
+    if (!p) return
+    if (!p.mossa && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 6) return
+    p.mossa = true
+    setFantasma({ nome: p.nome, x: e.clientX, y: e.clientY })
+    setSopra(zonaSotto(e.clientX, e.clientY))
+  }
+  const su = (e: PE) => {
+    const p = presa.current
+    presa.current = null
+    if (!p) return
+    if (p.mossa) {
+      const n = zonaSotto(e.clientX, e.clientY)
+      if (n != null) sposta(p.id, n)
+    } else {
+      setScelto((x) => (x === p.id ? null : p.id)) // tocco: scegli il piatto, poi tocca l'uscita
+    }
+    setFantasma(null); setSopra(null)
+  }
   const [sezione, setSezione] = useState<string>('tutte')
   const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
@@ -55,7 +91,7 @@ export default function Cameriere() {
   const invia = () => {
     if (tavolo == null || !righe.length) return
     inviaComandaSala(tavolo, righe, { origine: 'cameriere', cameriere: profilo?.nome, coperti: Number(coperti) || undefined, note })
-    setQta({}); setUsc({}); setNote('')
+    setQta({}); setUsc({}); setScelto(null); setNote('')
     setInviata(true)
     window.setTimeout(() => setInviata(false), 3000)
   }
@@ -145,21 +181,23 @@ export default function Cameriere() {
           <CardBody className="space-y-3 pt-2">
             {righe.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-profondo/50">Trascina i piatti nell'uscita giusta (o tocca il numero dell'uscita).</p>
+                <p className="text-xs text-profondo/50">{scelto ? 'Ora tocca l’uscita dove spostarlo.' : 'Trascina i piatti nell’uscita giusta, oppure tocca il piatto e poi l’uscita.'}</p>
                 {USCITE.map((n) => {
                   const qui = righe.filter((r) => r.uscita === n)
                   return (
-                    <div key={n}
-                      onDragOver={(e) => { e.preventDefault(); setSopra(n) }}
-                      onDragLeave={() => setSopra((x) => (x === n ? null : x))}
-                      onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); if (id) setUsc((m) => ({ ...m, [id]: n })); setSopra(null) }}
-                      className={cn('rounded-xl border border-dashed p-2 transition', sopra === n ? 'border-cabina bg-cabina/10' : qui.length ? 'border-calce-300' : 'border-calce-200 opacity-60')}>
+                    <div key={n} data-uscita={n}
+                      onClick={() => { if (scelto) sposta(scelto, n) }}
+                      className={cn('rounded-xl border border-dashed p-2 transition', sopra === n ? 'border-cabina bg-cabina/10' : scelto ? 'cursor-pointer border-cabina/50' : qui.length ? 'border-calce-300' : 'border-calce-200 opacity-60')}>
                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-profondo/50">{nomeUscita(n)}</p>
-                      {!qui.length && <p className="py-1 text-center text-xs text-profondo/35">Trascina qui</p>}
+                      {!qui.length && <p className="py-1 text-center text-xs text-profondo/35">{scelto ? 'Tocca per spostare qui' : 'Trascina qui'}</p>}
                       <ul className="space-y-1 text-sm">
                         {qui.map((r) => (
-                          <li key={r.piattoId} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', r.piattoId); e.dataTransfer.effectAllowed = 'move' }}
-                            className="flex cursor-grab items-center gap-1.5 rounded-lg bg-white px-1.5 py-1 shadow-sm active:cursor-grabbing">
+                          <li key={r.piattoId}
+                            onPointerDown={(e) => giu(e, r.piattoId, r.nome)} onPointerMove={muovi} onPointerUp={su}
+                            onPointerCancel={() => { presa.current = null; setFantasma(null); setSopra(null) }}
+                            onClick={(e) => e.stopPropagation()}
+                            className={cn('flex touch-none select-none items-center gap-1.5 rounded-lg bg-white px-1.5 py-1.5 shadow-sm cursor-grab active:cursor-grabbing',
+                              scelto === r.piattoId && 'ring-2 ring-cabina', fantasma && presa.current?.id === r.piattoId && 'opacity-40')}>
                             <GripVertical className="h-4 w-4 shrink-0 text-profondo/30" />
                             <span className="num w-6 font-bold text-cabina">{r.quantita}×</span>
                             <span className="min-w-0 flex-1 truncate text-profondo">{r.nome}</span>
@@ -172,6 +210,12 @@ export default function Cameriere() {
                   )
                 })}
                 <p className="num text-right text-sm font-semibold text-profondo">{euroCent(totale)}</p>
+                {/* in un portale: dentro la pagina (animata con transform) il fixed non seguirebbe il dito */}
+                {fantasma && createPortal(
+                  <div className="pointer-events-none fixed z-[200] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-cabina px-3 py-1.5 text-sm font-medium text-white shadow-xl"
+                    style={{ left: fantasma.x, top: fantasma.y }}>{fantasma.nome}</div>,
+                  document.body
+                )}
               </div>
             )}
             <div className="flex gap-2">
