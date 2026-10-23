@@ -124,6 +124,7 @@ function SchedaComanda({ c, ora, onAvanza, onSegna, onVia, onAnnulla }: {
             </div>
           )
         })}
+        {c.stato !== 'inviata' && <p className="text-center text-[11px] text-profondo/45">Tocca un piatto per segnarlo pronto: il cameriere decide se portarlo subito</p>}
         {c.note && <p className="rounded-lg bg-tenda/20 px-2.5 py-1.5 text-profondo">📝 {c.note}</p>}
       </div>
       <div className="flex items-center gap-2 border-t border-calce-200 px-4 py-2.5">
