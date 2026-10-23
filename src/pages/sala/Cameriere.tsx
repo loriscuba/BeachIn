@@ -36,6 +36,8 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
   const [sopra, setSopra] = useState<number | null>(null)
   // piatto scelto con un tocco (poi si tocca l'uscita) e trascinamento in corso
   const [scelto, setScelto] = useState<string | null>(null)
+  const sceltoRef = useRef(scelto)
+  sceltoRef.current = scelto
   const [fantasma, setFantasma] = useState<{ nome: string; x: number; y: number } | null>(null)
   const presa = useRef<{ id: string; nome: string; x0: number; y0: number; mossa: boolean } | null>(null)
   const zonaSotto = (x: number, y: number) => {
@@ -43,30 +45,44 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
     return el ? Number(el.getAttribute('data-uscita')) : null
   }
   const sposta = (id: string, n: number) => { setUsc((m) => ({ ...m, [id]: n })); setScelto(null) }
+  // Safari su iPhone perde gli eventi pointer sull'elemento (capture) e scorre la pagina: si ascolta su window
+  // e si blocca lo scorrimento (touchmove non passivo) finché il dito tiene il piatto.
   const giu = (e: PE, id: string, nome: string) => {
     if ((e.target as HTMLElement).closest('button')) return
     presa.current = { id, nome, x0: e.clientX, y0: e.clientY, mossa: false }
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-  }
-  const muovi = (e: PE) => {
-    const p = presa.current
-    if (!p) return
-    if (!p.mossa && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 6) return
-    p.mossa = true
-    setFantasma({ nome: p.nome, x: e.clientX, y: e.clientY })
-    setSopra(zonaSotto(e.clientX, e.clientY))
-  }
-  const su = (e: PE) => {
-    const p = presa.current
-    presa.current = null
-    if (!p) return
-    if (p.mossa) {
-      const n = zonaSotto(e.clientX, e.clientY)
-      if (n != null) sposta(p.id, n)
-    } else {
-      setScelto((x) => (x === p.id ? null : p.id)) // tocco: scegli il piatto, poi tocca l'uscita
+    const blocca = (ev: TouchEvent) => { if (presa.current) ev.preventDefault() }
+    const muovi = (ev: PointerEvent) => {
+      const p = presa.current
+      if (!p) return
+      if (!p.mossa && Math.hypot(ev.clientX - p.x0, ev.clientY - p.y0) < 6) return
+      p.mossa = true
+      setFantasma({ nome: p.nome, x: ev.clientX, y: ev.clientY })
+      setSopra(zonaSotto(ev.clientX, ev.clientY))
     }
-    setFantasma(null); setSopra(null)
+    const fine = (ev: PointerEvent) => {
+      window.removeEventListener('pointermove', muovi)
+      window.removeEventListener('pointerup', fine)
+      window.removeEventListener('pointercancel', fine)
+      document.removeEventListener('touchmove', blocca)
+      const p = presa.current
+      presa.current = null
+      setFantasma(null); setSopra(null)
+      if (!p || ev.type === 'pointercancel') return
+      if (p.mossa) {
+        const n = zonaSotto(ev.clientX, ev.clientY)
+        if (n != null) sposta(p.id, n)
+      } else {
+        // tocco: scegli il piatto, poi tocca l'uscita (anche sopra un altro piatto di quell'uscita)
+        const gia = sceltoRef.current
+        const n = zonaSotto(ev.clientX, ev.clientY)
+        if (gia && gia !== p.id && n != null) sposta(gia, n)
+        else setScelto(gia === p.id ? null : p.id)
+      }
+    }
+    window.addEventListener('pointermove', muovi)
+    window.addEventListener('pointerup', fine)
+    window.addEventListener('pointercancel', fine)
+    document.addEventListener('touchmove', blocca, { passive: false })
   }
   const [sezione, setSezione] = useState<string>('tutte')
   const [cerca, setCerca] = useState('')
@@ -203,14 +219,14 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
                   return (
                     <div key={n} data-uscita={n}
                       onClick={() => { if (scelto) sposta(scelto, n) }}
-                      className={cn('rounded-xl border border-dashed p-2 transition', sopra === n ? 'border-cabina bg-cabina/10' : scelto ? 'cursor-pointer border-cabina/50' : qui.length ? 'border-calce-300' : 'border-calce-200 opacity-60')}>
+                      className={cn('cursor-pointer rounded-xl border border-dashed p-2 transition', sopra === n ? 'border-cabina bg-cabina/10' : scelto ? 'cursor-pointer border-cabina/50' : qui.length ? 'border-calce-300' : 'border-calce-200 opacity-60')}>
                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-profondo/50">{nomeUscita(n)}</p>
                       {!qui.length && <p className="py-1 text-center text-xs text-profondo/35">{scelto ? 'Tocca per spostare qui' : 'Trascina qui'}</p>}
                       <ul className="space-y-1 text-sm">
                         {qui.map((r) => (
                           <li key={r.piattoId}
-                            onPointerDown={(e) => giu(e, r.piattoId, r.nome)} onPointerMove={muovi} onPointerUp={su}
-                            onPointerCancel={() => { presa.current = null; setFantasma(null); setSopra(null) }}
+                            onPointerDown={(e) => giu(e, r.piattoId, r.nome)}
+                            style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
                             onClick={(e) => e.stopPropagation()}
                             className={cn('flex touch-none select-none items-center gap-1.5 rounded-lg bg-white px-1.5 py-1.5 shadow-sm cursor-grab active:cursor-grabbing',
                               scelto === r.piattoId && 'ring-2 ring-cabina', fantasma && presa.current?.id === r.piattoId && 'opacity-40')}>
