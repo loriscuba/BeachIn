@@ -8,6 +8,7 @@ import { DemoDataProvider } from './context/DemoDataContext'
 import { ModuliProvider } from './context/ModuliContext'
 import { SessioneProvider, useSessione } from './context/SessioneContext'
 import { caricaImpostazioni, sottoscriviImpostazioni } from './lib/impostazioni'
+import { avviaPresenza } from './lib/presenza'
 import './styles/index.css'
 
 // Le pagine leggono `config` direttamente: quando cambiano le impostazioni (salvataggio o Realtime) rimonto il router.
@@ -22,6 +23,8 @@ function Dati({ children }: { children: React.ReactNode }) {
   const { profilo } = useSessione()
   return <DemoDataProvider key={profilo?.id ?? 'anon'}>{children}</DemoDataProvider>
 }
+
+avviaPresenza()
 
 void caricaImpostazioni().finally(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
