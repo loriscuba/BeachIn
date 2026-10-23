@@ -44,7 +44,7 @@ export default function AvvioSelf({ onAvvia }: { onAvvia: (v: StatoSelf) => void
       <CardBody className="space-y-4 pt-2">
         <div>
           <p className="mb-1.5 text-xs font-medium text-profondo/60">1. Tavolo dove lasci il tablet</p>
-          <div className="grid grid-cols-6 gap-2 sm:grid-cols-9">
+          <div className="grid grid-cols-5 gap-2 sm:grid-cols-9">
             {tavoli.map((t) => (
               <button key={t.id} type="button" onClick={() => setTavolo(t.numero)}
                 className={cn('num h-11 rounded-xl border text-base font-bold', tavolo === t.numero ? 'border-cabina bg-cabina text-white' : 'border-calce-200 text-profondo hover:border-cabina')}>

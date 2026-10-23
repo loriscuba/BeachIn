@@ -7,7 +7,7 @@
  */
 import { useMemo, useRef, useState, type PointerEvent as PE } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter } from 'lucide-react'
+import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp } from 'lucide-react'
 import type { ComandaSala, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useSessione } from '@/context/SessioneContext'
@@ -21,7 +21,8 @@ import { aperteDelTavolo, etichettaStatoSala, nomeUscita, tonoStatoSala, USCITE,
 
 const campo = 'h-9 rounded-lg border border-calce-200 bg-white px-3 text-sm text-profondo focus-visible:focus-ring'
 
-export default function Cameriere() {
+/** `app`: dentro l'app di sala (barra delle schede in fondo, la barra della comanda le sta sopra). */
+export default function Cameriere({ app = false }: { app?: boolean }) {
   const { menu, sezioniMenu, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala } = useDemoData()
   const { profilo } = useSessione()
   const tavoli = useMemo(() => [...tavoliDelGiorno(config.oggi)].sort((a, b) => a.numero - b.numero), [tavoliDelGiorno])
@@ -69,6 +70,7 @@ export default function Cameriere() {
   const [sezione, setSezione] = useState<string>('tutte')
   const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
+  const rifComanda = useRef<HTMLDivElement>(null)
 
   const q = cerca.trim().toLowerCase()
   const righe: RigaComandaSala[] = useMemo(
@@ -97,9 +99,21 @@ export default function Cameriere() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
+    <div className={cn('grid gap-4 md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_380px]', !app && tavolo != null && 'pb-20 md:pb-0')}>
       <div className="space-y-4">
         {/* Tavoli */}
+        {tavolo != null ? (
+          <Card>
+            <CardBody className="flex items-center gap-3 py-3">
+              <span className="grid h-11 w-11 place-content-center rounded-xl bg-gradient-to-br from-profondo to-cabina text-lg font-bold text-white num">{tavolo}</span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-profondo">Tavolo {tavolo}</p>
+                <p className="text-xs text-profondo/55">{aperte.length ? `${aperte.length} comand${aperte.length > 1 ? 'e aperte' : 'a aperta'} · ${euroCent(contoTavolo)}` : 'Nessuna comanda aperta'}</p>
+              </div>
+              <Button dimensione="sm" onClick={() => setTavolo(null)}>Cambia tavolo</Button>
+            </CardBody>
+          </Card>
+        ) : (
         <Card>
           <CardHeader titolo="Tavolo" sottotitolo="Tocca il tavolo per cui prendi la comanda" />
           <CardBody className="pt-2">
@@ -119,6 +133,7 @@ export default function Cameriere() {
             </div>
           </CardBody>
         </Card>
+        )}
 
         {/* Menu */}
         <Card>
@@ -175,7 +190,7 @@ export default function Cameriere() {
       </div>
 
       {/* Comanda in corso + comande del tavolo */}
-      <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+      <div ref={rifComanda} className="scroll-mt-20 space-y-4 md:sticky md:top-4 md:self-start">
         <Card>
           <CardHeader titolo={tavolo == null ? 'Comanda' : `Comanda · tavolo ${tavolo}`} sottotitolo={pezzi ? `${pezzi} piatti · ${euroCent(totale)}` : 'Nessun piatto ancora'} />
           <CardBody className="space-y-3 pt-2">
@@ -242,6 +257,26 @@ export default function Cameriere() {
           </Card>
         )}
       </div>
+
+      {/* su telefono la comanda è in fondo alla pagina: barra fissa con il riepilogo e l'invio (portale: la pagina usa transform) */}
+      {tavolo != null && createPortal(
+        <div className={cn('fixed inset-x-0 z-30 px-3 pb-2 md:hidden', app ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]' : 'bottom-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]')}>
+          <div className="flex items-center gap-2 rounded-2xl bg-profondo p-2 text-white shadow-xl">
+            <button type="button" onClick={() => rifComanda.current?.scrollIntoView({ behavior: 'smooth' })} className="flex min-w-0 flex-1 items-center gap-2 px-2 text-left">
+              <ChevronUp className="h-4 w-4 shrink-0 text-white/60" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">Tavolo {tavolo} · {pezzi ? `${pezzi} piatti` : 'comanda vuota'}</span>
+                <span className="num block text-xs text-white/65">{pezzi ? euroCent(totale) : 'Tocca per vedere uscite e già ordinato'}</span>
+              </span>
+            </button>
+            <button type="button" disabled={!righe.length} onClick={invia}
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-tenda px-4 text-sm font-semibold text-profondo disabled:opacity-40">
+              {inviata ? <><Check className="h-4 w-4" /> Inviata</> : <><Send className="h-4 w-4" /> Invia</>}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

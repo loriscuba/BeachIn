@@ -26,6 +26,7 @@ const Ristorante = lazyRiprova(() => import('@/pages/Ristorante'))
 const MenuPubblico = lazyRiprova(() => import('@/pages/MenuPubblico'))
 const ComandApp = lazyRiprova(() => import('@/pages/ComandApp'))
 const AdminApp = lazyRiprova(() => import('@/pages/AdminApp'))
+const SalaApp = lazyRiprova(() => import('@/pages/SalaApp'))
 const InvitoEvento = lazyRiprova(() => import('@/pages/InvitoEvento'))
 const Costi = lazyRiprova(() => import('@/pages/Costi'))
 const ContoEconomico = lazyRiprova(() => import('@/pages/ContoEconomico'))
@@ -73,6 +74,8 @@ export const router = creaRouter([
   { path: '/comandapp', element: s(<ComandApp />) },
   // App del gestore: prenotazioni ristorante da confermare + menu a voce
   { path: '/adminapp', element: s(<AdminApp />) },
+  // App di sala: cameriere, cucina e tablet self su telefono/tablet
+  { path: '/salaapp', element: s(<SalaApp />) },
   // Invito all'evento col QR (link nella mail di conferma), letto all'ingresso dall'app admin
   { path: '/invito', element: s(<InvitoEvento />) },
 ])

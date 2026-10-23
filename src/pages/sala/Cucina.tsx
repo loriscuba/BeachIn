@@ -26,6 +26,8 @@ export default function Cucina() {
   const { comandeSala, avanzaComandaSala, annullaComandaSala, segnaRigheSala, chiamaUscitaSala } = useDemoData()
   const [suoni, setSuoni] = useState(false)
   const [ora, setOra] = useState(Date.now())
+  // su telefono si vede una colonna alla volta (tablet e computer: tutte e tre)
+  const [colonna, setColonna] = useState<StatoComandaSala>('inviata')
   useEffect(() => { const t = window.setInterval(() => setOra(Date.now()), 30000); return () => window.clearInterval(t) }, [])
 
   // campanello quando arriva una comanda nuova (anche da un altro dispositivo)
@@ -46,13 +48,24 @@ export default function Cucina() {
           {suoni ? <><Bell className="h-4 w-4" /> Campanello attivo</> : <><BellOff className="h-4 w-4" /> Attiva campanello</>}
         </Button>
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-3 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm md:hidden">
+        {COLONNE.map((col) => {
+          const n = comandeSala.filter((c) => c.stato === col.stato).length
+          return (
+            <button key={col.stato} type="button" onClick={() => setColonna(col.stato)}
+              className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', colonna === col.stato ? 'bg-profondo text-white' : 'text-profondo/60')}>
+              <span className={cn('h-2 w-2 rounded-full', col.colore)} />{col.titolo.replace(' da servire', '')}<span className="num opacity-70">{n}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
         {COLONNE.map((col) => {
           // in cucina si lavora dalla più vecchia
           const lista = comandeSala.filter((c) => c.stato === col.stato).sort((a, b) => a.ts - b.ts)
           return (
-            <section key={col.stato} className="space-y-3">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-profondo">
+            <section key={col.stato} className={cn('space-y-3', colonna !== col.stato && 'hidden md:block')}>
+              <h3 className="hidden items-center gap-2 text-sm font-semibold text-profondo md:flex">
                 <span className={cn('h-2.5 w-2.5 rounded-full', col.colore)} /> {col.titolo}
                 <span className="num text-profondo/45">{lista.length}</span>
               </h3>
@@ -92,7 +105,7 @@ function SchedaComanda({ c, ora, onAvanza, onSegna, onVia, onAnnulla }: {
                 )}
                 {u.stato === 'servita' && <span className="text-[11px] text-profondo/45">servita</span>}
                 {u.chiamata && daFare.length > 0 && (
-                  <button type="button" onClick={() => onSegna(daFare, true)} className="ml-auto rounded-full bg-acqua/20 px-2.5 py-0.5 text-[11px] font-semibold text-profondo hover:bg-acqua/35">Uscita pronta</button>
+                  <button type="button" onClick={() => onSegna(daFare, true)} className="ml-auto rounded-full bg-acqua/20 px-3 py-1 text-xs font-semibold text-profondo hover:bg-acqua/35">Uscita pronta</button>
                 )}
               </div>
               {u.righe.map(({ r, i }) => {
@@ -100,7 +113,7 @@ function SchedaComanda({ c, ora, onAvanza, onSegna, onVia, onAnnulla }: {
                 const tocca = u.chiamata && st !== 'servita'
                 return (
                   <button key={i} type="button" disabled={!tocca} onClick={() => onSegna([i], st === 'attesa')}
-                    className={cn('flex w-full items-center gap-2 rounded-lg px-1 py-1 text-left', tocca && 'hover:bg-calce/50', st !== 'attesa' && 'text-profondo/45')}>
+                    className={cn('flex w-full items-center gap-2 rounded-lg px-1 py-1.5 text-left', tocca && 'hover:bg-calce/50', st !== 'attesa' && 'text-profondo/45')}>
                     <span className={cn('grid h-5 w-5 shrink-0 place-content-center rounded-md border', st === 'attesa' ? 'border-calce-300' : 'border-acqua bg-acqua text-white')}>
                       {st !== 'attesa' && <Check className="h-3.5 w-3.5" />}
                     </span>

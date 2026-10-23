@@ -1,0 +1,14 @@
+{
+  "name": "BeachIn Sala — Lido dei Pini",
+  "short_name": "BeachIn Sala",
+  "description": "Comande del ristorante: cameriere, cucina e tablet al tavolo",
+  "start_url": "./#/salaapp",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EDF1F2",
+  "theme_color": "#0E2A22",
+  "icons": [
+    { "src": "sala-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "sala-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
