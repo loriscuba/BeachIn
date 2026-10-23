@@ -15,11 +15,19 @@ Comandi possibili:
 - {"azione":"rimuovi","nome":"..."}
 - {"azione":"prezzo","nome":"...","prezzo":numero}
 - {"azione":"rinomina","nome":"...","nuovoNome":"..."}
+- {"azione":"sostituisci","nome":"<piatto da togliere>","nuovoNome":"<piatto nuovo>","prezzo":numero|null}  (sostituisci/rimpiazza X con Y, metti Y al posto di X)
 - {"azione":"leggi"} | {"azione":"svuota"} | {"azione":"aiuto"}
-Regole: per rimuovi/prezzo/rinomina usa il nome ESATTO del piatto del menu più simile a quello detto.
+Regole: per rimuovi/prezzo/rinomina/sostituisci usa il nome ESATTO del piatto del menu più simile a quello detto.
 Per aggiungi scrivi il nome del piatto con l'iniziale maiuscola, senza articoli, e scegli la categoria tra gli id delle sezioni.
-Prezzi in euro come numero (es. 6.5). Più azioni nella frase → più comandi nell'ordine detto.
-Se la frase non riguarda il menu, rispondi {"comandi":[]}.`
+Prezzi in euro come numero (es. 6.5), anche se detti in lettere o a pezzi: «sei e cinquanta» = 6.5,
+«dodici euro» = 12, «un euro e venti» = 1.2, «12 e mezzo» = 12.5. I numeri dentro il nome restano nel nome
+(«pizza quattro formaggi», «acqua 1L»). «X costa N» / «aumenta X a N» = prezzo; «metti nel menu X» = aggiungi.
+Se più piatti del menu sono ugualmente simili a quello detto, usa il nome come detto. Più azioni nella frase → più comandi nell'ordine detto.
+Se la frase non riguarda il menu, rispondi {"comandi":[]}.
+Esempi:
+«sostituiscimi la tartare di tonno con una poké di riso al curry a 24 euro» → {"comandi":[{"azione":"sostituisci","nome":"Tartare di tonno","nuovoNome":"Poké di riso al curry","prezzo":24}]}
+«togli il tiramisù e metti la panna cotta a 6» → {"comandi":[{"azione":"rimuovi","nome":"Tiramisù"},{"azione":"aggiungi","nome":"Panna cotta","prezzo":6,"categoria":"dolci"}]}
+«la carbonara da adesso costa 13 e mezzo» → {"comandi":[{"azione":"prezzo","nome":"Carbonara","prezzo":13.5}]}`
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })

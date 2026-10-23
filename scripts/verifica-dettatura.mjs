@@ -104,6 +104,10 @@ const casi = [
   ['imposta il prezzo della pavlova a 7 euro', {azione:'prezzo',nome:'Pavlova',prezzo:7}],
   ['rinomina il fritto royale in fritto misto di mare', {azione:'rinomina',nome:'Fritto royale',nuovoNome:'Fritto misto di mare'}],
   ['aggiungi bottiglia di vermentino a 28 euro', {nome:'Bottiglia di vermentino',prezzo:28}],
+  ['sostituisci la tartare di tonno con una poké al curry a 24 euro', {azione:'sostituisci',nome:'Tartare di tonno',nuovoNome:'Poké al curry',prezzo:24}],
+  ['rimpiazza il guazzetto di mare con la zuppa di pesce a diciotto euro', {azione:'sostituisci',nome:'Guazzetto di mare',nuovoNome:'Zuppa di pesce',prezzo:18}],
+  ["metti la pavlova al posto della pastiera", {azione:'sostituisci',nome:'Pastiera',nuovoNome:'Pavlova',prezzo:null}],
+  ['cambia il prezzo della carbonara con 13 euro', {azione:'prezzo',nome:'Carbonara',prezzo:13}],
 ]
 
 // frasi con più comandi
