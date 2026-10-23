@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "test": "node scripts/verifica-marketing.mjs"
+    "test": "node scripts/verifica-marketing.mjs && node scripts/verifica-dettatura.mjs",
+    "test:dettatura": "node scripts/verifica-dettatura.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
