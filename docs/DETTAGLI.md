@@ -124,6 +124,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - DB (migrazione `0015_comande_sala.sql`): `beachin.comande_sala` (Realtime, policy demo anon + staff secondo `sala`),
   colonna `menu_piatti.descrizione` (modificabile in Ristorante → Menu, riempita per i piatti dimostrativi da
   `src/data/seed/descrizioniMenu.ts`). Foto copertina del tablet da Unsplash (`fotoCopertinaSala` in `src/lib/sala.ts`).
+- Foto dei piatti (migrazione `0016_foto_menu.sql`, solo dove mancano): immagini libere Unsplash scelte su nome/descrizione,
+  stessi URL in `fotoMenu` del seed. Segnaposto finché il locale non carica le sue da Ristorante → Menu.
 
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a

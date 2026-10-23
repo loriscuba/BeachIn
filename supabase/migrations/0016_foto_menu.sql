@@ -1,0 +1,35 @@
+-- Foto dei piatti per il tablet self (ott 2026): immagini libere Unsplash scelte in base a nome e descrizione,
+-- solo dove il piatto non ha già una foto. Si sostituiscono con quelle vere da Ristorante → Menu.
+update beachin.menu_piatti p set foto = v.foto
+from (values
+  ('Tartare di tonno al naturale', 'https://images.unsplash.com/photo-1779635593350-47a648e174ce?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Duetto di acciughe e verdurine', 'https://images.unsplash.com/photo-1780823231663-6f08dde9b54c?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Penne con porri e salsiccia', 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Gnocchi di patate con crema di gorgonzola e gherigli di noci', 'https://images.unsplash.com/photo-1755677617146-9d69ea16b199?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Spaghetto Lido', 'https://images.unsplash.com/photo-1635475556713-8d3ff880d9ba?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Tagliatelle al ragù di fassona piemontese', 'https://images.unsplash.com/photo-1734356959885-54fe2e99c1cd?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Cappellacci bianchi e neri al profumo di mare', 'https://images.unsplash.com/photo-1636475735446-bfc801fa6f2c?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Tagliatelle al nero di seppia, tartare di gambero e stracciatella affumicata', 'https://images.unsplash.com/photo-1765100778802-f684a4b7fd20?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Pasta allo scoglio', 'https://images.unsplash.com/photo-1775634018153-51e9884dbf7c?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Insalata di mare', 'https://images.unsplash.com/photo-1771342755991-9a731f18e1f1?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Insalata di mare €', 'https://images.unsplash.com/photo-1771342755991-9a731f18e1f1?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Orata alla griglia', 'https://images.unsplash.com/photo-1773417461034-75e751de40ba?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Fritto royale', 'https://images.unsplash.com/photo-1682264895449-f75b342cbab6?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Trancio di spada alla griglia con aromi di Provenza', 'https://images.unsplash.com/photo-1551014700-0ca41391f312?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Filetto di fassona con burro aromatizzato alle erbe liguri', 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Tagliata di fassona spadellata con burro aromatizzato e salsa di soia (all''etto)', 'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Costine di maiale, coppa di vitello, pollo e arrosticini', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Colomba pasquale con crema al latte all''arancia', 'https://images.unsplash.com/photo-1604850723811-35d9702ee794?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Pavlova con frutti di bosco freschi', 'https://images.unsplash.com/photo-1634324040880-63dbf9a4e5ac?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Bunetto al cioccolato e amaretto di Saronno', 'https://images.unsplash.com/photo-1673551494277-92204546b504?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Pastiera napoletana al cioccolato', 'https://images.unsplash.com/photo-1777013486317-6defcbf4b2d4?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Panna cotta ai frutti di bosco con meringa alla mandorla', 'https://images.unsplash.com/photo-1787550275377-9f54a07c68c8?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Crostatina con panna cotta ai mirtilli', 'https://images.unsplash.com/photo-1644158774412-ee92bcab0a2f?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Gelato al fior di latte con Chartreuse francese', 'https://images.unsplash.com/photo-1618581260815-9371027b9516?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Acqua minerale 1L', 'https://images.unsplash.com/photo-1553564552-02656d6a2390?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Vino della casa (calice)', 'https://images.unsplash.com/photo-1585553616435-2dc0a54e271d?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Vino della casa (bottiglia)', 'https://images.unsplash.com/photo-1544776527-68e63addedf7?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Birra artigianale', 'https://images.unsplash.com/photo-1632173517757-1e87c79de596?auto=format&fit=crop&w=600&h=600&q=70'),
+  ('Caffè', 'https://images.unsplash.com/photo-1572286258217-40142c1c6a70?auto=format&fit=crop&w=600&h=600&q=70')
+) as v(nome, foto)
+where p.nome = v.nome and p.foto is null;
