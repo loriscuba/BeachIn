@@ -115,9 +115,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Ristorante lo trova attivo una volta, flag `beachin.moduli.sala`). Permesso `sala` nella griglia ruoli; ruolo **Cucina** (`sala`=2).
 - **App separata `/salaapp`** (`src/pages/SalaApp.tsx`, "BeachIn Sala", manifest `public/sala.webmanifest`, icone `sala-icon-*`):
   login staff (`LoginGestore`), serve modulo `sala` attivo + permesso `sala`≥1; schede in basso Cameriere/Cucina/Tablet self
-  (scheda ricordata in `salaapp.scheda.v1`). Link + QR in cima alla pagina Comande sala (`urlSalaApp()` in `lib/sala.ts`).
+  (a ogni apertura schermata "Cosa fai con questo dispositivo?": Cameriere / Cucina / Tablet self). Link + QR in cima alla pagina Comande sala (`urlSalaApp()` in `lib/sala.ts`).
 - Telefono/tablet: dal `md` cameriere su due colonne; su telefono tavolo scelto compresso ("Cambia tavolo") e barra fissa in
   basso con riepilogo + Invia (prop `app` la alza sopra le schede); cucina su telefono una colonna alla volta (selettore).
+  Campi a 16px su telefono (niente zoom di iPhone), colonne grid `minmax(0,1fr)`/`min-w-0` per non uscire dallo schermo.
 - Pagina `src/pages/Sala.tsx` (rotta `/sala`, schede `?tab=cameriere|cucina|self`, voci sotto Ristorante nel menu laterale,
   badge `cucina` = comande `inviata`). Componenti in `src/pages/sala/`: `Cameriere` (tavoli del giorno → piatti del menu del
   Ristorante → Invia in cucina, coperti/note, comande già aperte del tavolo e conto), `Cucina` (colonne Da fare / In preparazione /
