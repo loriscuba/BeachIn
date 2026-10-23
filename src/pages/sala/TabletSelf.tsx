@@ -11,7 +11,7 @@ import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, etichettaStatoSala, fotoCopertinaSala } from '@/lib/sala'
+import { aperteDelTavolo, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
 
 // Palette del tablet: verde bosco, crema e oro
@@ -35,7 +35,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
 
   const sezioni = useMemo(() => sezioniMenu.map((s) => ({ ...s, piatti: menu.filter((p) => p.categoria === s.id) })).filter((s) => s.piatti.length), [menu, sezioniMenu])
   const righe: RigaComandaSala[] = useMemo(
-    () => sezioni.flatMap((s) => s.piatti.filter((p) => qta[p.id]).map((p) => ({ piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo }))),
+    () => sezioni.flatMap((s) => s.piatti.filter((p) => qta[p.id]).map((p) => ({ piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo, uscita: uscitaPredefinita(s.id) }))),
     [sezioni, qta]
   )
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)

@@ -256,14 +256,21 @@ export interface Comanda {
 /** Flusso in cucina: inviata → in preparazione → pronta → servita. */
 export type StatoComandaSala = 'inviata' | 'in_preparazione' | 'pronta' | 'servita'
 
+/** Stato del singolo piatto in cucina. */
+export type StatoRigaSala = 'attesa' | 'pronta' | 'servita'
+
 export interface RigaComandaSala {
   piattoId: string
   nome: string
-  /** Sezione del menu (Antipasti, Primi…): la cucina raggruppa per uscita. */
+  /** Sezione del menu (Antipasti, Primi…). */
   sezione: string
   quantita: number
   prezzoUnitario: number
   note?: string
+  /** Uscita: 0 = subito (bevande), 1 = prima uscita, 2 = seconda… (assente nelle comande vecchie = 1). */
+  uscita?: number
+  /** Assente nelle comande vecchie: si ricava dallo stato della comanda. */
+  stato?: StatoRigaSala
 }
 
 export interface ComandaSala {
@@ -280,6 +287,8 @@ export interface ComandaSala {
   cameriere?: string
   coperti?: number
   note?: string
+  /** Uscite chiamate dal cameriere ("via"): la cucina prepara quelle ≤ uscitaVia. Assente = tutte. */
+  uscitaVia?: number
 }
 
 // ————————————————————————————————————————————————————————————

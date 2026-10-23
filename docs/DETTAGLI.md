@@ -124,6 +124,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - DB (migrazione `0015_comande_sala.sql`): `beachin.comande_sala` (Realtime, policy demo anon + staff secondo `sala`),
   colonna `menu_piatti.descrizione` (modificabile in Ristorante → Menu, riempita per i piatti dimostrativi da
   `src/data/seed/descrizioniMenu.ts`). Foto copertina del tablet da Unsplash (`fotoCopertinaSala` in `src/lib/sala.ts`).
+- **Uscite** (migrazione `0017_uscite_sala.sql`, colonna `uscita_via`): ogni riga ha `uscita` (0 Subito, 1ª, 2ª, 3ª; proposta da
+  `uscitaPredefinita(sezione)`: bevande 0, secondi/grigliata 2, dolci 3, resto 1) e `stato` (attesa/pronta/servita). Il cameriere
+  trascina i piatti tra le uscite (HTML5 drag&drop + tasto col numero che passa alla successiva, per i telefoni), poi su
+  "Già ordinato" dà il **via** alla prossima uscita e segna **Servita** quella pronta. In Cucina i piatti sono divisi per uscita:
+  tocco = pronto, "Uscita pronta" = tutta; le uscite senza via sono tratteggiate ("aspetta il via", toccabile per iniziarle comunque).
+  Lo stato della comanda si ricava dai piatti (`ricalcolaStato` in `src/lib/sala.ts`). Azioni `segnaRigheSala`, `chiamaUscitaSala`.
 - Foto dei piatti (migrazione `0016_foto_menu.sql`, solo dove mancano): immagini libere Unsplash scelte su nome/descrizione,
   stessi URL in `fotoMenu` del seed. Segnaposto finché il locale non carica le sue da Ristorante → Menu.
 
