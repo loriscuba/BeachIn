@@ -83,6 +83,10 @@ gestire chiavi e costi.
     Edge Function `beachin-utenti`, Impostazioni → Utenti e ruoli). Dettagli in `docs/DETTAGLI.md`.
   - [ ] Fase 2: togliere le policy "demo anon" e lasciare ad anon solo le azioni dei clienti (serve rivedere il sync del
     `DemoDataContext` sulle pagine pubbliche, che oggi legge e scrive tutte le tabelle).
+  - [ ] (25/10/2026, scelta di Loris dopo lo stress test comande) **Ogni pagina carica solo i suoi dati**: il telefono col QR
+    (`/tavolo`), `/menu` e ComandApp scaricano solo menu, tavolo e le proprie comande, non prenotazioni, richieste con nomi e
+    telefoni o comande degli altri. Oggi `DemoDataProvider` avvolge tutta l'app e sincronizza 15 tabelle ovunque. Va fatta
+    insieme alla Fase 2 qui sopra. Prima arriva la PR "comande di oggi + aggiornamento riga per riga".
   - [ ] Produzione: dopo il deploy creare il primo amministratore (procedura in `docs/DETTAGLI.md` → "Utenti, ruoli e permessi").
 - [ ] **Menu QR condiviso tra dispositivi**: oggi il menu vive nel browser del gestore; chi scansiona il QR vede il
   menu iniziale. In produzione serve un database (es. Supabase) da cui leggono gestionale e `/menu`.
