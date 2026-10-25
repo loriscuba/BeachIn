@@ -14,6 +14,16 @@ interface Opzioni<T extends { id: string }> {
   ordina: (a: Riga, b: Riga) => number
   /** Se la tabella è vuota al primo avvio, la popola con i dati iniziali locali. */
   semina?: boolean
+  /**
+   * Solo le righe che servono (es. comande non pagate o di oggi): `or` è il filtro della lettura (sintassi PostgREST),
+   * `tieni` la stessa regola per le modifiche dal vivo. Le righe escluse restano nel DB e non vengono mai cancellate.
+   */
+  filtro?: { or: () => string; tieni: (r: Riga) => boolean }
+  /**
+   * Le modifiche dal vivo aggiornano solo la riga cambiata invece di rileggere la tabella.
+   * Solo per tabelle che non salvano l'ordine (`aRiga` non usa l'indice).
+   */
+  perRiga?: boolean
   /** Righe nuove scritte con «inserisci se manca»: se un altro dispositivo l'ha creata prima, vince la sua (e si rilegge). */
   nuoveSenzaSovrascrivere?: boolean
 }
@@ -23,11 +33,11 @@ interface Opzioni<T extends { id: string }> {
  * lettura iniziale, scrittura delle differenze (upsert/delete) a ogni modifica locale
  * e aggiornamento dal vivo via Realtime. Senza Supabase configurato non fa nulla.
  */
-export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setRighe, aRiga, daRiga, ordina, semina, nuoveSenzaSovrascrivere }: Opzioni<T>) {
+export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setRighe, aRiga, daRiga, ordina, semina, nuoveSenzaSovrascrivere, filtro, perRiga }: Opzioni<T>) {
   const pronto = useRef(false)
   const foto = useRef(new Map<string, string>()) // id → JSON dell'ultima riga nota al DB
-  const opz = useRef({ aRiga, daRiga, ordina })
-  opz.current = { aRiga, daRiga, ordina }
+  const opz = useRef({ aRiga, daRiga, ordina, filtro })
+  opz.current = { aRiga, daRiga, ordina, filtro }
   const righeRef = useRef(righe)
   righeRef.current = righe
   const ricaricaRef = useRef(async () => {})
@@ -43,8 +53,12 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
       foto.current = new Map(oggetti.map((o, i) => [o.id, JSON.stringify(opz.current.aRiga(o, i))]))
       setRighe(oggetti)
     }
+    const leggi = () => {
+      const q = db.from(tabella).select('*')
+      return opz.current.filtro ? q.or(opz.current.filtro.or()) : q
+    }
     ;(async () => {
-      const { data, error } = await db.from(tabella).select('*')
+      const { data, error } = await leggi()
       if (!attivo) return
       if (error) { console.error(`[supabase] ${tabella}:`, error.message); return }
       if (!data.length && semina && righeRef.current.length) {
@@ -60,13 +74,27 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
     // ricarica la tabella: semplice e sempre coerente (tabelle piccole)
     const ricarica = async () => {
       if (!pronto.current) return
-      const { data } = await db.from(tabella).select('*')
+      const { data } = await leggi()
       if (attivo && data) applica(data as Riga[])
     }
     ricaricaRef.current = ricarica
     const canale = db
       .channel(`sync-${tabella}`)
-      .on('postgres_changes', { event: '*', schema: SCHEMA, table: tabella }, () => void ricarica())
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: tabella }, (p) => {
+        if (!perRiga || !pronto.current) return void ricarica()
+        // solo la riga cambiata: niente download della tabella intera a ogni tocco
+        const nuova = p.eventType === 'DELETE' ? null : (p.new as Riga)
+        const id = String((nuova ?? (p.old as Riga)).id)
+        const { aRiga: aR, daRiga: daR, ordina: ord, filtro: f } = opz.current
+        const tenuta = nuova && (!f || f.tieni(nuova)) ? daR(nuova) : null
+        // la foto segue: una riga uscita dal filtro sparisce da qui senza essere cancellata dal DB
+        if (tenuta) foto.current.set(id, JSON.stringify(aR(tenuta, 0)))
+        else foto.current.delete(id)
+        setRighe((prev) => {
+          const senza = prev.filter((x) => x.id !== id)
+          return tenuta ? [...senza, tenuta].sort((a, b) => ord(aR(a, 0), aR(b, 0))) : senza
+        })
+      })
       // (ri)connessione del canale live: recupera quanto perso mentre era giù
       .subscribe((stato) => { if (stato === 'SUBSCRIBED') void ricarica() })
     // Su telefono l'app in background viene sospesa e il canale live cade:
@@ -82,7 +110,7 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
       window.removeEventListener('online', suVisibile)
       window.removeEventListener('pageshow', suVisibile)
     }
-  }, [tabella, semina, setRighe])
+  }, [tabella, semina, setRighe, perRiga])
 
   // Scrittura delle differenze locali
   useEffect(() => {

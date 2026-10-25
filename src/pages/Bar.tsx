@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useSearchParams } from 'react-router-dom'
@@ -138,14 +138,27 @@ function DettaglioComanda({ c, conOmbrellone }: { c: Comanda; conOmbrellone?: bo
 
 const giornoDi = (c: Comanda) => format(c.ts ?? Date.now(), 'yyyy-MM-dd')
 
-/** Dettaglio del giorno: tutte le comande (incassate e no) della giornata scelta. */
+/**
+ * Dettaglio del giorno: tutte le comande (incassate e no) della giornata scelta.
+ * Con Supabase i dispositivi tengono solo le comande di oggi e quelle da incassare: i giorni passati si leggono dal DB.
+ */
 function Giornata() {
-  const { comande } = useDemoData()
+  const { comande, leggiComandeGiorno, giorniComande } = useDemoData()
   const oggi = format(new Date(), 'yyyy-MM-dd')
-  const giorni = useMemo(() => [...new Set([oggi, ...comande.map(giornoDi)])].sort().reverse(), [comande, oggi])
+  const [passati, setPassati] = useState<string[]>([])
+  useEffect(() => { void giorniComande().then((ts) => ts && setPassati(ts.map((t) => format(t, 'yyyy-MM-dd')))) }, [giorniComande])
+  const giorni = useMemo(() => [...new Set([oggi, ...passati, ...comande.map(giornoDi)])].sort().reverse(), [comande, oggi, passati])
   const [giorno, setGiorno] = useState(oggi)
   const [aperta, setAperta] = useState<string>()
-  const delGiorno = comande.filter((c) => giornoDi(c) === giorno).sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0))
+  const [delDb, setDelDb] = useState<{ giorno: string; comande: Comanda[] }>()
+  useEffect(() => {
+    if (giorno === oggi) return
+    let attivo = true
+    void leggiComandeGiorno(giorno).then((lista) => { if (attivo && lista) setDelDb({ giorno, comande: lista }) })
+    return () => { attivo = false }
+  }, [giorno, oggi, leggiComandeGiorno])
+  const fonte = giorno !== oggi && delDb?.giorno === giorno ? delDb.comande : comande
+  const delGiorno = fonte.filter((c) => giornoDi(c) === giorno).sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0))
   const incassato = delGiorno.filter((c) => c.pagata).reduce((s, c) => s + c.totale, 0)
   const totale = delGiorno.reduce((s, c) => s + c.totale, 0)
   return (

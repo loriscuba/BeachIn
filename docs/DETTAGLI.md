@@ -201,6 +201,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Una scrittura rifiutata fa rileggere la tabella (`useSyncSupabase`).
 - Trigger `tavolo_qr_codice_fisso`: il `codice` non cambia mai; `tavoli_qr` crea le righe nuove con «inserisci se manca»
   (`nuoveSenzaSovrascrivere`) e poi rilegge.
+- **Comande leggere** (25/10): `comande` e `comande_sala` si scaricano solo non pagate o di oggi (`FILTRO_COMANDE` nel context,
+  opzione `filtro` di `useSyncSupabase`) e con `perRiga` le modifiche dal vivo aggiornano la sola riga arrivata col Realtime invece
+  di rileggere la tabella (solo tabelle senza ordine salvato). Le righe fuori filtro restano nel DB e non vengono mai cancellate.
+  Bar → Dettaglio del giorno legge i giorni passati dal DB (`leggiComandeGiorno`, `giorniComande`). Le altre 13 tabelle rileggono
+  ancora tutto a ogni modifica (sono piccole); il caricamento per pagina è negli APPUNTI come cosa da fare prima della produzione.
 - Cucina: le comande che aspettano solo il via (`aspettaVia` in lib/sala) stanno in fondo a Da fare sotto «Aspettano il via»,
   non contano nel numero della colonna e non suonano.
 

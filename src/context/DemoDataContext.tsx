@@ -64,6 +64,12 @@ const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
 const CHIAVE_COMANDE_SALA = 'beachin.comandesala.v1'
 const CHIAVE_TAVOLI_QR = 'beachin.tavoliqr.v1'
 /** Codice del QR del tavolo: 10 caratteri casuali (il link non si indovina dal numero del tavolo). */
+/** Comande da tenere sui dispositivi: non pagate o di oggi (le altre restano nel DB, lette su richiesta). */
+const inizioOggi = () => new Date().setHours(0, 0, 0, 0)
+const FILTRO_COMANDE = {
+  or: () => `pagata.eq.false,ts.gte.${inizioOggi()}`,
+  tieni: (r: Record<string, unknown>) => !r.pagata || Number(r.ts) >= inizioOggi(),
+}
 const codiceQr = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('')
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
@@ -220,6 +226,10 @@ interface DemoDataValue {
   impostaTavoloQr: (numero: number, patch: Partial<Pick<TavoloQr, 'menu' | 'aperto'>>) => void
   /** Chiude il conto del tavolo (comande pagate e servite), prepara un conto nuovo vuoto e chiude il tavolo ai QR. */
   chiudiContoTavolo: (numero: number) => void
+  /** Comande dagli ombrelloni di un giorno passato, lette dal DB (null senza Supabase: sono tutte già in `comande`). */
+  leggiComandeGiorno: (giorno: string) => Promise<Comanda[] | null>
+  /** Orari (ts) delle comande salvate, per l'elenco dei giorni (null senza Supabase). */
+  giorniComande: () => Promise<number[] | null>
   /** Il conto del tavolo è ancora quello (e il tavolo aperto)? Con Supabase lo chiede al DB, non alla copia locale. */
   verificaContoTavolo: (numero: number, seduta: string) => Promise<boolean>
 
@@ -352,6 +362,13 @@ interface DemoDataValue {
 
 const DemoDataContext = createContext<DemoDataValue | null>(null)
 
+const comandaDaRiga = (r: Record<string, unknown> & { id: string }): Comanda => ({
+  id: r.id, ombrellone: r.ombrellone as string, righe: r.righe as Comanda['righe'], totale: Number(r.totale),
+  stato: r.stato as StatoComanda, ora: r.ora as string, note: (r.note as string) ?? undefined,
+  origine: (r.origine as Comanda['origine']) ?? undefined, cliente: (r.cliente as string) ?? undefined, ts: Number(r.ts),
+  pagata: !!r.pagata,
+})
+
 export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [postazioni, setPostazioni] = useState<Postazione[]>(() => clona(seedPostazioni))
   const [conti, setConti] = useState<ContoOmbrellone[]>([])
@@ -451,19 +468,26 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('storage', suCambio)
   }, [])
   useSyncSupabase({
-    tabella: 'comande', righe: comande, setRighe: setComande,
+    tabella: 'comande', righe: comande, setRighe: setComande, filtro: FILTRO_COMANDE, perRiga: true,
     aRiga: (c) => ({
       id: c.id, ombrellone: c.ombrellone, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora,
       note: c.note ?? null, origine: c.origine ?? null, cliente: c.cliente ?? null, ts: c.ts ?? 0, pagata: !!c.pagata,
     }),
-    daRiga: (r) => ({
-      id: r.id, ombrellone: r.ombrellone as string, righe: r.righe as Comanda['righe'], totale: Number(r.totale),
-      stato: r.stato as StatoComanda, ora: r.ora as string, note: (r.note as string) ?? undefined,
-      origine: (r.origine as Comanda['origine']) ?? undefined, cliente: (r.cliente as string) ?? undefined, ts: Number(r.ts),
-      pagata: !!r.pagata,
-    }),
+    daRiga: comandaDaRiga,
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
+  // Giorni passati (pagina Bar → Dettaglio del giorno): letti dal DB solo quando servono
+  const leggiComandeGiorno = useCallback(async (giorno: string): Promise<Comanda[] | null> => {
+    if (!supabase) return null
+    const da = new Date(`${giorno}T00:00`).getTime()
+    const { data } = await supabase.from('comande').select('*').gte('ts', da).lt('ts', da + 86400000)
+    return (data ?? []).map((r) => comandaDaRiga(r as Record<string, unknown> & { id: string }))
+  }, [])
+  const giorniComande = useCallback(async (): Promise<number[] | null> => {
+    if (!supabase) return null
+    const { data } = await supabase.from('comande').select('ts').order('ts', { ascending: false }).limit(5000)
+    return (data ?? []).map((r) => Number(r.ts))
+  }, [])
   // Comande del ristorante (sala → cucina): come le comande del bar, localStorage tra schede o Supabase tra dispositivi.
   const [comandeSala, setComandeSala] = useState<ComandaSala[]>(() => {
     if (supabaseAttivo) return []
@@ -485,7 +509,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const comandeSalaRef = useRef(comandeSala)
   useEffect(() => { comandeSalaRef.current = comandeSala }, [comandeSala])
   const syncSala = useSyncSupabase({
-    tabella: 'comande_sala', righe: comandeSala, setRighe: setComandeSala,
+    tabella: 'comande_sala', righe: comandeSala, setRighe: setComandeSala, filtro: FILTRO_COMANDE, perRiga: true,
     aRiga: (c) => ({
       id: c.id, tavolo: c.tavolo, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora, ts: c.ts, origine: c.origine,
       cameriere: c.cameriere ?? null, coperti: c.coperti ?? null, note: c.note ?? null, uscita_via: c.uscitaVia ?? null,
@@ -1422,6 +1446,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       impostaTavoloQr,
       chiudiContoTavolo,
       verificaContoTavolo,
+      leggiComandeGiorno,
+      giorniComande,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,
@@ -1535,6 +1561,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       impostaTavoloQr,
       chiudiContoTavolo,
       verificaContoTavolo,
+      leggiComandeGiorno,
+      giorniComande,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,
