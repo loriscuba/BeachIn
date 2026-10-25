@@ -1,6 +1,7 @@
 /**
  * Tablet self al tavolo: menu a tutto schermo, verde bosco ed elegante (spunto dal layout di Loris),
  * con foto rotonde, descrizioni e prezzi per sezione. Il cliente compone l'ordine e lo manda in cucina.
+ * Con il modulo Bar al tavolo, dopo i piatti ci sono le sezioni del listino bar (le bevande vanno al bar).
  * Bloccato: si esce solo col PIN scelto dal personale.
  */
 import { useMemo, useState } from 'react'
@@ -8,10 +9,11 @@ import { createPortal } from 'react-dom'
 import { Lock, Minus, Plus, ShoppingBag, UtensilsCrossed, X, Send, Check, ChefHat } from 'lucide-react'
 import type { Piatto, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
+import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
+import { aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
 
 // Palette del tablet: verde bosco, crema e oro
@@ -26,16 +28,27 @@ const ALLERGENI: Record<string, string> = {
 }
 
 export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci: () => void }) {
-  const { menu, sezioniMenu, comandeSala, inviaComandaSala } = useDemoData()
+  const { menu, sezioniMenu, articoliBar, sezioniBar, comandeSala, inviaComandaSala } = useDemoData()
+  const conBar = useModuli().moduloAttivo('bar-tavolo')
   const [qta, setQta] = useState<Record<string, number>>({})
   const [note, setNote] = useState('')
   const [carrello, setCarrello] = useState(false)
   const [grazie, setGrazie] = useState(false)
   const [sblocco, setSblocco] = useState(false)
 
-  const sezioni = useMemo(() => sezioniMenu.map((s) => ({ ...s, piatti: menu.filter((p) => p.categoria === s.id) })).filter((s) => s.piatti.length), [menu, sezioniMenu])
+  const sezioni = useMemo(() => {
+    const bevande = articoliComePiatti(articoliBar)
+    return [
+      ...sezioniMenu.map((s) => ({ ...s, bar: false, piatti: menu.filter((p) => p.categoria === s.id) })),
+      // id con prefisso: una categoria del bar può chiamarsi come una sezione del menu
+      ...(conBar ? sezioniBar.map((s) => ({ ...s, id: `bar-${s.id}`, bar: true, piatti: bevande.filter((p) => p.categoria === s.id) })) : []),
+    ].filter((s) => s.piatti.length)
+  }, [menu, sezioniMenu, articoliBar, sezioniBar, conBar])
   const righe: RigaComandaSala[] = useMemo(
-    () => sezioni.flatMap((s) => s.piatti.filter((p) => qta[p.id]).map((p) => ({ piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo, uscita: uscitaPredefinita(s.id) }))),
+    () => sezioni.flatMap((s) => s.piatti.filter((p) => qta[p.id]).map((p) => ({
+      piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo,
+      ...(s.bar ? { uscita: 0, reparto: 'bar' as const } : { uscita: uscitaPredefinita(s.id) }),
+    }))),
     [sezioni, qta]
   )
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
@@ -98,6 +111,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
       <main className="mx-auto max-w-6xl space-y-14 px-6 pb-40 sm:px-8">
         {sezioni.map((s, i) => (
           <section key={s.id} id={`self-${s.id}`} className="scroll-mt-28">
+            {s.bar && !sezioni[i - 1]?.bar && <p className="mb-10 text-center text-xs uppercase tracking-[0.35em] text-[#D9B66A]/70">— Dal bar —</p>}
             <div className="mb-6 text-center">
               <p className={cn('font-gesso text-2xl', ORO)}>{String(i + 1).padStart(2, '0')}</p>
               <h2 className="font-display text-4xl italic">{s.nome}</h2>

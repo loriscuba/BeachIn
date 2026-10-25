@@ -271,6 +271,8 @@ export interface RigaComandaSala {
   uscita?: number
   /** Assente nelle comande vecchie: si ricava dallo stato della comanda. */
   stato?: StatoRigaSala
+  /** Chi la prepara: 'bar' = articolo del listino bar (modulo Bar al tavolo). Assente = cucina. */
+  reparto?: 'cucina' | 'bar'
 }
 
 export interface ComandaSala {

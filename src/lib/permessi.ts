@@ -19,6 +19,7 @@ export const SEZIONI: { id: Sezione; nome: string }[] = [
   { id: 'comande', nome: 'Comande' },
   { id: 'ristorante', nome: 'Ristorante' },
   { id: 'sala', nome: 'Comande ristorante' },
+  { id: 'bar-tavolo', nome: 'Bar al tavolo (coda bar)' },
   { id: 'eventi', nome: 'Eventi' },
   { id: 'sito', nome: 'Sito e app clienti' },
   { id: 'costi', nome: 'Costi' },
