@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -32,7 +33,7 @@ export function Drawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [aperto, onChiudi])
 
-  return (
+  return createPortal(
     <>
       <div
         className={cn(
@@ -73,6 +74,7 @@ export function Drawer({
 
         {piede && <div className="border-t border-calce-200 bg-white p-3">{piede}</div>}
       </aside>
-    </>
+    </>,
+    document.body
   )
 }
