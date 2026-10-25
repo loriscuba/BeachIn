@@ -88,7 +88,7 @@ export default function Sito() {
             { valore: 'app', etichetta: 'App clienti' },
           ]}
         />
-        <Link to="/sito/anteprima">
+        <Link to="/sito/anteprima" target="_blank" rel="noopener noreferrer">
           <Button variante="primario" dimensione="sm"><ExternalLink className="h-4 w-4" /> Anteprima sito</Button>
         </Link>
       </div>
