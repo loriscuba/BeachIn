@@ -8,6 +8,71 @@ import { creaRng, intero, scegli, arrotonda, forse, type Rng } from './_rng'
 import { giorni, dettaglioBarGiorno } from './giornaliero'
 import { postazioni } from './spiaggia'
 
+/** Foto del listino (Unsplash, libere): si cambiano da Bar → Listino. */
+const u = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&h=600&q=70`
+export const fotoBar: Record<string, string> = {
+  'Caffè espresso': u('1485808191679-5f86510681a2'),
+  'Caffè macchiato': u('1563090308-5a7889e40542'),
+  'Cappuccino': u('1770448993107-81c89c28f84b'),
+  'Caffè shakerato': u('1577594412934-9b28db62ce6a'),
+  'Tè freddo pesca': u('1676693420436-7fa448f054eb'),
+  'Tè freddo limone': u('1758705206938-a196ac3ae3bb'),
+  'Cornetto': u('1623334044303-241021148842'),
+  'Brioche alla crema': u('1786426119462-380a67b9d838'),
+  "Spremuta d'arancia": u('1600271886742-f049cd451bba'),
+  'Caffè ginseng': u('1595434091143-b375ced5fe5c'),
+  'Acqua naturale 0,5L': u('1762681206108-ce20fc3cf7c2'),
+  'Acqua frizzante 0,5L': u('1613639119901-da64d78fe61f'),
+  'Coca-Cola': u('1574706226623-e5cc0da928c6'),
+  'Coca-Cola Zero': u('1543253687-c931c8e01820'),
+  'Fanta': u('1624517452488-04869289c4ca'),
+  'Sprite': u('1557746534-7e6ca4397ff5'),
+  'Chinotto': u('1636144832475-0d81f893354d'),
+  'Estathé': u('1601390395693-364c0e22031a'),
+  'Red Bull': u('1613218222876-954978a4404e'),
+  'Birra piccola': u('1608270586620-248524c67de9'),
+  'Birra media': u('1758380742009-163a0deee80e'),
+  'Birra artigianale': u('1632173517757-1e87c79de596'),
+  'Corona': u('1543328919-d1c63a7e836a'),
+  'Ichnusa non filtrata': u('1709010454595-1e8328c9f3c3'),
+  'Moretti': u('1639996889453-f95e871c1df6'),
+  'Heineken': u('1649628194010-ef5d798ae701'),
+  'Radler': u('1676408364951-fe1541a47366'),
+  'Spritz Aperol': u('1564090654281-eb1db56d15fc'),
+  'Spritz Campari': u('1570598912132-0ba1dc952b7d'),
+  'Negroni': u('1764712999736-761be7a71c43'),
+  'Americano': u('1654677608880-51f63b5dee97'),
+  'Mojito': u('1778104959714-f9e729a9c5de'),
+  'Gin Tonic': u('1623408859815-22534357b3db'),
+  'Hugo': u('1709195658489-5a14884e307d'),
+  'Piña Colada': u('1607644536940-6c300b5784c5'),
+  'Cocktail analcolico': u('1654074517750-f854f7c27d62'),
+  'Cono 2 gusti': u('1691200324934-d1fca4986671'),
+  'Cono 3 gusti': u('1564021345996-c4d4e8ac84b8'),
+  'Coppetta': u('1650553448920-9432f8086905'),
+  'Ghiacciolo': u('1561588012-17a0e1119c0e'),
+  'Magnum': u('1594305178909-03ab72b8205e'),
+  'Cornetto Algida': u('1787307320279-75d6d58c0748'),
+  'Affogato al caffè': u('1594631661960-34762327295a'),
+  'Patatine': u('1528751014936-863e6e7a319c'),
+  'Granita': u('1749542120098-dbb1f36e1577'),
+  'Arachidi': u('1646123424528-a3cfebda0351'),
+  'Toast': u('1647505794572-0a6d945d664d'),
+  'Focaccia': u('1767065886275-2a8ff2eaa13a'),
+  'Tramezzino': u('1785064138041-19295508d398'),
+  'Pop corn': u('1691480213129-106b2c7d1ee8'),
+  'Piadina': u('1752095809096-f09d22c466c5'),
+  'Piadina crudo e squacquerone': u('1646530208887-8a791bff4701'),
+  'Panino porchetta': u('1788875810951-9de7b2e27876'),
+  'Insalatona': u('1626451542138-1f86835340ec'),
+  'Caprese': u('1769458313937-b5ad8f84942e'),
+  'Primo del giorno': u('1775634018153-51e9884dbf7c'),
+  'Fritto misto': u('1682264895449-f75b342cbab6'),
+  'Poke bowl': u('1768326119213-e0ad875083a3'),
+  'Hamburger': u('1550949987-440138d6550e'),
+  'Club sandwich': u('1553909489-cd47e0907980'),
+}
+
 interface Def {
   nome: string
   prezzo: number
@@ -100,6 +165,7 @@ function costruisciArticoli(rng: Rng): ArticoloBar[] {
         giacenza,
         sogliaRiordino: gruppo.soglia,
         unita: 'pz',
+        foto: fotoBar[it.nome],
       })
     }
   }

@@ -94,7 +94,7 @@ export const repartoDi = (r: RigaComandaSala): Reparto => r.reparto ?? 'cucina'
 /** Articoli disponibili del listino bar nella forma dei piatti (stessi componenti di cameriere e tablet). */
 export const articoliComePiatti = (articoli: ArticoloBar[]): Piatto[] =>
   articoli.filter((a) => a.disponibile !== false).map((a) => ({
-    id: a.id, nome: a.nome, categoria: a.categoria, prezzo: a.prezzoVendita, foodCost: a.costoAcquisto, allergeni: [], vendutiStagione: 0,
+    id: a.id, nome: a.nome, categoria: a.categoria, prezzo: a.prezzoVendita, foodCost: a.costoAcquisto, allergeni: [], vendutiStagione: 0, foto: a.foto,
   }))
 
 /**

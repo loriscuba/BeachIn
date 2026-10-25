@@ -215,6 +215,17 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Cucina: le comande che aspettano solo il via (`aspettaVia` in lib/sala) stanno in fondo a Da fare sotto «Aspettano il via»,
   non contano nel numero della colonna e non suonano.
 
+## Grafica menu Lido dei Pini (ott 2026)
+- Componenti comuni in `src/components/menu/MenuLido.tsx` (`PaginaMenu`, `CopertinaMenu`, `ChipSezioni`, `TitoloSezione`,
+  `SchedaVoce`, `Stepper`, `TendaRighe`, `PiedeMenu`), usati da **tablet self / QR tavolo** (`sala/TabletSelf.tsx`, `TavoloQR.tsx`),
+  **Ombrellone** dell'app clienti (`ComandApp` → `Area`) e **menu pubblico** `/menu`.
+- Ispirata alle foto del lido: fondo sabbia `#F6EFE3`, inchiostro marrone del logo `#3B2A20`, logo vero nel medaglione,
+  foto vera in copertina con onda, tenda a righe a festoni (ombrelloni) come motivo, titoli Fraunces corsivo + numeri Caveat.
+- Colore per menu (`TEMI`, variabile CSS `--acc`): ristorante mare `#1F6A84` (foto sala), bar e ombrellone spritz `#D9622B`
+  (stesso listino e stessa grafica: foto spritz / ombrelloni), lavagnetta pineta `#2F6B4F` (tramonto).
+- **Foto listino bar**: `ArticoloBar.foto` (colonna `articoli_bar.foto`, migrazione `0023_foto_bar.sql`), Unsplash libere per
+  tutte le 60 voci (`fotoBar` in `seed/bar.ts`); il gestore le cambia da Bar → Listino (miniatura cliccabile).
+
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
   sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,

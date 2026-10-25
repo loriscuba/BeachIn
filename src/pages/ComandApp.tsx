@@ -6,11 +6,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
-  Umbrella, LogOut, Plus, Minus, Send, Check, ChefHat, Bell, ClipboardList, ShoppingBag, Newspaper, CalendarCheck,
+  Umbrella, LogOut, Send, Check, ChefHat, Bell, ClipboardList, ShoppingBag, Newspaper, CalendarCheck,
   PartyPopper, Phone, Pin, MapPin, MessageCircle, Mail, Clock, Facebook, ChevronRight, UtensilsCrossed, Ticket,
   type LucideIcon,
 } from 'lucide-react'
-import type { CategoriaBar, Evento, StatoComanda } from '@/data/types'
+import type { Evento, StatoComanda } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
@@ -26,6 +26,7 @@ import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 import { prezzoLavagna } from '@/components/app/GestioneAppClienti'
 import { EventoModal, FormRistorante, Sospese } from '@/pages/SitoAnteprima'
 import { fotoSito, logoLido } from '@/assets/sito'
+import { PaginaMenu, CopertinaMenu, ChipSezioni, TitoloSezione, SchedaVoce, GRIGLIA_VOCI } from '@/components/menu/MenuLido'
 
 type Utente = (typeof UTENTI_COMANDAPP)[number]
 type Sez = 'news' | 'ombrellone' | 'prenota' | 'eventi' | 'lavagna' | 'contatti'
@@ -76,7 +77,7 @@ export default function ComandApp() {
   }, [sez, ultimaNews])
 
   return (
-    <div className="min-h-screen bg-carta text-profondo">
+    <div className={cn('min-h-screen text-profondo', sez === 'ombrellone' && utente ? 'bg-[#F6EFE3]' : 'bg-carta')}>
       <header className="sticky top-0 z-20 border-b border-profondo/10 bg-white/95 px-4 py-2.5 backdrop-blur">
         <div className="mx-auto flex max-w-md md:max-w-3xl lg:max-w-5xl items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -366,7 +367,7 @@ function Area({ utente }: { utente: Utente }) {
   // stesso listino del gestionale (Bar → Listino): solo articoli disponibili, categorie nell'ordine scelto
   const articoli = useMemo(() => articoliBar.filter((a) => a.disponibile !== false), [articoliBar])
   const categorie = useMemo(() => sezioniBar.filter((s) => articoli.some((a) => a.categoria === s.id)), [sezioniBar, articoli])
-  const [scelta, setCat] = useState<CategoriaBar>()
+  const [scelta, setCat] = useState<string>()
   const cat = scelta && categorie.some((c) => c.id === scelta) ? scelta : categorie[0]?.id
   const [qta, setQta] = useState<Record<string, number>>({})
   const [note, setNote] = useState('')
@@ -390,50 +391,39 @@ function Area({ utente }: { utente: Utente }) {
     ding(); setQta({}); setNote(''); setTab('ordini')
   }
 
+  const vai = (id: string) => { setCat(id); document.getElementById(`ombr-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+
+  // stessa grafica del menu bar del tablet (componenti in MenuLido), colore «spritz»
   return (
-    <div className="pb-28">
-      <div className="mb-4 mt-2">
-        <p className="text-sm text-profondo/60">Ti portiamo tutto al posto</p>
-        <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight">Ciao, <span className="text-laguna">{utente.nome}.</span></h1>
-      </div>
-      <div className="mb-4 flex items-center justify-between rounded-2xl bg-laguna px-4 py-3 text-white">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/85">Il tuo posto oggi</span>
-        <span className="inline-flex items-center gap-1.5 font-bold text-2xl"><Umbrella className="h-5 w-5" /> {utente.ombrellone}</span>
-      </div>
-      <div className="mb-4 flex gap-2 text-sm font-semibold">
-        <button onClick={() => setTab('ordina')} className={cn('h-10 rounded-full px-4', tab === 'ordina' ? 'bg-laguna text-white' : 'bg-white')}>Ordina</button>
-        <button onClick={() => setTab('ordini')} className={cn('h-10 rounded-full px-4', tab === 'ordini' ? 'bg-laguna text-white' : 'bg-white')}>I miei ordini {mie.some((c) => c.stato !== 'pronta') && '•'}</button>
+    <PaginaMenu tema="ombrellone" className="-mx-4 -mt-4 px-4 pb-28 pt-4">
+      <CopertinaMenu tema="ombrellone" compatta etichetta={<span className="inline-flex items-center gap-1"><Umbrella className="h-3.5 w-3.5" /> {utente.ombrellone}</span>}>
+        <p className="mt-1 text-sm text-white/85">Ciao {utente.nome}, te lo portiamo al posto.</p>
+      </CopertinaMenu>
+      <div className="my-4 flex gap-2 text-sm font-semibold">
+        <button onClick={() => setTab('ordina')} className={cn('h-10 rounded-full px-4', tab === 'ordina' ? 'bg-[var(--acc)] text-white' : 'bg-[#FFFCF6] ring-1 ring-[#3B2A20]/10')}>Ordina</button>
+        <button onClick={() => setTab('ordini')} className={cn('h-10 rounded-full px-4', tab === 'ordini' ? 'bg-[var(--acc)] text-white' : 'bg-[#FFFCF6] ring-1 ring-[#3B2A20]/10')}>I miei ordini {mie.some((c) => c.stato !== 'pronta') && '•'}</button>
       </div>
 
       {tab === 'ordina' && (articoli.length === 0 ? <p className={vuoto}>Il bar non ha articoli disponibili al momento.</p> : (
         <>
-          <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1">
+          <ChipSezioni sezioni={categorie} attiva={cat} onScegli={vai} className="sticky top-[57px] z-10 -mx-4 bg-[#F6EFE3]/95 px-4 py-2 backdrop-blur" />
+          <div className="mt-4 space-y-10">
             {categorie.map((c, i) => (
-              <button key={c.id} onClick={() => setCat(c.id)} className={cn('h-10 shrink-0 rounded-full px-4 text-sm font-semibold', cat === c.id ? 'bg-laguna text-white' : tinta(i))}>{c.nome}</button>
+              <section key={c.id} id={`ombr-${c.id}`} className="scroll-mt-28">
+                <TitoloSezione n={i + 1} nome={c.nome} />
+                <div className={GRIGLIA_VOCI}>
+                  {articoli.filter((a) => a.categoria === c.id).map((a) => (
+                    <SchedaVoce key={a.id} v={{ id: a.id, nome: a.nome, prezzo: a.prezzoVendita, foto: a.foto }} n={qta[a.id] ?? 0} onCambia={(d) => cambia(a.id, d)} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
-          <ul className="divide-y divide-profondo/10 border-y border-profondo/10 md:grid md:grid-cols-2 md:gap-x-8 md:divide-y-0 md:[&>li]:border-b md:[&>li]:border-profondo/10">
-            {articoli.filter((a) => a.categoria === cat).map((a, i) => (
-              <li key={a.id} className="flex items-center gap-3 py-3">
-                <p className="min-w-0 flex-1 font-bold text-lg leading-tight">{a.nome}</p>
-                <span className={cn('num rounded-lg px-2.5 py-1 text-sm font-semibold', tinta(i))}>{euroCent(a.prezzoVendita)}</span>
-                {qta[a.id] ? (
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => cambia(a.id, -1)} className="grid h-10 w-10 place-content-center rounded-full bg-white" aria-label="Meno"><Minus className="h-4 w-4" /></button>
-                    <span className="num w-5 text-center font-bold">{qta[a.id]}</span>
-                    <button onClick={() => cambia(a.id, 1)} className="grid h-10 w-10 place-content-center rounded-full bg-laguna text-white" aria-label="Più"><Plus className="h-4 w-4" /></button>
-                  </div>
-                ) : (
-                  <button onClick={() => cambia(a.id, 1)} className="grid h-10 w-10 place-content-center rounded-full bg-laguna text-white" aria-label="Aggiungi"><Plus className="h-4 w-4" /></button>
-                )}
-              </li>
-            ))}
-          </ul>
           {pezzi > 0 && (
-            <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 border-t border-profondo/10 bg-carta p-3">
+            <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 border-t border-[#3B2A20]/10 bg-[#F6EFE3] p-3">
               <div className="mx-auto max-w-md space-y-2 md:max-w-xl">
-                <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (es. senza ghiaccio)" className="h-10 w-full rounded-full border border-profondo/15 bg-white px-4 text-sm" />
-                <button onClick={invia} className="flex h-12 w-full items-center justify-between rounded-full bg-laguna px-5 font-semibold text-white">
+                <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (es. senza ghiaccio)" className="h-10 w-full rounded-full border border-[#3B2A20]/15 bg-white px-4 text-sm" />
+                <button onClick={invia} className="flex h-12 w-full items-center justify-between rounded-full bg-[var(--acc)] px-5 font-semibold text-white shadow-lg">
                   <span className="inline-flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Ordina {pezzi} {pezzi === 1 ? 'articolo' : 'articoli'}</span>
                   <span className="num">{euroCent(totale)}</span>
                 </button>
@@ -449,7 +439,7 @@ function Area({ utente }: { utente: Utente }) {
           {mie.map((c) => {
             const passo = PASSI_COMANDA.indexOf(c.stato)
             return (
-              <div key={c.id} className="rounded-3xl bg-white shadow-[0_4px_20px_rgba(15,59,76,0.07)] p-4">
+              <div key={c.id} className="rounded-3xl bg-[#FFFCF6] p-4 shadow-[0_6px_24px_-12px_rgba(59,42,32,0.35)]">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="font-bold text-lg">Ordine delle {c.ora}</span>
                   <span className={cn('rounded-full px-3 py-1 text-xs font-bold text-profondo', c.stato === 'pronta' ? 'bg-acqua' : 'bg-tenda')}>{etichettaStatoComanda[c.stato]}</span>
@@ -459,10 +449,10 @@ function Area({ utente }: { utente: Utente }) {
                     const Icona = icona[s]
                     return (
                       <div key={s} className="flex flex-1 items-center last:flex-none">
-                        <span className={cn('grid h-8 w-8 place-content-center rounded-full', i <= passo ? 'bg-laguna text-white' : 'bg-calce text-profondo/40', i === passo && c.stato !== 'pronta' && 'animate-pulse')} title={etichettaStatoComanda[s]}>
+                        <span className={cn('grid h-8 w-8 place-content-center rounded-full', i <= passo ? 'bg-[var(--acc)] text-white' : 'bg-calce text-profondo/40', i === passo && c.stato !== 'pronta' && 'animate-pulse')} title={etichettaStatoComanda[s]}>
                           {i < passo || c.stato === 'pronta' ? <Check className="h-4 w-4" /> : <Icona className="h-4 w-4" />}
                         </span>
-                        {i < PASSI_COMANDA.length - 1 && <span className={cn('h-0.5 flex-1', i < passo ? 'bg-laguna' : 'bg-calce')} />}
+                        {i < PASSI_COMANDA.length - 1 && <span className={cn('h-0.5 flex-1', i < passo ? 'bg-[var(--acc)]' : 'bg-calce')} />}
                       </div>
                     )
                   })}
@@ -477,6 +467,6 @@ function Area({ utente }: { utente: Utente }) {
           })}
         </div>
       )}
-    </div>
+    </PaginaMenu>
   )
 }
