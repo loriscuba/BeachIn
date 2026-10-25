@@ -18,7 +18,7 @@ export type TemaMenu = 'ristorante' | 'bar' | 'ombrellone' | 'lavagnetta'
 export const TEMI: Record<TemaMenu, { colore: string; chiaro: string; foto: string; titolo: string; corsivo: string; motto: string }> = {
   ristorante: { colore: '#1F6A84', chiaro: '#DCEBEF', foto: fotoSito.ristorante, titolo: 'Il mare,', corsivo: 'nel piatto', motto: 'cucina di mare sotto il canniccio' },
   bar: { colore: '#D9622B', chiaro: '#FBE3D3', foto: fotoSito.barDistillati, titolo: 'Il bar', corsivo: 'in riva al mare', motto: 'spritz, caffè e gelati' },
-  ombrellone: { colore: '#D9622B', chiaro: '#FBE3D3', foto: fotoSito.ombrelloniCielo, titolo: 'Il bar', corsivo: 'all’ombrellone', motto: 'te lo portiamo al posto' },
+  ombrellone: { colore: '#D9622B', chiaro: '#FBE3D3', foto: fotoSito.ombrelloniCielo, titolo: 'Il bar', corsivo: 'all’ombrellone', motto: 'te lo portiamo sotto l’ombrellone' },
   lavagnetta: { colore: '#2F6B4F', chiaro: '#DDEBE2', foto: fotoSito.tramonto, titolo: 'La lavagna', corsivo: 'di oggi', motto: 'le proposte del giorno' },
 }
 

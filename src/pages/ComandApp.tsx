@@ -397,7 +397,7 @@ function Area({ utente }: { utente: Utente }) {
   return (
     <PaginaMenu tema="ombrellone" className="-mx-4 -mt-4 px-4 pb-28 pt-4">
       <CopertinaMenu tema="ombrellone" compatta etichetta={<span className="inline-flex items-center gap-1"><Umbrella className="h-3.5 w-3.5" /> {utente.ombrellone}</span>}>
-        <p className="mt-1 text-sm text-white/85">Ciao {utente.nome}, te lo portiamo al posto.</p>
+        <p className="mt-1 text-sm text-white/85">Ciao {utente.nome}, te lo portiamo sotto l’ombrellone.</p>
       </CopertinaMenu>
       <div className="my-4 flex gap-2 text-sm font-semibold">
         <button onClick={() => setTab('ordina')} className={cn('h-10 rounded-full px-4', tab === 'ordina' ? 'bg-[var(--acc)] text-white' : 'bg-[#FFFCF6] ring-1 ring-[#3B2A20]/10')}>Ordina</button>
