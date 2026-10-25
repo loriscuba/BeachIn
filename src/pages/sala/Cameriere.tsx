@@ -149,9 +149,9 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
         {/* Tavoli */}
         {tavolo != null ? (
           <Card>
-            <CardBody className="flex items-center gap-3 py-3">
+            <CardBody className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
               <span className="grid h-11 w-11 place-content-center rounded-xl bg-gradient-to-br from-profondo to-cabina text-lg font-bold text-white num">{tavolo}</span>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 basis-40">
                 <p className="font-semibold text-profondo">Tavolo {tavolo}</p>
                 <p className="text-xs text-profondo/55">{aperto(tavolo) && <span className="font-semibold text-acqua">Aperto ai QR · </span>}{conto.length ? `${aperte.length ? `${aperte.length} in corso · ` : ''}conto ${euroCent(contoTavolo)}` : 'Conto vuoto'}</p>
               </div>
