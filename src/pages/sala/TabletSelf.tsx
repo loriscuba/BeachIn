@@ -33,7 +33,7 @@ const ALLERGENI: Record<string, string> = {
 /** `qr`: aperto dal telefono del cliente col QR del tavolo (niente lucchetto né PIN; la comanda è «qr»).
  *  `seduta`: il conto su cui la pagina ordina; chiuso quello, l'invio viene rifiutato. */
 export default function TabletSelf({ stato, onEsci, qr = false, seduta }: { stato: StatoSelf; onEsci: () => void; qr?: boolean; seduta?: string }) {
-  const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala, tavoliQr } = useDemoData()
+  const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala, verificaContoTavolo, tavoliQr } = useDemoData()
   const conBar = useModuli().moduloAttivo('bar-tavolo')
   const tipo = stato.menu === 'bar' && !conBar ? 'ristorante' : stato.menu ?? 'ristorante'
   const [qta, setQta] = useState<Record<string, number>>({})
@@ -73,8 +73,11 @@ export default function TabletSelf({ stato, onEsci, qr = false, seduta }: { stat
     return n
   })
   const vai = (id: string) => document.getElementById(`self-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  const invia = () => {
+  const invia = async () => {
     if (!righe.length) return
+    // dal QR: prima di inviare si chiede al DB se il conto è ancora aperto (il telefono può avere dati vecchi);
+    // se è chiuso la pagina passa a «Conto chiuso»
+    if (qr && seduta && !(await verificaContoTavolo(stato.tavolo, seduta))) return
     if (!inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note, seduta: seduta || undefined })) return
     setQta({}); setNote(''); setCarrello(false); setGrazie(true)
   }

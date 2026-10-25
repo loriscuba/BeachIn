@@ -4,7 +4,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './router'
-import { DemoDataProvider } from './context/DemoDataContext'
+import { DemoDataProvider, PAGINE_CLIENTI } from './context/DemoDataContext'
 import { ModuliProvider } from './context/ModuliContext'
 import { SessioneProvider, useSessione } from './context/SessioneContext'
 import { caricaImpostazioni, sottoscriviImpostazioni } from './lib/impostazioni'
@@ -18,9 +18,22 @@ function Router() {
 }
 
 // Al login/logout dello staff i dati si rileggono col nuovo ruolo (le policy RLS cambiano cosa si vede).
+// Le pagine dei clienti (QR del tavolo, menu, ComandApp, sito, invito) scaricano solo le loro tabelle: passando da una
+// all'altra, o al gestionale, i dati si ricaricano (chiave del provider).
+const paginaDi = ({ pathname, search }: { pathname: string; search: string }) => ({ percorso: pathname, cerca: search })
 function Dati({ children }: { children: React.ReactNode }) {
   const { profilo } = useSessione()
-  return <DemoDataProvider key={profilo?.id ?? 'anon'}>{children}</DemoDataProvider>
+  const [pagina, setPagina] = React.useState(() => paginaDi(router.state.location))
+  React.useEffect(() => router.subscribe((st) => {
+    const p = paginaDi(st.location)
+    setPagina((prima) => (prima.percorso === p.percorso && prima.cerca === p.cerca ? prima : p))
+  }), [])
+  const gruppo = PAGINE_CLIENTI[pagina.percorso] ? `${pagina.percorso}${pagina.cerca}` : 'gestionale'
+  return (
+    <DemoDataProvider key={`${profilo?.id ?? 'anon'}-${gruppo}`} pagina={gruppo === 'gestionale' ? undefined : pagina}>
+      {children}
+    </DemoDataProvider>
+  )
 }
 
 void caricaImpostazioni().finally(() => {
