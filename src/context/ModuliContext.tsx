@@ -14,6 +14,7 @@ import { MODULI_CORE, PIANI, PIANO_DEFAULT, type ModuloId } from '@/config/modul
 
 const CHIAVE = 'beachin.moduli.v1'
 const CHIAVE_SALA = 'beachin.moduli.sala'
+const CHIAVE_BAR_TAVOLO = 'beachin.moduli.bartavolo'
 
 function carica(): ModuloId[] {
   try {
@@ -25,6 +26,11 @@ function carica(): ModuloId[] {
         if (!localStorage.getItem(CHIAVE_SALA)) {
           localStorage.setItem(CHIAVE_SALA, '1')
           if (arr.includes('ristorante') && !arr.includes('sala')) arr.push('sala')
+        }
+        // Bar al tavolo (ott 2026): attivo una volta per chi ha già Comande ristorante e Bar
+        if (!localStorage.getItem(CHIAVE_BAR_TAVOLO)) {
+          localStorage.setItem(CHIAVE_BAR_TAVOLO, '1')
+          if (arr.includes('sala') && arr.includes('bar') && !arr.includes('bar-tavolo')) arr.push('bar-tavolo')
         }
         return arr as ModuloId[]
       }
@@ -39,10 +45,14 @@ function carica(): ModuloId[] {
  * Unisce i moduli richiesti con i core (sempre attivi), senza duplicati.
  * Comande usa il listino del Bar: con Comande attivo, il Bar resta attivo
  * (altrimenti dal menu sparivano Listino e Conti lasciando solo Comande).
- * Allo stesso modo Comande ristorante usa il menu del Ristorante.
+ * Allo stesso modo Comande ristorante usa il menu del Ristorante, e Bar al tavolo usa entrambi.
  */
 function conCore(moduli: ModuloId[]): ModuloId[] {
-  const dip: ModuloId[] = [...(moduli.includes('comande') ? ['bar' as const] : []), ...(moduli.includes('sala') ? ['ristorante' as const] : [])]
+  const dip: ModuloId[] = [
+    ...(moduli.includes('comande') ? ['bar' as const] : []),
+    ...(moduli.includes('sala') ? ['ristorante' as const] : []),
+    ...(moduli.includes('bar-tavolo') ? ['sala' as const, 'ristorante' as const, 'bar' as const] : []),
+  ]
   return Array.from(new Set<ModuloId>([...MODULI_CORE, ...moduli, ...dip]))
 }
 
@@ -72,7 +82,8 @@ export function ModuliProvider({ children }: { children: ReactNode }) {
   const attiva = useCallback((id: ModuloId) => salva([...attivi, id]), [attivi, salva])
   const disattiva = useCallback(
     // spegnere il Bar spegne anche Comande, che ne usa il listino
-    (id: ModuloId) => salva(attivi.filter((m) => m !== id && !(id === 'bar' && m === 'comande') && !(id === 'ristorante' && m === 'sala'))),
+    (id: ModuloId) => salva(attivi.filter((m) => m !== id && !(id === 'bar' && m === 'comande') && !(id === 'ristorante' && m === 'sala')
+      && !(['bar', 'sala', 'ristorante'].includes(id) && m === 'bar-tavolo'))),
     [attivi, salva]
   )
   const toggle = useCallback(

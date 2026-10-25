@@ -149,6 +149,24 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Foto dei piatti (migrazione `0016_foto_menu.sql`, solo dove mancano): immagini libere Unsplash scelte su nome/descrizione,
   stessi URL in `fotoMenu` del seed. Segnaposto finché il locale non carica le sue da Ristorante → Menu.
 
+## Bar al tavolo (comande ristorante → bar, ott 2026)
+- Modulo **`bar-tavolo`** "Bar al tavolo" (attivandolo restano attivi `sala`, `ristorante` e `bar`; spegnendo uno di
+  questi si spegne; chi aveva già sala+bar lo trova attivo una volta, flag `beachin.moduli.bartavolo`). Permesso `bar-tavolo` nella
+  griglia ruoli: serve per la scheda Bar. Migrazione `0018_bar_tavolo.sql` (ruolo **Barista**: `bar-tavolo`/`sala`/`comande` 2, `bar` 1;
+  `bar-tavolo` 2 al responsabile): il barista ha anche `sala` 2 perché le policy di `comande_sala` lo chiedono.
+- I due menu restano separati: menu del Ristorante (`menu_piatti`) e listino bar (`articoli_bar`, solo `disponibile`), convertito in
+  forma `Piatto` da `articoliComePiatti` (`lib/sala.ts`). Riga della comanda con `reparto: 'bar'` (assente = cucina), dentro il jsonb
+  `righe`: nessuna colonna nuova. Le bevande partono in uscita 0 (Subito), spostabili come i piatti.
+- **Cameriere**: interruttore **Cucina | Bar** nella card Menu (filtri per categoria del listino), una sola comanda e un solo conto;
+  tasto "Invia in cucina / al bar / in cucina e al bar"; icona tazza sulle righe del bar. **Tablet self**: dopo i piatti le sezioni
+  del bar ("— Dal bar —", id `bar-<categoria>`).
+- **Cucina**: vede solo le righe di cucina (`perReparto(c, 'cucina')`, indici originali per le azioni); le comande di sole bevande
+  non compaiono. `ricalcolaStato`: "inviata" = la cucina non ha iniziato, le righe del bar non contano. Badge `daFareCucina`.
+- **Coda unica bar** (`src/pages/sala/CodaBar.tsx`, `codaBar()` in `lib/sala.ts`): comande dagli ombrelloni (avanzano di stato come
+  prima, `ComandaCard` spostata qui) + bevande dei tavoli (tocco = pronta, "Tutto pronto"; uscite senza via in grigio), colonne
+  Da preparare / Pronte, campanello. Dove: scheda **Bar** in `/sala?tab=bar` (voce "Coda bar", badge `bar`), quarta scheda dell'app
+  `/salaapp`, e al posto della coda nella pagina Comande quando il modulo è attivo (`<CodaBar compatta suoni />`).
+
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
   sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,

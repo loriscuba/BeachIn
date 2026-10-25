@@ -10,6 +10,7 @@ import { config } from '@/data/config'
 import { Logo } from './Logo'
 import { accento } from '@/config/accenti'
 import { cn } from '@/lib/cn'
+import { codaBar, daFareCucina } from '@/lib/sala'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 
 interface SidebarProps {
@@ -45,7 +46,8 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const conta = {
     richieste: richiesteRistorante.filter((r) => r.stato === 'da_confermare').length,
     comande: moduloAttivo('comande') ? comande.filter((c) => c.stato === 'in_attesa').length : 0,
-    cucina: moduloAttivo('sala') ? comandeSala.filter((c) => c.stato === 'inviata').length : 0,
+    cucina: moduloAttivo('sala') ? daFareCucina(comandeSala) : 0,
+    bar: moduloAttivo('bar-tavolo') ? codaBar(comande, comandeSala).daFare.length : 0,
   }
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
   // Suono a ogni richiesta nuova dal sito (non al primo caricamento). Il browser

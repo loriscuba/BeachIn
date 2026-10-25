@@ -3,6 +3,7 @@
  * - **Cameriere**: sceglie il tavolo, compone la comanda dal menu del Ristorante e la manda in cucina;
  * - **Tablet self**: il tablet resta al tavolo bloccato sul menu con foto, il cliente ordina da solo.
  * In entrambi i casi la comanda arriva nella scheda **Cucina** (stati, campanello). Schede `?tab=`.
+ * Con il modulo Bar al tavolo c'è anche la scheda **Bar**: coda unica di bevande dei tavoli e comande degli ombrelloni.
  */
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -10,21 +11,27 @@ import { Copy, ExternalLink, Smartphone } from 'lucide-react'
 import { Card, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { QrCodice } from '@/components/QrCodice'
-import { urlSalaApp } from '@/lib/sala'
+import { daFareCucina, urlSalaApp, codaBar } from '@/lib/sala'
 import { Tabs } from '@/components/ui/Tabs'
 import { useDemoData } from '@/context/DemoDataContext'
+import { useModuli } from '@/context/ModuliContext'
+import { useSessione } from '@/context/SessioneContext'
+import CodaBar from './sala/CodaBar'
 import Cameriere from './sala/Cameriere'
 import Cucina from './sala/Cucina'
 import AvvioSelf, { leggiSelf, type StatoSelf } from './sala/AvvioSelf'
 import TabletSelf from './sala/TabletSelf'
 
-type Scheda = 'cameriere' | 'cucina' | 'self'
-const SCHEDE: Scheda[] = ['cameriere', 'cucina', 'self']
+type Scheda = 'cameriere' | 'cucina' | 'self' | 'bar'
 
 export default function Sala() {
   const [params, setParams] = useSearchParams()
-  const tab = SCHEDE.includes(params.get('tab') as Scheda) ? (params.get('tab') as Scheda) : 'cameriere'
-  const { comandeSala } = useDemoData()
+  const { comande, comandeSala } = useDemoData()
+  const { moduloAttivo } = useModuli()
+  const { puo } = useSessione()
+  const conBar = moduloAttivo('bar-tavolo') && puo('bar-tavolo', 1)
+  const schede: Scheda[] = ['cameriere', 'cucina', 'self', ...(conBar ? ['bar' as const] : [])]
+  const tab = schede.includes(params.get('tab') as Scheda) ? (params.get('tab') as Scheda) : 'cameriere'
   // tablet in modalità self: resta bloccato anche se si ricarica la pagina
   const [self, setSelf] = useState<StatoSelf | null>(leggiSelf)
 
@@ -38,13 +45,15 @@ export default function Sala() {
         onChange={(v) => setParams({ tab: v })}
         opzioni={[
           { valore: 'cameriere', etichetta: 'Cameriere' },
-          { valore: 'cucina', etichetta: 'Cucina', badge: comandeSala.filter((c) => c.stato === 'inviata').length },
+          { valore: 'cucina', etichetta: 'Cucina', badge: daFareCucina(comandeSala) },
           { valore: 'self', etichetta: 'Tablet self' },
+          ...(conBar ? [{ valore: 'bar', etichetta: 'Bar', badge: codaBar(comande, comandeSala).daFare.length }] : []),
         ]}
       />
       {tab === 'cameriere' && <Cameriere />}
       {tab === 'cucina' && <Cucina />}
       {tab === 'self' && <AvvioSelf onAvvia={setSelf} />}
+      {tab === 'bar' && <CodaBar />}
     </div>
   )
 }

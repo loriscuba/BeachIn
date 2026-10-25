@@ -2,9 +2,10 @@
  * Cucina: le comande del ristorante (dal cameriere o dal tablet al tavolo) in tre colonne
  * Da fare → In lavorazione → Pronte. Dentro ogni comanda i piatti sono divisi per uscita: si segnano
  * pronti uno per uno (tocco) o tutta l'uscita; le uscite senza il «via» del cameriere restano in grigio.
- * Campanello a ogni comanda nuova, minuti di attesa sulla scheda.
+ * Campanello a ogni comanda nuova, minuti di attesa sulla scheda. Le bevande del bar (modulo Bar al tavolo)
+ * non compaiono: la cucina vede solo le sue righe (`perReparto`).
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Bell, BellOff, Check, ChefHat, Clock, Hourglass, Tablet, Users, X } from 'lucide-react'
 import type { ComandaSala, StatoComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { supabaseAttivo } from '@/lib/supabase'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
-import { azioneStatoSala, minutiDa, nomeUscita, usciteDi } from '@/lib/sala'
+import { azioneStatoSala, minutiDa, nomeUscita, perReparto, usciteDi } from '@/lib/sala'
 
 const COLONNE: { stato: StatoComandaSala; titolo: string; colore: string }[] = [
   { stato: 'inviata', titolo: 'Da fare', colore: 'bg-boa' },
@@ -29,14 +30,16 @@ export default function Cucina() {
   // su telefono si vede una colonna alla volta (tablet e computer: tutte e tre)
   const [colonna, setColonna] = useState<StatoComandaSala>('inviata')
   useEffect(() => { const t = window.setInterval(() => setOra(Date.now()), 30000); return () => window.clearInterval(t) }, [])
+  // solo i piatti: le comande di sole bevande vanno al bar
+  const viste = useMemo(() => comandeSala.flatMap((c) => perReparto(c, 'cucina') ?? []), [comandeSala])
 
   // campanello quando arriva una comanda nuova (anche da un altro dispositivo)
-  const visti = useRef(new Set(comandeSala.map((c) => c.id)))
+  const visti = useRef(new Set(viste.map((v) => v.c.id)))
   useEffect(() => {
-    const nuove = comandeSala.filter((c) => !visti.current.has(c.id))
-    nuove.forEach((c) => visti.current.add(c.id))
-    if (suoni && nuove.some((c) => c.stato === 'inviata')) campanello()
-  }, [comandeSala, suoni])
+    const nuove = viste.filter((v) => !visti.current.has(v.c.id))
+    nuove.forEach((v) => visti.current.add(v.c.id))
+    if (suoni && nuove.some((v) => v.c.stato === 'inviata')) campanello()
+  }, [viste, suoni])
 
   return (
     <div className="space-y-4">
@@ -50,7 +53,7 @@ export default function Cucina() {
       </div>
       <div className="grid grid-cols-3 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm md:hidden">
         {COLONNE.map((col) => {
-          const n = comandeSala.filter((c) => c.stato === col.stato).length
+          const n = viste.filter((v) => v.c.stato === col.stato).length
           return (
             <button key={col.stato} type="button" onClick={() => setColonna(col.stato)}
               className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', colonna === col.stato ? 'bg-profondo text-white' : 'text-profondo/60')}>
@@ -62,7 +65,7 @@ export default function Cucina() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {COLONNE.map((col) => {
           // in cucina si lavora dalla più vecchia
-          const lista = comandeSala.filter((c) => c.stato === col.stato).sort((a, b) => a.ts - b.ts)
+          const lista = viste.filter((v) => v.c.stato === col.stato).sort((a, b) => a.c.ts - b.c.ts)
           return (
             <section key={col.stato} className={cn('min-w-0 space-y-3', colonna !== col.stato && 'hidden md:block')}>
               <h3 className="hidden items-center gap-2 text-sm font-semibold text-profondo md:flex">
@@ -70,7 +73,7 @@ export default function Cucina() {
                 <span className="num text-profondo/45">{lista.length}</span>
               </h3>
               {!lista.length && <p className="rounded-2xl border border-dashed border-calce-300 p-6 text-center text-sm text-profondo/45">Niente qui</p>}
-              {lista.map((c) => <SchedaComanda key={c.id} c={c} ora={ora} onAvanza={() => avanzaComandaSala(c.id)} onSegna={(indici, pronta) => segnaRigheSala(c.id, indici, pronta ? 'pronta' : 'attesa')} onVia={(n) => chiamaUscitaSala(c.id, n)} onAnnulla={() => { if (confirm(`Annullare la comanda del tavolo ${c.tavolo}?`)) annullaComandaSala(c.id) }} />)}
+              {lista.map(({ c, indici: orig }) => <SchedaComanda key={c.id} c={c} ora={ora} onAvanza={() => avanzaComandaSala(c.id)} onSegna={(indici, pronta) => segnaRigheSala(c.id, indici.map((i) => orig[i]), pronta ? 'pronta' : 'attesa')} onVia={(n) => chiamaUscitaSala(c.id, n)} onAnnulla={() => { if (confirm(`Annullare la comanda del tavolo ${c.tavolo}?`)) annullaComandaSala(c.id) }} />)}
             </section>
           )
         })}

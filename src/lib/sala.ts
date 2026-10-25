@@ -1,5 +1,5 @@
 /** Comande del ristorante (sala → cucina): etichette, colori e foto di riserva per il tablet self. */
-import type { ComandaSala, RigaComandaSala, StatoComandaSala, StatoRigaSala } from '@/data/types'
+import type { ArticoloBar, Comanda, ComandaSala, Piatto, RigaComandaSala, StatoComandaSala, StatoRigaSala } from '@/data/types'
 import { urlPubblico } from '@/lib/urlPubblico'
 
 export const etichettaStatoSala: Record<StatoComandaSala, string> = {
@@ -63,12 +63,56 @@ export function usciteDi(c: ComandaSala) {
 export function ricalcolaStato(c: ComandaSala): ComandaSala {
   const stati = c.righe.map((r) => statoRiga(c, r))
   const daFare = c.righe.some((r, i) => stati[i] === 'attesa' && uscitaChiamata(c, uscitaDi(r)))
+  // «inviata» = la cucina non ha ancora iniziato: le bevande segnate dal bar non contano
   const stato: StatoComandaSala = stati.every((x) => x === 'servita') ? 'servita'
     : !daFare && stati.some((x) => x === 'pronta') ? 'pronta'
-    : c.stato === 'inviata' && stati.every((x) => x === 'attesa') ? 'inviata'
+    : c.stato === 'inviata' && c.righe.every((r, i) => repartoDi(r) === 'bar' || stati[i] === 'attesa') ? 'inviata'
     : 'in_preparazione'
   return { ...c, stato }
 }
 
 /** Link pubblico dell'app di sala (cameriere, cucina, tablet), da aprire su telefono o tablet. */
 export const urlSalaApp = () => urlPubblico('salaapp')
+
+// — Bar al tavolo (modulo `bar-tavolo`): righe del listino bar nella stessa comanda —
+export type Reparto = 'cucina' | 'bar'
+export const repartoDi = (r: RigaComandaSala): Reparto => r.reparto ?? 'cucina'
+
+/** Articoli disponibili del listino bar nella forma dei piatti (stessi componenti di cameriere e tablet). */
+export const articoliComePiatti = (articoli: ArticoloBar[]): Piatto[] =>
+  articoli.filter((a) => a.disponibile !== false).map((a) => ({
+    id: a.id, nome: a.nome, categoria: a.categoria, prezzo: a.prezzoVendita, foodCost: a.costoAcquisto, allergeni: [], vendutiStagione: 0,
+  }))
+
+/**
+ * La comanda vista da un reparto: solo le sue righe (con l'indice originale, per le azioni) e lo stato
+ * ricalcolato su quelle. `null` se il reparto non ha niente in questa comanda.
+ */
+export function perReparto(c: ComandaSala, reparto: Reparto): { c: ComandaSala; indici: number[] } | null {
+  const indici = c.righe.flatMap((r, i) => (repartoDi(r) === reparto ? [i] : []))
+  if (!indici.length) return null
+  return { c: ricalcolaStato({ ...c, righe: indici.map((i) => c.righe[i]) }), indici }
+}
+
+/** Comande che la cucina non ha ancora iniziato (badge «Cucina»). */
+export const daFareCucina = (comande: ComandaSala[]) => comande.filter((c) => perReparto(c, 'cucina')?.c.stato === 'inviata').length
+
+/** Bevande dei tavoli ancora da preparare al bar (righe chiamate e in attesa). */
+export const righeBarDaFare = (c: ComandaSala) =>
+  c.righe.flatMap((r, i) => (repartoDi(r) === 'bar' && statoRiga(c, r) === 'attesa' ? [i] : []))
+
+/** Una voce della coda unica del bar: comanda dall'ombrellone o bevande di un tavolo. */
+export type VoceBar = { tipo: 'ombrellone'; ts: number; c: Comanda } | { tipo: 'tavolo'; ts: number; c: ComandaSala }
+
+/** Coda unica del bar: da preparare (dalla più vecchia) e pronte (le ultime, dalla più recente). */
+export function codaBar(comande: Comanda[], comandeSala: ComandaSala[]) {
+  const ombrelloni: VoceBar[] = comande.map((c) => ({ tipo: 'ombrellone', ts: c.ts ?? 0, c }))
+  const tavoli: VoceBar[] = comandeSala.filter((c) => c.righe.some((r) => repartoDi(r) === 'bar')).map((c) => ({ tipo: 'tavolo', ts: c.ts, c }))
+  const daFare = (v: VoceBar) => (v.tipo === 'ombrellone' ? v.c.stato !== 'pronta' : righeBarDaFare(v.c).length > 0)
+  const pronta = (v: VoceBar) => (v.tipo === 'ombrellone' ? v.c.stato === 'pronta' : !daFare(v) && v.c.righe.some((r) => repartoDi(r) === 'bar' && statoRiga(v.c, r) === 'pronta'))
+  const tutte = [...ombrelloni, ...tavoli]
+  return {
+    daFare: tutte.filter(daFare).sort((a, b) => a.ts - b.ts),
+    pronte: tutte.filter(pronta).sort((a, b) => b.ts - a.ts).slice(0, 12),
+  }
+}

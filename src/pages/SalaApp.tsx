@@ -1,10 +1,11 @@
 /**
  * App di sala (rotta pubblica `/salaapp`, telefono e tablet): le comande del ristorante fuori dal gestionale.
  * Si entra con l'utente dello staff; servono il modulo `sala` attivo e il permesso. Tre schede in basso:
- * Cameriere, Cucina e Tablet self (stessi componenti della pagina Comande sala, dati condivisi).
+ * Cameriere, Cucina e Tablet self (stessi componenti della pagina Comande sala, dati condivisi), più Bar
+ * (coda unica tavoli + ombrelloni) col modulo Bar al tavolo e il suo permesso.
  */
 import { useEffect, useState } from 'react'
-import { ChefHat, ConciergeBell, LogOut, Tablet } from 'lucide-react'
+import { ChefHat, Coffee, ConciergeBell, LogOut, Tablet } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useSessione } from '@/context/SessioneContext'
 import { useModuli } from '@/context/ModuliContext'
@@ -15,12 +16,14 @@ import { impostaManifest } from '@/lib/notifichePush'
 import { sbloccaAudio } from '@/lib/suoni'
 import { supabaseAttivo } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
+import { codaBar, daFareCucina } from '@/lib/sala'
 import Cameriere from './sala/Cameriere'
 import Cucina from './sala/Cucina'
 import AvvioSelf, { leggiSelf, type StatoSelf } from './sala/AvvioSelf'
 import TabletSelf from './sala/TabletSelf'
+import CodaBar from './sala/CodaBar'
 
-type Scheda = 'cameriere' | 'cucina' | 'self'
+type Scheda = 'cameriere' | 'cucina' | 'self' | 'bar'
 
 export default function SalaApp() {
   const { profilo, esci, puo } = useSessione()
@@ -50,12 +53,16 @@ export default function SalaApp() {
 }
 
 function Area() {
-  const { comandeSala } = useDemoData()
+  const { comande, comandeSala } = useDemoData()
+  const { moduloAttivo } = useModuli()
+  const { puo } = useSessione()
+  const conBar = moduloAttivo('bar-tavolo') && puo('bar-tavolo', 1)
   // a ogni apertura si sceglie la funzione (un telefono fa da cameriere, un tablet da cucina o da self)
   const [scheda, setScheda] = useState<Scheda | null>(null)
   const [self, setSelf] = useState<StatoSelf | null>(leggiSelf)
   const vai = (s: Scheda) => { setScheda(s); window.scrollTo(0, 0) }
-  const daFare = comandeSala.filter((c) => c.stato === 'inviata').length
+  const daFare = daFareCucina(comandeSala)
+  const alBar = conBar ? codaBar(comande, comandeSala).daFare.length : 0
 
   if (self) return <TabletSelf stato={self} onEsci={() => setSelf(null)} />
 
@@ -63,8 +70,9 @@ function Area() {
     { id: 'cameriere', etichetta: 'Cameriere', icona: ConciergeBell },
     { id: 'cucina', etichetta: 'Cucina', icona: ChefHat, badge: daFare },
     { id: 'self', etichetta: 'Tablet self', icona: Tablet },
+    ...(conBar ? [{ id: 'bar' as const, etichetta: 'Bar', icona: Coffee, badge: alBar }] : []),
   ]
-  if (!scheda) return <SceltaFunzione onScegli={vai} daFare={daFare} />
+  if (!scheda) return <SceltaFunzione onScegli={vai} daFare={daFare} alBar={alBar} conBar={conBar} />
   return (
     <>
       {/* spazio in fondo per la barra delle schede (e la barra comanda del cameriere sopra) */}
@@ -72,9 +80,10 @@ function Area() {
         {scheda === 'cameriere' && <Cameriere app />}
         {scheda === 'cucina' && <Cucina />}
         {scheda === 'self' && <AvvioSelf onAvvia={setSelf} />}
+        {scheda === 'bar' && <CodaBar />}
       </main>
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-calce-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto grid max-w-xl grid-cols-3">
+        <div className={cn('mx-auto grid max-w-xl', voci.length === 4 ? 'grid-cols-4' : 'grid-cols-3')}>
           {voci.map((v) => (
             <button key={v.id} type="button" onClick={() => vai(v.id)}
               className={cn('relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold', scheda === v.id ? 'text-[#0E2A22]' : 'text-profondo/45')}>
@@ -94,17 +103,18 @@ const FUNZIONI: { id: Scheda; titolo: string; testo: string; icona: typeof ChefH
   { id: 'cameriere', titolo: 'Cameriere', testo: 'Prendi le comande al tavolo e mandale in cucina', icona: ConciergeBell, colore: 'from-profondo to-cabina' },
   { id: 'cucina', titolo: 'Cucina', testo: 'Vedi le comande in arrivo e segna i piatti pronti', icona: ChefHat, colore: 'from-[#B8401F] to-boa' },
   { id: 'self', titolo: 'Tablet self', testo: 'Lascia il tablet al tavolo: il cliente ordina da solo', icona: Tablet, colore: 'from-[#0E2A22] to-[#2F5D4C]' },
+  { id: 'bar', titolo: 'Bar', testo: 'Coda unica: bevande dei tavoli e ordini dagli ombrelloni', icona: Coffee, colore: 'from-[#8A5A1F] to-tenda' },
 ]
 
 /** Schermata d'apertura: quale funzione fa questo dispositivo. */
-function SceltaFunzione({ onScegli, daFare }: { onScegli: (s: Scheda) => void; daFare: number }) {
+function SceltaFunzione({ onScegli, daFare, alBar, conBar }: { onScegli: (s: Scheda) => void; daFare: number; alBar: number; conBar: boolean }) {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
       <PulsanteInstalla nome="BeachIn Sala" icona="sala-icon-192.png" perche="per prendere le comande e seguire la cucina" />
       <h1 className="font-display text-2xl font-semibold text-profondo">Cosa fai con questo dispositivo?</h1>
       <p className="mt-1 text-sm text-profondo/60">Puoi cambiare quando vuoi dalla barra in basso.</p>
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {FUNZIONI.map((f) => (
+      <div className={cn('mt-5 grid grid-cols-1 gap-3', conBar ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3')}>
+        {FUNZIONI.filter((f) => conBar || f.id !== 'bar').map((f) => (
           <button key={f.id} type="button" onClick={() => onScegli(f.id)}
             className={cn('relative flex items-center gap-4 rounded-2xl bg-gradient-to-br p-5 text-left text-white shadow-md active:scale-[0.98] sm:flex-col sm:items-start', f.colore)}>
             <span className="grid h-12 w-12 shrink-0 place-content-center rounded-xl bg-white/15"><f.icona className="h-6 w-6" /></span>
@@ -113,6 +123,7 @@ function SceltaFunzione({ onScegli, daFare }: { onScegli: (s: Scheda) => void; d
               <span className="block text-sm text-white/75">{f.testo}</span>
             </span>
             {f.id === 'cucina' && daFare > 0 && <span className="absolute right-3 top-3 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-boa">{daFare} da fare</span>}
+            {f.id === 'bar' && alBar > 0 && <span className="absolute right-3 top-3 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-boa">{alBar} da fare</span>}
           </button>
         ))}
       </div>

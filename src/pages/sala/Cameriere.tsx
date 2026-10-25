@@ -4,28 +4,39 @@
  * I piatti si dividono in uscite (Subito, 1ª, 2ª…) trascinandoli col dito/mouse (eventi pointer, così funziona anche
  * su telefono e iPad, dove il drag&drop HTML5 non va) oppure toccando il piatto e poi l'uscita;
  * poi il cameriere dà il «via» alle uscite successive e segna quelle servite.
+ * Con il modulo Bar al tavolo l'interruttore Cucina | Bar mostra il listino bar: le bevande vanno nella stessa
+ * comanda (riga con `reparto: 'bar'`) e arrivano alla coda del bar, i piatti alla cucina.
  */
 import { useMemo, useRef, useState, type PointerEvent as PE } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp, X } from 'lucide-react'
+import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp, X, Coffee, UtensilsCrossed } from 'lucide-react'
 import type { ComandaSala, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useSessione } from '@/context/SessioneContext'
+import { useModuli } from '@/context/ModuliContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, etichettaStatoSala, nomeUscita, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi } from '@/lib/sala'
+import { aperteDelTavolo, articoliComePiatti, etichettaStatoSala, nomeUscita, repartoDi, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi, type Reparto } from '@/lib/sala'
 
 // 16px su telefono: con meno iPhone ingrandisce la pagina quando si tocca il campo
 const campo = 'h-10 rounded-lg border border-calce-200 bg-white px-3 text-base text-profondo focus-visible:focus-ring sm:h-9 sm:text-sm'
 
 /** `app`: dentro l'app di sala (barra delle schede in fondo, la barra della comanda le sta sopra). */
 export default function Cameriere({ app = false }: { app?: boolean }) {
-  const { menu, sezioniMenu, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala } = useDemoData()
+  const { menu, sezioniMenu, articoliBar, sezioniBar, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala } = useDemoData()
   const { profilo } = useSessione()
+  const conBar = useModuli().moduloAttivo('bar-tavolo')
+  // menu del Ristorante (cucina) e listino bar: due menu separati, una sola comanda
+  const reparti = useMemo(() => ({
+    cucina: { sezioni: sezioniMenu, piatti: menu },
+    bar: conBar ? { sezioni: sezioniBar, piatti: articoliComePiatti(articoliBar) } : { sezioni: [], piatti: [] },
+  }), [menu, sezioniMenu, articoliBar, sezioniBar, conBar])
+  const [reparto, setReparto] = useState<Reparto>('cucina')
+  const vista = reparti[conBar ? reparto : 'cucina']
   const tavoli = useMemo(() => [...tavoliDelGiorno(config.oggi)].sort((a, b) => a.numero - b.numero), [tavoliDelGiorno])
   const [tavolo, setTavolo] = useState<number | null>(null)
   const [coperti, setCoperti] = useState('')
@@ -92,12 +103,18 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
 
   const q = cerca.trim().toLowerCase()
   const righe: RigaComandaSala[] = useMemo(
-    () => sezioniMenu.flatMap((s) => menu.filter((p) => p.categoria === s.id && (qta[p.id] ?? 0) > 0).map((p) => ({
-      piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo, uscita: usc[p.id] ?? uscitaPredefinita(s.id),
-    }))),
-    [menu, sezioniMenu, qta, usc]
+    () => (['cucina', 'bar'] as const).flatMap((rep) => reparti[rep].sezioni.flatMap((s) => reparti[rep].piatti.filter((p) => p.categoria === s.id && (qta[p.id] ?? 0) > 0).map((p) => ({
+      piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo,
+      // le bevande del bar partono «subito»
+      uscita: usc[p.id] ?? (rep === 'bar' ? 0 : uscitaPredefinita(s.id)),
+      ...(rep === 'bar' ? { reparto: 'bar' as const } : {}),
+    })))),
+    [reparti, qta, usc]
   )
   const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
+  const alBar = righe.some((r) => repartoDi(r) === 'bar')
+  const inCucina = righe.some((r) => repartoDi(r) === 'cucina')
+  const destinazione = alBar && inCucina ? 'in cucina e al bar' : alBar ? 'al bar' : 'in cucina'
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
   const aperte = tavolo == null ? [] : aperteDelTavolo(comandeSala, tavolo)
   const contoTavolo = aperte.reduce((s, c) => s + c.totale, 0)
@@ -155,15 +172,25 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
 
         {/* Menu */}
         <Card>
-          <CardHeader titolo="Menu" sottotitolo="Lo stesso del Ristorante → Menu" />
+          <CardHeader titolo="Menu" sottotitolo={reparto === 'bar' && conBar ? 'Il listino del Bar' : 'Lo stesso del Ristorante → Menu'}
+            azione={conBar && (
+              <div className="flex rounded-full bg-calce/70 p-0.5 text-xs font-semibold" role="group" aria-label="Menu">
+                {([['cucina', 'Cucina', UtensilsCrossed], ['bar', 'Bar', Coffee]] as const).map(([id, nome, Icona]) => (
+                  <button key={id} type="button" onClick={() => { setReparto(id); setSezione('tutte') }}
+                    className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1.5', reparto === id ? 'bg-profondo text-white shadow' : 'text-profondo/60')}>
+                    <Icona className="h-3.5 w-3.5" /> {nome}
+                  </button>
+                ))}
+              </div>
+            )} />
           <CardBody className="space-y-3 pt-2">
             <div className="flex flex-wrap items-center gap-2">
               <label className="relative w-full min-w-0 sm:w-auto sm:min-w-[10rem] sm:flex-1">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-profondo/40" />
-                <input value={cerca} onChange={(e) => setCerca(e.target.value)} placeholder="Cerca piatto" className={cn(campo, 'w-full pl-8')} />
+                <input value={cerca} onChange={(e) => setCerca(e.target.value)} placeholder={reparto === 'bar' && conBar ? 'Cerca bevanda' : 'Cerca piatto'} className={cn(campo, 'w-full pl-8')} />
               </label>
               <div className="-mx-1 flex w-full min-w-0 gap-1 overflow-x-auto px-1 pb-1">
-                {[{ id: 'tutte', nome: 'Tutto' }, ...sezioniMenu].map((s) => (
+                {[{ id: 'tutte', nome: 'Tutto' }, ...vista.sezioni].map((s) => (
                   <button key={s.id} type="button" data-naviga onClick={() => setSezione(s.id)}
                     className={cn('whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium', sezione === s.id ? 'border-cabina bg-cabina text-white' : 'border-calce-200 text-profondo/70')}>
                     {s.nome}
@@ -171,8 +198,8 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
                 ))}
               </div>
             </div>
-            {sezioniMenu.filter((s) => sezione === 'tutte' || s.id === sezione).map((s) => {
-              const piatti = menu.filter((p) => p.categoria === s.id && (!q || p.nome.toLowerCase().includes(q)))
+            {vista.sezioni.filter((s) => sezione === 'tutte' || s.id === sezione).map((s) => {
+              const piatti = vista.piatti.filter((p) => p.categoria === s.id && (!q || p.nome.toLowerCase().includes(q)))
               if (!piatti.length) return null
               return (
                 <div key={s.id}>
@@ -233,6 +260,7 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
                               scelto === r.piattoId && 'ring-2 ring-cabina', fantasma && presa.current?.id === r.piattoId && 'opacity-40')}>
                             <GripVertical className="hidden h-4 w-4 shrink-0 text-profondo/30 [@media(pointer:fine)]:block" />
                             <span className="num w-6 font-bold text-cabina">{r.quantita}×</span>
+                            {repartoDi(r) === 'bar' && <Coffee className="h-3.5 w-3.5 shrink-0 text-cabina" aria-label="Bar" />}
                             <span className="min-w-0 flex-1 truncate text-profondo">{r.nome}</span>
                             <button type="button" aria-label={`Togli ${r.nome}`} title="Togli dalla comanda"
                               onClick={() => { setQta((m) => { const c = { ...m }; delete c[r.piattoId]; return c }); if (scelto === r.piattoId) setScelto(null) }}
@@ -271,7 +299,7 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
               <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note per la cucina (allergie, cotture…)" className={cn(campo, 'min-w-0 flex-1')} />
             </div>
             <Button variante="primario" className="w-full" disabled={tavolo == null || !righe.length} onClick={invia}>
-              {inviata ? <><Check className="h-4 w-4" /> Inviata in cucina</> : <><Send className="h-4 w-4" /> {tavolo == null ? 'Scegli il tavolo' : 'Invia in cucina'}</>}
+              {inviata ? <><Check className="h-4 w-4" /> Inviata</> : <><Send className="h-4 w-4" /> {tavolo == null ? 'Scegli il tavolo' : `Invia ${destinazione}`}</>}
             </Button>
           </CardBody>
         </Card>
@@ -332,7 +360,7 @@ function ComandaAperta({ c, onVia, onServita }: { c: ComandaSala; onVia: (n: num
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide">
               <span className="text-profondo/60">{nomeUscita(u.n)}</span>
               <span className={cn('ml-auto', u.stato === 'pronta' || inParte ? 'text-acqua' : 'text-profondo/45')}>
-                {u.stato === 'servita' ? 'Servita' : u.stato === 'pronta' ? 'Pronta' : inParte ? `Pronti ${pronti.length} su ${u.righe.length}` : u.chiamata ? 'In cucina' : 'In attesa del via'}
+                {u.stato === 'servita' ? 'Servita' : u.stato === 'pronta' ? 'Pronta' : inParte ? `Pronti ${pronti.length} su ${u.righe.length}` : u.chiamata ? (u.righe.every(({ r }) => repartoDi(r) === 'bar') ? 'Al bar' : 'In cucina') : 'In attesa del via'}
               </span>
             </div>
             <ul className="mt-0.5 space-y-0.5">
@@ -341,7 +369,7 @@ function ComandaAperta({ c, onVia, onServita }: { c: ComandaSala; onVia: (n: num
                 return (
                   <li key={i} className={cn('flex items-center gap-1.5', st === 'servita' ? 'text-profondo/40 line-through' : 'text-profondo/75')}>
                     <span className={cn('h-2 w-2 shrink-0 rounded-full', st === 'pronta' ? 'bg-acqua' : st === 'servita' ? 'bg-calce-300' : 'bg-tenda')} />
-                    <span className="min-w-0 flex-1">{r.quantita}× {r.nome}</span>
+                    <span className="min-w-0 flex-1">{r.quantita}× {r.nome}{repartoDi(r) === 'bar' && <Coffee className="ml-1 inline h-3 w-3 text-cabina" aria-label="Bar" />}</span>
                     {st === 'pronta' && <span className="text-[11px] font-semibold text-acqua">pronto</span>}
                   </li>
                 )
