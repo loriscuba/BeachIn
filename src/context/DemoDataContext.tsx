@@ -54,7 +54,7 @@ import { costi as seedCosti } from '@/data/seed/costi'
 import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
 import { traduciNome } from '@/lib/menuLingue'
 import { supabase, supabaseAttivo } from '@/lib/supabase'
-import { useSyncSupabase } from '@/hooks/useSyncSupabase'
+import { useSyncSupabase, type AccessoSync } from '@/hooks/useSyncSupabase'
 import { ricalcolaStato, statoRiga, uscitaChiamata, uscitaDi } from '@/lib/sala'
 
 const CHIAVE_COMANDE = 'beachin.comande.v1'
@@ -70,6 +70,36 @@ const FILTRO_COMANDE = {
   or: () => `pagata.eq.false,ts.gte.${inizioOggi()}`,
   tieni: (r: Record<string, unknown>) => !r.pagata || Number(r.ts) >= inizioOggi(),
 }
+/**
+ * Pagine dei clienti (fuori dal gestionale): ogni pagina scarica solo le tabelle che usa, e di prenotazioni e richieste
+ * solo le colonne che servono a calcolare la disponibilità (niente nomi, telefoni, email). Le tabelle non elencate restano
+ * spente. Il gestionale, l'app admin e l'app di sala restano completi. Non è una protezione: la fa il DB con le policy.
+ */
+const LETTURA: AccessoSync = { modo: 'lettura' }
+const MENU = { menu_piatti: LETTURA, menu_sezioni: LETTURA }
+const LISTINI = { ...MENU, articoli_bar: LETTURA, bar_sezioni: LETTURA, lavagnetta: LETTURA }
+const SITO: Record<string, AccessoSync> = {
+  ...MENU, tavoli: LETTURA, tavoli_giorno: LETTURA, giorni_chiusi: LETTURA,
+  prenotazioni_ristorante: { modo: 'lettura', colonne: 'id,data,turno,ora,coperti,tavolo_id,stato' },
+  richieste_ristorante: { modo: 'nuove', colonne: 'id,ricevuta_il,data,turno,ora,coperti,stato,ts' },
+  richieste_eventi: { modo: 'scrittura' },
+}
+export const PAGINE_CLIENTI: Record<string, (cerca: URLSearchParams) => Record<string, AccessoSync>> = {
+  '/tavolo': () => ({ ...LISTINI, tavoli_qr: { modo: 'nuove' }, comande_sala: { modo: 'nuove' } }),
+  '/menu': () => MENU,
+  '/sito/anteprima': () => SITO,
+  '/comandapp': () => ({
+    ...SITO, ...LISTINI, notizie: LETTURA,
+    comande: { modo: 'nuove', colonne: 'id,ombrellone,righe,totale,stato,ora,note,origine,ts,pagata' },
+  }),
+  // l'invito legge solo la sua richiesta (codice nel link)
+  '/invito': (cerca) => {
+    const codice = codiceDaTesto(cerca.get('c') ?? '').replace(/[^A-Z0-9]/g, '') || '-'
+    return { richieste_eventi: { modo: 'lettura', filtro: { or: () => `codice.eq.${codice}`, tieni: (r) => r.codice === codice } } }
+  },
+}
+const SPENTO: AccessoSync = { modo: 'spento' }
+
 const codiceQr = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('')
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
@@ -77,7 +107,7 @@ import { eventi as seedEventi } from '@/data/seed/eventi'
 import { notizie as seedNotizie, lavagnetta as seedLavagnetta } from '@/data/seed/app'
 import { config } from '@/data/config'
 import { posInZona, zonaDaPos } from '@/lib/zoneTavoli'
-import { nuovoCodiceInvito, urlInvito } from '@/lib/invitiEventi'
+import { codiceDaTesto, nuovoCodiceInvito, urlInvito } from '@/lib/invitiEventi'
 
 const clona = <T,>(v: T): T =>
   typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v))
@@ -369,19 +399,25 @@ const comandaDaRiga = (r: Record<string, unknown> & { id: string }): Comanda => 
   pagata: !!r.pagata,
 })
 
-export function DemoDataProvider({ children }: { children: ReactNode }) {
+/** `pagina`: percorso aperto (es. `/tavolo`) e sua query: decide quali tabelle scaricare (vedi `PAGINE_CLIENTI`). */
+export function DemoDataProvider({ children, pagina }: { children: ReactNode; pagina?: { percorso: string; cerca: string } }) {
+  const tabellePagina = useMemo(() => {
+    const f = pagina && PAGINE_CLIENTI[pagina.percorso]
+    return f ? f(new URLSearchParams(pagina.cerca)) : null
+  }, [pagina])
+  const accessoDi = (tabella: string): AccessoSync | undefined => (tabellePagina ? tabellePagina[tabella] ?? SPENTO : undefined)
   const [postazioni, setPostazioni] = useState<Postazione[]>(() => clona(seedPostazioni))
   const [conti, setConti] = useState<ContoOmbrellone[]>([])
   const [sezioniBar, setSezioniBar] = useState<SezioneBar[]>(() => clona(seedSezioniBar))
   const [articoliBarStato, setArticoliBar] = useState<ArticoloBar[]>(() => clona(articoliBar))
   useSyncSupabase({
-    tabella: 'bar_sezioni', righe: sezioniBar, setRighe: setSezioniBar, semina: true,
+    tabella: 'bar_sezioni', accesso: accessoDi('bar_sezioni'), righe: sezioniBar, setRighe: setSezioniBar, semina: true,
     aRiga: (s, i) => ({ id: s.id, nome: s.nome, ordine: i }),
     daRiga: (r) => ({ id: r.id, nome: r.nome as string }),
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
   useSyncSupabase({
-    tabella: 'articoli_bar', righe: articoliBarStato, setRighe: setArticoliBar, semina: true,
+    tabella: 'articoli_bar', accesso: accessoDi('articoli_bar'), righe: articoliBarStato, setRighe: setArticoliBar, semina: true,
     aRiga: (a, i) => ({
       id: a.id, nome: a.nome, categoria: a.categoria, prezzo_vendita: a.prezzoVendita, costo_acquisto: a.costoAcquisto,
       giacenza: a.giacenza, soglia_riordino: a.sogliaRiordino, unita: a.unita, disponibile: a.disponibile !== false, ordine: i,
@@ -410,13 +446,13 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [sezioniMenu, setSezioniMenu] = useState<SezioneMenu[]>(() => clona(seedSezioni))
   // Sync Supabase (se configurato): menu + sezioni (editor/assistente vocale) e comande (ComandApp ↔ bar)
   useSyncSupabase({
-    tabella: 'menu_sezioni', righe: sezioniMenu, setRighe: setSezioniMenu, semina: true,
+    tabella: 'menu_sezioni', accesso: accessoDi('menu_sezioni'), righe: sezioniMenu, setRighe: setSezioniMenu, semina: true,
     aRiga: (s, i) => ({ id: s.id, nome: s.nome, traduzioni: s.traduzioni ?? null, ordine: i }),
     daRiga: (r) => ({ id: r.id, nome: r.nome as string, traduzioni: (r.traduzioni as SezioneMenu['traduzioni']) ?? undefined }),
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
   useSyncSupabase({
-    tabella: 'menu_piatti', righe: menu, setRighe: setMenu, semina: true,
+    tabella: 'menu_piatti', accesso: accessoDi('menu_piatti'), righe: menu, setRighe: setMenu, semina: true,
     aRiga: (p, i) => ({
       id: p.id, nome: p.nome, categoria: p.categoria, prezzo: p.prezzo, food_cost: p.foodCost, allergeni: p.allergeni,
       venduti_stagione: p.vendutiStagione, traduzioni: p.traduzioni ?? null, foto: p.foto ?? null, descrizione: p.descrizione ?? null, ordine: i,
@@ -434,7 +470,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [notizie, setNotizie] = useState<Notizia[]>(() => clona(seedNotizie))
   const [lavagnetta, setLavagnetta] = useState<VoceLavagnetta[]>(() => clona(seedLavagnetta))
   useSyncSupabase({
-    tabella: 'notizie', righe: notizie, setRighe: setNotizie, semina: true,
+    tabella: 'notizie', accesso: accessoDi('notizie'), righe: notizie, setRighe: setNotizie, semina: true,
     aRiga: (n) => ({ id: n.id, titolo: n.titolo, testo: n.testo, data: n.data, ts: n.ts, foto: n.foto ?? null, fissata: !!n.fissata }),
     daRiga: (r) => ({
       id: r.id, titolo: r.titolo as string, testo: r.testo as string, data: r.data as string, ts: Number(r.ts),
@@ -443,7 +479,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
   useSyncSupabase({
-    tabella: 'lavagnetta', righe: lavagnetta, setRighe: setLavagnetta, semina: true,
+    tabella: 'lavagnetta', accesso: accessoDi('lavagnetta'), righe: lavagnetta, setRighe: setLavagnetta, semina: true,
     aRiga: (v, i) => ({ id: v.id, nome: v.nome, descrizione: v.descrizione ?? null, prezzo: v.prezzo, reparto: v.reparto ?? 'cucina', ordine: i }),
     daRiga: (r) => ({ id: r.id, nome: r.nome as string, descrizione: (r.descrizione as string) ?? undefined, prezzo: r.prezzo == null ? null : Number(r.prezzo), reparto: r.reparto === 'bar' ? 'bar' as const : 'cucina' as const }),
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
@@ -468,7 +504,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('storage', suCambio)
   }, [])
   useSyncSupabase({
-    tabella: 'comande', righe: comande, setRighe: setComande, filtro: FILTRO_COMANDE, perRiga: true,
+    tabella: 'comande', accesso: accessoDi('comande'), righe: comande, setRighe: setComande, filtro: FILTRO_COMANDE, perRiga: true,
     aRiga: (c) => ({
       id: c.id, ombrellone: c.ombrellone, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora,
       note: c.note ?? null, origine: c.origine ?? null, cliente: c.cliente ?? null, ts: c.ts ?? 0, pagata: !!c.pagata,
@@ -509,7 +545,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const comandeSalaRef = useRef(comandeSala)
   useEffect(() => { comandeSalaRef.current = comandeSala }, [comandeSala])
   const syncSala = useSyncSupabase({
-    tabella: 'comande_sala', righe: comandeSala, setRighe: setComandeSala, filtro: FILTRO_COMANDE, perRiga: true,
+    tabella: 'comande_sala', accesso: accessoDi('comande_sala'), righe: comandeSala, setRighe: setComandeSala, filtro: FILTRO_COMANDE, perRiga: true,
     aRiga: (c) => ({
       id: c.id, tavolo: c.tavolo, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora, ts: c.ts, origine: c.origine,
       cameriere: c.cameriere ?? null, coperti: c.coperti ?? null, note: c.note ?? null, uscita_via: c.uscitaVia ?? null,
@@ -536,7 +572,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [tavoliQr])
   // tavolo nuovo creato da due dispositivi insieme: resta il primo (il codice del QR stampato non cambia)
   const syncQr = useSyncSupabase({
-    tabella: 'tavoli_qr', righe: tavoliQr, setRighe: setTavoliQr, nuoveSenzaSovrascrivere: true,
+    tabella: 'tavoli_qr', accesso: accessoDi('tavoli_qr'), righe: tavoliQr, setRighe: setTavoliQr, nuoveSenzaSovrascrivere: true,
     aRiga: (q) => ({ id: q.id, numero: q.numero, codice: q.codice, menu: q.menu, aperto: q.aperto, seduta: q.seduta ?? null }),
     daRiga: (r) => ({ id: r.id, numero: Number(r.numero), codice: r.codice as string, menu: r.menu as TavoloQr['menu'], aperto: !!r.aperto, seduta: (r.seduta as string) ?? undefined }),
     ordina: (a, b) => Number(a.numero) - Number(b.numero),
@@ -564,7 +600,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const tavoliGiorno = useMemo(() => Object.fromEntries(disposizioni.map((d) => [d.id, d.tavoli])) as Record<string, Tavolo[]>, [disposizioni])
   // Con Supabase la sala (tavoli, disposizioni per giorno, prenotazioni) è condivisa tra gestionale, app admin e sito.
   useSyncSupabase({
-    tabella: 'tavoli', righe: tavoli, setRighe: setTavoli, semina: true,
+    tabella: 'tavoli', accesso: accessoDi('tavoli'), righe: tavoli, setRighe: setTavoli, semina: true,
     aRiga: (t, i) => ({ id: t.id, numero: t.numero, posti: t.posti, zona: t.zona, x: t.x ?? null, y: t.y ?? null, forma: t.forma ?? null, ordine: i }),
     daRiga: (r) => ({
       id: r.id, numero: Number(r.numero), posti: Number(r.posti), zona: r.zona as Tavolo['zona'],
@@ -573,7 +609,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
   useSyncSupabase({
-    tabella: 'tavoli_giorno', righe: disposizioni, setRighe: setDisposizioni,
+    tabella: 'tavoli_giorno', accesso: accessoDi('tavoli_giorno'), righe: disposizioni, setRighe: setDisposizioni,
     aRiga: (d) => ({ id: d.id, tavoli: d.tavoli }),
     daRiga: (r) => ({ id: r.id, tavoli: (r.tavoli as Tavolo[]) ?? [] }),
     ordina: (a, b) => String(a.id).localeCompare(String(b.id)),
@@ -581,7 +617,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
   useSyncSupabase({
-    tabella: 'prenotazioni_ristorante', righe: prenotazioniRistorante, setRighe: setPrenotazioniRistorante, semina: true,
+    tabella: 'prenotazioni_ristorante', accesso: accessoDi('prenotazioni_ristorante'), righe: prenotazioniRistorante, setRighe: setPrenotazioniRistorante, semina: true,
     aRiga: (p) => ({
       id: p.id, data: p.data, turno: p.turno, ora: p.ora ?? null, nome: p.nome, coperti: p.coperti, tavolo_id: p.tavoloId ?? null, stato: p.stato,
       note: p.note ?? null, telefono: p.telefono ?? null, origine: p.origine ?? null,
@@ -595,7 +631,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   })
   // Richieste tavolo dal sito: su Supabase (arrivano dal telefono del cliente, si confermano dall'app admin).
   useSyncSupabase({
-    tabella: 'richieste_ristorante', righe: richiesteRistorante, setRighe: setRichiesteRistorante,
+    tabella: 'richieste_ristorante', accesso: accessoDi('richieste_ristorante'), righe: richiesteRistorante, setRighe: setRichiesteRistorante,
     aRiga: (r) => ({
       id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, data: r.data,
       turno: r.turno, ora: r.ora ?? null, coperti: r.coperti, stato: r.stato, note: r.note ?? null, ts: r.ts ?? 0,
@@ -609,7 +645,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   })
   // Richieste eventi dal sito: su Supabase (i trigger mandano le mail al cliente via Brevo).
   useSyncSupabase({
-    tabella: 'richieste_eventi', righe: richiesteEventi, setRighe: setRichiesteEventi,
+    tabella: 'richieste_eventi', accesso: accessoDi('richieste_eventi'), righe: richiesteEventi, setRighe: setRichiesteEventi,
     aRiga: (r) => ({
       id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, evento_id: r.eventoId,
       evento_nome: r.eventoNome, evento_data: r.eventoData, evento_foto: r.eventoFoto ?? null, persone: r.persone, stato: r.stato, note: r.note ?? null, origine: r.origine ?? null,
@@ -626,7 +662,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
   useSyncSupabase({
-    tabella: 'giorni_chiusi', righe: giorniChiusi, setRighe: setGiorniChiusi,
+    tabella: 'giorni_chiusi', accesso: accessoDi('giorni_chiusi'), righe: giorniChiusi, setRighe: setGiorniChiusi,
     aRiga: (g) => ({ id: g.id, data: g.data, nota: g.nota ?? null }),
     daRiga: (r) => ({ id: r.id, data: r.data as string, nota: (r.nota as string) ?? undefined }),
     ordina: (a, b) => String(a.data).localeCompare(String(b.data)),

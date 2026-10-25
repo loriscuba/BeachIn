@@ -206,6 +206,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   di rileggere la tabella (solo tabelle senza ordine salvato). Le righe fuori filtro restano nel DB e non vengono mai cancellate.
   Bar → Dettaglio del giorno legge i giorni passati dal DB (`leggiComandeGiorno`, `giorniComande`). Le altre 13 tabelle rileggono
   ancora tutto a ogni modifica (sono piccole); il caricamento per pagina è negli APPUNTI come cosa da fare prima della produzione.
+- **Pagine dei clienti leggere** (25/10): `PAGINE_CLIENTI` nel context dice cosa scarica ogni pagina pubblica (`/tavolo`, `/menu`,
+  `/comandapp`, `/sito/anteprima`, `/invito`); il resto resta spento. Modi di `useSyncSupabase` (`accesso`): `completo`, `lettura`,
+  `nuove` (legge e salva solo righe nuove), `scrittura` (salva solo righe nuove, non legge), `spento`. Prenotazioni e richieste sul
+  sito solo con le colonne della disponibilità (niente nomi, telefoni, email); l'invito legge solo la sua richiesta (`codice`).
+  `main.tsx` passa la pagina al provider e lo rimonta quando si passa tra pagine diverse. Non è sicurezza: anon può ancora leggere
+  tutto (policy "demo anon") e il Realtime manda la riga intera: va chiuso con la Fase 2 delle policy (APPUNTI).
 - Cucina: le comande che aspettano solo il via (`aspettaVia` in lib/sala) stanno in fondo a Da fare sotto «Aspettano il via»,
   non contano nel numero della colonna e non suonano.
 
