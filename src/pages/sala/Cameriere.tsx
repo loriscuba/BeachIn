@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { config } from '@/data/config'
 import TavoliPerZona from './TavoliPerZona'
+import { DettaglioQr } from './QrTavoli'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { aperteDelTavolo, articoliComePiatti, etichettaStatoSala, nomeUscita, repartoDi, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi, type Reparto } from '@/lib/sala'
@@ -29,6 +30,7 @@ const campo = 'h-10 rounded-lg border border-calce-200 bg-white px-3 text-base t
 /** `app`: dentro l'app di sala (barra delle schede in fondo, la barra della comanda le sta sopra). */
 export default function Cameriere({ app = false }: { app?: boolean }) {
   const { menu, sezioniMenu, articoliBar, sezioniBar, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala, tavoliQr, impostaTavoloQr } = useDemoData()
+  const [vediQr, setVediQr] = useState(false)
   // tavolo aperto = i clienti possono ordinare anche dal telefono col QR del tavolo
   const aperto = (n: number) => !!tavoliQr.find((q) => q.numero === n)?.aperto
   const { profilo } = useSessione()
@@ -154,8 +156,10 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
                 title={aperto(tavolo) ? 'Chiudi il tavolo: dal QR non si ordina più' : 'Apri il tavolo: i clienti possono ordinare anche col QR'}>
                 {aperto(tavolo) ? <><Lock className="h-4 w-4" /> Chiudi</> : <><QrCode className="h-4 w-4" /> Apri tavolo</>}
               </Button>
-              <Button dimensione="sm" onClick={() => setTavolo(null)}>Cambia tavolo</Button>
+              <Button dimensione="sm" variante={vediQr ? 'primario' : 'secondario'} onClick={() => setVediQr(!vediQr)} aria-label="QR del tavolo" title="QR del tavolo"><QrCode className="h-4 w-4" /></Button>
+              <Button dimensione="sm" onClick={() => { setTavolo(null); setVediQr(false) }}>Cambia tavolo</Button>
             </CardBody>
+            {vediQr && <CardBody className="border-t border-calce-200 pt-3"><DettaglioQr numero={tavolo} /></CardBody>}
           </Card>
         ) : (
         <Card>

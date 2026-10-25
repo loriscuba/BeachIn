@@ -17,6 +17,7 @@ import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { urlTavoloQr, aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
+import { useQrTavolo } from './QrTavoli'
 
 // Palette del tablet: verde bosco, crema e oro
 const BOSCO = 'bg-[#0E2A22]'
@@ -283,15 +284,14 @@ function Sblocco({ pin, onChiudi, onOk }: { pin: string; onChiudi: () => void; o
 
 /** QR fisso del tavolo, per ordinare dal proprio telefono invece che dal tablet. */
 function QrTelefono({ tavolo, onChiudi }: { tavolo: number; onChiudi: () => void }) {
-  const { assicuraTavoliQr } = useDemoData()
-  const [q] = useState(() => assicuraTavoliQr([tavolo])[0])
+  const q = useQrTavolo(tavolo)
   return (
     <div className="fixed inset-0 z-[60] grid place-content-center bg-black/70 p-6" onClick={onChiudi}>
       <div className={cn('w-80 rounded-3xl p-6 text-center', PANNELLO)} onClick={(e) => e.stopPropagation()}>
         <Smartphone className={cn('mx-auto h-6 w-6', ORO)} />
         <h3 className="mt-2 font-display text-2xl italic">Ordina dal tuo telefono</h3>
         <p className="mt-1 text-sm text-[#F3EBDD]/70">Inquadra il codice con la fotocamera: si apre il menu del tavolo {tavolo}.</p>
-        <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />
+        {q && <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />}
         <button type="button" onClick={onChiudi} className={cn('mt-5 rounded-full px-6 py-2 text-sm font-semibold', BTN_ORO)}>Chiudi</button>
       </div>
     </div>

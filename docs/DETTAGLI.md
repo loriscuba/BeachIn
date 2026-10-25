@@ -182,6 +182,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   dalla card del tavolo; si apre da solo alla prima comanda del cameriere.
 - Scheda **QR tavoli** (`/sala?tab=qr`, `sala/QrTavoli.tsx`): menu per tavolo, apri/chiudi, "Chiudi tutti", stampa (`stampaQr`).
   Il tablet self ha il bottone telefono che mostra il QR del suo tavolo (`QrTelefono`).
+- App **BeachIn Sala** → Cameriere: selettore **Comande | QR tavoli** (`SchedaCameriere` in `SalaApp.tsx`); sulla card del tavolo del
+  cameriere il tasto QR apre `DettaglioQr` (QR, menu, apri/chiudi, stampa). `useQrTavolo(numero)` crea la riga mancante in un effect.
 
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
