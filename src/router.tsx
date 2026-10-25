@@ -27,6 +27,7 @@ const MenuPubblico = lazyRiprova(() => import('@/pages/MenuPubblico'))
 const ComandApp = lazyRiprova(() => import('@/pages/ComandApp'))
 const AdminApp = lazyRiprova(() => import('@/pages/AdminApp'))
 const SalaApp = lazyRiprova(() => import('@/pages/SalaApp'))
+const TavoloQR = lazyRiprova(() => import('@/pages/TavoloQR'))
 const InvitoEvento = lazyRiprova(() => import('@/pages/InvitoEvento'))
 const Costi = lazyRiprova(() => import('@/pages/Costi'))
 const ContoEconomico = lazyRiprova(() => import('@/pages/ContoEconomico'))
@@ -76,6 +77,8 @@ export const router = creaRouter([
   { path: '/adminapp', element: s(<AdminApp />) },
   // App di sala: cameriere, cucina e tablet self su telefono/tablet
   { path: '/salaapp', element: s(<SalaApp />) },
+  // Ordine dal telefono col QR fisso del tavolo (solo con tavolo aperto dal cameriere)
+  { path: '/tavolo', element: s(<TavoloQR />) },
   // Invito all'evento col QR (link nella mail di conferma), letto all'ingresso dall'app admin
   { path: '/invito', element: s(<InvitoEvento />) },
 ])

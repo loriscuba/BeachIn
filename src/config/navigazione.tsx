@@ -61,6 +61,7 @@ export const navigazione: VoceNav[] = [
       { percorso: '/sala?tab=cameriere', etichetta: 'Comande sala', modulo: 'sala' },
       { percorso: '/sala?tab=cucina', etichetta: 'Cucina', modulo: 'sala', badge: 'cucina' },
       { percorso: '/sala?tab=self', etichetta: 'Tablet self', modulo: 'sala' },
+      { percorso: '/sala?tab=qr', etichetta: 'QR tavoli', modulo: 'sala' },
       { percorso: '/sala?tab=bar', etichetta: 'Coda bar', modulo: 'bar-tavolo', badge: 'bar' },
       { percorso: '/ristorante?tab=menu', etichetta: 'Menu', modulo: 'ristorante' },
       { percorso: '/ristorante?tab=magazzino', etichetta: 'Magazzino', modulo: 'ristorante' },

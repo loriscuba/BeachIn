@@ -1,19 +1,21 @@
 /**
  * Tablet self al tavolo: menu a tutto schermo, verde bosco ed elegante (spunto dal layout di Loris),
  * con foto rotonde, descrizioni e prezzi per sezione. Il cliente compone l'ordine e lo manda in cucina.
- * Con il modulo Bar al tavolo, dopo i piatti ci sono le sezioni del listino bar (le bevande vanno al bar).
+ * Un solo menu per tablet (scelto all'avvio): Ristorante (va in cucina), Bar (listino bar, va al bar, modulo Bar al tavolo)
+ * o Lavagnetta (proposte del giorno, ogni voce va al suo reparto).
  * Bloccato: si esce solo col PIN scelto dal personale.
  */
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Lock, Minus, Plus, ShoppingBag, UtensilsCrossed, X, Send, Check, ChefHat } from 'lucide-react'
+import { Lock, Minus, Plus, ShoppingBag, UtensilsCrossed, X, Send, Check, ChefHat, Smartphone } from 'lucide-react'
+import { QrCodice } from '@/components/QrCodice'
 import type { Piatto, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
+import { urlTavoloQr, aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
 
 // Palette del tablet: verde bosco, crema e oro
@@ -27,29 +29,36 @@ const ALLERGENI: Record<string, string> = {
   latte: 'latte', frutta_guscio: 'frutta a guscio', sedano: 'sedano', molluschi: 'molluschi',
 }
 
-export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci: () => void }) {
-  const { menu, sezioniMenu, articoliBar, sezioniBar, comandeSala, inviaComandaSala } = useDemoData()
+/** `qr`: aperto dal telefono del cliente col QR del tavolo (niente lucchetto né PIN; la comanda è «qr»). */
+export default function TabletSelf({ stato, onEsci, qr = false }: { stato: StatoSelf; onEsci: () => void; qr?: boolean }) {
+  const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala } = useDemoData()
   const conBar = useModuli().moduloAttivo('bar-tavolo')
+  const tipo = stato.menu === 'bar' && !conBar ? 'ristorante' : stato.menu ?? 'ristorante'
   const [qta, setQta] = useState<Record<string, number>>({})
   const [note, setNote] = useState('')
   const [carrello, setCarrello] = useState(false)
   const [grazie, setGrazie] = useState(false)
   const [sblocco, setSblocco] = useState(false)
+  const [telefono, setTelefono] = useState(false)
 
-  const sezioni = useMemo(() => {
-    const bevande = articoliComePiatti(articoliBar)
-    return [
-      ...sezioniMenu.map((s) => ({ ...s, bar: false, piatti: menu.filter((p) => p.categoria === s.id) })),
-      // id con prefisso: una categoria del bar può chiamarsi come una sezione del menu
-      ...(conBar ? sezioniBar.map((s) => ({ ...s, id: `bar-${s.id}`, bar: true, piatti: bevande.filter((p) => p.categoria === s.id) })) : []),
-    ].filter((s) => s.piatti.length)
-  }, [menu, sezioniMenu, articoliBar, sezioniBar, conBar])
+  // reparto per piatto (la lavagnetta li mescola)
+  const { sezioni, alBar } = useMemo(() => {
+    if (tipo === 'bar') {
+      const bevande = articoliComePiatti(articoliBar)
+      return { sezioni: sezioniBar.map((s) => ({ ...s, piatti: bevande.filter((p) => p.categoria === s.id) })).filter((s) => s.piatti.length), alBar: new Set(bevande.map((p) => p.id)) }
+    }
+    if (tipo === 'lavagnetta') {
+      const piatti: Piatto[] = lavagnetta.map((v) => ({ id: v.id, nome: v.nome, descrizione: v.descrizione, categoria: 'lavagnetta', prezzo: v.prezzo ?? 0, foodCost: 0, allergeni: [], vendutiStagione: 0 }))
+      return { sezioni: piatti.length ? [{ id: 'lavagnetta', nome: 'La lavagna di oggi', piatti }] : [], alBar: new Set(lavagnetta.filter((v) => v.reparto === 'bar').map((v) => v.id)) }
+    }
+    return { sezioni: sezioniMenu.map((s) => ({ ...s, piatti: menu.filter((p) => p.categoria === s.id) })).filter((s) => s.piatti.length), alBar: new Set<string>() }
+  }, [tipo, menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta])
   const righe: RigaComandaSala[] = useMemo(
     () => sezioni.flatMap((s) => s.piatti.filter((p) => qta[p.id]).map((p) => ({
       piattoId: p.id, nome: p.nome, sezione: s.nome, quantita: qta[p.id], prezzoUnitario: p.prezzo,
-      ...(s.bar ? { uscita: 0, reparto: 'bar' as const } : { uscita: uscitaPredefinita(s.id) }),
+      ...(alBar.has(p.id) ? { uscita: 0, reparto: 'bar' as const } : { uscita: tipo === 'lavagnetta' ? 1 : uscitaPredefinita(s.id) }),
     }))),
-    [sezioni, qta]
+    [sezioni, alBar, tipo, qta]
   )
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
   const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
@@ -64,7 +73,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
   const vai = (id: string) => document.getElementById(`self-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const invia = () => {
     if (!righe.length) return
-    inviaComandaSala(stato.tavolo, righe, { origine: 'self', note })
+    inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note })
     setQta({}); setNote(''); setCarrello(false); setGrazie(true)
   }
 
@@ -81,7 +90,8 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
             ))}
           </nav>
           <span className="ml-auto rounded-full border border-[#D9B66A]/40 px-3 py-1 text-xs uppercase tracking-[0.2em] text-[#D9B66A]">Tavolo {stato.tavolo}</span>
-          <button type="button" onClick={() => setSblocco(true)} className="grid h-9 w-9 place-content-center rounded-full text-[#F3EBDD]/40 hover:text-[#F3EBDD]" aria-label="Sblocca tablet"><Lock className="h-4 w-4" /></button>
+          {!qr && <button type="button" onClick={() => setTelefono(true)} className="grid h-9 w-9 place-content-center rounded-full text-[#D9B66A]/80 hover:text-[#D9B66A]" aria-label="Ordina dal tuo telefono" title="Ordina dal tuo telefono"><Smartphone className="h-4 w-4" /></button>}
+          {!qr && <button type="button" onClick={() => setSblocco(true)} className="grid h-9 w-9 place-content-center rounded-full text-[#F3EBDD]/40 hover:text-[#F3EBDD]" aria-label="Sblocca tablet"><Lock className="h-4 w-4" /></button>}
         </div>
         {/* sezioni su tablet in verticale */}
         <nav className="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden">
@@ -97,7 +107,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
           <p className="text-xs uppercase tracking-[0.3em] text-[#D9B66A]/80">Benvenuti al tavolo {stato.tavolo}</p>
           <h1 className="mt-3 font-display text-5xl italic leading-[1.05] sm:text-6xl">Il mare,<br />nel piatto</h1>
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[#F3EBDD]/70">
-            Sfoglia il nostro menu, scegli con calma e invia l’ordine: arriva direttamente in cucina. Per allergie o richieste scrivilo nelle note.
+            Sfoglia il nostro menu, scegli con calma e invia l’ordine: arriva direttamente a chi lo prepara. Per allergie o richieste scrivilo nelle note.
           </p>
           <button type="button" onClick={() => sezioni[0] && vai(sezioni[0].id)} className="mt-6 rounded-sm border border-[#D9B66A]/60 px-5 py-2.5 text-xs uppercase tracking-[0.25em] text-[#D9B66A] hover:bg-[#D9B66A]/10">Sfoglia il menu</button>
         </div>
@@ -111,7 +121,6 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
       <main className="mx-auto max-w-6xl space-y-14 px-6 pb-40 sm:px-8">
         {sezioni.map((s, i) => (
           <section key={s.id} id={`self-${s.id}`} className="scroll-mt-28">
-            {s.bar && !sezioni[i - 1]?.bar && <p className="mb-10 text-center text-xs uppercase tracking-[0.35em] text-[#D9B66A]/70">— Dal bar —</p>}
             <div className="mb-6 text-center">
               <p className={cn('font-gesso text-2xl', ORO)}>{String(i + 1).padStart(2, '0')}</p>
               <h2 className="font-display text-4xl italic">{s.nome}</h2>
@@ -199,6 +208,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
         </div>
       )}
 
+      {telefono && <QrTelefono tavolo={stato.tavolo} onChiudi={() => setTelefono(false)} />}
       {sblocco && <Sblocco pin={stato.pin} onChiudi={() => setSblocco(false)} onOk={() => { salvaSelf(null); if (document.fullscreenElement) void document.exitFullscreen?.(); onEsci() }} />}
     </div>,
     document.body
@@ -266,6 +276,23 @@ function Sblocco({ pin, onChiudi, onOk }: { pin: string; onChiudi: () => void; o
             <button key={i} type="button" onClick={() => prova(k === '⌫' ? v.slice(0, -1) : (v + k).slice(0, 4))} className="num h-12 rounded-xl bg-black/20 text-lg hover:bg-black/30">{k}</button>
           ) : <span key={i} />)}
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** QR fisso del tavolo, per ordinare dal proprio telefono invece che dal tablet. */
+function QrTelefono({ tavolo, onChiudi }: { tavolo: number; onChiudi: () => void }) {
+  const { assicuraTavoliQr } = useDemoData()
+  const [q] = useState(() => assicuraTavoliQr([tavolo])[0])
+  return (
+    <div className="fixed inset-0 z-[60] grid place-content-center bg-black/70 p-6" onClick={onChiudi}>
+      <div className={cn('w-80 rounded-3xl p-6 text-center', PANNELLO)} onClick={(e) => e.stopPropagation()}>
+        <Smartphone className={cn('mx-auto h-6 w-6', ORO)} />
+        <h3 className="mt-2 font-display text-2xl italic">Ordina dal tuo telefono</h3>
+        <p className="mt-1 text-sm text-[#F3EBDD]/70">Inquadra il codice con la fotocamera: si apre il menu del tavolo {tavolo}.</p>
+        <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />
+        <button type="button" onClick={onChiudi} className={cn('mt-5 rounded-full px-6 py-2 text-sm font-semibold', BTN_ORO)}>Chiudi</button>
       </div>
     </div>
   )

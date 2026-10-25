@@ -256,8 +256,8 @@ export interface Comanda {
 /** Flusso in cucina: inviata → in preparazione → pronta → servita. */
 export type StatoComandaSala = 'inviata' | 'in_preparazione' | 'pronta' | 'servita'
 
-/** Stato del singolo piatto in cucina. */
-export type StatoRigaSala = 'attesa' | 'pronta' | 'servita'
+/** Stato del singolo piatto (cucina o bar): da fare → in lavorazione → pronto → servito. */
+export type StatoRigaSala = 'attesa' | 'preparazione' | 'pronta' | 'servita'
 
 export interface RigaComandaSala {
   piattoId: string
@@ -283,8 +283,8 @@ export interface ComandaSala {
   stato: StatoComandaSala
   ora: string // HH:mm di invio
   ts: number
-  /** 'cameriere' = presa in sala; 'self' = ordinata dal tablet al tavolo. */
-  origine: 'cameriere' | 'self'
+  /** 'cameriere' = presa in sala; 'self' = ordinata dal tablet al tavolo; 'qr' = dal telefono del cliente col QR del tavolo. */
+  origine: 'cameriere' | 'self' | 'qr'
   /** Nome di chi l'ha presa (utente collegato). */
   cameriere?: string
   coperti?: number
@@ -350,6 +350,17 @@ export interface Tavolo {
   x?: number
   y?: number
   forma?: 'tondo' | 'quadrato'
+}
+
+/** QR fisso del tavolo (per numero): il cliente ordina dal telefono solo quando il cameriere ha aperto il tavolo. */
+export interface TavoloQr {
+  /** = numero del tavolo, come testo */
+  id: string
+  numero: number
+  /** Codice nel link del QR: non indovinabile, resta uguale (il QR si stampa una volta). */
+  codice: string
+  menu: 'ristorante' | 'bar' | 'lavagnetta'
+  aperto: boolean
 }
 
 export type CategoriaMagazzino = 'pesce' | 'carne' | 'verdura' | 'latticini' | 'secco' | 'bevande' | 'altro'
@@ -713,4 +724,6 @@ export interface VoceLavagnetta {
   nome: string
   descrizione?: string
   prezzo: number | null
+  /** Chi la prepara se ordinata dal tablet self col menu Lavagnetta (assente = cucina). */
+  reparto?: 'cucina' | 'bar'
 }

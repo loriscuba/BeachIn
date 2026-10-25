@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { ArrowDown, ArrowUp, ImagePlus, Pin, PinOff, Plus, Trash2, X } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
+import { useModuli } from '@/context/ModuliContext'
 import { fileAImmagine } from '@/lib/immagini'
 import { data as fmtData, euro, euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
@@ -77,6 +78,8 @@ export function GestioneNews() {
 export function GestioneLavagnetta() {
   const { lavagnetta, aggiungiVoceLavagnetta, modificaVoceLavagnetta, rimuoviVoceLavagnetta, spostaVoceLavagnetta } = useDemoData()
   const [f, setF] = useState({ nome: '', descrizione: '', prezzo: '' })
+  // ordinata dal tablet self con il menu Lavagnetta: la voce va in cucina o al bar
+  const conReparto = useModuli().moduloAttivo('sala')
   const leggiPrezzo = (s: string) => { const n = Number(s.replace(',', '.')); return s.trim() && Number.isFinite(n) ? n : null }
   const aggiungi = (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,7 +97,13 @@ export function GestioneLavagnetta() {
             <div className="grid min-w-0 flex-1 grid-cols-[1fr_5rem] gap-1.5">
               <input value={v.nome} onChange={(e) => modificaVoceLavagnetta(v.id, { nome: e.target.value })} className={cn(campo, 'font-medium')} aria-label="Piatto" />
               <input key={`${v.id}-${v.prezzo}`} defaultValue={v.prezzo ?? ''} inputMode="decimal" onBlur={(e) => modificaVoceLavagnetta(v.id, { prezzo: leggiPrezzo(e.target.value) })} placeholder="€" className={cn(campo, 'num text-right')} aria-label="Prezzo" />
-              <input value={v.descrizione ?? ''} onChange={(e) => modificaVoceLavagnetta(v.id, { descrizione: e.target.value || undefined })} placeholder="descrizione (facoltativa)" className={cn(campo, 'col-span-2 h-9 text-xs')} aria-label="Descrizione" />
+              <input value={v.descrizione ?? ''} onChange={(e) => modificaVoceLavagnetta(v.id, { descrizione: e.target.value || undefined })} placeholder="descrizione (facoltativa)" className={cn(campo, 'h-9 text-xs', !conReparto && 'col-span-2')} aria-label="Descrizione" />
+              {conReparto && (
+                <button type="button" onClick={() => modificaVoceLavagnetta(v.id, { reparto: v.reparto === 'bar' ? 'cucina' : 'bar' })} title="Chi la prepara quando la ordinano dal tablet al tavolo"
+                  className={cn('h-9 rounded-lg border text-xs font-semibold', v.reparto === 'bar' ? 'border-cabina bg-cabina/10 text-cabina' : 'border-calce-200 text-profondo/60')}>
+                  {v.reparto === 'bar' ? 'Bar' : 'Cucina'}
+                </button>
+              )}
             </div>
             <div className="flex shrink-0 flex-col">
               <button onClick={() => spostaVoceLavagnetta(v.id, -1)} disabled={i === 0} className="grid h-7 w-7 place-content-center rounded text-profondo/50 hover:bg-calce disabled:opacity-25" aria-label="Su"><ArrowUp className="h-4 w-4" /></button>

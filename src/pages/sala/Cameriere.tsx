@@ -9,7 +9,7 @@
  */
 import { useMemo, useRef, useState, type PointerEvent as PE } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp, X, Coffee, UtensilsCrossed } from 'lucide-react'
+import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp, X, Coffee, UtensilsCrossed, Lock, QrCode, Smartphone } from 'lucide-react'
 import type { ComandaSala, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useSessione } from '@/context/SessioneContext'
@@ -18,6 +18,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { config } from '@/data/config'
+import TavoliPerZona from './TavoliPerZona'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { aperteDelTavolo, articoliComePiatti, etichettaStatoSala, nomeUscita, repartoDi, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi, type Reparto } from '@/lib/sala'
@@ -27,7 +28,9 @@ const campo = 'h-10 rounded-lg border border-calce-200 bg-white px-3 text-base t
 
 /** `app`: dentro l'app di sala (barra delle schede in fondo, la barra della comanda le sta sopra). */
 export default function Cameriere({ app = false }: { app?: boolean }) {
-  const { menu, sezioniMenu, articoliBar, sezioniBar, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala } = useDemoData()
+  const { menu, sezioniMenu, articoliBar, sezioniBar, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala, tavoliQr, impostaTavoloQr } = useDemoData()
+  // tavolo aperto = i clienti possono ordinare anche dal telefono col QR del tavolo
+  const aperto = (n: number) => !!tavoliQr.find((q) => q.numero === n)?.aperto
   const { profilo } = useSessione()
   const conBar = useModuli().moduloAttivo('bar-tavolo')
   // menu del Ristorante (cucina) e listino bar: due menu separati, una sola comanda
@@ -128,6 +131,8 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
   const invia = () => {
     if (tavolo == null || !righe.length) return
     inviaComandaSala(tavolo, righe, { origine: 'cameriere', cameriere: profilo?.nome, coperti: Number(coperti) || undefined, note })
+    // chi ha ordinato è seduto: il tavolo si apre anche ai QR
+    if (!aperto(tavolo)) impostaTavoloQr(tavolo, { aperto: true })
     setQta({}); setUsc({}); setScelto(null); setNote('')
     setInviata(true)
     window.setTimeout(() => setInviata(false), 3000)
@@ -143,8 +148,12 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
               <span className="grid h-11 w-11 place-content-center rounded-xl bg-gradient-to-br from-profondo to-cabina text-lg font-bold text-white num">{tavolo}</span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-profondo">Tavolo {tavolo}</p>
-                <p className="text-xs text-profondo/55">{aperte.length ? `${aperte.length} comand${aperte.length > 1 ? 'e aperte' : 'a aperta'} · ${euroCent(contoTavolo)}` : 'Nessuna comanda aperta'}</p>
+                <p className="text-xs text-profondo/55">{aperto(tavolo) && <span className="font-semibold text-acqua">Aperto ai QR · </span>}{aperte.length ? `${aperte.length} comand${aperte.length > 1 ? 'e aperte' : 'a aperta'} · ${euroCent(contoTavolo)}` : 'Nessuna comanda aperta'}</p>
               </div>
+              <Button dimensione="sm" variante={aperto(tavolo) ? 'secondario' : 'primario'} onClick={() => impostaTavoloQr(tavolo, { aperto: !aperto(tavolo) })}
+                title={aperto(tavolo) ? 'Chiudi il tavolo: dal QR non si ordina più' : 'Apri il tavolo: i clienti possono ordinare anche col QR'}>
+                {aperto(tavolo) ? <><Lock className="h-4 w-4" /> Chiudi</> : <><QrCode className="h-4 w-4" /> Apri tavolo</>}
+              </Button>
               <Button dimensione="sm" onClick={() => setTavolo(null)}>Cambia tavolo</Button>
             </CardBody>
           </Card>
@@ -152,20 +161,9 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
         <Card>
           <CardHeader titolo="Tavolo" sottotitolo="Tocca il tavolo per cui prendi la comanda" />
           <CardBody className="pt-2">
-            <div className="grid grid-cols-4 gap-2 min-[400px]:grid-cols-5 sm:grid-cols-8 lg:grid-cols-9">
-              {tavoli.map((t) => {
-                const n = aperteDelTavolo(comandeSala, t.numero).length
-                return (
-                  <button key={t.id} type="button" onClick={() => { setTavolo(t.numero); setCoperti('') }}
-                    className={cn('relative grid h-14 place-content-center rounded-xl border text-center transition',
-                      tavolo === t.numero ? 'border-cabina bg-gradient-to-br from-profondo to-cabina text-white shadow' : n ? 'border-tenda bg-tenda/15 text-profondo' : 'border-calce-200 bg-white text-profondo hover:border-cabina')}>
-                    <span className="num text-lg font-bold leading-none">{t.numero}</span>
-                    <span className={cn('text-[10px]', tavolo === t.numero ? 'text-white/75' : 'text-profondo/50')}>{t.posti} posti</span>
-                    {n > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-content-center rounded-full bg-boa px-1 text-[11px] font-bold text-white">{n}</span>}
-                  </button>
-                )
-              })}
-            </div>
+            <TavoliPerZona tavoli={tavoli} scelto={tavolo} onScegli={(n) => { setTavolo(n); setCoperti('') }}
+              badge={(t) => aperteDelTavolo(comandeSala, t.numero).length} evidenzia={(t) => aperto(t.numero) || aperteDelTavolo(comandeSala, t.numero).length > 0}
+              nota={(t) => (aperto(t.numero) ? 'aperto' : `${t.posti} posti`)} />
           </CardBody>
         </Card>
         )}
@@ -347,7 +345,7 @@ function ComandaAperta({ c, onVia, onServita }: { c: ComandaSala; onVia: (n: num
     <div className="rounded-xl border border-calce-200 p-2.5 text-sm">
       <div className="mb-1.5 flex items-center gap-2">
         <span className="num font-semibold text-profondo">{c.ora}</span>
-        {c.origine === 'self' ? <Badge tono="mare"><Tablet className="h-3 w-3" /> Tablet</Badge> : <Badge tono="neutro"><ChefHat className="h-3 w-3" /> {c.cameriere ?? 'Sala'}</Badge>}
+        {c.origine === 'qr' ? <Badge tono="mare"><Smartphone className="h-3 w-3" /> QR</Badge> : c.origine === 'self' ? <Badge tono="mare"><Tablet className="h-3 w-3" /> Tablet</Badge> : <Badge tono="neutro"><ChefHat className="h-3 w-3" /> {c.cameriere ?? 'Sala'}</Badge>}
         <Badge tono={tonoStatoSala[c.stato]} puntino className="ml-auto">{etichettaStatoSala[c.stato]}</Badge>
       </div>
       <div className="space-y-1.5">

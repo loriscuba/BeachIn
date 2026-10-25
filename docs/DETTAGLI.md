@@ -158,14 +158,30 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   forma `Piatto` da `articoliComePiatti` (`lib/sala.ts`). Riga della comanda con `reparto: 'bar'` (assente = cucina), dentro il jsonb
   `righe`: nessuna colonna nuova. Le bevande partono in uscita 0 (Subito), spostabili come i piatti.
 - **Cameriere**: interruttore **Cucina | Bar** nella card Menu (filtri per categoria del listino), una sola comanda e un solo conto;
-  tasto "Invia in cucina / al bar / in cucina e al bar"; icona tazza sulle righe del bar. **Tablet self**: dopo i piatti le sezioni
-  del bar ("— Dal bar —", id `bar-<categoria>`).
-- **Cucina**: vede solo le righe di cucina (`perReparto(c, 'cucina')`, indici originali per le azioni); le comande di sole bevande
-  non compaiono. `ricalcolaStato`: "inviata" = la cucina non ha iniziato, le righe del bar non contano. Badge `daFareCucina`.
-- **Coda unica bar** (`src/pages/sala/CodaBar.tsx`, `codaBar()` in `lib/sala.ts`): comande dagli ombrelloni (avanzano di stato come
-  prima, `ComandaCard` spostata qui) + bevande dei tavoli (tocco = pronta, "Tutto pronto"; uscite senza via in grigio), colonne
-  Da preparare / Pronte, campanello. Dove: scheda **Bar** in `/sala?tab=bar` (voce "Coda bar", badge `bar`), quarta scheda dell'app
+  tasto "Invia in cucina / al bar / in cucina e al bar"; icona tazza sulle righe del bar.
+- **Tablet self**: un solo menu per tablet, scelto in `AvvioSelf` (`StatoSelf.menu`: `ristorante` | `bar` | `lavagnetta`, assente =
+  ristorante). Lavagnetta: ogni voce ha `reparto` cucina/bar (migrazione `0019_lavagnetta_reparto.sql`, bottone Cucina/Bar
+  nell'editor della lavagnetta quando `sala` è attivo); prezzo `null` = 0.
+- **Stati uniformi** cucina e bar: per riga `attesa → preparazione → pronta → servita`; `ricalcolaStato` li riassume sulla comanda
+  o sulla vista di un reparto (piatti chiamati non serviti: tutti da fare = inviata/Da fare, tutti pronti = pronta, altrimenti in
+  preparazione). "Inizia preparazione" mette in lavorazione le righe chiamate del reparto (`azioniTavolo` in `Cucina.tsx`).
+- **Cucina** (`<Cucina reparto>`): vede solo le sue righe (`perReparto`, indici originali per le azioni). Badge `daFareCucina`.
+- **Coda unica bar** = `<Cucina reparto="bar" />` (stesse tre colonne Da fare / In lavorazione / Pronte) con anche le comande dagli
+  ombrelloni (`ComandaCard` in `sala/ComandaOmbrellone.tsx`; nuova = Da fare, presa in carico/in preparazione = In lavorazione,
+  pronta = Pronte, ultime 12 non incassate); al bar niente X sulle comande dei tavoli. `CodaBar compatta` = elenco unico in Comande. Dove: scheda **Bar** in `/sala?tab=bar` (voce "Coda bar", badge `bar`), quarta scheda dell'app
   `/salaapp`, e al posto della coda nella pagina Comande quando il modulo è attivo (`<CodaBar compatta suoni />`).
+
+## QR tavoli e scelta tavolo per zona (ott 2026)
+- **Scelta del tavolo per zona** (`src/pages/sala/TavoliPerZona.tsx`): cameriere, avvio tablet self e QR tavoli usano i tavoli del
+  giorno (`tavoliDelGiorno(config.oggi)`, gli stessi di Ristorante → Tavoli) divisi per le zone di `lib/zoneTavoli.ts`.
+- **QR fisso per tavolo**: tabella `beachin.tavoli_qr` (migrazione `0020_tavoli_qr.sql`: id = numero, `codice` casuale di 10 caratteri,
+  `menu` ristorante/bar/lavagnetta, `aperto`; anche origine `qr` su `comande_sala`). Context `tavoliQr`, `assicuraTavoliQr(numeri)`
+  (crea le righe mancanti), `impostaTavoloQr(numero, { menu?, aperto? })`; senza Supabase localStorage `beachin.tavoliqr.v1`.
+- Link `urlTavoloQr(codice)` → rotta pubblica **`/tavolo?c=`** (`src/pages/TavoloQR.tsx`): se il tavolo è aperto apre `TabletSelf`
+  con `qr` (niente lucchetto, comanda `origine: 'qr'`, badge "QR"), altrimenti "chiedi al cameriere". Il cameriere apre/chiude il tavolo
+  dalla card del tavolo; si apre da solo alla prima comanda del cameriere.
+- Scheda **QR tavoli** (`/sala?tab=qr`, `sala/QrTavoli.tsx`): menu per tavolo, apri/chiudi, "Chiudi tutti", stampa (`stampaQr`).
+  Il tablet self ha il bottone telefono che mostra il QR del suo tavolo (`QrTelefono`).
 
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
