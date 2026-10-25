@@ -1,7 +1,8 @@
 /**
  * Ordine dal telefono col QR fisso del tavolo (rotta pubblica `/tavolo?c=<codice>`, fuori dallo shell).
  * Il codice individua il tavolo (`tavoliQr`); si ordina solo se il cameriere ha aperto il tavolo, così chi ha
- * la foto del QR non può ordinare da fuori. Menu = quello scelto per il tavolo in Comande sala → QR tavoli.
+ * la foto del QR non può ordinare da fuori. La pagina resta legata al conto (seduta) che ha trovato aperto: chiuso
+ * il conto, chi la tiene aperta non ordina più sul conto dei clienti successivi. Menu = quello scelto per il tavolo in Comande sala → QR tavoli.
  */
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -19,11 +20,21 @@ export default function TavoloQR() {
   const [attesa, setAttesa] = useState(true)
   useEffect(() => { const t = window.setTimeout(() => setAttesa(false), 4000); return () => window.clearTimeout(t) }, [])
 
-  if (q?.aperto) return <TabletSelf qr stato={{ tavolo: q.numero, pin: '', menu: q.menu }} onEsci={() => {}} />
+  const [seduta, setSeduta] = useState<string>()
+  useEffect(() => { if (q?.aperto && !seduta) setSeduta(q.seduta ?? '') }, [q?.aperto, q?.seduta, seduta])
+  const scaduta = !!q && seduta !== undefined && (q.seduta ?? '') !== seduta
+
+  if (q?.aperto && !scaduta) return <TabletSelf qr seduta={seduta} stato={{ tavolo: q.numero, pin: '', menu: q.menu }} onEsci={() => {}} />
   return (
     <div className="grid min-h-screen place-content-center bg-[#0E2A22] p-8 text-center text-[#F3EBDD]">
       <p className="font-gesso text-4xl text-[#D9B66A]">{config.nome}</p>
-      {q ? (
+      {q && scaduta ? (
+        <>
+          <Lock className="mx-auto mt-6 h-8 w-8 text-[#D9B66A]/80" />
+          <h1 className="mt-3 font-display text-3xl italic">Conto chiuso</h1>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-[#F3EBDD]/70">Grazie della visita! Per ordinare di nuovo al tavolo {q.numero} inquadra ancora il QR.</p>
+        </>
+      ) : q ? (
         <>
           <Lock className="mx-auto mt-6 h-8 w-8 text-[#D9B66A]/80" />
           <h1 className="mt-3 font-display text-3xl italic">Tavolo {q.numero}</h1>

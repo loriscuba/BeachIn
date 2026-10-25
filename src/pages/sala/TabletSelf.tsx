@@ -15,8 +15,9 @@ import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { urlTavoloQr, aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
+import { urlTavoloQr, delConto, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
+import { useQrTavolo } from './QrTavoli'
 
 // Palette del tablet: verde bosco, crema e oro
 const BOSCO = 'bg-[#0E2A22]'
@@ -29,9 +30,10 @@ const ALLERGENI: Record<string, string> = {
   latte: 'latte', frutta_guscio: 'frutta a guscio', sedano: 'sedano', molluschi: 'molluschi',
 }
 
-/** `qr`: aperto dal telefono del cliente col QR del tavolo (niente lucchetto né PIN; la comanda è «qr»). */
-export default function TabletSelf({ stato, onEsci, qr = false }: { stato: StatoSelf; onEsci: () => void; qr?: boolean }) {
-  const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala } = useDemoData()
+/** `qr`: aperto dal telefono del cliente col QR del tavolo (niente lucchetto né PIN; la comanda è «qr»).
+ *  `seduta`: il conto su cui la pagina ordina; chiuso quello, l'invio viene rifiutato. */
+export default function TabletSelf({ stato, onEsci, qr = false, seduta }: { stato: StatoSelf; onEsci: () => void; qr?: boolean; seduta?: string }) {
+  const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala, tavoliQr } = useDemoData()
   const conBar = useModuli().moduloAttivo('bar-tavolo')
   const tipo = stato.menu === 'bar' && !conBar ? 'ristorante' : stato.menu ?? 'ristorante'
   const [qta, setQta] = useState<Record<string, number>>({})
@@ -62,7 +64,7 @@ export default function TabletSelf({ stato, onEsci, qr = false }: { stato: Stato
   )
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
   const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
-  const ordini = aperteDelTavolo(comandeSala, stato.tavolo)
+  const ordini = delConto(comandeSala, stato.tavolo, seduta || tavoliQr.find((q) => q.numero === stato.tavolo)?.seduta)
 
   const cambia = (id: string, d: number) => setQta((m) => {
     const v = Math.max(0, (m[id] ?? 0) + d)
@@ -73,7 +75,7 @@ export default function TabletSelf({ stato, onEsci, qr = false }: { stato: Stato
   const vai = (id: string) => document.getElementById(`self-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const invia = () => {
     if (!righe.length) return
-    inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note })
+    if (!inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note, seduta: seduta || undefined })) return
     setQta({}); setNote(''); setCarrello(false); setGrazie(true)
   }
 
@@ -283,15 +285,14 @@ function Sblocco({ pin, onChiudi, onOk }: { pin: string; onChiudi: () => void; o
 
 /** QR fisso del tavolo, per ordinare dal proprio telefono invece che dal tablet. */
 function QrTelefono({ tavolo, onChiudi }: { tavolo: number; onChiudi: () => void }) {
-  const { assicuraTavoliQr } = useDemoData()
-  const [q] = useState(() => assicuraTavoliQr([tavolo])[0])
+  const q = useQrTavolo(tavolo)
   return (
     <div className="fixed inset-0 z-[60] grid place-content-center bg-black/70 p-6" onClick={onChiudi}>
       <div className={cn('w-80 rounded-3xl p-6 text-center', PANNELLO)} onClick={(e) => e.stopPropagation()}>
         <Smartphone className={cn('mx-auto h-6 w-6', ORO)} />
         <h3 className="mt-2 font-display text-2xl italic">Ordina dal tuo telefono</h3>
         <p className="mt-1 text-sm text-[#F3EBDD]/70">Inquadra il codice con la fotocamera: si apre il menu del tavolo {tavolo}.</p>
-        <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />
+        {q && <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />}
         <button type="button" onClick={onChiudi} className={cn('mt-5 rounded-full px-6 py-2 text-sm font-semibold', BTN_ORO)}>Chiudi</button>
       </div>
     </div>

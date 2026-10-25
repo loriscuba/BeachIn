@@ -291,6 +291,10 @@ export interface ComandaSala {
   note?: string
   /** Uscite chiamate dal cameriere ("via"): la cucina prepara quelle ≤ uscitaVia. Assente = tutte. */
   uscitaVia?: number
+  /** Conto del tavolo a cui appartiene (`TavoloQr.seduta`); assente nelle comande vecchie. */
+  seduta?: string
+  /** Conto chiuso e incassato: la comanda esce dal tavolo (resta nello storico). */
+  pagata?: boolean
 }
 
 // ————————————————————————————————————————————————————————————
@@ -361,6 +365,8 @@ export interface TavoloQr {
   codice: string
   menu: 'ristorante' | 'bar' | 'lavagnetta'
   aperto: boolean
+  /** Conto in corso del tavolo: ogni comanda ne porta l'id; «Chiudi conto» lo chiude e ne prepara uno nuovo. */
+  seduta?: string
 }
 
 export type CategoriaMagazzino = 'pesce' | 'carne' | 'verdura' | 'latticini' | 'secco' | 'bevande' | 'altro'

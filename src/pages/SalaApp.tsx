@@ -22,6 +22,7 @@ import Cucina from './sala/Cucina'
 import AvvioSelf, { leggiSelf, type StatoSelf } from './sala/AvvioSelf'
 import TabletSelf from './sala/TabletSelf'
 import CodaBar from './sala/CodaBar'
+import QrTavoli from './sala/QrTavoli'
 
 type Scheda = 'cameriere' | 'cucina' | 'self' | 'bar'
 
@@ -77,7 +78,7 @@ function Area() {
     <>
       {/* spazio in fondo per la barra delle schede (e la barra comanda del cameriere sopra) */}
       <main className={cn('mx-auto max-w-6xl px-3 py-3 sm:px-4', scheda === 'cameriere' ? 'pb-40 lg:pb-24' : 'pb-24')}>
-        {scheda === 'cameriere' && <Cameriere app />}
+        {scheda === 'cameriere' && <SchedaCameriere />}
         {scheda === 'cucina' && <Cucina />}
         {scheda === 'self' && <AvvioSelf onAvvia={setSelf} />}
         {scheda === 'bar' && <CodaBar />}
@@ -128,5 +129,20 @@ function SceltaFunzione({ onScegli, daFare, alBar, conBar }: { onScegli: (s: Sch
         ))}
       </div>
     </main>
+  )
+}
+
+/** Cameriere nell'app: comande del tavolo oppure QR dei tavoli (menu, apri/chiudi, stampa). */
+function SchedaCameriere() {
+  const [vista, setVista] = useState<'comande' | 'qr'>('comande')
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm">
+        {([['comande', 'Comande'], ['qr', 'QR tavoli']] as const).map(([id, nome]) => (
+          <button key={id} type="button" onClick={() => setVista(id)} className={cn('rounded-lg py-2', vista === id ? 'bg-profondo text-white' : 'text-profondo/60')}>{nome}</button>
+        ))}
+      </div>
+      {vista === 'comande' ? <Cameriere app /> : <QrTavoli />}
+    </div>
   )
 }
