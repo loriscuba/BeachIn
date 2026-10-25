@@ -158,13 +158,17 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   forma `Piatto` da `articoliComePiatti` (`lib/sala.ts`). Riga della comanda con `reparto: 'bar'` (assente = cucina), dentro il jsonb
   `righe`: nessuna colonna nuova. Le bevande partono in uscita 0 (Subito), spostabili come i piatti.
 - **Cameriere**: interruttore **Cucina | Bar** nella card Menu (filtri per categoria del listino), una sola comanda e un solo conto;
-  tasto "Invia in cucina / al bar / in cucina e al bar"; icona tazza sulle righe del bar. **Tablet self**: dopo i piatti le sezioni
-  del bar ("— Dal bar —", id `bar-<categoria>`).
-- **Cucina**: vede solo le righe di cucina (`perReparto(c, 'cucina')`, indici originali per le azioni); le comande di sole bevande
-  non compaiono. `ricalcolaStato`: "inviata" = la cucina non ha iniziato, le righe del bar non contano. Badge `daFareCucina`.
-- **Coda unica bar** (`src/pages/sala/CodaBar.tsx`, `codaBar()` in `lib/sala.ts`): comande dagli ombrelloni (avanzano di stato come
-  prima, `ComandaCard` spostata qui) + bevande dei tavoli (tocco = pronta, "Tutto pronto"; uscite senza via in grigio), colonne
-  Da preparare / Pronte, campanello. Dove: scheda **Bar** in `/sala?tab=bar` (voce "Coda bar", badge `bar`), quarta scheda dell'app
+  tasto "Invia in cucina / al bar / in cucina e al bar"; icona tazza sulle righe del bar.
+- **Tablet self**: un solo menu per tablet, scelto in `AvvioSelf` (`StatoSelf.menu`: `ristorante` | `bar` | `lavagnetta`, assente =
+  ristorante). Lavagnetta: ogni voce ha `reparto` cucina/bar (migrazione `0019_lavagnetta_reparto.sql`, bottone Cucina/Bar
+  nell'editor della lavagnetta quando `sala` è attivo); prezzo `null` = 0.
+- **Stati uniformi** cucina e bar: per riga `attesa → preparazione → pronta → servita`; `ricalcolaStato` li riassume sulla comanda
+  o sulla vista di un reparto (piatti chiamati non serviti: tutti da fare = inviata/Da fare, tutti pronti = pronta, altrimenti in
+  preparazione). "Inizia preparazione" mette in lavorazione le righe chiamate del reparto (`azioniTavolo` in `Cucina.tsx`).
+- **Cucina** (`<Cucina reparto>`): vede solo le sue righe (`perReparto`, indici originali per le azioni). Badge `daFareCucina`.
+- **Coda unica bar** = `<Cucina reparto="bar" />` (stesse tre colonne Da fare / In lavorazione / Pronte) con anche le comande dagli
+  ombrelloni (`ComandaCard` in `sala/ComandaOmbrellone.tsx`; nuova = Da fare, presa in carico/in preparazione = In lavorazione,
+  pronta = Pronte, ultime 12 non incassate); al bar niente X sulle comande dei tavoli. `CodaBar compatta` = elenco unico in Comande. Dove: scheda **Bar** in `/sala?tab=bar` (voce "Coda bar", badge `bar`), quarta scheda dell'app
   `/salaapp`, e al posto della coda nella pagina Comande quando il modulo è attivo (`<CodaBar compatta suoni />`).
 
 ## App clienti (`/comandapp`, ott 2026)

@@ -54,7 +54,7 @@ import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, pre
 import { traduciNome } from '@/lib/menuLingue'
 import { supabaseAttivo } from '@/lib/supabase'
 import { useSyncSupabase } from '@/hooks/useSyncSupabase'
-import { ricalcolaStato } from '@/lib/sala'
+import { ricalcolaStato, statoRiga, uscitaChiamata, uscitaDi } from '@/lib/sala'
 
 const CHIAVE_COMANDE = 'beachin.comande.v1'
 const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
@@ -765,15 +765,18 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setComandeSala((prev) => prev.map((c) => (c.id === id ? ricalcolaStato(fn(c)) : c)))
   }, [])
   const avanzaComandaSala = useCallback((id: string) => {
-    cambiaComandaSala(id, (c) => c.stato === 'inviata'
-      ? { ...c, stato: 'in_preparazione' }
-      : { ...c, righe: c.righe.map((r) => (r.stato === 'pronta' || (!r.stato && c.stato === 'pronta') ? { ...r, stato: 'servita' } : r)) })
+    // inviata: i piatti chiamati passano in lavorazione; poi si serve tutto il pronto
+    cambiaComandaSala(id, (c) => ({ ...c, righe: c.righe.map((r) => {
+      const st = statoRiga(c, r)
+      if (c.stato === 'inviata') return st === 'attesa' && uscitaChiamata(c, uscitaDi(r)) ? { ...r, stato: 'preparazione' } : r
+      return st === 'pronta' ? { ...r, stato: 'servita' } : r
+    }) }))
   }, [cambiaComandaSala])
   const segnaRigheSala = useCallback((id: string, indici: number[], stato: StatoRigaSala) => {
     // le righe senza stato (comande vecchie) partono dallo stato della comanda
     cambiaComandaSala(id, (c) => ({
       ...c,
-      righe: c.righe.map((r, i) => (indici.includes(i) ? { ...r, stato } : { ...r, stato: r.stato ?? (c.stato === 'servita' ? 'servita' : c.stato === 'pronta' ? 'pronta' : 'attesa') })),
+      righe: c.righe.map((r, i) => ({ ...r, stato: indici.includes(i) ? stato : statoRiga(c, r) })),
     }))
   }, [cambiaComandaSala])
   const chiamaUscitaSala = useCallback((id: string, n: number) => {

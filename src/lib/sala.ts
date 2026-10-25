@@ -43,7 +43,9 @@ export const uscitaDi = (r: RigaComandaSala) => r.uscita ?? 1
 export const uscitaChiamata = (c: ComandaSala, n: number) => n <= (c.uscitaVia ?? 99)
 /** Stato del piatto; le comande vecchie (senza stato per riga) lo ricavano da quello della comanda. */
 export const statoRiga = (c: ComandaSala, r: RigaComandaSala): StatoRigaSala =>
-  r.stato ?? (c.stato === 'servita' ? 'servita' : c.stato === 'pronta' ? 'pronta' : 'attesa')
+  r.stato ?? (c.stato === 'servita' ? 'servita' : c.stato === 'pronta' ? 'pronta' : c.stato === 'in_preparazione' ? 'preparazione' : 'attesa')
+/** Piatto ancora da preparare (da fare o in lavorazione). */
+export const daPreparare = (st: StatoRigaSala) => st === 'attesa' || st === 'preparazione'
 
 /** Uscite presenti nella comanda, in ordine, con i loro piatti (indice originale per le azioni). */
 export function usciteDi(c: ComandaSala) {
@@ -51,24 +53,25 @@ export function usciteDi(c: ComandaSala) {
   c.righe.forEach((r, i) => { const n = uscitaDi(r); mappa.set(n, [...(mappa.get(n) ?? []), { r, i }]) })
   return [...mappa.entries()].sort((a, b) => a[0] - b[0]).map(([n, righe]) => {
     const stati = righe.map(({ r }) => statoRiga(c, r))
-    const stato: StatoRigaSala = stati.every((x) => x === 'servita') ? 'servita' : stati.every((x) => x !== 'attesa') ? 'pronta' : 'attesa'
+    const stato: StatoRigaSala = stati.every((x) => x === 'servita') ? 'servita' : stati.every((x) => !daPreparare(x)) ? 'pronta' : 'attesa'
     return { n, righe, stato, chiamata: uscitaChiamata(c, n) }
   })
 }
 
 /**
- * Stato della comanda ricavato dai piatti: servita se tutto è servito; pronta se c'è qualcosa
- * di pronto da portare e niente di chiamato ancora da cucinare; altrimenti resta inviata finché la cucina non inizia.
+ * Stato della comanda ricavato dai piatti (stessa regola per cucina e bar, anche sulla vista di un solo reparto):
+ * servita se tutto è servito; dei piatti chiamati e non serviti: tutti da fare = inviata (Da fare), tutti pronti = pronta,
+ * altrimenti in preparazione. Le stesse righe stanno nel jsonb: lo stato salvato è solo un riassunto.
  */
 export function ricalcolaStato(c: ComandaSala): ComandaSala {
   const stati = c.righe.map((r) => statoRiga(c, r))
-  const daFare = c.righe.some((r, i) => stati[i] === 'attesa' && uscitaChiamata(c, uscitaDi(r)))
-  // «inviata» = la cucina non ha ancora iniziato: le bevande segnate dal bar non contano
+  const attivi = stati.filter((x, i) => x !== 'servita' && uscitaChiamata(c, uscitaDi(c.righe[i])))
   const stato: StatoComandaSala = stati.every((x) => x === 'servita') ? 'servita'
-    : !daFare && stati.some((x) => x === 'pronta') ? 'pronta'
-    : c.stato === 'inviata' && c.righe.every((r, i) => repartoDi(r) === 'bar' || stati[i] === 'attesa') ? 'inviata'
+    : attivi.length && attivi.every((x) => x === 'pronta') ? 'pronta'
+    : attivi.length && attivi.every((x) => x === 'attesa') ? 'inviata'
     : 'in_preparazione'
-  return { ...c, stato }
+  // righe senza stato (comande vecchie): lo fissano qui, così non dipendono più dallo stato della comanda
+  return { ...c, righe: c.righe.map((r, i) => (r.stato ? r : { ...r, stato: stati[i] })), stato }
 }
 
 /** Link pubblico dell'app di sala (cameriere, cucina, tablet), da aprire su telefono o tablet. */
@@ -94,12 +97,12 @@ export function perReparto(c: ComandaSala, reparto: Reparto): { c: ComandaSala; 
   return { c: ricalcolaStato({ ...c, righe: indici.map((i) => c.righe[i]) }), indici }
 }
 
-/** Comande che la cucina non ha ancora iniziato (badge «Cucina»). */
+/** Comande che la cucina non ha ancora iniziato (badge «Cucina»): sono nella colonna Da fare. */
 export const daFareCucina = (comande: ComandaSala[]) => comande.filter((c) => perReparto(c, 'cucina')?.c.stato === 'inviata').length
 
-/** Bevande dei tavoli ancora da preparare al bar (righe chiamate e in attesa). */
+/** Bevande dei tavoli ancora da preparare al bar (da fare o in lavorazione). */
 export const righeBarDaFare = (c: ComandaSala) =>
-  c.righe.flatMap((r, i) => (repartoDi(r) === 'bar' && statoRiga(c, r) === 'attesa' ? [i] : []))
+  c.righe.flatMap((r, i) => (repartoDi(r) === 'bar' && daPreparare(statoRiga(c, r)) ? [i] : []))
 
 /** Una voce della coda unica del bar: comanda dall'ombrellone o bevande di un tavolo. */
 export type VoceBar = { tipo: 'ombrellone'; ts: number; c: Comanda } | { tipo: 'tavolo'; ts: number; c: ComandaSala }

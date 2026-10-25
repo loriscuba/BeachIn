@@ -256,8 +256,8 @@ export interface Comanda {
 /** Flusso in cucina: inviata → in preparazione → pronta → servita. */
 export type StatoComandaSala = 'inviata' | 'in_preparazione' | 'pronta' | 'servita'
 
-/** Stato del singolo piatto in cucina. */
-export type StatoRigaSala = 'attesa' | 'pronta' | 'servita'
+/** Stato del singolo piatto (cucina o bar): da fare → in lavorazione → pronto → servito. */
+export type StatoRigaSala = 'attesa' | 'preparazione' | 'pronta' | 'servita'
 
 export interface RigaComandaSala {
   piattoId: string
@@ -713,4 +713,6 @@ export interface VoceLavagnetta {
   nome: string
   descrizione?: string
   prezzo: number | null
+  /** Chi la prepara se ordinata dal tablet self col menu Lavagnetta (assente = cucina). */
+  reparto?: 'cucina' | 'bar'
 }
