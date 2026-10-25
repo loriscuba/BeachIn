@@ -78,6 +78,12 @@ export function ricalcolaStato(c: ComandaSala): ComandaSala {
   return { ...c, righe: c.righe.map((r, i) => (r.stato ? r : { ...r, stato: stati[i] })), stato }
 }
 
+/** Restano piatti da servire ma nessuno ha il «via»: il reparto non ha niente da fare, aspetta il cameriere. */
+export function aspettaVia(c: ComandaSala): boolean {
+  const daServire = c.righe.filter((r) => statoRiga(c, r) !== 'servita')
+  return daServire.length > 0 && !daServire.some((r) => uscitaChiamata(c, uscitaDi(r)))
+}
+
 /** Link pubblico dell'app di sala (cameriere, cucina, tablet), da aprire su telefono o tablet. */
 export const urlSalaApp = () => urlPubblico('salaapp')
 

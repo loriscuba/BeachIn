@@ -6,7 +6,7 @@
  * le comande dagli ombrelloni: nuova = Da fare, presa in carico/in preparazione = In lavorazione, pronta = Pronte.
  * Campanello a ogni comanda nuova, minuti di attesa sulla scheda.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Bell, BellOff, Check, ChefHat, Clock, Hourglass, Smartphone, Tablet, Users, X } from 'lucide-react'
 import type { Comanda, ComandaSala, StatoComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button'
 import { supabaseAttivo } from '@/lib/supabase'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
-import { azioneStatoSala, daPreparare, minutiDa, nomeUscita, perReparto, statoRiga, uscitaChiamata, uscitaDi, usciteDi, type Reparto } from '@/lib/sala'
+import { aspettaVia, azioneStatoSala, daPreparare, minutiDa, nomeUscita, perReparto, statoRiga, uscitaChiamata, uscitaDi, usciteDi, type Reparto } from '@/lib/sala'
 import { ComandaCard } from './ComandaOmbrellone'
 
 const COLONNE: { stato: StatoComandaSala; titolo: string; colore: string }[] = [
@@ -26,7 +26,7 @@ const COLONNE: { stato: StatoComandaSala; titolo: string; colore: string }[] = [
 ]
 
 /** Una scheda nelle colonne: comanda del ristorante vista dal reparto, oppure (al bar) comanda dall'ombrellone. */
-type Voce = { tipo: 'tavolo'; stato: StatoComandaSala; ts: number; c: ComandaSala; indici: number[] } | { tipo: 'ombrellone'; stato: StatoComandaSala; ts: number; c: Comanda }
+type Voce = { tipo: 'tavolo'; stato: StatoComandaSala; ts: number; c: ComandaSala; indici: number[]; via?: boolean } | { tipo: 'ombrellone'; stato: StatoComandaSala; ts: number; c: Comanda }
 const colonnaOmbrellone = (c: Comanda): StatoComandaSala => (c.stato === 'in_attesa' ? 'inviata' : c.stato === 'pronta' ? 'pronta' : 'in_preparazione')
 
 export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
@@ -39,7 +39,10 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
   const voci = useMemo(() => {
     const tavoli: Voce[] = comandeSala.flatMap((c) => {
       const v = perReparto(c, reparto)
-      return v && v.c.stato !== 'servita' ? [{ tipo: 'tavolo' as const, stato: v.c.stato, ts: c.ts, c: v.c, indici: v.indici }] : []
+      if (!v || v.c.stato === 'servita') return []
+      // in attesa del via: in fondo a Da fare, non «In lavorazione» (la cucina non ha niente da preparare)
+      const via = aspettaVia(v.c)
+      return [{ tipo: 'tavolo' as const, stato: via ? 'inviata' : v.c.stato, ts: c.ts, c: v.c, indici: v.indici, via }]
     })
     // al bar anche gli ombrelloni; delle pronte restano le ultime 12 non ancora incassate
     const ombrelloni: Voce[] = reparto !== 'bar' ? [] : comande.filter((c) => !c.pagata).map((c) => ({ tipo: 'ombrellone' as const, stato: colonnaOmbrellone(c), ts: c.ts ?? 0, c }))
@@ -53,7 +56,7 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
   useEffect(() => {
     const nuove = voci.filter((v) => !visti.current.has(chiave(v)))
     nuove.forEach((v) => visti.current.add(chiave(v)))
-    if (suoni && nuove.some((v) => v.stato === 'inviata')) campanello()
+    if (suoni && nuove.some((v) => v.stato === 'inviata' && !(v.tipo === 'tavolo' && v.via))) campanello()
   }, [voci, suoni])
 
   return (
@@ -70,7 +73,7 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
       </div>
       <div className="grid grid-cols-3 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm md:hidden">
         {COLONNE.map((col) => {
-          const n = voci.filter((v) => v.stato === col.stato).length
+          const n = voci.filter((v) => v.stato === col.stato && !(v.tipo === 'tavolo' && v.via)).length
           return (
             <button key={col.stato} type="button" onClick={() => setColonna(col.stato)}
               className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', colonna === col.stato ? 'bg-profondo text-white' : 'text-profondo/60')}>
@@ -82,19 +85,24 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {COLONNE.map((col) => {
           // si lavora dalla più vecchia; le pronte dalla più recente
-          const lista = voci.filter((v) => v.stato === col.stato).sort((a, b) => (col.stato === 'pronta' ? b.ts - a.ts : a.ts - b.ts))
+          const inVia = (v: Voce) => (v.tipo === 'tavolo' && v.via ? 1 : 0)
+          const lista = voci.filter((v) => v.stato === col.stato).sort((a, b) => inVia(a) - inVia(b) || (col.stato === 'pronta' ? b.ts - a.ts : a.ts - b.ts))
+          const primaInVia = lista.findIndex((v) => inVia(v))
           return (
             <section key={col.stato} className={cn('min-w-0 space-y-3', colonna !== col.stato && 'hidden md:block')}>
               <h3 className="hidden items-center gap-2 text-sm font-semibold text-profondo md:flex">
                 <span className={cn('h-2.5 w-2.5 rounded-full', col.colore)} /> {col.titolo}
-                <span className="num text-profondo/45">{lista.length}</span>
+                <span className="num text-profondo/45">{primaInVia < 0 ? lista.length : primaInVia}</span>
               </h3>
               {!lista.length && <p className="rounded-2xl border border-dashed border-calce-300 p-6 text-center text-sm text-profondo/45">Niente qui</p>}
-              {lista.map((v) => v.tipo === 'ombrellone'
+              {lista.map((v, i) => <Fragment key={chiave(v)}>
+                {i === primaInVia && <p className="flex items-center gap-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-profondo/45"><Hourglass className="h-3 w-3" /> Aspettano il via</p>}
+                {v.tipo === 'ombrellone'
                 ? <ComandaCard key={chiave(v)} comanda={v.c} onAvanza={() => avanzaComanda(v.c.id)} onAnnulla={() => annullaComanda(v.c.id)} />
                 : <SchedaComanda key={chiave(v)} c={v.c} ora={ora} {...azioniTavolo(v.c, v.indici, segnaRigheSala)} onVia={(n) => chiamaUscitaSala(v.c.id, n)}
                     // al bar niente X: annullerebbe anche i piatti della cucina
-                    onAnnulla={reparto === 'bar' ? undefined : () => { if (confirm(`Annullare la comanda del tavolo ${v.c.tavolo}?`)) annullaComandaSala(v.c.id) }} />)}
+                    onAnnulla={reparto === 'bar' ? undefined : () => { if (confirm(`Annullare la comanda del tavolo ${v.c.tavolo}?`)) annullaComandaSala(v.c.id) }} />}
+              </Fragment>)}
             </section>
           )
         })}

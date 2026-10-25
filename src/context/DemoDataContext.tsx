@@ -53,7 +53,7 @@ import { articoliBar, sezioniBar as seedSezioniBar } from '@/data/seed/bar'
 import { costi as seedCosti } from '@/data/seed/costi'
 import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
 import { traduciNome } from '@/lib/menuLingue'
-import { supabaseAttivo } from '@/lib/supabase'
+import { supabase, supabaseAttivo } from '@/lib/supabase'
 import { useSyncSupabase } from '@/hooks/useSyncSupabase'
 import { ricalcolaStato, statoRiga, uscitaChiamata, uscitaDi } from '@/lib/sala'
 
@@ -220,6 +220,8 @@ interface DemoDataValue {
   impostaTavoloQr: (numero: number, patch: Partial<Pick<TavoloQr, 'menu' | 'aperto'>>) => void
   /** Chiude il conto del tavolo (comande pagate e servite), prepara un conto nuovo vuoto e chiude il tavolo ai QR. */
   chiudiContoTavolo: (numero: number) => void
+  /** Il conto del tavolo è ancora quello (e il tavolo aperto)? Con Supabase lo chiede al DB, non alla copia locale. */
+  verificaContoTavolo: (numero: number, seduta: string) => Promise<boolean>
 
   // Clienti aggiunti in demo (si affiancano a quelli caricati da api)
   clientiAggiunti: Cliente[]
@@ -480,7 +482,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     window.addEventListener('storage', suCambio)
     return () => window.removeEventListener('storage', suCambio)
   }, [])
-  useSyncSupabase({
+  const comandeSalaRef = useRef(comandeSala)
+  useEffect(() => { comandeSalaRef.current = comandeSala }, [comandeSala])
+  const syncSala = useSyncSupabase({
     tabella: 'comande_sala', righe: comandeSala, setRighe: setComandeSala,
     aRiga: (c) => ({
       id: c.id, tavolo: c.tavolo, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora, ts: c.ts, origine: c.origine,
@@ -506,8 +510,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     tavoliQrRef.current = tavoliQr
     if (!supabaseAttivo) try { localStorage.setItem(CHIAVE_TAVOLI_QR, JSON.stringify(tavoliQr)) } catch { /* storage non disponibile */ }
   }, [tavoliQr])
-  useSyncSupabase({
-    tabella: 'tavoli_qr', righe: tavoliQr, setRighe: setTavoliQr,
+  // tavolo nuovo creato da due dispositivi insieme: resta il primo (il codice del QR stampato non cambia)
+  const syncQr = useSyncSupabase({
+    tabella: 'tavoli_qr', righe: tavoliQr, setRighe: setTavoliQr, nuoveSenzaSovrascrivere: true,
     aRiga: (q) => ({ id: q.id, numero: q.numero, codice: q.codice, menu: q.menu, aperto: q.aperto, seduta: q.seduta ?? null }),
     daRiga: (r) => ({ id: r.id, numero: Number(r.numero), codice: r.codice as string, menu: r.menu as TavoloQr['menu'], aperto: !!r.aperto, seduta: (r.seduta as string) ?? undefined }),
     ordina: (a, b) => Number(a.numero) - Number(b.numero),
@@ -813,9 +818,28 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     setComandeSala((prev) => [comanda, ...prev])
     return comanda
   }, [assicuraTavoliQr])
+  // Con Supabase si mandano solo i piatti cambiati (funzione del DB): cucina, bar e sala che toccano la stessa
+  // comanda nello stesso momento non si cancellano a vicenda il lavoro, come succedeva riscrivendo la riga intera.
   const cambiaComandaSala = useCallback((id: string, fn: (c: ComandaSala) => ComandaSala) => {
-    setComandeSala((prev) => prev.map((c) => (c.id === id ? ricalcolaStato(fn(c)) : c)))
-  }, [])
+    const prima = comandeSalaRef.current.find((c) => c.id === id)
+    if (!prima) return
+    const dopo = ricalcolaStato(fn(prima))
+    comandeSalaRef.current = comandeSalaRef.current.map((c) => (c.id === id ? dopo : c))
+    setComandeSala((prev) => prev.map((c) => (c.id === id ? dopo : c)))
+    if (!supabase) return
+    const stati: Record<string, StatoRigaSala> = {}
+    dopo.righe.forEach((r, i) => { if (r.stato && r.stato !== prima.righe[i]?.stato) stati[i] = r.stato })
+    syncSala.allinea(dopo)
+    void supabase.rpc('aggiorna_righe_sala', { p_id: id, p_stati: stati, p_uscita_via: dopo.uscitaVia ?? null })
+      .then(({ error }) => { if (error) { console.error('[supabase] comande_sala:', error.message); void syncSala.ricarica() } })
+  }, [syncSala])
+  const verificaContoTavolo = useCallback(async (numero: number, seduta: string) => {
+    if (!supabase) return tavoliQrRef.current.some((q) => q.numero === numero && q.aperto && q.seduta === seduta)
+    const { data } = await supabase.from('tavoli_qr').select('aperto, seduta').eq('numero', numero).maybeSingle()
+    const ok = !data || (!!data.aperto && data.seduta === seduta)
+    if (!ok) void syncQr.ricarica()
+    return ok
+  }, [syncQr])
   const chiudiContoTavolo = useCallback((numero: number) => {
     const { seduta } = assicuraTavoliQr([numero])[0]
     // del conto: le comande del tavolo non pagate di questo conto (o vecchie, senza conto)
@@ -1397,6 +1421,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       assicuraTavoliQr,
       impostaTavoloQr,
       chiudiContoTavolo,
+      verificaContoTavolo,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,
@@ -1509,6 +1534,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       assicuraTavoliQr,
       impostaTavoloQr,
       chiudiContoTavolo,
+      verificaContoTavolo,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,

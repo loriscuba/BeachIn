@@ -191,6 +191,19 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   La pagina `/tavolo` si lega alla seduta trovata aperta e la passa a `inviaComandaSala(..., { seduta })`, che rifiuta (null) se il
   conto è cambiato: la pagina mostra "Conto chiuso, inquadra di nuovo il QR".
 
+## Comande sala con più dispositivi (migrazione 0022, stress test 25/10/2026)
+- Cucina, bar e sala cambiano i piatti con la funzione del DB **`aggiorna_righe_sala(p_id, p_stati, p_uscita_via)`**
+  (`p_stati` = `{ "<indice>": stato }`, via solo in avanti, ignorata se la comanda è pagata): `cambiaComandaSala` aggiorna lo stato
+  locale, chiama la funzione e con `allinea` dice a `useSyncSupabase` di non riscrivere la riga intera. Lo stato riassunto è
+  ricalcolato da `stato_comanda_sala` (stessa regola di `ricalcolaStato`, verificata su 80 casi). Chiudi conto e invio restano upsert.
+- Trigger `comanda_sala_sul_conto` (solo comande nuove): la comanda va sempre sulla `seduta` in corso di `tavoli_qr`; con origine `qr`
+  è rifiutata se il tavolo è chiuso o il conto è cambiato. Prima di inviare, la pagina QR chiede al DB (`verificaContoTavolo`).
+  Una scrittura rifiutata fa rileggere la tabella (`useSyncSupabase`).
+- Trigger `tavolo_qr_codice_fisso`: il `codice` non cambia mai; `tavoli_qr` crea le righe nuove con «inserisci se manca»
+  (`nuoveSenzaSovrascrivere`) e poi rilegge.
+- Cucina: le comande che aspettano solo il via (`aspettaVia` in lib/sala) stanno in fondo a Da fare sotto «Aspettano il via»,
+  non contano nel numero della colonna e non suonano.
+
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
   sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,
