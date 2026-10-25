@@ -11,6 +11,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { config } from '@/data/config'
 import { cn } from '@/lib/cn'
+import TavoliPerZona from './TavoliPerZona'
 
 /** Menu del tablet: uno solo per tablet. Lavagnetta = proposte del giorno, ogni voce va in cucina o al bar. */
 export type MenuSelf = 'ristorante' | 'bar' | 'lavagnetta'
@@ -32,7 +33,7 @@ export function salvaSelf(v: StatoSelf | null) {
 
 export default function AvvioSelf({ onAvvia }: { onAvvia: (v: StatoSelf) => void }) {
   const { tavoliDelGiorno } = useDemoData()
-  const tavoli = useMemo(() => [...tavoliDelGiorno(config.oggi)].sort((a, b) => a.numero - b.numero), [tavoliDelGiorno])
+  const tavoli = useMemo(() => tavoliDelGiorno(config.oggi), [tavoliDelGiorno])
   const [tavolo, setTavolo] = useState<number | null>(null)
   const [pin, setPin] = useState('')
   const conBar = useModuli().moduloAttivo('bar-tavolo')
@@ -57,14 +58,7 @@ export default function AvvioSelf({ onAvvia }: { onAvvia: (v: StatoSelf) => void
       <CardBody className="space-y-4 pt-2">
         <div>
           <p className="mb-1.5 text-xs font-medium text-profondo/60">1. Tavolo dove lasci il tablet</p>
-          <div className="grid grid-cols-5 gap-2 sm:grid-cols-9">
-            {tavoli.map((t) => (
-              <button key={t.id} type="button" onClick={() => setTavolo(t.numero)}
-                className={cn('num h-11 rounded-xl border text-base font-bold', tavolo === t.numero ? 'border-cabina bg-cabina text-white' : 'border-calce-200 text-profondo hover:border-cabina')}>
-                {t.numero}
-              </button>
-            ))}
-          </div>
+          <TavoliPerZona tavoli={tavoli} scelto={tavolo} onScegli={setTavolo} />
         </div>
         <div>
           <p className="mb-1.5 text-xs font-medium text-profondo/60">2. Menu del tablet</p>

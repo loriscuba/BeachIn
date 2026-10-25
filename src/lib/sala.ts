@@ -119,3 +119,6 @@ export function codaBar(comande: Comanda[], comandeSala: ComandaSala[]) {
     pronte: tutte.filter(pronta).sort((a, b) => b.ts - a.ts).slice(0, 12),
   }
 }
+
+/** Link del QR fisso di un tavolo (codice non indovinabile): il telefono del cliente apre il menu di quel tavolo. */
+export const urlTavoloQr = (codice: string) => urlPubblico(`tavolo?c=${codice}`)

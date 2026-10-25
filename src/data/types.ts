@@ -283,8 +283,8 @@ export interface ComandaSala {
   stato: StatoComandaSala
   ora: string // HH:mm di invio
   ts: number
-  /** 'cameriere' = presa in sala; 'self' = ordinata dal tablet al tavolo. */
-  origine: 'cameriere' | 'self'
+  /** 'cameriere' = presa in sala; 'self' = ordinata dal tablet al tavolo; 'qr' = dal telefono del cliente col QR del tavolo. */
+  origine: 'cameriere' | 'self' | 'qr'
   /** Nome di chi l'ha presa (utente collegato). */
   cameriere?: string
   coperti?: number
@@ -350,6 +350,17 @@ export interface Tavolo {
   x?: number
   y?: number
   forma?: 'tondo' | 'quadrato'
+}
+
+/** QR fisso del tavolo (per numero): il cliente ordina dal telefono solo quando il cameriere ha aperto il tavolo. */
+export interface TavoloQr {
+  /** = numero del tavolo, come testo */
+  id: string
+  numero: number
+  /** Codice nel link del QR: non indovinabile, resta uguale (il QR si stampa una volta). */
+  codice: string
+  menu: 'ristorante' | 'bar' | 'lavagnetta'
+  aperto: boolean
 }
 
 export type CategoriaMagazzino = 'pesce' | 'carne' | 'verdura' | 'latticini' | 'secco' | 'bevande' | 'altro'

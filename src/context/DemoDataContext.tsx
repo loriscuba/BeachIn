@@ -20,6 +20,7 @@ import type {
   RigaComandaSala,
   StatoComandaSala,
   StatoRigaSala,
+  TavoloQr,
   ContoOmbrellone,
   ArticoloBar,
   SezioneBar,
@@ -61,6 +62,9 @@ const SUCCESSIVO: Record<StatoComanda, StatoComanda> = {
   in_attesa: 'presa_in_carico', presa_in_carico: 'in_preparazione', in_preparazione: 'pronta', pronta: 'pronta',
 }
 const CHIAVE_COMANDE_SALA = 'beachin.comandesala.v1'
+const CHIAVE_TAVOLI_QR = 'beachin.tavoliqr.v1'
+/** Codice del QR del tavolo: 10 caratteri casuali (il link non si indovina dal numero del tavolo). */
+const codiceQr = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('')
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
@@ -207,6 +211,12 @@ interface DemoDataValue {
   /** Il cameriere dà il via all'uscita `n` (e alle precedenti). */
   chiamaUscitaSala: (id: string, n: number) => void
   annullaComandaSala: (id: string) => void
+  /** QR fissi dei tavoli (codice, menu, aperto). */
+  tavoliQr: TavoloQr[]
+  /** Crea (se mancano) le righe QR dei tavoli e le restituisce, nell'ordine dei numeri. */
+  assicuraTavoliQr: (numeri: number[]) => TavoloQr[]
+  /** Cambia menu o apertura del QR di un tavolo (crea la riga se manca). */
+  impostaTavoloQr: (numero: number, patch: Partial<Pick<TavoloQr, 'menu' | 'aperto'>>) => void
 
   // Clienti aggiunti in demo (si affiancano a quelli caricati da api)
   clientiAggiunti: Cliente[]
@@ -412,8 +422,8 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   })
   useSyncSupabase({
     tabella: 'lavagnetta', righe: lavagnetta, setRighe: setLavagnetta, semina: true,
-    aRiga: (v, i) => ({ id: v.id, nome: v.nome, descrizione: v.descrizione ?? null, prezzo: v.prezzo, ordine: i }),
-    daRiga: (r) => ({ id: r.id, nome: r.nome as string, descrizione: (r.descrizione as string) ?? undefined, prezzo: r.prezzo == null ? null : Number(r.prezzo) }),
+    aRiga: (v, i) => ({ id: v.id, nome: v.nome, descrizione: v.descrizione ?? null, prezzo: v.prezzo, reparto: v.reparto ?? 'cucina', ordine: i }),
+    daRiga: (r) => ({ id: r.id, nome: r.nome as string, descrizione: (r.descrizione as string) ?? undefined, prezzo: r.prezzo == null ? null : Number(r.prezzo), reparto: r.reparto === 'bar' ? 'bar' as const : 'cucina' as const }),
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
   // Comande condivise tra le schede dello stesso browser (ComandApp ↔ cruscotto bar) via localStorage.
@@ -481,6 +491,37 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
+  // QR fissi dei tavoli: senza Supabase restano in questo browser (localStorage)
+  const [tavoliQr, setTavoliQr] = useState<TavoloQr[]>(() => {
+    if (supabaseAttivo) return []
+    try { return JSON.parse(localStorage.getItem(CHIAVE_TAVOLI_QR) ?? '[]') as TavoloQr[] } catch { return [] }
+  })
+  const tavoliQrRef = useRef(tavoliQr)
+  useEffect(() => {
+    tavoliQrRef.current = tavoliQr
+    if (!supabaseAttivo) try { localStorage.setItem(CHIAVE_TAVOLI_QR, JSON.stringify(tavoliQr)) } catch { /* storage non disponibile */ }
+  }, [tavoliQr])
+  useSyncSupabase({
+    tabella: 'tavoli_qr', righe: tavoliQr, setRighe: setTavoliQr,
+    aRiga: (q) => ({ id: q.id, numero: q.numero, codice: q.codice, menu: q.menu, aperto: q.aperto }),
+    daRiga: (r) => ({ id: r.id, numero: Number(r.numero), codice: r.codice as string, menu: r.menu as TavoloQr['menu'], aperto: !!r.aperto }),
+    ordina: (a, b) => Number(a.numero) - Number(b.numero),
+  })
+  const assicuraTavoliQr = useCallback((numeri: number[]) => {
+    const esistenti = new Map(tavoliQrRef.current.map((q) => [q.numero, q]))
+    const nuovi = numeri.filter((n) => !esistenti.has(n)).map((n): TavoloQr => ({ id: String(n), numero: n, codice: codiceQr(), menu: 'ristorante', aperto: false }))
+    if (nuovi.length) {
+      tavoliQrRef.current = [...tavoliQrRef.current, ...nuovi]
+      setTavoliQr(tavoliQrRef.current)
+      nuovi.forEach((q) => esistenti.set(q.numero, q))
+    }
+    return numeri.map((n) => esistenti.get(n)!)
+  }, [])
+  const impostaTavoloQr = useCallback((numero: number, patch: Partial<Pick<TavoloQr, 'menu' | 'aperto'>>) => {
+    assicuraTavoliQr([numero])
+    tavoliQrRef.current = tavoliQrRef.current.map((q) => (q.numero === numero ? { ...q, ...patch } : q))
+    setTavoliQr(tavoliQrRef.current)
+  }, [assicuraTavoliQr])
   const [tavoli, setTavoli] = useState<Tavolo[]>(() => clona(seedTavoli))
   // Disposizioni per giorno: lista { id = data, tavoli } (così si sincronizza come le altre tabelle)
   const [disposizioni, setDisposizioni] = useState<{ id: string; tavoli: Tavolo[] }[]>([])
@@ -1333,6 +1374,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaRigheSala,
       chiamaUscitaSala,
       annullaComandaSala,
+      tavoliQr,
+      assicuraTavoliQr,
+      impostaTavoloQr,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,
@@ -1441,6 +1485,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       segnaRigheSala,
       chiamaUscitaSala,
       annullaComandaSala,
+      tavoliQr,
+      assicuraTavoliQr,
+      impostaTavoloQr,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,

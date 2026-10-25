@@ -7,14 +7,15 @@
  */
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Lock, Minus, Plus, ShoppingBag, UtensilsCrossed, X, Send, Check, ChefHat } from 'lucide-react'
+import { Lock, Minus, Plus, ShoppingBag, UtensilsCrossed, X, Send, Check, ChefHat, Smartphone } from 'lucide-react'
+import { QrCodice } from '@/components/QrCodice'
 import type { Piatto, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
+import { urlTavoloQr, aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
 
 // Palette del tablet: verde bosco, crema e oro
@@ -28,7 +29,8 @@ const ALLERGENI: Record<string, string> = {
   latte: 'latte', frutta_guscio: 'frutta a guscio', sedano: 'sedano', molluschi: 'molluschi',
 }
 
-export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci: () => void }) {
+/** `qr`: aperto dal telefono del cliente col QR del tavolo (niente lucchetto né PIN; la comanda è «qr»). */
+export default function TabletSelf({ stato, onEsci, qr = false }: { stato: StatoSelf; onEsci: () => void; qr?: boolean }) {
   const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala } = useDemoData()
   const conBar = useModuli().moduloAttivo('bar-tavolo')
   const tipo = stato.menu === 'bar' && !conBar ? 'ristorante' : stato.menu ?? 'ristorante'
@@ -37,6 +39,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
   const [carrello, setCarrello] = useState(false)
   const [grazie, setGrazie] = useState(false)
   const [sblocco, setSblocco] = useState(false)
+  const [telefono, setTelefono] = useState(false)
 
   // reparto per piatto (la lavagnetta li mescola)
   const { sezioni, alBar } = useMemo(() => {
@@ -70,7 +73,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
   const vai = (id: string) => document.getElementById(`self-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const invia = () => {
     if (!righe.length) return
-    inviaComandaSala(stato.tavolo, righe, { origine: 'self', note })
+    inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note })
     setQta({}); setNote(''); setCarrello(false); setGrazie(true)
   }
 
@@ -87,7 +90,8 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
             ))}
           </nav>
           <span className="ml-auto rounded-full border border-[#D9B66A]/40 px-3 py-1 text-xs uppercase tracking-[0.2em] text-[#D9B66A]">Tavolo {stato.tavolo}</span>
-          <button type="button" onClick={() => setSblocco(true)} className="grid h-9 w-9 place-content-center rounded-full text-[#F3EBDD]/40 hover:text-[#F3EBDD]" aria-label="Sblocca tablet"><Lock className="h-4 w-4" /></button>
+          {!qr && <button type="button" onClick={() => setTelefono(true)} className="grid h-9 w-9 place-content-center rounded-full text-[#D9B66A]/80 hover:text-[#D9B66A]" aria-label="Ordina dal tuo telefono" title="Ordina dal tuo telefono"><Smartphone className="h-4 w-4" /></button>}
+          {!qr && <button type="button" onClick={() => setSblocco(true)} className="grid h-9 w-9 place-content-center rounded-full text-[#F3EBDD]/40 hover:text-[#F3EBDD]" aria-label="Sblocca tablet"><Lock className="h-4 w-4" /></button>}
         </div>
         {/* sezioni su tablet in verticale */}
         <nav className="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden">
@@ -204,6 +208,7 @@ export default function TabletSelf({ stato, onEsci }: { stato: StatoSelf; onEsci
         </div>
       )}
 
+      {telefono && <QrTelefono tavolo={stato.tavolo} onChiudi={() => setTelefono(false)} />}
       {sblocco && <Sblocco pin={stato.pin} onChiudi={() => setSblocco(false)} onOk={() => { salvaSelf(null); if (document.fullscreenElement) void document.exitFullscreen?.(); onEsci() }} />}
     </div>,
     document.body
@@ -271,6 +276,23 @@ function Sblocco({ pin, onChiudi, onOk }: { pin: string; onChiudi: () => void; o
             <button key={i} type="button" onClick={() => prova(k === '⌫' ? v.slice(0, -1) : (v + k).slice(0, 4))} className="num h-12 rounded-xl bg-black/20 text-lg hover:bg-black/30">{k}</button>
           ) : <span key={i} />)}
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** QR fisso del tavolo, per ordinare dal proprio telefono invece che dal tablet. */
+function QrTelefono({ tavolo, onChiudi }: { tavolo: number; onChiudi: () => void }) {
+  const { assicuraTavoliQr } = useDemoData()
+  const [q] = useState(() => assicuraTavoliQr([tavolo])[0])
+  return (
+    <div className="fixed inset-0 z-[60] grid place-content-center bg-black/70 p-6" onClick={onChiudi}>
+      <div className={cn('w-80 rounded-3xl p-6 text-center', PANNELLO)} onClick={(e) => e.stopPropagation()}>
+        <Smartphone className={cn('mx-auto h-6 w-6', ORO)} />
+        <h3 className="mt-2 font-display text-2xl italic">Ordina dal tuo telefono</h3>
+        <p className="mt-1 text-sm text-[#F3EBDD]/70">Inquadra il codice con la fotocamera: si apre il menu del tavolo {tavolo}.</p>
+        <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />
+        <button type="button" onClick={onChiudi} className={cn('mt-5 rounded-full px-6 py-2 text-sm font-semibold', BTN_ORO)}>Chiudi</button>
       </div>
     </div>
   )

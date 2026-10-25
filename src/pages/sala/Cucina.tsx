@@ -7,7 +7,7 @@
  * Campanello a ogni comanda nuova, minuti di attesa sulla scheda.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bell, BellOff, Check, ChefHat, Clock, Hourglass, Tablet, Users, X } from 'lucide-react'
+import { Bell, BellOff, Check, ChefHat, Clock, Hourglass, Smartphone, Tablet, Users, X } from 'lucide-react'
 import type { Comanda, ComandaSala, StatoComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card } from '@/components/ui/Card'
@@ -167,7 +167,7 @@ export function SchedaComanda({ c, ora, onAvanza, onSegna, onVia, onAnnulla }: {
         {c.note && <p className="rounded-lg bg-tenda/20 px-2.5 py-1.5 text-profondo">📝 {c.note}</p>}
       </div>
       <div className="flex items-center gap-2 border-t border-calce-200 px-4 py-2.5">
-        {c.origine === 'self' ? <Badge tono="mare"><Tablet className="h-3 w-3" /> Tablet al tavolo</Badge> : <Badge tono="neutro"><ChefHat className="h-3 w-3" /> {c.cameriere ?? 'Sala'}</Badge>}
+        {c.origine === 'qr' ? <Badge tono="mare"><Smartphone className="h-3 w-3" /> QR dal telefono</Badge> : c.origine === 'self' ? <Badge tono="mare"><Tablet className="h-3 w-3" /> Tablet al tavolo</Badge> : <Badge tono="neutro"><ChefHat className="h-3 w-3" /> {c.cameriere ?? 'Sala'}</Badge>}
         <span className="ml-auto" />
         {onAnnulla && <button type="button" onClick={onAnnulla} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/35 hover:bg-boa/10 hover:text-boa" aria-label="Annulla comanda" title="Annulla comanda"><X className="h-4 w-4" /></button>}
         {azioneStatoSala[c.stato] && <Button dimensione="sm" variante="primario" onClick={onAvanza}>{azioneStatoSala[c.stato]}</Button>}

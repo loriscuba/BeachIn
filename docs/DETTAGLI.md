@@ -171,6 +171,18 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   pronta = Pronte, ultime 12 non incassate); al bar niente X sulle comande dei tavoli. `CodaBar compatta` = elenco unico in Comande. Dove: scheda **Bar** in `/sala?tab=bar` (voce "Coda bar", badge `bar`), quarta scheda dell'app
   `/salaapp`, e al posto della coda nella pagina Comande quando il modulo è attivo (`<CodaBar compatta suoni />`).
 
+## QR tavoli e scelta tavolo per zona (ott 2026)
+- **Scelta del tavolo per zona** (`src/pages/sala/TavoliPerZona.tsx`): cameriere, avvio tablet self e QR tavoli usano i tavoli del
+  giorno (`tavoliDelGiorno(config.oggi)`, gli stessi di Ristorante → Tavoli) divisi per le zone di `lib/zoneTavoli.ts`.
+- **QR fisso per tavolo**: tabella `beachin.tavoli_qr` (migrazione `0020_tavoli_qr.sql`: id = numero, `codice` casuale di 10 caratteri,
+  `menu` ristorante/bar/lavagnetta, `aperto`; anche origine `qr` su `comande_sala`). Context `tavoliQr`, `assicuraTavoliQr(numeri)`
+  (crea le righe mancanti), `impostaTavoloQr(numero, { menu?, aperto? })`; senza Supabase localStorage `beachin.tavoliqr.v1`.
+- Link `urlTavoloQr(codice)` → rotta pubblica **`/tavolo?c=`** (`src/pages/TavoloQR.tsx`): se il tavolo è aperto apre `TabletSelf`
+  con `qr` (niente lucchetto, comanda `origine: 'qr'`, badge "QR"), altrimenti "chiedi al cameriere". Il cameriere apre/chiude il tavolo
+  dalla card del tavolo; si apre da solo alla prima comanda del cameriere.
+- Scheda **QR tavoli** (`/sala?tab=qr`, `sala/QrTavoli.tsx`): menu per tavolo, apri/chiudi, "Chiudi tutti", stampa (`stampaQr`).
+  Il tablet self ha il bottone telefono che mostra il QR del suo tavolo (`QrTelefono`).
+
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
   sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,
