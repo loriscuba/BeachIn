@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -12,7 +13,7 @@ interface ModalProps {
   larghezza?: string
 }
 
-/** Dialog centrato, sobrio. */
+/** Dialog centrato, sobrio. Montato su body: un antenato con transform/blur non lo ritaglia. */
 export function Modal({ aperto, onChiudi, titolo, children, piede, larghezza = 'max-w-lg' }: ModalProps) {
   useEffect(() => {
     if (!aperto) return
@@ -23,8 +24,8 @@ export function Modal({ aperto, onChiudi, titolo, children, piede, larghezza = '
 
   if (!aperto) return null
 
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4">
       <div className="absolute inset-0 bg-profondo-900/50 backdrop-blur-sm" onClick={onChiudi} aria-hidden />
       <div
         className={cn('anim-pop relative w-full overflow-hidden rounded-3xl border border-calce-200 bg-white shadow-[0_40px_80px_-30px_rgba(6,22,29,0.6)]', larghezza)}
@@ -37,9 +38,10 @@ export function Modal({ aperto, onChiudi, titolo, children, piede, larghezza = '
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto p-4">{children}</div>
+        <div className="max-h-[70dvh] overflow-y-auto p-4">{children}</div>
         {piede && <div className="border-t border-calce-200 bg-white p-3">{piede}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
