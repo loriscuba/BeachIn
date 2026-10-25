@@ -420,11 +420,11 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     tabella: 'articoli_bar', accesso: accessoDi('articoli_bar'), righe: articoliBarStato, setRighe: setArticoliBar, semina: true,
     aRiga: (a, i) => ({
       id: a.id, nome: a.nome, categoria: a.categoria, prezzo_vendita: a.prezzoVendita, costo_acquisto: a.costoAcquisto,
-      giacenza: a.giacenza, soglia_riordino: a.sogliaRiordino, unita: a.unita, disponibile: a.disponibile !== false, ordine: i,
+      giacenza: a.giacenza, soglia_riordino: a.sogliaRiordino, unita: a.unita, disponibile: a.disponibile !== false, foto: a.foto ?? null, ordine: i,
     }),
     daRiga: (r) => ({
       id: r.id, nome: r.nome as string, categoria: r.categoria as string, prezzoVendita: Number(r.prezzo_vendita), costoAcquisto: Number(r.costo_acquisto),
-      giacenza: Number(r.giacenza), sogliaRiordino: Number(r.soglia_riordino), unita: r.unita as string, disponibile: r.disponibile !== false,
+      giacenza: Number(r.giacenza), sogliaRiordino: Number(r.soglia_riordino), unita: r.unita as string, disponibile: r.disponibile !== false, foto: (r.foto as string | null) ?? undefined,
     }),
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })

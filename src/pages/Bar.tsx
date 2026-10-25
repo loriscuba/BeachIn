@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useSearchParams } from 'react-router-dom'
-import { CheckCircle2, Plus, Search, Pencil, Tags, Trash2, ChevronUp, ChevronDown, Umbrella, Smartphone, CalendarDays } from 'lucide-react'
+import { CheckCircle2, Plus, Search, Pencil, Tags, Trash2, ChevronUp, ChevronDown, Umbrella, Smartphone, CalendarDays, Camera } from 'lucide-react'
 import type { ArticoloBar, Comanda } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select'
 import { Tabs } from '@/components/ui/Tabs'
 import { euroCent, numero, percento } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
+import { fileAImmagine } from '@/lib/immagini'
 import { etichettaStatoComanda } from '@/lib/comandapp'
 
 /**
@@ -251,6 +252,10 @@ function Listino() {
                 const margine = a.prezzoVendita > 0 ? (a.prezzoVendita - a.costoAcquisto) / a.prezzoVendita : 0
                 return (
                   <li key={a.id} className={cn('flex items-center gap-3 py-2 text-sm', off && 'opacity-55')}>
+                    <label className="grid h-10 w-10 shrink-0 cursor-pointer place-content-center overflow-hidden rounded-lg border border-dashed border-calce-300 bg-calce/40 text-profondo/40 hover:border-cabina" title={a.foto ? 'Cambia foto (menu e app clienti)' : 'Carica foto'}>
+                      {a.foto ? <img src={a.foto} alt="" loading="lazy" className="h-full w-full object-cover" /> : <Camera className="h-4 w-4" />}
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) modificaArticoloBar(a.id, { foto: await fileAImmagine(f, 'menu', 480, 0.8) }) }} />
+                    </label>
                     <button onClick={() => setModifica(a)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
                       <span className="truncate font-medium text-profondo">{a.nome}</span>
                       <Pencil className="h-3.5 w-3.5 shrink-0 text-profondo/30" />

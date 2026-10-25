@@ -195,6 +195,8 @@ export interface ArticoloBar {
   unita: string
   /** false = esaurito/nascosto in ComandApp e nelle Comande (resta nel listino). */
   disponibile?: boolean
+  /** Foto per i menu (URL o data URI ridimensionato). */
+  foto?: string
 }
 
 export interface RigaConto {
