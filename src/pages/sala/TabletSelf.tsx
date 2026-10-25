@@ -15,7 +15,7 @@ import { useModuli } from '@/context/ModuliContext'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { urlTavoloQr, aperteDelTavolo, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
+import { urlTavoloQr, delConto, articoliComePiatti, etichettaStatoSala, fotoCopertinaSala, uscitaPredefinita } from '@/lib/sala'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
 import { useQrTavolo } from './QrTavoli'
 
@@ -30,9 +30,10 @@ const ALLERGENI: Record<string, string> = {
   latte: 'latte', frutta_guscio: 'frutta a guscio', sedano: 'sedano', molluschi: 'molluschi',
 }
 
-/** `qr`: aperto dal telefono del cliente col QR del tavolo (niente lucchetto né PIN; la comanda è «qr»). */
-export default function TabletSelf({ stato, onEsci, qr = false }: { stato: StatoSelf; onEsci: () => void; qr?: boolean }) {
-  const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala } = useDemoData()
+/** `qr`: aperto dal telefono del cliente col QR del tavolo (niente lucchetto né PIN; la comanda è «qr»).
+ *  `seduta`: il conto su cui la pagina ordina; chiuso quello, l'invio viene rifiutato. */
+export default function TabletSelf({ stato, onEsci, qr = false, seduta }: { stato: StatoSelf; onEsci: () => void; qr?: boolean; seduta?: string }) {
+  const { menu, sezioniMenu, articoliBar, sezioniBar, lavagnetta, comandeSala, inviaComandaSala, tavoliQr } = useDemoData()
   const conBar = useModuli().moduloAttivo('bar-tavolo')
   const tipo = stato.menu === 'bar' && !conBar ? 'ristorante' : stato.menu ?? 'ristorante'
   const [qta, setQta] = useState<Record<string, number>>({})
@@ -63,7 +64,7 @@ export default function TabletSelf({ stato, onEsci, qr = false }: { stato: Stato
   )
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
   const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
-  const ordini = aperteDelTavolo(comandeSala, stato.tavolo)
+  const ordini = delConto(comandeSala, stato.tavolo, seduta || tavoliQr.find((q) => q.numero === stato.tavolo)?.seduta)
 
   const cambia = (id: string, d: number) => setQta((m) => {
     const v = Math.max(0, (m[id] ?? 0) + d)
@@ -74,7 +75,7 @@ export default function TabletSelf({ stato, onEsci, qr = false }: { stato: Stato
   const vai = (id: string) => document.getElementById(`self-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const invia = () => {
     if (!righe.length) return
-    inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note })
+    if (!inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note, seduta: seduta || undefined })) return
     setQta({}); setNote(''); setCarrello(false); setGrazie(true)
   }
 

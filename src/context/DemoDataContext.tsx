@@ -203,7 +203,8 @@ interface DemoDataValue {
 
   // Comande del ristorante: dal cameriere o dal tablet al tavolo → cucina
   comandeSala: ComandaSala[]
-  inviaComandaSala: (tavolo: number, righe: RigaComandaSala[], extra: Pick<ComandaSala, 'origine'> & Partial<Pick<ComandaSala, 'cameriere' | 'coperti' | 'note'>>) => ComandaSala
+  /** Con `extra.seduta` (telefono col QR) la comanda è rifiutata (null) se nel frattempo il conto del tavolo è cambiato. */
+  inviaComandaSala: (tavolo: number, righe: RigaComandaSala[], extra: Pick<ComandaSala, 'origine'> & Partial<Pick<ComandaSala, 'cameriere' | 'coperti' | 'note' | 'seduta'>>) => ComandaSala | null
   /** Inviata → inizia la preparazione; pronta → i piatti pronti diventano serviti. */
   avanzaComandaSala: (id: string) => void
   /** Segna dei piatti (indici in `righe`) come in attesa, pronti o serviti; lo stato della comanda si ricalcola. */
@@ -217,6 +218,8 @@ interface DemoDataValue {
   assicuraTavoliQr: (numeri: number[]) => TavoloQr[]
   /** Cambia menu o apertura del QR di un tavolo (crea la riga se manca). */
   impostaTavoloQr: (numero: number, patch: Partial<Pick<TavoloQr, 'menu' | 'aperto'>>) => void
+  /** Chiude il conto del tavolo (comande pagate e servite), prepara un conto nuovo vuoto e chiude il tavolo ai QR. */
+  chiudiContoTavolo: (numero: number) => void
 
   // Clienti aggiunti in demo (si affiancano a quelli caricati da api)
   clientiAggiunti: Cliente[]
@@ -482,12 +485,14 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     aRiga: (c) => ({
       id: c.id, tavolo: c.tavolo, righe: c.righe, totale: c.totale, stato: c.stato, ora: c.ora, ts: c.ts, origine: c.origine,
       cameriere: c.cameriere ?? null, coperti: c.coperti ?? null, note: c.note ?? null, uscita_via: c.uscitaVia ?? null,
+      seduta: c.seduta ?? null, pagata: !!c.pagata,
     }),
     daRiga: (r) => ({
       id: r.id, tavolo: Number(r.tavolo), righe: (r.righe as RigaComandaSala[]) ?? [], totale: Number(r.totale),
       stato: r.stato as StatoComandaSala, ora: r.ora as string, ts: Number(r.ts), origine: r.origine as ComandaSala['origine'],
       cameriere: (r.cameriere as string) ?? undefined, coperti: r.coperti == null ? undefined : Number(r.coperti),
       note: (r.note as string) ?? undefined, uscitaVia: r.uscita_via == null ? undefined : Number(r.uscita_via),
+      seduta: (r.seduta as string) ?? undefined, pagata: !!r.pagata,
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
@@ -503,17 +508,19 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [tavoliQr])
   useSyncSupabase({
     tabella: 'tavoli_qr', righe: tavoliQr, setRighe: setTavoliQr,
-    aRiga: (q) => ({ id: q.id, numero: q.numero, codice: q.codice, menu: q.menu, aperto: q.aperto }),
-    daRiga: (r) => ({ id: r.id, numero: Number(r.numero), codice: r.codice as string, menu: r.menu as TavoloQr['menu'], aperto: !!r.aperto }),
+    aRiga: (q) => ({ id: q.id, numero: q.numero, codice: q.codice, menu: q.menu, aperto: q.aperto, seduta: q.seduta ?? null }),
+    daRiga: (r) => ({ id: r.id, numero: Number(r.numero), codice: r.codice as string, menu: r.menu as TavoloQr['menu'], aperto: !!r.aperto, seduta: (r.seduta as string) ?? undefined }),
     ordina: (a, b) => Number(a.numero) - Number(b.numero),
   })
   const assicuraTavoliQr = useCallback((numeri: number[]) => {
     const esistenti = new Map(tavoliQrRef.current.map((q) => [q.numero, q]))
-    const nuovi = numeri.filter((n) => !esistenti.has(n)).map((n): TavoloQr => ({ id: String(n), numero: n, codice: codiceQr(), menu: 'ristorante', aperto: false }))
-    if (nuovi.length) {
-      tavoliQrRef.current = [...tavoliQrRef.current, ...nuovi]
+    const nuovi = numeri.filter((n) => !esistenti.has(n)).map((n): TavoloQr => ({ id: String(n), numero: n, codice: codiceQr(), menu: 'ristorante', aperto: false, seduta: codiceQr() }))
+    // righe create prima del conto per tavolo: ricevono il loro conto
+    const senza = numeri.filter((n) => esistenti.get(n) && !esistenti.get(n)!.seduta)
+    if (nuovi.length || senza.length) {
+      tavoliQrRef.current = [...tavoliQrRef.current.map((q) => (senza.includes(q.numero) ? { ...q, seduta: codiceQr() } : q)), ...nuovi]
       setTavoliQr(tavoliQrRef.current)
-      nuovi.forEach((q) => esistenti.set(q.numero, q))
+      tavoliQrRef.current.forEach((q) => esistenti.set(q.numero, q))
     }
     return numeri.map((n) => esistenti.get(n)!)
   }, [])
@@ -784,8 +791,12 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // — Comande del ristorante (sala → cucina) —
-  const inviaComandaSala = useCallback((tavolo: number, righe: RigaComandaSala[], extra: Pick<ComandaSala, 'origine'> & Partial<Pick<ComandaSala, 'cameriere' | 'coperti' | 'note'>>) => {
+  const inviaComandaSala = useCallback((tavolo: number, righe: RigaComandaSala[], extra: Pick<ComandaSala, 'origine'> & Partial<Pick<ComandaSala, 'cameriere' | 'coperti' | 'note' | 'seduta'>>) => {
+    const { seduta } = assicuraTavoliQr([tavolo])[0]
+    // pagina del telefono rimasta aperta da un conto già chiuso: non finisce sul conto dei nuovi clienti
+    if (extra.seduta && extra.seduta !== seduta) return null
     const comanda: ComandaSala = {
+      seduta,
       id: nuovoId('CS'),
       tavolo,
       righe: righe.map((r) => ({ ...r, uscita: r.uscita ?? 1, stato: 'attesa' as const })),
@@ -801,10 +812,18 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     }
     setComandeSala((prev) => [comanda, ...prev])
     return comanda
-  }, [])
+  }, [assicuraTavoliQr])
   const cambiaComandaSala = useCallback((id: string, fn: (c: ComandaSala) => ComandaSala) => {
     setComandeSala((prev) => prev.map((c) => (c.id === id ? ricalcolaStato(fn(c)) : c)))
   }, [])
+  const chiudiContoTavolo = useCallback((numero: number) => {
+    const { seduta } = assicuraTavoliQr([numero])[0]
+    // del conto: le comande del tavolo non pagate di questo conto (o vecchie, senza conto)
+    setComandeSala((prev) => prev.map((c) => (c.tavolo === numero && !c.pagata && (!c.seduta || c.seduta === seduta)
+      ? { ...c, pagata: true, stato: 'servita', righe: c.righe.map((r) => ({ ...r, stato: 'servita' })) } : c)))
+    tavoliQrRef.current = tavoliQrRef.current.map((q) => (q.numero === numero ? { ...q, seduta: codiceQr(), aperto: false } : q))
+    setTavoliQr(tavoliQrRef.current)
+  }, [assicuraTavoliQr])
   const avanzaComandaSala = useCallback((id: string) => {
     // inviata: i piatti chiamati passano in lavorazione; poi si serve tutto il pronto
     cambiaComandaSala(id, (c) => ({ ...c, righe: c.righe.map((r) => {
@@ -1377,6 +1396,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       tavoliQr,
       assicuraTavoliQr,
       impostaTavoloQr,
+      chiudiContoTavolo,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,
@@ -1488,6 +1508,7 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
       tavoliQr,
       assicuraTavoliQr,
       impostaTavoloQr,
+      chiudiContoTavolo,
       clientiAggiunti,
       aggiungiCliente,
       aggiungiCosto,

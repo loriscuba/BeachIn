@@ -184,6 +184,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Il tablet self ha il bottone telefono che mostra il QR del suo tavolo (`QrTelefono`).
 - App **BeachIn Sala** → Cameriere: selettore **Comande | QR tavoli** (`SchedaCameriere` in `SalaApp.tsx`); sulla card del tavolo del
   cameriere il tasto QR apre `DettaglioQr` (QR, menu, apri/chiudi, stampa). `useQrTavolo(numero)` crea la riga mancante in un effect.
+- **Conto del tavolo** (migrazione 0021): `TavoloQr.seduta` = conto in corso; ogni comanda nasce con la `seduta` del tavolo.
+  `delConto(comande, tavolo, seduta)` (lib/sala) = comande della seduta non `pagata` (anche servite): "già ordinato" e totale nel
+  cameriere e nel tablet. Tasto **Chiudi conto** (card del tavolo, con riepilogo `RiepilogoConto`) → `chiudiContoTavolo(numero)`:
+  comande pagate e servite, nuova seduta, QR chiuso finché il cameriere non manda la prima comanda o tocca "Apri tavolo".
+  La pagina `/tavolo` si lega alla seduta trovata aperta e la passa a `inviaComandaSala(..., { seduta })`, che rifiuta (null) se il
+  conto è cambiato: la pagina mostra "Conto chiuso, inquadra di nuovo il QR".
 
 ## App clienti (`/comandapp`, ott 2026)
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a

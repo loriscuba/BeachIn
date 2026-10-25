@@ -15,7 +15,11 @@ export const azioneStatoSala: Partial<Record<StatoComandaSala, string>> = {
 
 /** Comande ancora "aperte" di un tavolo (non servite), dalla più vecchia. */
 export const aperteDelTavolo = (comande: ComandaSala[], tavolo: number) =>
-  comande.filter((c) => c.tavolo === tavolo && c.stato !== 'servita').sort((a, b) => a.ts - b.ts)
+  comande.filter((c) => c.tavolo === tavolo && c.stato !== 'servita' && !c.pagata).sort((a, b) => a.ts - b.ts)
+
+/** Comande del conto in corso del tavolo (anche già servite): quelle della seduta attuale, non ancora pagate. */
+export const delConto = (comande: ComandaSala[], tavolo: number, seduta?: string) =>
+  comande.filter((c) => c.tavolo === tavolo && !c.pagata && (!c.seduta || !seduta || c.seduta === seduta)).sort((a, b) => a.ts - b.ts)
 
 /** Minuti trascorsi dall'invio. */
 export const minutiDa = (ts: number, ora = Date.now()) => Math.max(0, Math.floor((ora - ts) / 60000))

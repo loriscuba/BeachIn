@@ -9,7 +9,7 @@
  */
 import { useMemo, useRef, useState, type PointerEvent as PE } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp, X, Coffee, UtensilsCrossed, Lock, QrCode, Smartphone } from 'lucide-react'
+import { Plus, Minus, Send, Check, Search, Users, ChefHat, Tablet, GripVertical, Play, HandPlatter, ChevronUp, X, Coffee, UtensilsCrossed, QrCode, Smartphone, Receipt, Lock } from 'lucide-react'
 import type { ComandaSala, RigaComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useSessione } from '@/context/SessioneContext'
@@ -17,19 +17,20 @@ import { useModuli } from '@/context/ModuliContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { config } from '@/data/config'
 import TavoliPerZona from './TavoliPerZona'
 import { DettaglioQr } from './QrTavoli'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
-import { aperteDelTavolo, articoliComePiatti, etichettaStatoSala, nomeUscita, repartoDi, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi, type Reparto } from '@/lib/sala'
+import { aperteDelTavolo, delConto, articoliComePiatti, etichettaStatoSala, nomeUscita, repartoDi, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi, type Reparto } from '@/lib/sala'
 
 // 16px su telefono: con meno iPhone ingrandisce la pagina quando si tocca il campo
 const campo = 'h-10 rounded-lg border border-calce-200 bg-white px-3 text-base text-profondo focus-visible:focus-ring sm:h-9 sm:text-sm'
 
 /** `app`: dentro l'app di sala (barra delle schede in fondo, la barra della comanda le sta sopra). */
 export default function Cameriere({ app = false }: { app?: boolean }) {
-  const { menu, sezioniMenu, articoliBar, sezioniBar, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala, tavoliQr, impostaTavoloQr } = useDemoData()
+  const { menu, sezioniMenu, articoliBar, sezioniBar, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala, tavoliQr, impostaTavoloQr, chiudiContoTavolo } = useDemoData()
   const [vediQr, setVediQr] = useState(false)
   // tavolo aperto = i clienti possono ordinare anche dal telefono col QR del tavolo
   const aperto = (n: number) => !!tavoliQr.find((q) => q.numero === n)?.aperto
@@ -122,7 +123,9 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
   const destinazione = alBar && inCucina ? 'in cucina e al bar' : alBar ? 'al bar' : 'in cucina'
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
   const aperte = tavolo == null ? [] : aperteDelTavolo(comandeSala, tavolo)
-  const contoTavolo = aperte.reduce((s, c) => s + c.totale, 0)
+  const conto = tavolo == null ? [] : delConto(comandeSala, tavolo, tavoliQr.find((x) => x.numero === tavolo)?.seduta)
+  const contoTavolo = conto.reduce((s, c) => s + c.totale, 0)
+  const [chiudiConto, setChiudiConto] = useState(false)
 
   const cambia = (id: string, d: number) => setQta((m) => {
     const v = Math.max(0, (m[id] ?? 0) + d)
@@ -150,12 +153,18 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
               <span className="grid h-11 w-11 place-content-center rounded-xl bg-gradient-to-br from-profondo to-cabina text-lg font-bold text-white num">{tavolo}</span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-profondo">Tavolo {tavolo}</p>
-                <p className="text-xs text-profondo/55">{aperto(tavolo) && <span className="font-semibold text-acqua">Aperto ai QR · </span>}{aperte.length ? `${aperte.length} comand${aperte.length > 1 ? 'e aperte' : 'a aperta'} · ${euroCent(contoTavolo)}` : 'Nessuna comanda aperta'}</p>
+                <p className="text-xs text-profondo/55">{aperto(tavolo) && <span className="font-semibold text-acqua">Aperto ai QR · </span>}{conto.length ? `${aperte.length ? `${aperte.length} in corso · ` : ''}conto ${euroCent(contoTavolo)}` : 'Conto vuoto'}</p>
               </div>
-              <Button dimensione="sm" variante={aperto(tavolo) ? 'secondario' : 'primario'} onClick={() => impostaTavoloQr(tavolo, { aperto: !aperto(tavolo) })}
-                title={aperto(tavolo) ? 'Chiudi il tavolo: dal QR non si ordina più' : 'Apri il tavolo: i clienti possono ordinare anche col QR'}>
-                {aperto(tavolo) ? <><Lock className="h-4 w-4" /> Chiudi</> : <><QrCode className="h-4 w-4" /> Apri tavolo</>}
-              </Button>
+              {conto.length > 0 ? (
+                <Button dimensione="sm" variante="primario" onClick={() => setChiudiConto(true)} title="Il cliente paga: chiude il conto e prepara il tavolo per i prossimi">
+                  <Receipt className="h-4 w-4" /> Chiudi conto
+                </Button>
+              ) : (
+                <Button dimensione="sm" variante={aperto(tavolo) ? 'secondario' : 'primario'} onClick={() => impostaTavoloQr(tavolo, { aperto: !aperto(tavolo) })}
+                  title={aperto(tavolo) ? 'Chiudi il tavolo: dal QR non si ordina più' : 'Apri il tavolo: i clienti possono ordinare anche col QR'}>
+                  {aperto(tavolo) ? <><Lock className="h-4 w-4" /> Chiudi</> : <><QrCode className="h-4 w-4" /> Apri tavolo</>}
+                </Button>
+              )}
               <Button dimensione="sm" variante={vediQr ? 'primario' : 'secondario'} onClick={() => setVediQr(!vediQr)} aria-label="QR del tavolo" title="QR del tavolo"><QrCode className="h-4 w-4" /></Button>
               <Button dimensione="sm" onClick={() => { setTavolo(null); setVediQr(false) }}>Cambia tavolo</Button>
             </CardBody>
@@ -308,15 +317,27 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
 
         {tavolo != null && (
           <Card>
-            <CardHeader titolo={`Tavolo ${tavolo}: già ordinato`} sottotitolo={aperte.length ? `Conto finora ${euroCent(contoTavolo)}` : 'Nessuna comanda aperta'} />
-            {aperte.length > 0 && (
+            <CardHeader titolo={`Tavolo ${tavolo}: già ordinato`} sottotitolo={conto.length ? `Conto finora ${euroCent(contoTavolo)}` : 'Conto vuoto'} />
+            {conto.length > 0 && (
               <CardBody className="space-y-2 pt-2">
-                {aperte.map((c) => <ComandaAperta key={c.id} c={c} onVia={(n) => chiamaUscitaSala(c.id, n)} onServita={(indici) => segnaRigheSala(c.id, indici, 'servita')} />)}
+                {conto.map((c) => <ComandaAperta key={c.id} c={c} onVia={(n) => chiamaUscitaSala(c.id, n)} onServita={(indici) => segnaRigheSala(c.id, indici, 'servita')} />)}
               </CardBody>
             )}
           </Card>
         )}
       </div>
+
+      {tavolo != null && (
+        <Modal aperto={chiudiConto} onChiudi={() => setChiudiConto(false)} titolo={`Chiudi conto · tavolo ${tavolo}`}
+          piede={(
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setChiudiConto(false)}>Annulla</Button>
+              <Button variante="primario" onClick={() => { chiudiContoTavolo(tavolo); setChiudiConto(false) }}><Receipt className="h-4 w-4" /> Incassato, chiudi</Button>
+            </div>
+          )}>
+          <RiepilogoConto conto={conto} totale={contoTavolo} />
+        </Modal>
+      )}
 
       {/* su telefono la comanda è in fondo alla pagina: barra fissa con il riepilogo e l'invio (portale: la pagina usa transform) */}
       {tavolo != null && createPortal(
@@ -342,6 +363,34 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
 }
 
 /** Comanda già inviata: uscite con il loro stato, «Dai il via» alla prossima e «Servita» quando è pronta. */
+/** Cosa incassare: i piatti del conto raggruppati, il totale e l'avviso se qualcosa non è ancora uscito. */
+function RiepilogoConto({ conto, totale }: { conto: ComandaSala[]; totale: number }) {
+  const voci = new Map<string, { nome: string; quantita: number; importo: number }>()
+  for (const r of conto.flatMap((c) => c.righe)) {
+    const k = `${r.piattoId}|${r.prezzoUnitario}`
+    const v = voci.get(k) ?? { nome: r.nome, quantita: 0, importo: 0 }
+    v.quantita += r.quantita; v.importo += r.quantita * r.prezzoUnitario
+    voci.set(k, v)
+  }
+  const daServire = conto.flatMap((c) => c.righe.filter((r) => statoRiga(c, r) !== 'servita')).length
+  return (
+    <div className="space-y-3 text-sm">
+      <ul className="divide-y divide-calce-200">
+        {[...voci.values()].map((v) => (
+          <li key={v.nome + v.importo} className="flex items-center gap-2 py-1.5">
+            <span className="num w-7 font-semibold text-profondo">{v.quantita}×</span>
+            <span className="min-w-0 flex-1 truncate text-profondo">{v.nome}</span>
+            <span className="num text-profondo/70">{euroCent(v.importo)}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="flex items-center justify-between border-t border-calce-200 pt-2 font-display text-lg font-semibold text-profondo">Totale <span className="num">{euroCent(totale)}</span></p>
+      {daServire > 0 && <p className="rounded-xl bg-tenda/20 p-2 text-xs text-profondo/80">{daServire} piatt{daServire > 1 ? 'i non ancora serviti' : 'o non ancora servito'}: chiudendo il conto escono dalle code di cucina e bar.</p>}
+      <p className="text-xs text-profondo/55">Il tavolo riparte con un conto nuovo e vuoto. Il QR resta chiuso finché non mandi la prima comanda o tocchi «Apri tavolo»; le pagine dei clienti di prima non possono più ordinare.</p>
+    </div>
+  )
+}
+
 function ComandaAperta({ c, onVia, onServita }: { c: ComandaSala; onVia: (n: number) => void; onServita: (indici: number[]) => void }) {
   const uscite = usciteDi(c)
   const prossima = uscite.find((u) => !u.chiamata)
