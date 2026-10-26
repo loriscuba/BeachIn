@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { accento } from '@/config/accenti'
@@ -19,6 +19,20 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
   const { pathname, search } = useLocation()
   // cambio pagina (anche dal tasto indietro) = pannello chiuso
   useEffect(() => { onChiudi() }, [pathname, search]) // eslint-disable-line react-hooks/exhaustive-deps
+  // aperto: la pagina dietro non scorre e Esc chiude
+  const chiudi = useRef(onChiudi)
+  chiudi.current = onChiudi
+  useEffect(() => {
+    if (!aperto) return
+    const main = document.querySelector('main')
+    const prima = main?.style.overflowY ?? ''
+    if (main) main.style.overflowY = 'hidden'
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') chiudi.current() }
+    window.addEventListener('keydown', esc)
+    return () => { if (main) main.style.overflowY = prima; window.removeEventListener('keydown', esc) }
+  }, [aperto])
+  // trascinando giù la maniglia/il titolo il pannello si chiude
+  const inizioY = useRef<number | null>(null)
 
   // sezioni senza sottomenu insieme in "Generale", le altre ognuna col suo gruppo
   const singole: Tessera[] = voci.filter((v) => !v.figli).map((v) => ({ percorso: v.percorso, etichetta: v.etichetta, icona: v.icona, colore: accento(v.percorso) }))
@@ -33,22 +47,27 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
 
   return (
     <div className={cn('fixed inset-0 z-40 md:hidden', !aperto && 'pointer-events-none')} aria-hidden={!aperto}>
-      <div className={cn('absolute inset-0 bg-profondo-900/50 transition-opacity duration-200', aperto ? 'opacity-100' : 'opacity-0')} onClick={onChiudi} />
+      <div className={cn('absolute inset-0 touch-none bg-profondo-900/50 transition-opacity duration-200', aperto ? 'opacity-100' : 'opacity-0')} onClick={onChiudi} />
       <div
         role="dialog"
         aria-label="Tutte le sezioni"
         className={cn(
-          'shell-side absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl bg-profondo pb-[env(safe-area-inset-bottom)] text-white shadow-2xl transition-transform duration-200',
+          'shell-side absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col overflow-hidden rounded-t-3xl bg-profondo pb-[env(safe-area-inset-bottom)] text-white shadow-2xl transition-transform duration-200',
           aperto ? 'translate-y-0' : 'translate-y-full'
         )}
       >
-        <div className="flex items-center justify-between px-5 pb-2 pt-4">
+        <div className="shrink-0 touch-none px-5 pb-2 pt-2"
+          onTouchStart={(e) => { inizioY.current = e.touches[0].clientY }}
+          onTouchEnd={(e) => { if (inizioY.current !== null && e.changedTouches[0].clientY - inizioY.current > 50) onChiudi(); inizioY.current = null }}>
+          <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-white/25" />
+          <div className="flex items-center justify-between">
           <p className="font-display text-xl font-semibold text-white">Tutte le sezioni</p>
-          <button type="button" onClick={onChiudi} className="grid h-10 w-10 place-items-center rounded-full text-white/70 hover:bg-white/10" aria-label="Chiudi">
-            <X className="h-5 w-5" />
+          <button type="button" onClick={onChiudi} className="-mr-2 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white hover:bg-white/10" aria-label="Chiudi">
+            <X className="h-6 w-6" />
           </button>
+          </div>
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto px-4 pb-5">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-5 [-webkit-overflow-scrolling:touch]">
           {gruppi.map((g) => (
             // riquadro con un velo leggero del colore della sezione, per distinguerle a colpo d'occhio
             <section key={g.titolo} className="rounded-2xl p-2 pt-2.5"
