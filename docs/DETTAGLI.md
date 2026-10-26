@@ -25,8 +25,12 @@ Aggiornare qui quando cambia un modulo.
   Senza Supabase utenti demo `admin`, `cameriere`, `cucina`, `barista` (password `lido`, tasti rapidi sotto il login); la sessione
   demo è per scheda (sessionStorage, ultima usata in localStorage): tre schede dello stesso browser possono essere tre utenti.
 - `Sidebar`: su PC a scomparsa (hamburger nella `Topbar`, colonna che scorre fuori `lg:-ml-64`, scelta ricordata in
-  localStorage `beachin.menu.v1`); su tablet pannello da sinistra aperto da Menu; su telefono pannello che sale dal basso
-  (Altro), alto al massimo 85% dello schermo, si chiude toccando fuori, con la X o trascinando giù la maniglia (> 80 px).
+  localStorage `beachin.menu.v1`); su tablet pannello da sinistra aperto da Menu; sul telefono non c'è (`max-md:hidden`).
+- **Telefono, "Altro"** (`components/layout/MenuGriglia.tsx`, richiesta di Loris 26/10: niente menu a elenco, poco ergonomico):
+  pannello dal basso con tutte le sezioni come pulsanti grandi con icona (griglia a 3 colonne, badge), divise per area
+  ("Generale" per le voci senza sottomenu, poi una per voce con sottomenu); voci da `useVociMenu()`. Si chiude toccando
+  fuori, con la X, scegliendo una sezione o cambiando pagina. Barra delle schede scura in tema scuro (`.barra-basso`);
+  pulsante Esci della topbar con stile proprio in tema scuro (`.bi-esci`); badge "Dati dimostrativi" solo da `sm`.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
 - (ott 2026) **Nuovo look + tema chiaro/scuro**: interruttore sole/luna nella `Topbar` (hook `useTema`, localStorage
   `beachin.tema.v1`, default scuro) → `data-tema` sulla radice di `AppShell`. In `styles/index.css`: sfondo a luci sfumate

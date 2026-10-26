@@ -1,7 +1,7 @@
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { useSessione } from '@/context/SessioneContext'
-import { SCHEDE_PER_RUOLO, SCHEDE_RAPIDE, type SchedaRapida, type SottoVoce } from '@/config/navigazione'
+import { SCHEDE_PER_RUOLO, SCHEDE_RAPIDE, navigazione, type SchedaRapida, type SottoVoce, type VoceNav } from '@/config/navigazione'
 import { codaBar, daFareCucina } from '@/lib/sala'
 
 /** Contatori dei badge del menu (stile iPhone). */
@@ -43,4 +43,15 @@ export function schedaAttiva(s: SchedaRapida, pathname: string, search: string) 
   const tab = new URLSearchParams(qs).get('tab')
   if (!tab) return true
   return (new URLSearchParams(search).get('tab') ?? 'cameriere') === tab
+}
+
+/** Voci del menu visibili all'utente (modulo attivo + permesso), con i sottomenu filtrati allo stesso modo. */
+export function useVociMenu(): VoceNav[] {
+  const { moduloAttivo } = useModuli()
+  const { puo } = useSessione()
+  const conHome = useConHome()
+  const visibile = (m: VoceNav['modulo'], permesso?: 'utenti') => (m !== 'panoramica' || conHome) && moduloAttivo(m) && puo(permesso ?? m)
+  return navigazione
+    .map((v) => (v.figli ? { ...v, figli: v.figli.filter((f) => visibile(f.modulo, f.permesso)) } : v))
+    .filter((v) => (v.figli ? v.figli.length > 0 : visibile(v.modulo)))
 }

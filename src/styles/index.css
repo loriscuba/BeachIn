@@ -160,6 +160,13 @@
 /* Altezza della barra delle schede in basso (solo telefono): i pulsanti fluttuanti e il fondo pagina le stanno sopra. */
 .shell-bg { --barra-basso: calc(3.5rem + env(safe-area-inset-bottom)); }
 @media (min-width: 768px) { .shell-bg { --barra-basso: 0px; } }
+/* tema scuro: pulsante Esci della topbar visibile (prima bianco su bianco) */
+[data-tema='scuro'] .bi-esci { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.85); }
+[data-tema='scuro'] .bi-esci:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
+/* in tema scuro anche la barra delle schede è scura */
+[data-tema='scuro'] .barra-basso { background: rgba(6, 22, 29, 0.94); border-color: rgba(255, 255, 255, 0.08); }
+[data-tema='scuro'] .barra-basso .text-profondo { color: #fff; }
+[data-tema='scuro'] .barra-basso .text-profondo\/45 { color: rgba(255, 255, 255, 0.55); }
 
 /* ── Tema del gestionale (chiaro / scuro) applicato a tutto lo shell ───────── */
 .shell-bg {

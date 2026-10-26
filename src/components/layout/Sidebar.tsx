@@ -60,16 +60,13 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
     window.addEventListener('pointerdown', sblocca, { once: true })
     return () => window.removeEventListener('pointerdown', sblocca)
   }, [])
-  // trascinamento della maniglia del pannello dal basso (telefono)
-  const inizio = useRef<number | null>(null)
-  const [trascina, setTrascina] = useState(0)
   const dentro = (v: VoceNav) => (v.figli ?? []).some((f) => pathname === f.percorso.split('?')[0])
   return (
     <>
       {/* Backdrop su mobile */}
       {aperta && (
         <div
-          className="fixed inset-0 z-30 bg-profondo-900/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-profondo-900/40 max-md:hidden lg:hidden"
           onClick={onChiudi}
           aria-hidden
         />
@@ -77,29 +74,16 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
 
       <aside
         className={cn(
-          'shell-side fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white',
-          // telefono: pannello che sale dal basso (vicino al pollice e al tasto "Altro"); tablet: pannello da sinistra;
+          'shell-side fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white max-md:hidden',
+          // telefono: niente menu a elenco (c'è la griglia di pulsanti, `MenuGriglia`); tablet: pannello sopra i contenuti;
           // PC: colonna che scorre fuori a sinistra
-          'max-md:inset-x-0 max-md:top-auto max-md:max-h-[85dvh] max-md:w-full max-md:rounded-t-3xl max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-2xl',
           'transition-all duration-200 lg:static',
-          aperta ? 'translate-x-0 translate-y-0' : 'max-md:translate-y-full md:-translate-x-full lg:-ml-64'
+          aperta ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
         )}
-        style={trascina > 0 ? { transform: `translateY(${trascina}px)`, transition: 'none' } : undefined}
         aria-hidden={!aperta}
       >
-        {/* Maniglia: sul telefono si chiude trascinando giù */}
-        <div
-          className="grid touch-none place-items-center pt-2 md:hidden"
-          onPointerDown={(e) => { inizio.current = e.clientY; (e.target as HTMLElement).setPointerCapture?.(e.pointerId) }}
-          onPointerMove={(e) => { if (inizio.current != null) setTrascina(Math.max(0, e.clientY - inizio.current)) }}
-          onPointerUp={() => { if (trascina > 80) onChiudi(); inizio.current = null; setTrascina(0) }}
-          onPointerCancel={() => { inizio.current = null; setTrascina(0) }}
-          aria-hidden
-        >
-          <span className="h-1.5 w-10 rounded-full bg-white/30" />
-        </div>
         {/* Intestazione */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-white/10 max-md:h-14">
+        <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
           <Logo />
           <button
             className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
