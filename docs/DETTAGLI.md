@@ -25,7 +25,8 @@ Aggiornare qui quando cambia un modulo.
   Senza Supabase utenti demo `admin`, `cameriere`, `cucina`, `barista` (password `lido`, tasti rapidi sotto il login); la sessione
   demo è per scheda (sessionStorage, ultima usata in localStorage): tre schede dello stesso browser possono essere tre utenti.
 - `Sidebar`: su PC a scomparsa (hamburger nella `Topbar`, colonna che scorre fuori `lg:-ml-64`, scelta ricordata in
-  localStorage `beachin.menu.v1`); su telefono e tablet pannello sopra i contenuti aperto da Altro/Menu.
+  localStorage `beachin.menu.v1`); su tablet pannello da sinistra aperto da Menu; su telefono pannello che sale dal basso
+  (Altro), alto al massimo 85% dello schermo, si chiude toccando fuori, con la X o trascinando giù la maniglia (> 80 px).
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
 - (ott 2026) **Nuovo look + tema chiaro/scuro**: interruttore sole/luna nella `Topbar` (hook `useTema`, localStorage
   `beachin.tema.v1`, default scuro) → `data-tema` sulla radice di `AppShell`. In `styles/index.css`: sfondo a luci sfumate

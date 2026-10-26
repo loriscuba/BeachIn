@@ -60,6 +60,9 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
     window.addEventListener('pointerdown', sblocca, { once: true })
     return () => window.removeEventListener('pointerdown', sblocca)
   }, [])
+  // trascinamento della maniglia del pannello dal basso (telefono)
+  const inizio = useRef<number | null>(null)
+  const [trascina, setTrascina] = useState(0)
   const dentro = (v: VoceNav) => (v.figli ?? []).some((f) => pathname === f.percorso.split('?')[0])
   return (
     <>
@@ -75,14 +78,28 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
       <aside
         className={cn(
           'shell-side fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-profondo text-white',
-          // mobile: pannello sopra i contenuti; desktop: colonna che scorre fuori a sinistra
+          // telefono: pannello che sale dal basso (vicino al pollice e al tasto "Altro"); tablet: pannello da sinistra;
+          // PC: colonna che scorre fuori a sinistra
+          'max-md:inset-x-0 max-md:top-auto max-md:max-h-[85dvh] max-md:w-full max-md:rounded-t-3xl max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-2xl',
           'transition-all duration-200 lg:static',
-          aperta ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
+          aperta ? 'translate-x-0 translate-y-0' : 'max-md:translate-y-full md:-translate-x-full lg:-ml-64'
         )}
+        style={trascina > 0 ? { transform: `translateY(${trascina}px)`, transition: 'none' } : undefined}
         aria-hidden={!aperta}
       >
+        {/* Maniglia: sul telefono si chiude trascinando giù */}
+        <div
+          className="grid touch-none place-items-center pt-2 md:hidden"
+          onPointerDown={(e) => { inizio.current = e.clientY; (e.target as HTMLElement).setPointerCapture?.(e.pointerId) }}
+          onPointerMove={(e) => { if (inizio.current != null) setTrascina(Math.max(0, e.clientY - inizio.current)) }}
+          onPointerUp={() => { if (trascina > 80) onChiudi(); inizio.current = null; setTrascina(0) }}
+          onPointerCancel={() => { inizio.current = null; setTrascina(0) }}
+          aria-hidden
+        >
+          <span className="h-1.5 w-10 rounded-full bg-white/30" />
+        </div>
         {/* Intestazione */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
+        <div className="flex h-16 items-center justify-between px-4 border-b border-white/10 max-md:h-14">
           <Logo />
           <button
             className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
