@@ -23,7 +23,7 @@ import { PresenzeEventi } from '@/components/eventi/PresenzeEventi'
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
   sport: Trophy, musica: Music, festa: PartyPopper, gastronomia: UtensilsCrossed, benessere: Flower2, privato: Gift,
 }
-const mesiLabel: Record<string, string> = { '05': 'Maggio', '06': 'Giugno', '07': 'Luglio', '08': 'Agosto', '09': 'Settembre' }
+const mesiLabel = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 
 export default function Eventi() {
   const { eventi, aggiungiEvento, modificaEvento, eliminaEvento, richiesteEventi, aggiungiPartecipanteEvento, rimuoviPartecipanteEvento, aggiungiFotoEvento, rimuoviFotoEvento } = useDemoData()
@@ -32,8 +32,14 @@ export default function Eventi() {
   // Sottosezione da `?tab=` (sottomenu laterale): calendario (default) o presenze.
   const [q, setQ] = useSearchParams()
   const tab = q.get('tab') === 'presenze' ? 'presenze' : 'calendario'
+  // Calendario diviso in "In corso e prossimi" (da oggi in poi) e "Passati".
+  const [periodo, setPeriodo] = useState<'prossimi' | 'passati'>('prossimi')
 
-  const ordinati = useMemo(() => [...eventi].sort((a, b) => a.data.localeCompare(b.data)), [eventi])
+  const oggi = config.oggi
+  // In entrambe le schede si parte dall'evento più vicino a oggi e ci si allontana.
+  const prossimi = useMemo(() => eventi.filter((e) => e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data)), [eventi, oggi])
+  const passati = useMemo(() => eventi.filter((e) => e.data < oggi).sort((a, b) => b.data.localeCompare(a.data)), [eventi, oggi])
+  const ordinati = periodo === 'prossimi' ? prossimi : passati
   const sintesi = useMemo(() => {
     const ricavi = eventi.reduce((s, e) => s + e.ricavi, 0)
     const costi = eventi.reduce((s, e) => s + e.costiSostenuti, 0)
@@ -42,12 +48,19 @@ export default function Eventi() {
   }, [eventi])
 
   const perMese = useMemo(() => {
-    const g: Record<string, Evento[]> = {}
-    for (const e of ordinati) (g[e.data.slice(5, 7)] ??= []).push(e)
-    return Object.entries(g).sort(([a], [b]) => a.localeCompare(b))
+    // Mesi nell'ordine della lista (Map conserva l'ordine di inserimento).
+    const g = new Map<string, Evento[]>()
+    for (const e of ordinati) {
+      const k = e.data.slice(0, 7)
+      if (!g.has(k)) g.set(k, [])
+      g.get(k)!.push(e)
+    }
+    return [...g.entries()]
   }, [ordinati])
-
-  const oggi = config.oggi
+  const etichettaMese = (k: string) => {
+    const [a, m] = k.split('-')
+    return `${mesiLabel[Number(m) - 1]}${a === oggi.slice(0, 4) ? '' : ` ${a}`}`
+  }
   // Versione "viva" dell'evento selezionato: si aggiorna quando cambia l'album.
   const selLive = sel ? eventi.find((x) => x.id === sel.id) ?? sel : undefined
 
@@ -76,10 +89,14 @@ export default function Eventi() {
           azione={<Button variante="primario" dimensione="sm" onClick={() => setForm({ open: true })}><Plus className="h-4 w-4" /> Nuovo evento</Button>}
         />
         <CardBody className="space-y-4 pt-2">
-          {perMese.length === 0 && <p className="py-6 text-center text-sm text-profondo/45">Nessun evento. Aggiungine uno con “Nuovo evento”.</p>}
+          <Tabs opzioni={[
+            { valore: 'prossimi', etichetta: 'In corso e prossimi', badge: prossimi.length },
+            { valore: 'passati', etichetta: 'Passati' },
+          ]} valore={periodo} onChange={setPeriodo} />
+          {perMese.length === 0 && <p className="py-6 text-center text-sm text-profondo/45">{periodo === 'prossimi' ? 'Nessun evento in programma. Aggiungine uno con “Nuovo evento”.' : 'Nessun evento passato.'}</p>}
           {perMese.map(([m, list]) => (
             <div key={m}>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-profondo/45">{mesiLabel[m] ?? m}</p>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-profondo/45">{etichettaMese(m)}</p>
               <ul className="space-y-2">
                 {list.map((e) => {
                   const Icona = iconaTipo[e.tipo]
