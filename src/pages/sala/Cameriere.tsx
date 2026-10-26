@@ -28,8 +28,8 @@ import { aperteDelTavolo, delConto, articoliComePiatti, etichettaStatoSala, nome
 // 16px su telefono: con meno iPhone ingrandisce la pagina quando si tocca il campo
 const campo = 'h-10 rounded-lg border border-calce-200 bg-white px-3 text-base text-profondo focus-visible:focus-ring sm:h-9 sm:text-sm'
 
-/** `app`: dentro l'app di sala (barra delle schede in fondo, la barra della comanda le sta sopra). */
-export default function Cameriere({ app = false }: { app?: boolean }) {
+/** Su telefono la barra della comanda sta sopra la barra delle schede dell'app staff. */
+export default function Cameriere() {
   const { menu, sezioniMenu, articoliBar, sezioniBar, tavoliDelGiorno, comandeSala, inviaComandaSala, chiamaUscitaSala, segnaRigheSala, tavoliQr, impostaTavoloQr, chiudiContoTavolo } = useDemoData()
   const [vediQr, setVediQr] = useState(false)
   // tavolo aperto = i clienti possono ordinare anche dal telefono col QR del tavolo
@@ -144,7 +144,7 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
   }
 
   return (
-    <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_380px]', !app && tavolo != null && 'pb-20 md:pb-0')}>
+    <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_380px]', tavolo != null && 'pb-20 md:pb-0')}>
       <div className="min-w-0 space-y-4">
         {/* Tavoli */}
         {tavolo != null ? (
@@ -341,7 +341,7 @@ export default function Cameriere({ app = false }: { app?: boolean }) {
 
       {/* su telefono la comanda è in fondo alla pagina: barra fissa con il riepilogo e l'invio (portale: la pagina usa transform) */}
       {tavolo != null && createPortal(
-        <div className={cn('fixed inset-x-0 z-30 px-3 pb-2 md:hidden', app ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]' : 'bottom-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]')}>
+        <div className={cn('fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 px-3 pb-2 md:hidden')}>
           <div className="flex items-center gap-2 rounded-2xl bg-profondo p-2 text-white shadow-xl">
             <button type="button" onClick={() => rifComanda.current?.scrollIntoView({ behavior: 'smooth' })} className="flex min-w-0 flex-1 items-center gap-2 px-2 text-left">
               <ChevronUp className="h-4 w-4 shrink-0 text-white/60" />

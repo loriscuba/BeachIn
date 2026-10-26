@@ -3,11 +3,29 @@
 Riferimento completo spostato da `CLAUDE.md` (che resta snello). Leggere solo la sezione che serve.
 Aggiornare qui quando cambia un modulo.
 
-## Shell (menu laterale)
-- **Accesso**: `AppShell` e `AdminApp` mostrano `LoginGestore` finché `SessioneContext` non ha un profilo; Esci nella Topbar
-  (con nome e ruolo dell'utente). Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
-- `Sidebar` a scomparsa anche su desktop: hamburger nella `Topbar` sempre visibile (apre/chiude), su desktop la colonna
-  scorre fuori (`lg:-ml-64`) e la scelta è ricordata in localStorage `beachin.menu.v1`; su telefono resta pannello sopra i contenuti.
+## Shell: app staff unica su telefono, tablet e PC (26/10/2026)
+- **Un'unica app per lo staff** (gestionale + ex app Admin + ex app Sala): stessa rotta, stesso login, un solo manifest
+  `public/staff.webmanifest` ("BeachIn", `id` `./?app=staff`, start_url e scope `./`, scorciatoie Prenotazioni/Cameriere/Cucina),
+  impostato da `AppShell` con `impostaManifest`. `/adminapp` → `/prenotazioni`, `/salaapp` → `/sala` (Navigate): link, QR e
+  icone già installate continuano a funzionare (le vecchie icone aprono fuori dal loro scope: meglio reinstallare "BeachIn").
+- **Forma per dispositivo** (`AppShell` + `components/layout/BarraRapida.tsx`): telefono (< `md`) barra in basso con 4 schede del
+  ruolo + **Altro** (apre il menu completo); tablet (`md`–`lg`) colonna stretta a sinistra con fino a 6 schede + **Menu**; PC
+  (≥ `lg`) menu laterale completo con hamburger. Variabile CSS `--barra-basso` (altezza della barra, 0 da `md`) per fondo pagina
+  e pulsanti fluttuanti (DemoPlayer, WhatsApp); la barra della comanda del cameriere (portale) sta sopra la barra delle schede.
+- **Schede per ruolo**: `SCHEDE_RAPIDE` e `SCHEDE_PER_RUOLO` in `config/navigazione.tsx`, hook `hooks/useNavStaff.ts`
+  (`useSchedeRapide`, `useConteggiNav` per i badge, `useConHome`). Home (Panoramica) solo per amministratore o chi vede le
+  Impostazioni; gli altri ruoli aprono la loro prima scheda (cameriere → Cameriere, cucina → Cucina, barista → Bar) e non vedono Panoramica nel menu.
+- **Velocità**: service worker `public/sw-admin.js` registrato da `attivaCacheApp()` (`lib/notifichePush.ts`, solo build di
+  produzione, non single-file): pagina dalla rete con ripiego sulla copia dopo 3 s o offline, `/assets/` con hash dalla cache,
+  icone e font dalla cache aggiornata in sottofondo; dati Supabase mai in cache. `lib/precarica.ts` scarica a riposo il codice
+  delle schede del ruolo (non con "risparmio dati"). In Prenotazioni menu a voce e lettore QR sono lazy (pagina 158 → 18 KB).
+- **Telefono**: `Tabella` sotto `sm` diventa una lista di schede (prima colonna titolo, le altre etichetta/valore).
+- **Accesso**: `AppShell` mostra `LoginGestore` finché `SessioneContext` non ha un profilo; Esci nella Topbar
+  (con nome e ruolo dell'utente). Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/tavolo`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
+  Senza Supabase utenti demo `admin`, `cameriere`, `cucina`, `barista` (password `lido`, tasti rapidi sotto il login); la sessione
+  demo è per scheda (sessionStorage, ultima usata in localStorage): tre schede dello stesso browser possono essere tre utenti.
+- `Sidebar`: su PC a scomparsa (hamburger nella `Topbar`, colonna che scorre fuori `lg:-ml-64`, scelta ricordata in
+  localStorage `beachin.menu.v1`); su telefono e tablet pannello sopra i contenuti aperto da Altro/Menu.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
 - (ott 2026) **Nuovo look + tema chiaro/scuro**: interruttore sole/luna nella `Topbar` (hook `useTema`, localStorage
   `beachin.tema.v1`, default scuro) → `data-tema` sulla radice di `AppShell`. In `styles/index.css`: sfondo a luci sfumate
@@ -54,7 +72,7 @@ Aggiornare qui quando cambia un modulo.
   a login/logout (`main.tsx`, rilegge i dati col nuovo ruolo). `Sidebar` = modulo attivo **e** permesso; `ModuloGate` →
   `AccessoNegato` (livello 0) o `SolaLettura` (livello 1: blocca clic/digitazione tranne schede `data-naviga`, select e filtri data).
   Impostazioni a schede `?tab=generali|utenti`; **Utenti e ruoli** = `src/pages/impostazioni/UtentiRuoli.tsx` (elenco utenti,
-  nuovo/modifica/password/disattiva/elimina, griglia ruoli×sezioni modificabile, nuovo ruolo). `AdminApp`: schede secondo il
+  nuovo/modifica/password/disattiva/elimina, griglia ruoli×sezioni modificabile, nuovo ruolo). `Prenotazioni` (ex AdminApp): schede secondo il
   permesso di modifica (Prenotazioni/Menu = ristorante, App = sito, Ingressi = eventi).
 - **Foto profilo** (migrazione 0013, `beachin.utenti.foto`): scelta toccando il cerchio in Nuovo/Modifica utente (`SceltaFoto`,
   `fileAImmagine(file, 'utenti', 320)` → Storage `beachin/utenti/`), salvata dalla Edge Function; `Avatar` tondo (iniziali se manca)
@@ -92,17 +110,17 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   evento Realtime. Progetto: **Demo IPA** (`exchjppslwhbnbzuhfqs`, eu-west-1, condiviso tra demo), schema già creato via connettore MCP Supabase (migration `beachin_schema`). Senza env → tutto come prima (localStorage per le comande). Con Supabase il `reset()` non tocca menu/comande.
 - **IPA Monitor**: vista `beachin.monitor_riepilogo` (migrazione 0009, solo conteggi/date, nessun grant ad anon/authenticated) letta dal collettore `ipa-collect` del cruscotto IPA Monitor (schema `ipamonitor` nello stesso progetto Demo IPA).
 
-- **App admin** (rotta pubblica `/adminapp`, `src/pages/AdminApp.tsx`, mobile): login demo `admin/lido` (`src/lib/adminapp.ts`),
-  tab **Prenotazioni** (richieste tavolo dal sito da confermare/rifiutare, campanello all'arrivo; **Conferma** apre
+- **Prenotazioni operative** (`/prenotazioni` nell'app staff, `src/pages/Prenotazioni.tsx`, ex app admin `/adminapp`; `?tab=`
+  prenotazioni/menu/app/ingressi; campanello globale nella `Sidebar`), tab **Prenotazioni** (richieste tavolo dal sito da confermare/rifiutare, campanello all'arrivo; **Conferma** apre
   `SceltaTavolo` a schermo intero: in orizzontale la pianta `PiantaTavoli` (estratta da `ristorante/ScegliTavolo.tsx`), in
   verticale invito a girare il telefono + elenco tavoli con consigliato; poi `confermaRistorante` + `assegnaTavolo(PR-<id>)`;
   card **Oggi al ristorante** `OggiRistorante`: coperti/posti e riempimento per turno, avvisi senza tavolo/richieste di oggi,
   lista arrivi con tavolo assegnabile e spunta "arrivato") e **Menu a voce**
   (`<AssistenteVocale />`). `richiesteRistorante` sincronizzate su Supabase (`beachin.richieste_ristorante`); un effect nel
   context crea la `PrenotazioneRistorante` `PR-<id>` per ogni richiesta confermata (anche da altro dispositivo).
-  Link "App admin" in Ristorante → Prenotazioni.
+  Link "Apri sul telefono" in Ristorante → Prenotazioni.
 - **Notifiche push app admin** (anche a schermo bloccato): PWA installabile (`public/admin.webmanifest`, icone
-  `public/admin-icon-*.png`, manifest/meta iniettati da `preparaInstallazione()` solo su /adminapp), service worker
+  `public/admin-icon-*.png`, ora manifest unico `staff.webmanifest` dell'app staff), service worker
   `public/sw-admin.js`, logica in `src/lib/notifichePush.ts` (VAPID pubblica nel codice; privata nel **Vault** Supabase
   `beachin_vapid_private`, mai nel repo). Iscrizioni in `beachin.push_iscrizioni` (non leggibile da anon, scrittura via RPC
   `beachin.registra_push`). Trigger `notifica_nuova_richiesta` su `richieste_ristorante` → `pg_net` → Edge Function
@@ -117,11 +135,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   start_url e scope `./adminapp`. Prima lo scope `./` dell'admin copriva tutto e Chrome diceva "già installata". Su GitHub Pages
   `404.html` = index e `hashInPercorso` converte il percorso in `#/…`. ComandApp `id` `./` (identità delle installazioni dei clienti), start_url e scope `./comandapp`.
   Un'app installata col vecchio scope `./` copre tutto il sito: va disinstallata e reinstallata.
-- **App separata `/salaapp`** (`src/pages/SalaApp.tsx`, "BeachIn Sala", manifest `public/sala.webmanifest`, icone `sala-icon-*`):
-  login staff (`LoginGestore`), serve modulo `sala` attivo + permesso `sala`≥1; schede in basso Cameriere/Cucina/Tablet self
-  (a ogni apertura schermata "Cosa fai con questo dispositivo?": Cameriere / Cucina / Tablet self). Link + QR in cima alla pagina Comande sala (`urlSalaApp()` in `lib/sala.ts`).
+- **Ex app separata `/salaapp`**: dal 26/10/2026 reindirizza a `/sala` nell'app staff (schede Cameriere/Cucina/Bar nella barra
+  del telefono). Su PC in cima alla pagina il QR "Apri la sala sul telefono o sul tablet" (`urlSalaApp()` in `lib/sala.ts` → `/sala`).
+  `sala.webmanifest` e `admin.webmanifest` restano solo per le vecchie installazioni.
 - Telefono/tablet: dal `md` cameriere su due colonne; su telefono tavolo scelto compresso ("Cambia tavolo") e barra fissa in
-  basso con riepilogo + Invia (prop `app` la alza sopra le schede); cucina su telefono una colonna alla volta (selettore).
+  basso con riepilogo + Invia (sopra la barra delle schede); cucina su telefono una colonna alla volta (selettore).
 - Uscita dei piatti (cameriere): su ogni riga i bottoni S·1·2·3 (affidabili su iPhone/Android); il trascinamento resta solo
   col mouse (`pointerType === 'mouse'`, ascolto su `window`). Su iPhone il tutto schermo c'è solo aprendo l'app dalla Home.
   GitHub Pages (HashRouter): `pages.yml` riscrive i manifest a start_url `./#/app` e scope `./`, altrimenti iPhone apriva l'app
@@ -182,7 +200,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   dalla card del tavolo; si apre da solo alla prima comanda del cameriere.
 - Scheda **QR tavoli** (`/sala?tab=qr`, `sala/QrTavoli.tsx`): menu per tavolo, apri/chiudi, "Chiudi tutti", stampa (`stampaQr`).
   Il tablet self ha il bottone telefono che mostra il QR del suo tavolo (`QrTelefono`).
-- App **BeachIn Sala** → Cameriere: selettore **Comande | QR tavoli** (`SchedaCameriere` in `SalaApp.tsx`); sulla card del tavolo del
+- Sala → scheda **QR tavoli** (prima nell'app BeachIn Sala sotto Cameriere); sulla card del tavolo del
   cameriere il tasto QR apre `DettaglioQr` (QR, menu, apri/chiudi, stampa). `useQrTavolo(numero)` crea la riga mancante in un effect.
 - **Conto del tavolo** (migrazione 0021): `TavoloQr.seduta` = conto in corso; ogni comanda nasce con la `seduta` del tavolo.
   `delConto(comande, tavolo, seduta)` (lib/sala) = comande della seduta non `pagata` (anche servite): "già ordinato" e totale nel
@@ -400,7 +418,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 ## Risposta WhatsApp simulata (ott 2026)
 - Ogni conferma/rifiuto (ombrellone, tavolo ristorante, evento) chiama `pushWa` nel `DemoDataContext` → stato `whatsapp`
   (`MessaggioWhatsApp`: nome, telefono, testo con `*grassetto*`, esito) + `chiudiWhatsapp`.
-- `src/components/AnteprimaWhatsApp.tsx` (montato in `AppShell` e `AdminApp`): telefono in basso a destra con chat,
+- `src/components/AnteprimaWhatsApp.tsx` (montato in `AppShell`): telefono in basso a destra con chat,
   "sta scrivendo…", messaggio, `ding()`, spunte grigie → blu. Pulsante "Invia davvero su WhatsApp" = link `wa.me`
   con numero (prefisso 39 se manca) e testo già compilati. Nessun invio automatico reale (servirebbe WhatsApp Business API).
 

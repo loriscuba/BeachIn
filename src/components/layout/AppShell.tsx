@@ -1,7 +1,11 @@
 import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
-import { useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
+import { BarraRapida } from './BarraRapida'
+import { useSchedeRapide } from '@/hooks/useNavStaff'
+import { attivaCacheApp, impostaManifest } from '@/lib/notifichePush'
+import { precaricaPagine } from '@/lib/precarica'
 import { Topbar } from './Topbar'
 import { DemoPlayer } from '@/components/demo/DemoPlayer'
 import { navigazione } from '@/config/navigazione'
@@ -11,6 +15,7 @@ import { accento } from '@/config/accenti'
 import { LoginGestore } from '@/components/LoginGestore'
 import { useSessione } from '@/context/SessioneContext'
 import { Caricamento } from '@/components/ui/Caricamento'
+import PulsanteInstalla from '@/components/PulsanteInstalla'
 
 /** Sottotitoli per pagina mostrati nella topbar. */
 const sottotitoli: Record<string, string> = {
@@ -30,20 +35,30 @@ const sottotitoli: Record<string, string> = {
   '/eventi': 'Calendario e conto degli eventi',
   '/sito': 'Gestione del sito e prenotazioni online',
   '/impostazioni': 'Anagrafica, arenile, utenti e ruoli',
+  '/prenotazioni': 'Richieste dal sito, tavoli di oggi, menu a voce',
 }
+
+/** Pagine dell'app staff che non sono voci del menu laterale. */
+const altrePagine: Record<string, string> = { '/prenotazioni': 'Prenotazioni' }
 
 const CHIAVE_MENU = 'beachin.menu.v1'
 
-/** Gestionale accessibile solo dopo l'accesso dello staff (stessa sessione dell'app admin). */
+/**
+ * App staff unica (gestionale, prenotazioni, sala, cucina, bar), accessibile dopo l'accesso dello staff.
+ * Si adatta al dispositivo: telefono con barra in basso, tablet con colonna stretta, PC con il menu completo.
+ * Le schede rapide dipendono dal ruolo (`useSchedeRapide`).
+ */
 export function AppShell() {
   const { profilo, caricamento, esci } = useSessione()
+  // una sola app da installare (manifest unico) e apertura istantanea con la cache del service worker
+  useEffect(() => { impostaManifest('staff.webmanifest', 'admin-icon-192.png', 'BeachIn'); attivaCacheApp() }, [])
   if (caricamento) return <Caricamento />
   if (!profilo) {
     return (
       <div className="grid min-h-screen place-items-center bg-calce px-4">
         <div className="w-full max-w-md">
           <p className="text-center font-display text-3xl font-semibold text-profondo">BeachIn</p>
-          <p className="text-center text-sm text-profondo/60">{config.nome} · gestionale</p>
+          <p className="text-center text-sm text-profondo/60">{config.nome} · app dello staff</p>
           <LoginGestore />
         </div>
       </div>
@@ -66,19 +81,26 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
   }
   const { pathname } = useLocation()
   const [tema] = useTema()
+  const schede = useSchedeRapide()
+  // a riposo il telefono scarica in anticipo le pagine delle schede del ruolo: il primo tocco è immediato
+  useEffect(() => precaricaPagine(schede.map((s) => s.percorso)), [schede.map((s) => s.id).join()]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const voce = navigazione.find((v) =>
     v.percorso === '/' ? pathname === '/' : pathname.startsWith(v.percorso)
   )
   // pagine raggiungibili solo da un sottomenu (es. Comande sotto Bar)
   const figlio = voce ? undefined : navigazione.flatMap((v) => v.figli ?? []).find((f) => f.percorso === pathname)
-  const titolo = voce?.etichetta ?? figlio?.etichetta ?? 'BeachIn'
+  const titolo = voce?.etichetta ?? figlio?.etichetta ?? altrePagine[pathname] ?? 'BeachIn'
   const coloreArea = accento(figlio?.percorso ?? voce?.percorso)
   const sottotitolo = sottotitoli[voce?.percorso ?? figlio?.percorso ?? ''] ?? undefined
 
+  // chi non gestisce (cameriere, cucina, bar) non ha la Home con i numeri: apre la sua prima scheda
+  if (pathname === '/' && schede.length > 0 && schede[0].id !== 'home') return <Navigate to={schede[0].percorso} replace />
+
   return (
-    <div className="shell-bg flex h-screen overflow-hidden" data-tema={tema} style={{ ['--accento' as string]: coloreArea }}>
+    <div className="shell-bg flex h-[100dvh] overflow-hidden" data-tema={tema} style={{ ['--accento' as string]: coloreArea }}>
       <Sidebar aperta={menuAperto} onChiudi={() => impostaMenu(false)} />
+      <BarraRapida onAltro={() => impostaMenu(true)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
@@ -89,7 +111,8 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
           onEsci={onEsci}
         />
         <main className="flex-1 overflow-y-auto">
-          <div key={pathname} className="bi-pagina mx-auto max-w-[1400px] px-4 py-5 lg:px-6 lg:py-6">
+          <div key={pathname} className="bi-pagina mx-auto max-w-[1400px] px-3 pb-[calc(1.25rem+var(--barra-basso))] pt-4 sm:px-4 md:py-5 lg:px-6 lg:py-6">
+            {schede[0] && pathname === schede[0].percorso.split('?')[0] && <PulsanteInstalla nome="BeachIn" icona="admin-icon-192.png" perche="per aprire l'app dello staff con un tocco" />}
             <Outlet />
           </div>
         </main>

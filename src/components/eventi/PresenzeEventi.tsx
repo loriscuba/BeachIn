@@ -36,8 +36,8 @@ export function PresenzeEventi() {
           <Select value={eventoId} onChange={(e) => setEventoId(e.target.value)}
             opzioni={ordinati.map((e) => ({ valore: e.id, etichetta: `${dataEstesa(e.data)} · ${e.nome}` }))} />
         </div>
-        <a href={urlPubblico('adminapp')} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline">
-          <Smartphone className="h-4 w-4" /> Ingressi col QR dall’app admin
+        <a href={urlPubblico('prenotazioni?tab=ingressi')} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline">
+          <Smartphone className="h-4 w-4" /> Ingressi col QR dal telefono
         </a>
       </div>
 

@@ -17,7 +17,7 @@ export function DemoPlayer() {
   if (!demoInCorso && attivita.length === 0) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-[min(92vw,340px)] overflow-hidden rounded-card border border-calce-200 bg-white shadow-pop anim-pop">
+    <div className="fixed bottom-[calc(1rem+var(--barra-basso,0px))] right-4 z-40 w-[min(92vw,340px)] overflow-hidden rounded-card border border-calce-200 bg-white shadow-pop anim-pop">
       {/* Testata */}
       <div className="flex items-center justify-between gap-2 bg-profondo px-3 py-2.5 text-white">
         <div className="flex items-center gap-2">

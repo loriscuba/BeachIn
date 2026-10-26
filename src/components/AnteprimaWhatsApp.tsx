@@ -42,7 +42,7 @@ export function AnteprimaWhatsApp() {
   const ora = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   const link = `https://wa.me/${numeroWa(m.telefono)}?text=${encodeURIComponent(m.testo.replace(/\*/g, ''))}`
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[300px] max-w-[calc(100vw-2rem)]" role="dialog" aria-label="Messaggio WhatsApp al cliente">
+    <div className="fixed bottom-[calc(1rem+var(--barra-basso,0px))] right-4 z-50 w-[300px] max-w-[calc(100vw-2rem)]" role="dialog" aria-label="Messaggio WhatsApp al cliente">
       <div className="overflow-hidden rounded-[2rem] border-[6px] border-neutral-900 bg-neutral-900 shadow-2xl">
         {/* intestazione chat */}
         <div className="flex items-center gap-2 bg-[#075e54] px-3 py-2.5 text-white">

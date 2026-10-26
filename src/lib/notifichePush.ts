@@ -71,14 +71,16 @@ export function impostaManifest(manifest: string, icona: string, titolo: string)
   metti('meta', 'name', 'apple-mobile-web-app-title', 'content', titolo)
 }
 
-/** Rende l'app admin installabile (manifest + meta iOS), solo su questa pagina. */
-export function preparaInstallazione() {
-  impostaManifest('admin.webmanifest', 'admin-icon-192.png', 'BeachIn Admin')
-  // tocco su una notifica con l'app già aperta: ricarico per avere le prenotazioni aggiornate
-  if ('serviceWorker' in navigator && !(window as unknown as { __bxAggiorna?: boolean }).__bxAggiorna) {
+/**
+ * App staff: registra il service worker (cache per l'apertura istantanea, installazione su Android, notifiche) e,
+ * al tocco su una notifica con l'app già aperta, ricarica per avere i dati aggiornati.
+ * Non nell'anteprima single-file né in sviluppo (lì la cache darebbe file vecchi).
+ */
+export function attivaCacheApp() {
+  if (!('serviceWorker' in navigator) || !import.meta.env.PROD || import.meta.env.VITE_INLINE === '1') return
+  if (!(window as unknown as { __bxAggiorna?: boolean }).__bxAggiorna) {
     (window as unknown as { __bxAggiorna?: boolean }).__bxAggiorna = true
     navigator.serviceWorker.addEventListener('message', (e) => { if (e.data?.tipo === 'aggiorna') window.location.reload() })
   }
-  // registra subito il service worker (serve anche per l'installazione su Android)
-  if ('serviceWorker' in navigator) void registrazione().catch(() => undefined)
+  void registrazione().catch(() => undefined)
 }
