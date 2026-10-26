@@ -786,8 +786,8 @@ export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: {
             <form onSubmit={invia} className="grid grid-cols-2 gap-3 rounded-2xl border border-calce-200 bg-calce/40 p-4">
               <p className="col-span-2 flex items-center gap-1.5 font-bold text-profondo"><Ticket className="h-4 w-4 text-cabina" /> Prenota la tua partecipazione</p>
               <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(ev) => set('nome', ev.target.value)} placeholder="Mario Rossi" /></Campo>
-              <Campo label="Email"><input type="email" className={pc} value={f.email} onChange={(ev) => set('email', ev.target.value)} placeholder="tu@email.it" /></Campo>
-              <Campo label="Cellulare"><input type="tel" className={pc} value={f.telefono} onChange={(ev) => set('telefono', ev.target.value)} placeholder="340 1234567" /></Campo>
+              <Campo label="Email" mezzo><input type="email" className={pc} value={f.email} onChange={(ev) => set('email', ev.target.value)} placeholder="tu@email.it" /></Campo>
+              <Campo label="Cellulare" mezzo><input type="tel" className={pc} value={f.telefono} onChange={(ev) => set('telefono', ev.target.value)} placeholder="340 1234567" /></Campo>
               <NotaContatto email={f.email} telefono={f.telefono} />
               <Campo label="Persone"><input type="number" min={1} className={pc} value={f.persone} onChange={(ev) => set('persone', ev.target.value)} /></Campo>
               <Campo label="Note"><input className={pc} value={f.note} onChange={(ev) => set('note', ev.target.value)} placeholder="facoltative" /></Campo>
@@ -818,8 +818,8 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string, dove: string)
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 text-profondo shadow-2xl shadow-profondo-900/30 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold">Richiedi il tuo ombrellone</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
-      <Campo label="Email"><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
-      <Campo label="Cellulare"><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
+      <Campo label="Email" mezzo><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
+      <Campo label="Cellulare" mezzo><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
       <NotaContatto email={f.email} telefono={f.telefono} />
       <Campo label="Dal"><input type="date" className={pc} value={f.dal} onChange={(e) => set('dal', e.target.value)} /></Campo>
       <Campo label="Al"><input type="date" className={pc} value={f.al} onChange={(e) => set('al', e.target.value)} /></Campo>
@@ -875,8 +875,8 @@ export function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: 
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 shadow-xl shadow-profondo/10 ring-1 ring-calce-200 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold text-profondo">Prenota un tavolo</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
-      <Campo label="Email"><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
-      <Campo label="Cellulare"><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
+      <Campo label="Email" mezzo><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
+      <Campo label="Cellulare" mezzo><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
       <NotaContatto email={f.email} telefono={f.telefono} />
       <div className="col-span-2">
         <span className="mb-1 block text-xs font-medium text-profondo/60">Data</span>
@@ -1012,9 +1012,10 @@ function ConsensoPrivacy({ checked, onChange }: { checked: boolean; onChange: (v
 
 const pc = 'h-11 w-full rounded-xl border border-calce-200 bg-calce/40 px-3 text-sm text-profondo transition-colors focus:bg-white focus-visible:focus-ring'
 
-function Campo({ label, span2, children }: { label: string; span2?: boolean; children: React.ReactNode }) {
+// `mezzo`: mezza riga da tablet in su, riga intera su telefono (email e cellulare affiancati non ci stanno).
+function Campo({ label, span2, mezzo, children }: { label: string; span2?: boolean; mezzo?: boolean; children: React.ReactNode }) {
   return (
-    <label className={cn('block', span2 && 'col-span-2')}>
+    <label className={cn('block min-w-0', span2 && 'col-span-2', mezzo && 'col-span-2 sm:col-span-1')}>
       <span className="mb-1 block text-xs font-medium text-profondo/60">{label}</span>
       {children}
     </label>

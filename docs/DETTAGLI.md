@@ -46,6 +46,11 @@ Aggiornare qui quando cambia un modulo.
 - **Cruscotto** ridisegnato (hero incasso+meteo, KPI con anello, mappa spiaggia dal vivo, "Da fare oggi", area incassi,
   ciambella mix ricavi, scadenze a card); token propri `.cz`. Ingresso pagine animato (`.bi-pagina`), rispetta reduced-motion.
 
+- **Zoom bloccato ovunque** (26/10/2026): viewport `maximum-scale=1, user-scalable=no` in `index.html`; `src/lib/bloccoZoom.ts`
+  ferma pizzico iOS (`gesture*`), pizzico a due dita, Ctrl+rotella e Ctrl +/−/0 su PC; `touch-action: manipulation` sul
+  doppio tocco. Su touch (`pointer: coarse`) input/select/textarea a 16px (sotto Safari zooma al tocco); `body` con
+  `overflow-x: clip` come rete. Nei moduli del sito email e cellulare vanno a riga intera su telefono (`Campo mezzo`).
+
 ## Architettura dati
 - `src/context/DemoDataContext.tsx`: unico store mutabile in memoria. Le azioni
   stabili (useCallback) leggono lo stato fresco tramite ref sincronizzate in
