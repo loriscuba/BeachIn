@@ -32,8 +32,10 @@ export default function Sala() {
   const { moduloAttivo } = useModuli()
   const { puo } = useSessione()
   const conBar = moduloAttivo('bar-tavolo') && puo('bar-tavolo', 1)
-  const schede: Scheda[] = ['cameriere', 'cucina', 'self', 'qr', ...(conBar ? ['bar' as const] : [])]
-  const tab = schede.includes(params.get('tab') as Scheda) ? (params.get('tab') as Scheda) : 'cameriere'
+  // chi ha solo la Coda bar (es. Responsabile senza Sala) vede solo quella
+  const conSala = moduloAttivo('sala') && puo('sala', 1)
+  const schede: Scheda[] = [...(conSala ? ['cameriere', 'cucina', 'self', 'qr'] as const : []), ...(conBar ? ['bar' as const] : [])]
+  const tab = schede.includes(params.get('tab') as Scheda) ? (params.get('tab') as Scheda) : schede[0]
   // tablet in modalità self: resta bloccato anche se si ricarica la pagina
   const [self, setSelf] = useState<StatoSelf | null>(leggiSelf)
 
@@ -41,18 +43,20 @@ export default function Sala() {
 
   return (
     <div className="space-y-4">
-      <LinkSalaApp className="hidden lg:block" />
-      <Tabs
+      {conSala && <LinkSalaApp className="hidden lg:block" />}
+      {schede.length > 1 && <Tabs
         valore={tab}
         onChange={(v) => setParams({ tab: v })}
         opzioni={[
-          { valore: 'cameriere', etichetta: 'Cameriere' },
-          { valore: 'cucina', etichetta: 'Cucina', badge: daFareCucina(comandeSala) },
-          { valore: 'self', etichetta: 'Tablet self' },
-          { valore: 'qr', etichetta: 'QR tavoli' },
+          ...(conSala ? [
+            { valore: 'cameriere', etichetta: 'Cameriere' },
+            { valore: 'cucina', etichetta: 'Cucina', badge: daFareCucina(comandeSala) },
+            { valore: 'self', etichetta: 'Tablet self' },
+            { valore: 'qr', etichetta: 'QR tavoli' },
+          ] : []),
           ...(conBar ? [{ valore: 'bar', etichetta: 'Bar', badge: codaBar(comande, comandeSala).daFare.length }] : []),
         ]}
-      />
+      />}
       {tab === 'cameriere' && <Cameriere />}
       {tab === 'cucina' && <Cucina />}
       {tab === 'self' && <AvvioSelf onAvvia={setSelf} />}

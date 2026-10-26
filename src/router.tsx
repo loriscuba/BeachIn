@@ -39,7 +39,7 @@ const NonTrovata = lazyRiprova(() => import('@/pages/NonTrovata'))
 
 const s = (el: ReactNode): ReactNode => <Suspense fallback={<Caricamento />}>{el}</Suspense>
 // Rotta protetta da modulo: se non attivo mostra l'upsell.
-const g = (id: ModuloId, el: ReactNode): ReactNode => s(<ModuloGate id={id}>{el}</ModuloGate>)
+const g = (id: ModuloId, el: ReactNode, oppure?: ModuloId[]): ReactNode => s(<ModuloGate id={id} oppure={oppure}>{el}</ModuloGate>)
 
 export const router = creaRouter([
   {
@@ -51,7 +51,7 @@ export const router = creaRouter([
       { path: 'arenile', element: g('arenile', <Arenile />) },
       { path: 'clienti', element: g('clienti', <Clienti />) },
       { path: 'comande', element: g('comande', <Comande />) },
-      { path: 'sala', element: g('sala', <Sala />) },
+      { path: 'sala', element: g('sala', <Sala />, ['bar-tavolo']) },
       // Prenotazioni operative (ex app admin): richieste dal sito, oggi, menu a voce, news, ingressi
       { path: 'prenotazioni', element: s(<Prenotazioni />) },
       { path: 'tariffe', element: g('tariffe', <Tariffe />) },

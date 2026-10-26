@@ -26,11 +26,14 @@ Aggiornare qui quando cambia un modulo.
   demo è per scheda (sessionStorage, ultima usata in localStorage): tre schede dello stesso browser possono essere tre utenti.
 - `Sidebar`: su PC a scomparsa (hamburger nella `Topbar`, colonna che scorre fuori `lg:-ml-64`, scelta ricordata in
   localStorage `beachin.menu.v1`); su tablet pannello da sinistra aperto da Menu; sul telefono non c'è (`max-md:hidden`).
+- **Sala per chi ha solo la Coda bar**: la rotta `/sala` usa `ModuloGate` con `oppure={['bar-tavolo']}` (vale il livello più
+  alto); in `Sala.tsx` le schede Cameriere/Cucina/Tablet self/QR compaiono solo col permesso `sala` (es. Responsabile vede solo Bar).
 - **Telefono, "Altro"** (`components/layout/MenuGriglia.tsx`, richiesta di Loris 26/10: niente menu a elenco, poco ergonomico):
   pannello dal basso con tutte le sezioni come pulsanti con icona uguali a quelli della barra in basso (griglia a 4 colonne,
   icone a linee neutre, colore dell'area solo sulla sezione aperta come puntino accanto al titolo e come velo leggero del riquadro di ogni gruppo, badge), divise per area
   ("Generale" per le voci senza sottomenu, poi una per voce con sottomenu); voci da `useVociMenu()`. Si chiude toccando
-  fuori, con la X, scegliendo una sezione o cambiando pagina. Barra delle schede scura in tema scuro (`.barra-basso`);
+  fuori, con la X, trascinando giù la maniglia, con Esc, scegliendo una sezione o cambiando pagina. Aperto, l'elenco scorre
+  da solo (`min-h-0` + `overscroll-contain`) e il `<main>` dietro è bloccato. Barra delle schede scura in tema scuro (`.barra-basso`);
   pulsante Esci della topbar con stile proprio in tema scuro (`.bi-esci`); badge "Dati dimostrativi" solo da `sm`.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
 - (ott 2026) **Nuovo look + tema chiaro/scuro**: interruttore sole/luna nella `Topbar` (hook `useTema`, localStorage
