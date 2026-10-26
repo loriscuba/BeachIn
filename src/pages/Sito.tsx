@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   Loader2, ExternalLink, CalendarCheck, MessageSquare, Star, BarChart3, Globe, Check, X as XIcon,
-  Image, Newspaper, Tags, Umbrella, Search, FileText, UtensilsCrossed, Inbox, Mail, Ticket, Upload,
+  Image, Newspaper, Tags, Umbrella, Search, UtensilsCrossed, Inbox, Mail, Ticket, Upload, Save, RotateCcw,
 } from 'lucide-react'
-import type { Email, StatoSito, Turno } from '@/data/types'
+import type { ContenutoHome, Email, StatoSito, Turno } from '@/data/types'
 import { getDisponibilitaSito, getStatoSito } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
@@ -20,6 +20,7 @@ import Marketing from './sito/Marketing'
 import { GestioneLavagnetta, GestioneNews } from '@/components/app/GestioneAppClienti'
 import { QrCodice } from '@/components/QrCodice'
 import { urlComandApp } from '@/lib/comandapp'
+import { fotoSito } from '@/assets/sito'
 
 type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni' | 'marketing' | 'app'
 const SEZIONI: Sezione[] = ['panoramica', 'prenotazioni', 'posta', 'contenuti', 'interazioni', 'marketing', 'app']
@@ -31,7 +32,7 @@ export default function Sito() {
     richiesteRistorante, confermaRistorante, rifiutaRistorante,
     richiesteEventi, confermaEvento, rifiutaEvento,
     canaliPrenotazione, impostaCanalePrenotazione,
-    postaAdmin, segnaEmailLetta, pagine, pubblicaPagina, listinoPubblicato,
+    postaAdmin, segnaEmailLetta, listinoPubblicato, notizie, homeSito, salvaHomeSito,
     galleria, aggiungiFoto, rimuoviFoto, rinominaFoto,
   } = useDemoData()
   // Senza modulo Arenile gli ombrelloni spariscono anche da qui (interruttore, richieste, disponibilità)
@@ -42,12 +43,15 @@ export default function Sito() {
   const [q, setQ] = useSearchParams()
   const sez = SEZIONI.find((x) => x === q.get('tab')) ?? 'panoramica'
   const setSez = (v: Sezione) => setQ({ tab: v })
-  const [home, setHome] = useState({ titolo: '', sottotitolo: '', testo: '' })
+  // Bozza dell'editor homepage: si pubblica con «Salva» (finché non cambia, segue quella salvata)
+  const [bozzaHome, setBozzaHome] = useState<ContenutoHome>()
+  const home = bozzaHome ?? homeSito
+  const setHome = (f: (h: ContenutoHome) => ContenutoHome) => setBozzaHome((b) => f(b ?? homeSito))
+  const homeModificata = !!bozzaHome && JSON.stringify(bozzaHome) !== JSON.stringify(homeSito)
 
   useEffect(() => {
     Promise.all([getStatoSito(), getDisponibilitaSito()]).then(([s, d]) => {
       setSito(s); setDisp(d)
-      setHome({ titolo: s.home.titolo, sottotitolo: s.home.sottotitolo, testo: s.home.testo })
     })
   }, [])
 
@@ -68,6 +72,10 @@ export default function Sito() {
 
   const caricaFotoGalleria = async (files: FileList | null) => {
     const falliti = await importaImmagini(files, (uri, file) => aggiungiFoto(uri, file.name.replace(/\.[^.]+$/, '')), 'sito')
+    if (falliti.length) alert(messaggioFileFalliti(falliti))
+  }
+  const caricaFotoHome = async (files: FileList | null) => {
+    const falliti = await importaImmagini(files, (uri) => setHome((h) => ({ ...h, immagine: uri })), 'sito')
     if (falliti.length) alert(messaggioFileFalliti(falliti))
   }
 
@@ -272,36 +280,42 @@ export default function Sito() {
 
       {sez === 'contenuti' && (
         <div className="space-y-4">
-          {/* Pagine */}
-          <Card>
-            <CardHeader titolo={<span className="inline-flex items-center gap-2"><FileText className="h-4 w-4 text-cabina" /> Pagine del sito</span>} />
-            <CardBody className="pt-1">
-              <ul className="divide-y divide-calce-200">
-                {pagine.map((pg) => (
-                  <li key={pg.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <div>
-                      <p className="text-sm font-medium text-profondo">{pg.titolo}</p>
-                      <p className="num text-xs text-profondo/50">/{pg.slug} · agg. {fmtData(pg.aggiornata)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge tono={pg.pubblicata ? 'acqua' : 'tenda'} puntino>{pg.pubblicata ? 'Pubblicata' : 'Bozza'}</Badge>
-                      {!pg.pubblicata && <Button variante="secondario" dimensione="sm" onClick={() => pubblicaPagina(pg.id)}>Pubblica</Button>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </CardBody>
-          </Card>
-
           {/* Editor homepage */}
           <Card>
-            <CardHeader titolo="Editor homepage" sottotitolo="Titolo, testo e immagine di apertura" />
+            <CardHeader
+              titolo="Editor homepage"
+              sottotitolo="Titolo, testo e foto di apertura del sito"
+              azione={
+                <div className="flex items-center gap-2">
+                  {homeModificata && <Button variante="secondario" dimensione="sm" onClick={() => setBozzaHome(undefined)}><RotateCcw className="h-4 w-4" /> Annulla</Button>}
+                  <Button dimensione="sm" disabled={!homeModificata} onClick={() => { salvaHomeSito(home); setBozzaHome(undefined) }}><Save className="h-4 w-4" /> Salva</Button>
+                </div>
+              }
+            />
             <CardBody className="space-y-3 pt-1">
               <Campo label="Titolo"><input className={ic} value={home.titolo} onChange={(e) => setHome((h) => ({ ...h, titolo: e.target.value }))} /></Campo>
               <Campo label="Sottotitolo"><input className={ic} value={home.sottotitolo} onChange={(e) => setHome((h) => ({ ...h, sottotitolo: e.target.value }))} /></Campo>
               <Campo label="Testo"><textarea rows={3} className={cn(ic, 'h-auto py-2')} value={home.testo} onChange={(e) => setHome((h) => ({ ...h, testo: e.target.value }))} /></Campo>
-              <div className="flex items-center gap-2 rounded-lg border border-dashed border-calce-300 bg-calce/40 px-3 py-3 text-sm text-profondo/55">
-                <Image className="h-4 w-4" /> Immagine di apertura: <span className="font-medium text-profondo/70">{sito.home.immagine}</span>
+              <div>
+                <p className="mb-1 text-xs font-medium text-profondo/60">Foto di apertura</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setHome((h) => ({ ...h, immagine: '' }))}
+                    className={cn('relative h-16 w-24 overflow-hidden rounded-lg border-2', !home.immagine ? 'border-cabina' : 'border-transparent')}
+                    title="Predefinita (video o foto dal drone)">
+                    <img src={fotoSito.spiaggiaAlto} alt="" className="h-full w-full object-cover" />
+                    <span className="absolute inset-x-0 bottom-0 bg-profondo-900/60 text-[10px] text-white">Predefinita</span>
+                  </button>
+                  {[...new Set([...galleria.map((f) => f.immagine).filter((x): x is string => !!x), ...(home.immagine ? [home.immagine] : [])])].map((src) => (
+                    <button key={src} type="button" onClick={() => setHome((h) => ({ ...h, immagine: src }))}
+                      className={cn('h-16 w-24 overflow-hidden rounded-lg border-2', home.immagine === src ? 'border-cabina' : 'border-transparent')}>
+                      <img src={src} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                  <label className="grid h-16 w-24 cursor-pointer place-content-center rounded-lg border border-dashed border-calce-300 bg-calce/40 text-profondo/55 hover:border-cabina hover:text-cabina" title="Carica una foto">
+                    <Upload className="mx-auto h-4 w-4" /><span className="text-[10px]">Carica</span>
+                    <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={(e) => { caricaFotoHome(e.target.files); e.target.value = '' }} />
+                  </label>
+                </div>
               </div>
             </CardBody>
           </Card>
@@ -366,24 +380,27 @@ export default function Sito() {
                   )}
                 </div>
                 <p className="mt-2 text-[11px] text-profondo/45">
-                  Le foto vengono ridimensionate e compaiono sul sito pubblico. In demo restano in memoria.
+                  Le foto vengono ridimensionate e compaiono subito nella galleria del sito pubblico.
                 </p>
               </CardBody>
             </Card>
             <Card>
-              <CardHeader titolo={<span className="inline-flex items-center gap-2"><Newspaper className="h-4 w-4 text-cabina" /> News ed eventi</span>} />
+              <CardHeader
+                titolo={<span className="inline-flex items-center gap-2"><Newspaper className="h-4 w-4 text-cabina" /> News</span>}
+                sottotitolo="Quelle che i clienti vedono nell'app"
+                azione={<Link to="/sito?tab=app" className="text-xs font-semibold text-cabina hover:underline">Gestisci</Link>}
+              />
               <CardBody className="pt-1">
-                <ul className="divide-y divide-calce-200">
-                  {sito.news.map((n) => (
-                    <li key={n.id} className="flex items-center justify-between gap-3 py-2.5">
-                      <div className="min-w-0">
+                {notizie.length === 0 ? <Vuoto testo="Nessuna news. Scrivila da App clienti." /> : (
+                  <ul className="divide-y divide-calce-200">
+                    {notizie.slice(0, 6).map((n) => (
+                      <li key={n.id} className="py-2.5">
                         <p className="truncate text-sm font-medium text-profondo">{n.titolo}</p>
                         <p className="num text-xs text-profondo/50">{fmtData(n.data)}</p>
-                      </div>
-                      <Badge tono={n.pubblicata ? 'acqua' : 'tenda'}>{n.pubblicata ? 'Pubblicata' : 'Bozza'}</Badge>
-                    </li>
-                  ))}
-                </ul>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </CardBody>
             </Card>
           </div>

@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import {
   ArrowLeft, ArrowDown, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Star, Phone, Mail, MapPin,
   Clock, Check, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa, Waves,
+  MessageCircle,
 } from 'lucide-react'
-import type { Evento, FilaId, Periodo, StatoSito, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
-import { getDisponibilitaSito, getListinoPubblicato, getStatoSito } from '@/data/api'
+import type { Evento, FilaId, Periodo, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
+import { getDisponibilitaSito, getListinoPubblicato } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { fotoSito, logoLido, videoHero } from '@/assets/sito'
@@ -37,7 +38,7 @@ const temiRecensioni = [
 const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 
 export default function SitoAnteprima() {
-  const { eventi, canaliPrenotazione, galleria, menu, sezioniMenu } = useDemoData()
+  const { eventi, canaliPrenotazione, galleria, menu, sezioniMenu, homeSito, prezziListino } = useDemoData()
   // Gestione ombrelloni (modulo Arenile): se spento, dal sito spariscono prenotazione, listino e disponibilità.
   const ombrelloni = useModuli().moduloAttivo('arenile')
   // Prenotazione ombrellone dal sito: doppio controllo, modulo Arenile attivo E canale "Ombrelloni" acceso (Sito → Prenotazioni).
@@ -45,7 +46,6 @@ export default function SitoAnteprima() {
   const voci = nav.filter(([id]) => (id !== 'prenota' || prenotaOmbrelloni) && (id !== 'listino' || ombrelloni))
   const voceNastro = nastro.filter((t) => ombrelloni || !/ombrell/i.test(t))
   const idPrenota = prenotaOmbrelloni ? 'prenota' : 'prenota-tavolo'
-  const [sito, setSito] = useState<StatoSito>()
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   const [listino, setListino] = useState<VoceTariffa[]>([])
   const [menuMobile, setMenuMobile] = useState(false)
@@ -58,8 +58,8 @@ export default function SitoAnteprima() {
   const [movimentoRidotto] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 
   useEffect(() => {
-    Promise.all([getStatoSito(), getDisponibilitaSito(), getListinoPubblicato()]).then(
-      ([s, d, l]) => { setSito(s); setDisp(d); setListino(l) }
+    Promise.all([getDisponibilitaSito(), getListinoPubblicato()]).then(
+      ([d, l]) => { setDisp(d); setListino(l) }
     )
   }, [])
 
@@ -83,9 +83,10 @@ export default function SitoAnteprima() {
 
   const matrice = useMemo(() => {
     const m = new Map<string, number>()
-    for (const v of listino) if (v.durata === 'giornaliera' && v.tipologia === 'ombrellone_2_lettini') m.set(`${v.fila}|${v.periodo}`, v.prezzo)
+    // prezzi pubblicati da Tariffe sopra quelli iniziali
+    for (const v of listino) if (v.durata === 'giornaliera' && v.tipologia === 'ombrellone_2_lettini') m.set(`${v.fila}|${v.periodo}`, prezziListino[v.id] ?? v.prezzo)
     return m
-  }, [listino])
+  }, [listino, prezziListino])
   const [prezzoMin, prezzoMax] = useMemo(() => {
     const v = [...matrice.values()]
     return v.length ? [Math.min(...v), Math.max(...v)] : [0, 1]
@@ -99,7 +100,7 @@ export default function SitoAnteprima() {
   const eventiVetrina = [...eventiFuturi, ...eventiPassati].slice(0, 8)
   const fotoGalleria = galleria.filter((f) => f.immagine)
 
-  useReveal([sito, disp, eventiVetrina.length, fotoGalleria.length, menu.length])
+  useReveal([homeSito, disp, eventiVetrina.length, fotoGalleria.length, menu.length])
 
   const mostraToast = (t: string) => { setToast(t); window.setTimeout(() => setToast(undefined), 6000) }
 
@@ -116,7 +117,11 @@ export default function SitoAnteprima() {
     }, ms)
   }
 
-  const [titoloHero, sottoHero] = (sito?.home.titolo ?? config.nome).split(/\s+—\s+/)
+  const titoloHero = homeSito.titolo || config.nome
+  const sottoHero = homeSito.sottotitolo
+  // foto di apertura scelta dal gestore (Sito → Contenuti); senza, video o foto dal drone
+  const fotoHero = homeSito.immagine || fotoSito.spiaggiaAlto
+  const waSito = (config.whatsapp || '').replace(/[^\d]/g, '')
   const piatti = menu.filter((p) => ['antipasti', 'primi', 'secondi'].includes(p.categoria)).slice(0, 7)
 
   return (
@@ -161,9 +166,9 @@ export default function SitoAnteprima() {
       {/* Hero a tutto schermo */}
       <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-profondo-900 text-white">
         <div ref={heroImg} className="absolute inset-0 will-change-transform">
-          {videoHero && !movimentoRidotto
-            ? <video src={videoHero} poster={fotoSito.spiaggiaAlto} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full scale-105 object-cover" />
-            : <img src={fotoSito.spiaggiaAlto} alt="La spiaggia del Lido dei Pini vista dall’alto" className="kenburns h-full w-full object-cover object-[center_55%]" fetchPriority="high" />}
+          {videoHero && !movimentoRidotto && !homeSito.immagine
+            ? <video src={videoHero} poster={fotoHero} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full scale-105 object-cover" />
+            : <img src={fotoHero} alt={`${config.nome}: la spiaggia`} className="kenburns h-full w-full object-cover object-[center_55%]" fetchPriority="high" />}
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-profondo-900 via-profondo-900/35 to-profondo-900/20" />
         <div className="absolute inset-0 bg-gradient-to-r from-profondo-900/60 via-transparent to-transparent" />
@@ -177,7 +182,7 @@ export default function SitoAnteprima() {
               {titoloHero}
             </h1>
             {sottoHero && <p className="mt-3 font-display text-3xl italic text-white/90 sm:text-4xl lg:text-5xl">{sottoHero}</p>}
-            <p className="mt-6 max-w-xl text-base leading-7 text-white/80 sm:text-lg">{sito?.home.testo}</p>
+            <p className="mt-6 max-w-xl text-base leading-7 text-white/80 sm:text-lg">{homeSito.testo}</p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               {prenotaOmbrelloni ? (
                 <>
@@ -511,8 +516,9 @@ export default function SitoAnteprima() {
               {[
                 { i: MapPin, t: 'Dove siamo', v: `${config.indirizzo} ${config.localita} · a 3 km dal centro`, href: config.mappa },
                 { i: Phone, t: 'Telefono', v: config.telefono, href: `tel:${config.telefono.replace(/\s/g, '')}` },
+                ...(waSito.length >= 9 ? [{ i: MessageCircle, t: 'WhatsApp', v: config.whatsapp, href: `https://wa.me/${waSito.startsWith('39') ? waSito : `39${waSito}`}` }] : []),
                 ...(config.email ? [{ i: Mail, t: 'Email', v: config.email, href: `mailto:${config.email}` }] : []),
-                { i: Clock, t: 'Orari', v: `Spiaggia ${config.orari.stagioneSpiaggia} · Ristorante tutto l’anno, ${config.orari.ristorantePranzo} e ${config.orari.ristoranteCena}` },
+                { i: Clock, t: 'Orari', v: `Spiaggia ${config.orari.stagioneSpiaggia} · Bar ${config.orari.barApertura}–${config.orari.barChiusura} · Ristorante ${config.orari.ristorantePranzo} e ${config.orari.ristoranteCena}${config.orari.nota ? ` · ${config.orari.nota}` : ''}` },
               ].map(({ i: Icona, t, v, href }) => (
                 <li key={t} className="flex items-start gap-4">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 text-tenda"><Icona className="h-5 w-5" /></span>
@@ -522,7 +528,7 @@ export default function SitoAnteprima() {
             </ul>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href={config.mappa} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-tenda px-5 py-2.5 text-sm font-semibold text-profondo hover:bg-tenda/90"><MapPin className="h-4 w-4" /> Indicazioni</a>
-              <a href={config.facebook} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Facebook</a>
+              {config.facebook && <a href={config.facebook} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Facebook</a>}
               <a href={config.tripadvisor.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Tripadvisor</a>
             </div>
           </div>
