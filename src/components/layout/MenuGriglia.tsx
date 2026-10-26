@@ -48,10 +48,12 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-5">
+        <div className="flex-1 space-y-3 overflow-y-auto px-4 pb-5">
           {gruppi.map((g) => (
-            <section key={g.titolo}>
-              {/* il colore dell'area resta solo come puntino accanto al titolo: icone sobrie come nella barra in basso */}
+            // riquadro con un velo leggero del colore della sezione, per distinguerle a colpo d'occhio
+            <section key={g.titolo} className="rounded-2xl p-2 pt-2.5"
+              style={{ background: `color-mix(in srgb, ${g.tessere[0]?.colore} 11%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${g.tessere[0]?.colore} 18%, transparent)` }}>
+              {/* colore dell'area: puntino accanto al titolo e velo del riquadro; icone sobrie come nella barra in basso */}
               <p className="mb-1.5 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: g.tessere[0]?.colore }} />{g.titolo}
               </p>

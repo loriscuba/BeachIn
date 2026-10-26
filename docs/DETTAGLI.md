@@ -28,7 +28,7 @@ Aggiornare qui quando cambia un modulo.
   localStorage `beachin.menu.v1`); su tablet pannello da sinistra aperto da Menu; sul telefono non c'è (`max-md:hidden`).
 - **Telefono, "Altro"** (`components/layout/MenuGriglia.tsx`, richiesta di Loris 26/10: niente menu a elenco, poco ergonomico):
   pannello dal basso con tutte le sezioni come pulsanti con icona uguali a quelli della barra in basso (griglia a 4 colonne,
-  icone a linee neutre, colore dell'area solo sulla sezione aperta e come puntino accanto al titolo del gruppo, badge), divise per area
+  icone a linee neutre, colore dell'area solo sulla sezione aperta come puntino accanto al titolo e come velo leggero del riquadro di ogni gruppo, badge), divise per area
   ("Generale" per le voci senza sottomenu, poi una per voce con sottomenu); voci da `useVociMenu()`. Si chiude toccando
   fuori, con la X, scegliendo una sezione o cambiando pagina. Barra delle schede scura in tema scuro (`.barra-basso`);
   pulsante Esci della topbar con stile proprio in tema scuro (`.bi-esci`); badge "Dati dimostrativi" solo da `sm`.
