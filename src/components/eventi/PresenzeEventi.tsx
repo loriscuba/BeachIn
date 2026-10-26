@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { dataEstesa, numero } from '@/lib/formatters'
-import { eventoPredefinito, oraDa, urlInvito } from '@/lib/invitiEventi'
+import { oraDa, urlInvito } from '@/lib/invitiEventi'
 import { urlPubblico } from '@/lib/urlPubblico'
 
 /** Eventi → Presenze: chi ha l'invito confermato e chi è già entrato (ingressi registrati dall'app admin col QR). */
@@ -19,9 +19,11 @@ export function PresenzeEventi() {
     setInviati((m) => ({ ...m, [id]: true }))
     setTimeout(() => setInviati((m) => ({ ...m, [id]: false })), 4000)
   }
-  const ordinati = useMemo(() => [...eventi].sort((a, b) => a.data.localeCompare(b.data)), [eventi])
-  const [eventoId, setEventoId] = useState(() => eventoPredefinito(eventi, config.oggi)?.id ?? '')
-  const evento = eventi.find((e) => e.id === eventoId)
+  // Solo eventi di oggi e futuri, dal più vicino.
+  const ordinati = useMemo(() => eventi.filter((e) => e.data >= config.oggi).sort((a, b) => a.data.localeCompare(b.data)), [eventi])
+  const [scelto, setEventoId] = useState('')
+  const evento = ordinati.find((e) => e.id === scelto) ?? ordinati[0]
+  const eventoId = evento?.id ?? ''
 
   const invitati = richiesteEventi
     .filter((r) => r.eventoId === eventoId && r.stato === 'confermata')
@@ -34,7 +36,7 @@ export function PresenzeEventi() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full sm:w-96">
           <Select value={eventoId} onChange={(e) => setEventoId(e.target.value)}
-            opzioni={ordinati.map((e) => ({ valore: e.id, etichetta: `${dataEstesa(e.data)} · ${e.nome}` }))} />
+            opzioni={ordinati.length ? ordinati.map((e) => ({ valore: e.id, etichetta: `${dataEstesa(e.data)} · ${e.nome}` })) : [{ valore: '', etichetta: 'Nessun evento in programma' }]} />
         </div>
         <a href={urlPubblico('prenotazioni?tab=ingressi')} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline">
           <Smartphone className="h-4 w-4" /> Ingressi col QR dal telefono
