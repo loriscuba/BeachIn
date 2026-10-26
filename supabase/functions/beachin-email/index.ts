@@ -52,7 +52,7 @@ function testo(tabella: string, r: Richiesta): Testo {
   }
   const quando = `${r.turno === 'pranzo' ? 'pranzo' : 'cena'} di ${dataIt(r.data ?? '')}${r.ora ? ` alle <b>${esc(r.ora)}</b>` : ''}`
   if (r.stato === 'confermata')
-    return { oggetto: 'Tavolo confermato ✓', titolo: 'Tavolo confermato', colore: OK, righe: [`il tuo tavolo per ${r.coperti} persone a ${quando} è <b>confermato</b>.`, 'Ti aspettiamo!'] }
+    return { oggetto: `Tavolo confermato per ${dataIt(r.data ?? '')} ${r.ora ? `alle ${r.ora}` : `a ${r.turno === 'pranzo' ? 'pranzo' : 'cena'}`}`, titolo: 'Tavolo confermato', colore: OK, righe: [`il tuo tavolo per ${r.coperti} persone a ${quando} è <b>confermato</b>.`, 'Ti aspettiamo!'] }
   if (r.stato === 'rifiutata')
     return { oggetto: 'Tavolo non disponibile', titolo: 'Siamo al completo', colore: NO, righe: [`ci dispiace, per ${quando} siamo al completo.`, 'Prova con un altro turno o un’altra data.'] }
   return { oggetto: 'Richiesta ricevuta — tavolo ristorante', titolo: 'Richiesta ricevuta', colore: ATTESA, righe: [`abbiamo ricevuto la tua richiesta di tavolo per ${r.coperti} persone a ${quando}.`, 'Ti confermeremo a breve.'] }

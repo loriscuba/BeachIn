@@ -325,6 +325,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Vault `beachin_email_img` (facoltativo) sostituisce la cartella. Foto evento: `RichiestaEvento.eventoFoto` → colonna
   `evento_foto` (migrazione `0008_foto_evento_mail.sql`), URL assoluto della foto dell'evento preso alla creazione della
   richiesta (`fotoEvento` nel context; le foto in data URI sono scartate → si usa `evento.jpg`).
+- Oggetto conferma tavolo: "Tavolo confermato per sabato 1 novembre alle 20:30" (senza ora: "… a cena"), uguale in Edge Function e `pushMail`.
+- Logo mittente in Gmail (BIMI): logo SVG Tiny PS in `public/bimi/logo.svg`, passi e record DNS in `docs/bimi/README.md` (serve dominio proprio su Brevo).
 - La "posta" simulata in app (`pushMail` nel context) resta per la demo locale. Eventi sincronizzati su `richieste_eventi`; ombrellone non è su Supabase → niente mail reali.
 
 ## Eventi: invito con QR e presenze (ott 2026)

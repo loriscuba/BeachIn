@@ -1027,7 +1027,8 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
           ? prev
           : [{ id: `PR-${r.id}`, data: r.data, turno: r.turno, nome: r.nome, coperti: r.coperti, stato: 'confermata', note: r.note, telefono: r.telefono, origine: 'sito' }, ...prev]
       )
-      pushMail('cliente', 'conferma', config.nome, r.email, 'Tavolo confermato ✓',
+      pushMail('cliente', 'conferma', config.nome, r.email,
+        `Tavolo confermato per ${new Date(`${r.data}T12:00:00`).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })} ${r.ora ? `alle ${r.ora}` : `a ${turnoLabel(r.turno)}`}`,
         `Gentile ${r.nome},\nil tuo tavolo per ${r.coperti} coperti (${quandoTurno(r.turno, r.ora)}) del ${gg(r.data)} è CONFERMATO.\nA presto!\n\n${config.nome}`)
     }
     if (r) pushWa('conferma', r.nome, r.telefono, `Ciao ${nomeBreve(r.nome)} 👋\nil tuo tavolo per *${r.coperti}* a *${quandoTurno(r.turno, r.ora)}* del *${gg(r.data)}* è *confermato* ✅\nA presto al ${config.nome}! 🍽️🌊`)
