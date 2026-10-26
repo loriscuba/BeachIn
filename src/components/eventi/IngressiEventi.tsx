@@ -47,7 +47,11 @@ export function IngressiEventi() {
     <div className="space-y-3">
       <select value={eventoId} onChange={(e) => { setEventoId(e.target.value); setEsito(undefined) }}
         className="h-12 w-full rounded-xl border-0 bg-white px-3 text-base font-semibold shadow-sm">
-        {ordinati.map((e) => <option key={e.id} value={e.id}>{dataIt(e.data)} · {e.nome}</option>)}
+        {ordinati.map((e) => {
+          // Numero di inviti confermati accanto al nome: si vede subito su quale evento sono.
+          const n = richiesteEventi.filter((r) => r.eventoId === e.id && r.stato === 'confermata').length
+          return <option key={e.id} value={e.id}>{dataIt(e.data)} · {e.nome}{n ? ` (${n})` : ''}</option>
+        })}
       </select>
 
       <div className="grid grid-cols-2 gap-2">
