@@ -10,7 +10,7 @@ import { cn } from '@/lib/cn'
 interface Tessera { percorso: string; etichetta: string; icona: LucideIcon; colore: string; badge?: SottoVoce['badge'] }
 
 /**
- * Telefono: "Altro" apre tutte le sezioni come pulsanti grandi con icona (come la barra in basso), divisi per area,
+ * Telefono: "Altro" apre tutte le sezioni come pulsanti con icona come quelli della barra in basso, divisi per area,
  * al posto del menu a elenco. Pannello dal basso; si chiude toccando fuori, con la X o scegliendo una sezione.
  */
 export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: () => void }) {
@@ -26,7 +26,7 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
     ...(singole.length ? [{ titolo: 'Generale', tessere: singole }] : []),
     ...voci.filter((v) => v.figli).map((v) => ({
       titolo: v.etichetta,
-      tessere: v.figli!.map((f) => ({ percorso: f.percorso, etichetta: f.etichetta, icona: v.icona, colore: accento(v.percorso), badge: f.badge })),
+      tessere: v.figli!.map((f) => ({ percorso: f.percorso, etichetta: f.etichetta, icona: f.icona ?? v.icona, colore: accento(v.percorso), badge: f.badge })),
     })),
   ]
   const qui = pathname + search
@@ -51,8 +51,11 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
         <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-5">
           {gruppi.map((g) => (
             <section key={g.titolo}>
-              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">{g.titolo}</p>
-              <div className="grid grid-cols-3 gap-2">
+              {/* il colore dell'area resta solo come puntino accanto al titolo: icone sobrie come nella barra in basso */}
+              <p className="mb-1.5 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: g.tessere[0]?.colore }} />{g.titolo}
+              </p>
+              <div className="grid grid-cols-4 gap-1">
                 {g.tessere.map((t) => {
                   const att = qui === t.percorso || (!t.percorso.includes('?') && pathname === t.percorso)
                   const n = t.badge ? conta[t.badge] : 0
@@ -61,14 +64,15 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
                       key={t.percorso}
                       to={t.percorso}
                       onClick={onChiudi}
-                      className={cn('relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-2xl px-1 py-3 text-center text-[12px] font-semibold leading-tight transition active:scale-95',
-                        att ? 'bg-white/[0.12] text-white' : 'bg-white/[0.05] text-white/80')}
+                      className={cn('relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-center text-[11px] font-semibold leading-tight transition active:scale-95',
+                        att ? 'bg-white/[0.09] text-white' : 'text-white/65 hover:bg-white/[0.05]')}
                     >
-                      <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: t.colore, color: '#0B2C39' }}>
-                        <t.icona className="h-5 w-5" strokeWidth={2.2} />
+                      {/* come la barra in basso: icona a linee, colorata solo sulla sezione aperta */}
+                      <span className="relative grid h-7 w-7 place-items-center rounded-lg" style={att ? { background: t.colore, color: '#0B2C39' } : undefined}>
+                        <t.icona className="h-[19px] w-[19px]" strokeWidth={att ? 2.4 : 2} />
+                        {n > 0 && <span className="num absolute -right-2 -top-1.5 grid h-[18px] min-w-[18px] place-content-center rounded-full bg-boa px-1 text-[10px] font-bold leading-none text-white">{n > 99 ? '99+' : n}</span>}
                       </span>
-                      <span className="line-clamp-2">{t.etichetta}</span>
-                      {n > 0 && <span className="num absolute right-2 top-2 grid h-5 min-w-5 place-content-center rounded-full bg-boa px-1.5 text-[11px] font-bold text-white">{n > 99 ? '99+' : n}</span>}
+                      <span className="line-clamp-2 max-w-full">{t.etichetta}</span>
                     </Link>
                   )
                 })}
