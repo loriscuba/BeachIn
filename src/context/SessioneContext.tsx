@@ -2,14 +2,14 @@
  * Sessione dello staff (gestionale e app admin).
  * - Con Supabase: login nome utente (o email) + password (Supabase Auth); il profilo (ruolo e permessi) arriva da `beachin.mio_profilo()`.
  *   Chi ha un account Auth ma nessun profilo attivo in `beachin.utenti` non entra.
- * - Senza Supabase: credenziali demo nel codice (`src/lib/adminapp.ts`), profilo amministratore.
+ * - Senza Supabase: utenti demo nel codice (`src/lib/adminapp.ts`): amministratore, cameriere, cucina, barista.
  * Il profilo si ricarica quando la finestra torna in primo piano e quando cambia la propria riga (Realtime):
  * un utente disattivato esce subito.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
-import { credenzialiValide, entraGestore, esciGestore, sessioneGestore } from '@/lib/adminapp'
-import { PROFILO_DEMO, emailAccesso, livelloDi, sezioneDi, type Livello, type Profilo, type Sezione } from '@/lib/permessi'
+import { credenzialiValide, entraGestore, esciGestore, profiloDemo, sessioneGestore } from '@/lib/adminapp'
+import { emailAccesso, livelloDi, sezioneDi, type Livello, type Profilo, type Sezione } from '@/lib/permessi'
 import type { ModuloId } from '@/config/moduli'
 
 interface Sessione {
@@ -34,7 +34,7 @@ async function leggiProfilo(): Promise<Profilo | null> {
 }
 
 export function SessioneProvider({ children }: { children: ReactNode }) {
-  const [profilo, setProfilo] = useState<Profilo | null>(() => (!supabase && sessioneGestore() ? PROFILO_DEMO : null))
+  const [profilo, setProfilo] = useState<Profilo | null>(() => (supabase ? null : profiloDemo(sessioneGestore() ?? '')))
   const [caricamento, setCaricamento] = useState(!!supabase)
 
   const aggiorna = useCallback(async () => {
@@ -73,8 +73,9 @@ export function SessioneProvider({ children }: { children: ReactNode }) {
   const accedi = useCallback(async (utente: string, password: string) => {
     if (!supabase) {
       if (!credenzialiValide(utente, password)) return 'Utente o password non corretti.'
-      entraGestore()
-      setProfilo(PROFILO_DEMO)
+      const u = utente.trim().toLowerCase()
+      entraGestore(u)
+      setProfilo(profiloDemo(u))
       return null
     }
     const { error } = await supabase.auth.signInWithPassword({ email: emailAccesso(utente), password })

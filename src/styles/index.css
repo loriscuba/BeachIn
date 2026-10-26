@@ -157,6 +157,10 @@
 .cz-tenue { color: var(--cz-tenue); }
 .cz-orb { position: absolute; border-radius: 9999px; filter: blur(70px); pointer-events: none; }
 
+/* Altezza della barra delle schede in basso (solo telefono): i pulsanti fluttuanti e il fondo pagina le stanno sopra. */
+.shell-bg { --barra-basso: calc(3.5rem + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) { .shell-bg { --barra-basso: 0px; } }
+
 /* ── Tema del gestionale (chiaro / scuro) applicato a tutto lo shell ───────── */
 .shell-bg {
   background:
@@ -300,3 +304,6 @@
     100% { box-shadow: 0 0 0 10px rgba(242, 193, 78, 0); }
   }
 }
+
+/* Telefono: le celle delle griglie possono stringersi (di base min-width:auto le fa uscire dallo schermo con contenuti lunghi). */
+.bi-pagina .grid > * { min-width: 0; }

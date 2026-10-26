@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { useSessione } from '@/context/SessioneContext'
 import { cn } from '@/lib/cn'
+import { supabaseAttivo } from '@/lib/supabase'
+import { UTENTI_ADMIN } from '@/lib/adminapp'
 
 /** Accesso dello staff (gestionale e app admin): nome utente (o email) + password Supabase Auth, oppure credenziali demo senza Supabase. */
 export function LoginGestore({ onEntra, className }: { onEntra?: () => void; className?: string }) {
@@ -33,6 +35,15 @@ export function LoginGestore({ onEntra, className }: { onEntra?: () => void; cla
         </button>
       </div>
       {errore && <p className="text-sm text-boa">{errore}</p>}
+      {!supabaseAttivo && (
+        // demo locale: un tocco compila l'utente del ruolo (per provare l'app su più dispositivi)
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-profondo/55">
+          <span>Demo (password <b>lido</b>):</span>
+          {UTENTI_ADMIN.map((u) => (
+            <button key={u.utente} type="button" onClick={() => { setUtente(u.utente); setPassword(u.password); setErrore(null) }} className="rounded-full border border-calce-200 px-2.5 py-1 font-medium text-profondo/70 hover:bg-calce">{u.ruolo}</button>
+          ))}
+        </div>
+      )}
       <button disabled={attesa} className="h-12 w-full rounded-xl bg-cabina text-base font-semibold text-white hover:bg-profondo disabled:opacity-60">{attesa ? 'Accesso…' : 'Entra'}</button>
     </form>
   )

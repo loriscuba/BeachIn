@@ -97,8 +97,3 @@ export function proponiUsername(nomeCompleto: string) {
 }
 export const USERNAME_VALIDO = /^[a-z0-9._-]{3,30}$/
 
-/** Profilo usato senza Supabase (demo locale, credenziali nel codice): amministratore. */
-export const PROFILO_DEMO: Profilo = {
-  id: 'demo', email: 'admin', username: 'admin', nome: 'Gestione Lido', ruolo_id: 'amministratore', ruolo: 'Amministratore',
-  amministratore: true, permessi: {},
-}

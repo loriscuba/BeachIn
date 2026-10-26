@@ -12,6 +12,11 @@ import {
   CalendarDays,
   Globe,
   Settings,
+  Inbox,
+  ConciergeBell,
+  ChefHat,
+  Beer,
+  Bell,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ModuloId } from './moduli'
@@ -108,3 +113,37 @@ export const gruppiNav: VoceNav['gruppo'][] = [
   'Presenza online',
   'Impostazioni',
 ]
+
+/**
+ * Schede rapide dell'app staff su telefono (barra in basso, le prime 4 + "Altro") e tablet (barra laterale stretta,
+ * le prime 6): le funzioni operative del ruolo. Ogni ruolo ha il suo ordine; si mostrano solo quelle con modulo
+ * attivo e permesso. Su PC resta il menu completo.
+ */
+export interface SchedaRapida {
+  id: 'home' | 'prenotazioni' | 'cameriere' | 'cucina' | 'bar' | 'comande' | 'arenile'
+  percorso: string
+  etichetta: string
+  icona: LucideIcon
+  modulo: ModuloId
+  /** Livello minimo del permesso (1 lettura, 2 modifica). */
+  minimo?: 1 | 2
+  badge?: SottoVoce['badge']
+}
+
+export const SCHEDE_RAPIDE: SchedaRapida[] = [
+  { id: 'home', percorso: '/', etichetta: 'Home', icona: Home, modulo: 'panoramica' },
+  { id: 'prenotazioni', percorso: '/prenotazioni', etichetta: 'Prenota', icona: Inbox, modulo: 'ristorante', minimo: 2, badge: 'richieste' },
+  { id: 'cameriere', percorso: '/sala?tab=cameriere', etichetta: 'Cameriere', icona: ConciergeBell, modulo: 'sala' },
+  { id: 'cucina', percorso: '/sala?tab=cucina', etichetta: 'Cucina', icona: ChefHat, modulo: 'sala', badge: 'cucina' },
+  { id: 'bar', percorso: '/sala?tab=bar', etichetta: 'Bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
+  { id: 'comande', percorso: '/comande', etichetta: 'Ombrelloni', icona: Bell, modulo: 'comande', badge: 'comande' },
+  { id: 'arenile', percorso: '/arenile', etichetta: 'Arenile', icona: Umbrella, modulo: 'arenile' },
+]
+
+/** Ordine delle schede per ruolo (ruoli di sistema); gli altri ruoli usano l'ordine di `SCHEDE_RAPIDE`. */
+export const SCHEDE_PER_RUOLO: Record<string, SchedaRapida['id'][]> = {
+  cameriere: ['cameriere', 'prenotazioni', 'cucina', 'comande'],
+  cucina: ['cucina', 'cameriere'],
+  barista: ['bar', 'comande', 'cucina'],
+  bar: ['comande', 'bar'],
+}

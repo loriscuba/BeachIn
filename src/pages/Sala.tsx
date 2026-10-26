@@ -41,7 +41,7 @@ export default function Sala() {
 
   return (
     <div className="space-y-4">
-      <LinkSalaApp />
+      <LinkSalaApp className="hidden lg:block" />
       <Tabs
         valore={tab}
         onChange={(v) => setParams({ tab: v })}
@@ -62,18 +62,18 @@ export default function Sala() {
   )
 }
 
-/** Link all'app di sala separata (telefono del cameriere, tablet in cucina), come quello di ComandApp. */
-function LinkSalaApp() {
+/** Solo su PC: QR per aprire la stessa app sul telefono del cameriere o sul tablet della cucina. */
+function LinkSalaApp({ className }: { className?: string }) {
   const link = urlSalaApp()
   const [copiato, setCopiato] = useState(false)
   return (
-    <Card>
+    <Card className={className}>
       <CardBody className="flex flex-wrap items-center gap-4">
         <QrCodice url={link} className="w-20 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="inline-flex items-center gap-2 font-semibold text-profondo"><Smartphone className="h-4 w-4 text-cabina" /> BeachIn Sala: l'app per cameriere, cucina e tablet</p>
+          <p className="inline-flex items-center gap-2 font-semibold text-profondo"><Smartphone className="h-4 w-4 text-cabina" /> Apri la sala sul telefono o sul tablet</p>
           <p className="break-all text-xs text-profondo/55">{link}</p>
-          <p className="mt-1 text-xs text-profondo/55">Si apre col telefono o il tablet e si aggiunge alla schermata Home. Si entra con lo stesso utente del gestionale.</p>
+          <p className="mt-1 text-xs text-profondo/55">È la stessa app BeachIn: inquadra il QR, entra con il tuo utente e aggiungila alla schermata Home. Ognuno vede le schede del suo ruolo.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button dimensione="sm" onClick={() => { navigator.clipboard?.writeText(link); setCopiato(true); window.setTimeout(() => setCopiato(false), 2000) }}><Copy className="h-4 w-4" /> {copiato ? 'Copiato!' : 'Copia link'}</Button>

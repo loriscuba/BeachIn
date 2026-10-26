@@ -26,9 +26,10 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
   const IconaMeteo = meteoIcona[meteo.meteo]
   const { profilo } = useSessione()
   return (
-    <header className="shell-bar sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-calce-200 px-4 backdrop-blur-xl lg:px-6">
+    <header className="shell-bar sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-calce-200 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:px-4 md:h-16 lg:px-6">
+      {/* su telefono e tablet il menu completo si apre da "Altro"/"Menu" nella barra delle schede */}
       <button
-        className="-ml-1 rounded-lg p-2 text-profondo hover:bg-profondo/5"
+        className="-ml-1 hidden rounded-lg p-2 text-profondo hover:bg-profondo/5 lg:block"
         onClick={onApriMenu}
         aria-label="Apri o chiudi il menu"
         title="Menu"

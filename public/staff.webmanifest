@@ -1,0 +1,21 @@
+{
+  "name": "BeachIn — Lido dei Pini",
+  "short_name": "BeachIn",
+  "description": "L'app dello staff: prenotazioni, sala, cucina, bar e gestione su telefono, tablet e PC",
+  "id": "./?app=staff",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EDF1F2",
+  "theme_color": "#0F3B4C",
+  "icons": [
+    { "src": "admin-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "admin-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Prenotazioni", "url": "./prenotazioni", "icons": [{ "src": "admin-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Cameriere", "url": "./sala?tab=cameriere", "icons": [{ "src": "sala-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Cucina", "url": "./sala?tab=cucina", "icons": [{ "src": "sala-icon-192.png", "sizes": "192x192" }] }
+  ]
+}

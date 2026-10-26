@@ -85,7 +85,7 @@ export function aspettaVia(c: ComandaSala): boolean {
 }
 
 /** Link pubblico dell'app di sala (cameriere, cucina, tablet), da aprire su telefono o tablet. */
-export const urlSalaApp = () => urlPubblico('salaapp')
+export const urlSalaApp = () => urlPubblico('sala')
 
 // — Bar al tavolo (modulo `bar-tavolo`): righe del listino bar nella stessa comanda —
 export type Reparto = 'cucina' | 'bar'

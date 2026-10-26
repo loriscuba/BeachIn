@@ -10,7 +10,7 @@ import { config } from '@/data/config'
 import { Logo } from './Logo'
 import { accento } from '@/config/accenti'
 import { cn } from '@/lib/cn'
-import { codaBar, daFareCucina } from '@/lib/sala'
+import { useConHome, useConteggiNav } from '@/hooks/useNavStaff'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 
 interface SidebarProps {
@@ -39,16 +39,13 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const { moduloAttivo } = useModuli()
   const { puo } = useSessione()
   // voce nel menu = modulo attivo nel piano + permesso del ruolo dell'utente
-  const visibile = (m: ModuloId, permesso?: 'utenti') => moduloAttivo(m) && puo(permesso ?? m)
-  const { richiesteRistorante, comande, comandeSala } = useDemoData()
+  // la Panoramica (numeri di tutta la struttura) solo per chi gestisce
+  const conHome = useConHome()
+  const visibile = (m: ModuloId, permesso?: 'utenti') => (m !== 'panoramica' || conHome) && moduloAttivo(m) && puo(permesso ?? m)
+  const { richiesteRistorante } = useDemoData()
   const { pathname, search } = useLocation()
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
-  const conta = {
-    richieste: richiesteRistorante.filter((r) => r.stato === 'da_confermare').length,
-    comande: moduloAttivo('comande') ? comande.filter((c) => c.stato === 'in_attesa').length : 0,
-    cucina: moduloAttivo('sala') ? daFareCucina(comandeSala) : 0,
-    bar: moduloAttivo('bar-tavolo') ? codaBar(comande, comandeSala).daFare.length : 0,
-  }
+  const conta = useConteggiNav()
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
   // Suono a ogni richiesta nuova dal sito (non al primo caricamento). Il browser
   // permette l'audio solo dopo un gesto: lo sblocchiamo al primo tocco sulla pagina.

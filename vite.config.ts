@@ -28,7 +28,13 @@ export default defineConfig({
       output:
         process.env.VITE_INLINE === '1'
           ? { inlineDynamicImports: true }
-          : { manualChunks: { charts: ['recharts'] } },
+          : {
+              // React e le librerie comuni in un blocco a parte: altrimenti Rollup le mette nel blocco dei grafici (dipendenze di
+              // Recharts) e la pagina iniziale scaricava 540 KB di grafici anche sul telefono del cameriere
+              manualChunks: (id) =>
+                /node_modules\/(react|react-dom|scheduler|react-is|clsx)\//.test(id) ? 'react'
+                  : /node_modules\/recharts\//.test(id) ? 'charts' : undefined,
+            },
     },
   },
 })

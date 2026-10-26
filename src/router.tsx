@@ -25,8 +25,7 @@ const Bar = lazyRiprova(() => import('@/pages/Bar'))
 const Ristorante = lazyRiprova(() => import('@/pages/Ristorante'))
 const MenuPubblico = lazyRiprova(() => import('@/pages/MenuPubblico'))
 const ComandApp = lazyRiprova(() => import('@/pages/ComandApp'))
-const AdminApp = lazyRiprova(() => import('@/pages/AdminApp'))
-const SalaApp = lazyRiprova(() => import('@/pages/SalaApp'))
+const Prenotazioni = lazyRiprova(() => import('@/pages/Prenotazioni'))
 const TavoloQR = lazyRiprova(() => import('@/pages/TavoloQR'))
 const InvitoEvento = lazyRiprova(() => import('@/pages/InvitoEvento'))
 const Costi = lazyRiprova(() => import('@/pages/Costi'))
@@ -53,6 +52,8 @@ export const router = creaRouter([
       { path: 'clienti', element: g('clienti', <Clienti />) },
       { path: 'comande', element: g('comande', <Comande />) },
       { path: 'sala', element: g('sala', <Sala />) },
+      // Prenotazioni operative (ex app admin): richieste dal sito, oggi, menu a voce, news, ingressi
+      { path: 'prenotazioni', element: s(<Prenotazioni />) },
       { path: 'tariffe', element: g('tariffe', <Tariffe />) },
       { path: 'bar', element: g('bar', <Bar />) },
       { path: 'ristorante', element: g('ristorante', <Ristorante />) },
@@ -73,10 +74,9 @@ export const router = creaRouter([
   { path: '/menu', element: s(<MenuPubblico />) },
   // ComandApp: app del bagnante per ordinare dall'ombrellone
   { path: '/comandapp', element: s(<ComandApp />) },
-  // App del gestore: prenotazioni ristorante da confermare + menu a voce
-  { path: '/adminapp', element: s(<AdminApp />) },
-  // App di sala: cameriere, cucina e tablet self su telefono/tablet
-  { path: '/salaapp', element: s(<SalaApp />) },
+  // Le vecchie app admin e sala ora sono sezioni dell'app staff unica (link, QR e icone già installate continuano a funzionare)
+  { path: '/adminapp', element: <Navigate to="/prenotazioni" replace /> },
+  { path: '/salaapp', element: <Navigate to="/sala" replace /> },
   // Ordine dal telefono col QR fisso del tavolo (solo con tavolo aperto dal cameriere)
   { path: '/tavolo', element: s(<TavoloQR />) },
   // Invito all'evento col QR (link nella mail di conferma), letto all'ingresso dall'app admin
