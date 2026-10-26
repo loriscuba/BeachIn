@@ -21,31 +21,38 @@ export function ScannerQr({ onLettura, attivo = true }: { onLettura: (testo: str
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
-    const leggi = () => {
-      const v = video.current
-      if (v && ctx && v.readyState >= 2 && v.videoWidth) {
-        // riduco il fotogramma: jsQR è più veloce e i QR dell'invito sono grandi
-        const scala = Math.min(1, 640 / v.videoWidth)
-        canvas.width = Math.round(v.videoWidth * scala)
-        canvas.height = Math.round(v.videoHeight * scala)
-        ctx.drawImage(v, 0, 0, canvas.width, canvas.height)
-        const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        const qr = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' })
-        const ora = Date.now()
-        if (qr?.data && (qr.data !== ultimo.testo || ora - ultimo.t > 3000)) {
-          ultimo = { testo: qr.data, t: ora }
-          navigator.vibrate?.(80)
-          cb.current(qr.data)
-        }
-      }
+    // ogni giro alterna: riquadro centrale a piena risoluzione (QR piccoli o lontani, mostrati su un altro telefono)
+    // e fotogramma intero ridotto (QR grandi o fuori centro); ogni 4 giri prova anche i colori invertiti.
+    let giro = 0
+    let prima = 0
+    const leggi = (t: number) => {
       raf = requestAnimationFrame(leggi)
+      const v = video.current
+      if (!v || !ctx || v.readyState < 2 || !v.videoWidth || t - prima < 90) return
+      prima = t
+      giro++
+      const vw = v.videoWidth, vh = v.videoHeight
+      let sx = 0, sy = 0, sw = vw, sh = vh
+      if (giro % 2) { const lato = Math.round(Math.min(vw, vh) * 0.75); sx = (vw - lato) >> 1; sy = (vh - lato) >> 1; sw = sh = lato }
+      const scala = Math.min(1, 720 / Math.max(sw, sh))
+      canvas.width = Math.round(sw * scala)
+      canvas.height = Math.round(sh * scala)
+      ctx.drawImage(v, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const qr = jsQR(img.data, img.width, img.height, { inversionAttempts: giro % 4 === 3 ? 'attemptBoth' : 'dontInvert' })
+      const ora = Date.now()
+      if (qr?.data && (qr.data !== ultimo.testo || ora - ultimo.t > 3000)) {
+        ultimo = { testo: qr.data, t: ora }
+        navigator.vibrate?.(80)
+        cb.current(qr.data)
+      }
     }
 
     let chiuso = false
     const avvia = async () => {
       if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error(), { name: 'NonSupportato' })
       try {
-        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
       } catch (e) {
         // alcuni tablet/browser rifiutano i vincoli: riprovo con una fotocamera qualsiasi (non se il permesso è negato)
         if ((e as Error).name === 'NotAllowedError' || (e as Error).name === 'SecurityError') throw e

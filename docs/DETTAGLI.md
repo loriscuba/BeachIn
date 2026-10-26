@@ -336,9 +336,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   in app portano lo stesso link.
 - **Pagina pubblica** `/invito?c=` (`src/pages/InvitoEvento.tsx`): QR grande + codice + dettagli; dice se l'ingresso è registrato.
 - **App admin → Ingressi** (tab visibile col modulo `eventi`, `src/components/eventi/IngressiEventi.tsx`): scelta evento (default
-  oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore `ideal`, ripiego `video:true`; errore spiegato per tipo
-  con Riprova) o codice a mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento / non confermata / sconosciuto
-  (campanello). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
+  oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore `ideal` 1920×1080, ripiego `video:true`; ~11 letture/s alternando riquadro centrale
+  a piena risoluzione e fotogramma intero ridotto, ogni 4 giri anche colori invertiti; errore spiegato per tipo con Riprova) o codice a mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento (tasto "Passa a quell'evento") / non confermata / sconosciuto
+  (campanello); l'esito viene portato in vista (sta sotto la fotocamera). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
 - **Gestionale Eventi** a sottomenu `?tab=calendario|presenze`: Presenze (`src/components/eventi/PresenzeEventi.tsx`) con KPI
   (inviti, attese, entrate, mancanti) e tabella invitati: codice (link all'invito), stato, segna/annulla a mano.
   **Reinvia invito** (se c'è l'email): `reinviaInvito(id)` imposta `invioTs` → colonna `invio_ts` (migrazione `0007_reinvia_invito.sql`),
