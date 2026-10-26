@@ -28,7 +28,7 @@ const ordineStato: Record<StatoPrenotazione, number> = { in_attesa: 0, confermat
 export default function Panoramica() {
   // Prenotazioni vere (le stesse di Ristorante → Prenotazioni, sincronizzate), non i dati di esempio fissi
   const { magazzino, eventi, richiesteRistorante, prenotazioniOnline, prenotazioniRistorante } = useDemoData()
-  const { moduloAttivo } = useModuli()
+  const { moduloAttivo, funzioneAttiva } = useModuli()
   const meteo = useMeteoOggi()
   const oggi = config.oggi
   const prenOggi = prenotazioniRistorante
@@ -162,7 +162,7 @@ export default function Panoramica() {
           <CardHeader
             titolo="Magazzino · da riordinare"
             sottotitolo={`${sottoScorta.length} articoli sotto scorta`}
-            azione={<Link to="/ristorante?tab=magazzino" className="text-sm font-medium text-cabina hover:underline">Apri</Link>}
+            azione={funzioneAttiva('ristorante.magazzino') ? <Link to="/ristorante?tab=magazzino" className="text-sm font-medium text-cabina hover:underline">Apri</Link> : undefined}
           />
           <CardBody className="pt-1">
             <ul className="divide-y divide-calce-200">

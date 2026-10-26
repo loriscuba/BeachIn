@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Users2, ShieldCheck, Plus, KeyRound, Pencil, Power, Trash2, Save, Wand2, Camera } from 'lucide-react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { Users2, ShieldCheck, Plus, KeyRound, Pencil, Power, Trash2, Save, Wand2, Camera, ChevronDown } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
 import { fileAImmagine } from '@/lib/immagini'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -13,6 +13,7 @@ import {
   leggiUtentiRuoli, creaUtente, aggiornaUtente, cambiaPassword, eliminaUtente, salvaRuolo, eliminaRuolo, idDaNome,
 } from '@/lib/utenti'
 import { cn } from '@/lib/cn'
+import { funzioniDi } from '@/config/moduli'
 
 const campo = 'h-10 w-full rounded-xl border border-calce-200 bg-white px-3 text-sm focus-visible:focus-ring'
 const quando = (d: string | null) =>
@@ -255,18 +256,27 @@ function MatricePermessi({ ruoli, utenti, modifica, esegui }: { ruoli: Ruolo[]; 
   const permessi = (r: Ruolo) => bozza[r.id] ?? r.permessi
   const cambiati = useMemo(() => ruoli.filter((r) => bozza[r.id] && JSON.stringify(bozza[r.id]) !== JSON.stringify(r.permessi)), [ruoli, bozza])
   const imposta = (r: Ruolo, s: string, l: Livello) => setBozza({ ...bozza, [r.id]: { ...permessi(r), [s]: l } })
+  // funzionalità: si salva solo se più bassa della sezione (senza chiave vale il livello della sezione)
+  const impostaFunzione = (r: Ruolo, sezione: string, id: string, l: Livello) => {
+    const p: Permessi = { ...permessi(r) }
+    if (l >= (p[sezione] ?? 0)) delete p[id]
+    else p[id] = l
+    setBozza({ ...bozza, [r.id]: p })
+  }
+  const [aperte, setAperte] = useState<Record<string, boolean>>({})
   const salva = async () => {
     for (const r of cambiati) {
       if (!(await esegui(salvaRuolo({ ...r, permessi: bozza[r.id] }, false), 'Permessi salvati'))) return
     }
   }
   const assegnati = (id: string) => utenti.filter((u) => u.ruolo_id === id).length
+  const ristrette = (sezione: string, ids: string[]) => ruoli.some((r) => !r.amministratore && ids.some((id) => (permessi(r)[id] ?? 2) < (permessi(r)[sezione] ?? 0)))
 
   return (
     <Card>
       <CardHeader
         titolo={<span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-cabina" /> Ruoli e permessi</span>}
-        sottotitolo="Per ogni ruolo, cosa può fare in ogni sezione. Vale nel menu e nel database."
+        sottotitolo="Per ogni ruolo, cosa può fare in ogni sezione e, aprendo la sezione, in ogni funzionalità (mai più della sezione). Vale nel menu e nelle pagine; il database controlla le sezioni."
         azione={modifica && (
           <div className="flex gap-2">
             <Button dimensione="sm" onClick={() => setNuovo(true)}><Plus className="h-4 w-4" /> Nuovo ruolo</Button>
@@ -293,35 +303,68 @@ function MatricePermessi({ ruoli, utenti, modifica, esegui }: { ruoli: Ruolo[]; 
             </tr>
           </thead>
           <tbody>
-            {SEZIONI.map((s) => (
-              <tr key={s.id} className="border-t border-calce-200">
-                <td className="py-2 pr-3 text-profondo">{s.nome}</td>
-                {ruoli.map((r) => {
-                  if (r.amministratore) return <td key={r.id} className="px-2 py-2"><Badge tono="stagionale">Tutto</Badge></td>
-                  const l = (permessi(r)[s.id] ?? 0) as Livello
-                  return (
-                    <td key={r.id} className="px-2 py-2">
-                      {modifica ? (
-                        <select
-                          value={l}
-                          onChange={(e) => imposta(r, s.id, Number(e.target.value) as Livello)}
-                          className={cn('h-8 rounded-lg border border-calce-200 bg-white px-2 text-xs', l === 2 && 'font-semibold text-cabina', l === 0 && 'text-profondo/45')}
-                        >
-                          {LIVELLI.map((x) => <option key={x.valore} value={x.valore}>{x.nome}</option>)}
-                        </select>
-                      ) : (
-                        <Badge tono={tonoLivello[l]}>{LIVELLI[l].nome}</Badge>
-                      )}
+            {SEZIONI.map((s) => {
+              const funzioni = s.id === 'utenti' ? [] : funzioniDi(s.id)
+              const aperta = !!aperte[s.id]
+              return (
+                <Fragment key={s.id}>
+                  <tr className="border-t border-calce-200">
+                    <td className="py-2 pr-3 text-profondo">
+                      {funzioni.length > 0 ? (
+                        <button type="button" data-naviga onClick={() => setAperte({ ...aperte, [s.id]: !aperta })} className="inline-flex items-center gap-1 text-left hover:text-cabina" aria-expanded={aperta}>
+                          <ChevronDown className={cn('h-4 w-4 shrink-0 text-profondo/40 transition-transform', aperta && 'rotate-180')} />
+                          {s.nome}
+                          {ristrette(s.id, funzioni.map((x) => x.id)) && <span className="ml-1 h-1.5 w-1.5 rounded-full bg-tenda" title="Alcune funzionalità hanno un permesso più basso" />}
+                        </button>
+                      ) : <span className="pl-5">{s.nome}</span>}
                     </td>
-                  )
-                })}
-              </tr>
-            ))}
+                    {ruoli.map((r) => {
+                      if (r.amministratore) return <td key={r.id} className="px-2 py-2"><Badge tono="stagionale">Tutto</Badge></td>
+                      const l = (permessi(r)[s.id] ?? 0) as Livello
+                      return (
+                        <td key={r.id} className="px-2 py-2">
+                          <CellaLivello l={l} modifica={modifica} onChange={(v) => imposta(r, s.id, v)} />
+                        </td>
+                      )
+                    })}
+                  </tr>
+                  {aperta && funzioni.map((x) => (
+                    <tr key={x.id} className="bg-calce/40">
+                      <td className="py-1.5 pl-9 pr-3 text-xs text-profondo/70">{x.nome}</td>
+                      {ruoli.map((r) => {
+                        if (r.amministratore) return <td key={r.id} className="px-2 py-1.5"><Badge tono="stagionale">Tutto</Badge></td>
+                        const max = (permessi(r)[s.id] ?? 0) as Livello
+                        const l = Math.min(max, permessi(r)[x.id] ?? max) as Livello
+                        return (
+                          <td key={r.id} className="px-2 py-1.5">
+                            <CellaLivello l={l} max={max} modifica={modifica} onChange={(v) => impostaFunzione(r, s.id, x.id, v)} />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </Fragment>
+              )
+            })}
           </tbody>
         </table>
       </CardBody>
       {nuovo && <ModaleNuovoRuolo ruoli={ruoli} onChiudi={() => setNuovo(false)} esegui={esegui} />}
     </Card>
+  )
+}
+
+/** Livello di una cella: select in modifica (livelli sopra `max` non sceglibili), badge in lettura. */
+function CellaLivello({ l, max = 2, modifica, onChange }: { l: Livello; max?: Livello; modifica: boolean; onChange: (l: Livello) => void }) {
+  if (!modifica) return <Badge tono={tonoLivello[l]}>{LIVELLI[l].nome}</Badge>
+  return (
+    <select
+      value={l}
+      onChange={(e) => onChange(Number(e.target.value) as Livello)}
+      className={cn('h-8 rounded-lg border border-calce-200 bg-white px-2 text-xs', l === 2 && 'font-semibold text-cabina', l === 0 && 'text-profondo/45')}
+    >
+      {LIVELLI.map((x) => <option key={x.valore} value={x.valore} disabled={x.valore > max}>{x.nome}</option>)}
+    </select>
   )
 }
 

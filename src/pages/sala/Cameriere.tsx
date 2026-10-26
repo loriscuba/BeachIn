@@ -35,7 +35,10 @@ export default function Cameriere() {
   // tavolo aperto = i clienti possono ordinare anche dal telefono col QR del tavolo
   const aperto = (n: number) => !!tavoliQr.find((q) => q.numero === n)?.aperto
   const { profilo } = useSessione()
-  const conBar = useModuli().moduloAttivo('bar-tavolo')
+  const { moduloAttivo, funzioneAttiva } = useModuli()
+  const conBar = moduloAttivo('bar-tavolo')
+  // ordini dal telefono col QR del tavolo: solo con la funzionalità QR tavoli attiva
+  const conQr = funzioneAttiva('sala.qr')
   // menu del Ristorante (cucina) e listino bar: due menu separati, una sola comanda
   const reparti = useMemo(() => ({
     cucina: { sezioni: sezioniMenu, piatti: menu },
@@ -137,7 +140,7 @@ export default function Cameriere() {
     if (tavolo == null || !righe.length) return
     inviaComandaSala(tavolo, righe, { origine: 'cameriere', cameriere: profilo?.nome, coperti: Number(coperti) || undefined, note })
     // chi ha ordinato è seduto: il tavolo si apre anche ai QR
-    if (!aperto(tavolo)) impostaTavoloQr(tavolo, { aperto: true })
+    if (conQr && !aperto(tavolo)) impostaTavoloQr(tavolo, { aperto: true })
     setQta({}); setUsc({}); setScelto(null); setNote('')
     setInviata(true)
     window.setTimeout(() => setInviata(false), 3000)
@@ -159,16 +162,16 @@ export default function Cameriere() {
                 <Button dimensione="sm" variante="primario" onClick={() => setChiudiConto(true)} title="Il cliente paga: chiude il conto e prepara il tavolo per i prossimi">
                   <Receipt className="h-4 w-4" /> Chiudi conto
                 </Button>
-              ) : (
+              ) : conQr && (
                 <Button dimensione="sm" variante={aperto(tavolo) ? 'secondario' : 'primario'} onClick={() => impostaTavoloQr(tavolo, { aperto: !aperto(tavolo) })}
                   title={aperto(tavolo) ? 'Chiudi il tavolo: dal QR non si ordina più' : 'Apri il tavolo: i clienti possono ordinare anche col QR'}>
                   {aperto(tavolo) ? <><Lock className="h-4 w-4" /> Chiudi</> : <><QrCode className="h-4 w-4" /> Apri tavolo</>}
                 </Button>
               )}
-              <Button dimensione="sm" variante={vediQr ? 'primario' : 'secondario'} onClick={() => setVediQr(!vediQr)} aria-label="QR del tavolo" title="QR del tavolo"><QrCode className="h-4 w-4" /></Button>
+              {conQr && <Button dimensione="sm" variante={vediQr ? 'primario' : 'secondario'} onClick={() => setVediQr(!vediQr)} aria-label="QR del tavolo" title="QR del tavolo"><QrCode className="h-4 w-4" /></Button>}
               <Button dimensione="sm" onClick={() => { setTavolo(null); setVediQr(false) }}>Cambia tavolo</Button>
             </CardBody>
-            {vediQr && <CardBody className="border-t border-calce-200 pt-3"><DettaglioQr numero={tavolo} /></CardBody>}
+            {conQr && vediQr && <CardBody className="border-t border-calce-200 pt-3"><DettaglioQr numero={tavolo} /></CardBody>}
           </Card>
         ) : (
         <Card>

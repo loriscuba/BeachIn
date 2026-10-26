@@ -176,3 +176,45 @@ export const PIANI: Record<string, Piano> = {
 }
 
 export const PIANO_DEFAULT = 'ristorante_web'
+
+/**
+ * Funzionalità dentro i moduli (le schede `?tab=` delle pagine). Secondo livello di attivazione:
+ * il cliente può avere un modulo ma non tutte le sue funzionalità (es. Eventi con il Calendario ma senza Presenze),
+ * e un ruolo può avere permessi diversi per funzionalità (chiave `modulo.scheda` in `ruoli.permessi`).
+ * Una funzionalità nuova nasce attiva: lo stato salva solo quelle spente.
+ */
+export interface InfoFunzione {
+  id: string
+  modulo: ModuloId
+  /** Valore di `?tab=` nella pagina del modulo. */
+  scheda: string
+  nome: string
+}
+
+const f = (modulo: ModuloId, scheda: string, nome: string): InfoFunzione => ({ id: `${modulo}.${scheda}`, modulo, scheda, nome })
+
+export const FUNZIONI: InfoFunzione[] = [
+  f('bar', 'listino', 'Listino'),
+  f('bar', 'conti', 'Conti e giornata'),
+  f('ristorante', 'prenotazioni', 'Prenotazioni'),
+  f('ristorante', 'tavoli', 'Tavoli'),
+  f('ristorante', 'menu', 'Menu'),
+  f('ristorante', 'magazzino', 'Magazzino'),
+  f('ristorante', 'giorni', 'Gestione giorni'),
+  f('sala', 'cameriere', 'Comande cameriere'),
+  f('sala', 'cucina', 'Monitor cucina'),
+  f('sala', 'self', 'Tablet self-service'),
+  f('sala', 'qr', 'QR tavoli'),
+  f('eventi', 'calendario', 'Calendario'),
+  f('eventi', 'presenze', 'Presenze e ingressi (scanner)'),
+  f('sito', 'panoramica', 'Panoramica'),
+  f('sito', 'prenotazioni', 'Prenotazioni online'),
+  f('sito', 'posta', 'Posta'),
+  f('sito', 'contenuti', 'Contenuti'),
+  f('sito', 'interazioni', 'Recensioni e messaggi'),
+  f('sito', 'marketing', 'Sito e marketing'),
+  f('sito', 'app', 'App clienti'),
+]
+
+export const funzioniDi = (modulo: ModuloId) => FUNZIONI.filter((x) => x.modulo === modulo)
+export const idFunzione = (modulo: ModuloId, scheda: string) => `${modulo}.${scheda}`

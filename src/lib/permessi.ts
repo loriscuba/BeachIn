@@ -8,7 +8,8 @@ import type { ModuloId } from '@/config/moduli'
 export type Livello = 0 | 1 | 2
 /** Sezioni con permesso: i moduli (tranne Panoramica, sempre visibile) + gestione utenti. */
 export type Sezione = Exclude<ModuloId, 'panoramica' | 'assistente-vocale'> | 'utenti'
-export type Permessi = Partial<Record<Sezione, Livello>>
+/** Sezione → livello, più (facoltative) le funzionalità `modulo.scheda` → livello: senza chiave vale quello della sezione. */
+export type Permessi = Partial<Record<Sezione, Livello>> & { [funzione: string]: Livello | undefined }
 
 export const SEZIONI: { id: Sezione; nome: string }[] = [
   { id: 'cruscotto', nome: 'Cruscotto completo' },
@@ -80,6 +81,14 @@ export function livelloDi(p: Profilo | null, sezione: Sezione | null): Livello {
   if (!p) return 0
   if (p.amministratore) return 2
   return (p.permessi[sezione] ?? 0) as Livello
+}
+
+/** Livello su una funzionalità (`modulo.scheda`): quello della sezione, ridotto dall'eventuale permesso proprio. */
+export function livelloFunzioneDi(p: Profilo | null, id: string): Livello {
+  const base = livelloDi(p, sezioneDi(id.split('.')[0] as ModuloId))
+  if (!p || p.amministratore) return base
+  const proprio = p.permessi[id]
+  return (proprio == null ? base : Math.min(base, proprio)) as Livello
 }
 
 /** Dominio delle email sintetiche di Supabase Auth per chi entra col nome utente (migrazione 0012). */

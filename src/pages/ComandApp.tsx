@@ -47,19 +47,19 @@ export default function ComandApp() {
     // service worker: richiesto da alcuni browser Android per proporre l'installazione
     if ('serviceWorker' in navigator) void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw-admin.js`, { scope: import.meta.env.BASE_URL }).catch(() => undefined)
   }, [])
-  const { moduloAttivo } = useModuli()
+  const { moduloAttivo, funzioneAttiva } = useModuli()
   const { canaliPrenotazione, notizie } = useDemoData()
   const [utente, setUtente] = useState<Utente | undefined>(leggiSessione)
   const esci = () => { try { localStorage.removeItem(CHIAVE) } catch { /* */ } setUtente(undefined) }
 
-  // sezioni visibili secondo i moduli attivi
+  // sezioni visibili secondo i moduli e le funzionalità attive
   const ristorante = moduloAttivo('ristorante')
-  const eventiOn = moduloAttivo('eventi')
+  const eventiOn = funzioneAttiva('eventi.calendario')
   const voci = ([
     { id: 'news', etichetta: 'News', icona: Newspaper, on: true },
     { id: 'eventi', etichetta: 'Eventi', icona: PartyPopper, on: eventiOn },
     { id: 'lavagna', etichetta: 'Lavagna', icona: UtensilsCrossed, on: ristorante },
-    { id: 'prenota', etichetta: 'Prenota', icona: CalendarCheck, on: (ristorante && canaliPrenotazione.ristorante) || (eventiOn && canaliPrenotazione.eventi) },
+    { id: 'prenota', etichetta: 'Prenota', icona: CalendarCheck, on: (funzioneAttiva('ristorante.prenotazioni') && canaliPrenotazione.ristorante) || (eventiOn && canaliPrenotazione.eventi) },
     { id: 'ombrellone', etichetta: 'Ombrellone', icona: Umbrella, on: moduloAttivo('comande') },
     { id: 'contatti', etichetta: 'Contatti', icona: Phone, on: true },
   ] satisfies { id: Sez; etichetta: string; icona: LucideIcon; on: boolean }[]).filter((v) => v.on)
@@ -100,7 +100,7 @@ export default function ComandApp() {
         <InvitoNotifiche app="clienti" titolo="Resta aggiornato" descrizione="Ricevi una notifica quando pubblichiamo una news o aggiorniamo la lavagna del giorno." />
         {sez === 'news' && <News scorciatoie={voci.filter((v) => v.id !== 'news' && v.id !== 'contatti')} vai={vai} />}
         {sez === 'ombrellone' && (utente ? <Area utente={utente} /> : <Login onEntra={(u) => { try { localStorage.setItem(CHIAVE, u.utente) } catch { /* */ } setUtente(u) }} />)}
-        {sez === 'prenota' && <Prenota ristorante={ristorante} eventiOn={eventiOn} />}
+        {sez === 'prenota' && <Prenota ristorante={funzioneAttiva('ristorante.prenotazioni')} eventiOn={eventiOn} />}
         {sez === 'eventi' && <Eventi />}
         {sez === 'lavagna' && <Lavagna />}
         {sez === 'contatti' && <Contatti />}

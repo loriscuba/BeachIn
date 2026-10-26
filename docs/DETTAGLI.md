@@ -460,8 +460,18 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 
 ## Moduli commerciali (vendita a moduli)
 - BeachIn si vende a moduli: sorgente unica `src/config/moduli.ts` (`ModuloId`, `MODULI` con testi di
-  upsell, `PIANI` bundle, `MODULI_CORE`). Stato "attivi" nel `src/context/ModuliContext.tsx`
-  (in memoria + localStorage `beachin.moduli.v1`; domani = campo per-cliente dal DB).
+  upsell, `PIANI` bundle, `MODULI_CORE`, `FUNZIONI`). Stato "attivi" nel `src/context/ModuliContext.tsx`
+  (localStorage `beachin.moduli.v1` + `beachin.funzioni.spente`; con Supabase riga `id='moduli'` di `beachin.impostazioni`,
+  `valori = { attivi, spente }`, letta all'avvio e dal vivo via Realtime; senza riga vale lo stato locale. Nessuna migrazione).
+- **Funzionalità** (ott 2026): `FUNZIONI` = schede `?tab=` dei moduli, id `modulo.scheda` (Bar listino/conti; Ristorante
+  prenotazioni/tavoli/menu/magazzino/giorni; Sala cameriere/cucina/self/qr; Eventi calendario/presenze; Sito panoramica/
+  prenotazioni/posta/contenuti/interazioni/marketing/app). Nascono attive, si salvano solo le spente (`funzioneAttiva`, `toggleFunzione`);
+  applicare un piano le riaccende. Due livelli: cliente (Impostazioni → **Moduli e funzionalità**, `?tab=moduli`, modulo apribile con
+  interruttore per funzionalità) e ruolo (Utenti e ruoli: sezione apribile, livello per funzionalità salvato in `ruoli.permessi`
+  come chiave `modulo.scheda` solo se più basso della sezione; `livelloFunzioneDi` = min(sezione, proprio)). Il DB controlla solo le sezioni.
+  App: `src/hooks/useFunzioni.tsx` (`useFunzioni().ok/livello`, `useSchede(modulo, schede, tab)`, `SchedaProtetta` = accesso negato o
+  sola lettura per scheda). Menu (`funzioneDiVoce` in `navigazione.tsx`, Sidebar, griglia telefono, schede rapide), pagine Bar/Ristorante/
+  Sala/Eventi/Sito/Prenotazioni, pulsanti QR del Cameriere (`sala.qr`), ComandApp (Prenota ristorante, Eventi) rispettano entrambi.
 - "Richiedi attivazione" (`ModuloBloccato`) scrive a `config.emailBeachIn` (contatto commerciale BeachIn); vuoto = pulsante nascosto.
 - Core sempre attivi: `panoramica` (home ridotta, rotta `/`) e `impostazioni`.
 - **Panoramica** (`src/pages/Panoramica.tsx`): KPI meteo oggi (reale da Open-Meteo per Savona, hook
@@ -473,7 +483,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   non è attivo mostra `src/pages/ModuloBloccato.tsx` (pagina di upsell, deep-link non fa 404). La Sidebar
   mostra i moduli bloccati col lucchetto. Il Cruscotto completo è ora rotta `/cruscotto` (modulo `cruscotto`).
 - Piano di default: `ristorante_web` (Panoramica, Ristorante, Assistente vocale, Comande, Eventi, Sito, Impostazioni).
-- Attivazione dal vivo (demo/vendita) da **Impostazioni → Moduli e piano** (`applicaPiano`, `toggle`).
+- Attivazione dal vivo (demo/vendita) da **Impostazioni → Moduli e funzionalità** (`applicaPiano`, `toggle`, `toggleFunzione`).
 
 - (ott 2026) **Colori parlanti** sugli stati (toni `verde/giallo/rosso` di `Badge`): giallo *Da accogliere* (+ bottone
   verde **Accogli**), verde *Arrivati* (badge, scheda verdina, piccola ↺ per annullare l'arrivo), rosso *Annullata* con

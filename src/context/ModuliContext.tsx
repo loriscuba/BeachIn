@@ -1,20 +1,32 @@
 /**
- * ModuliContext — quali moduli sono attivi per il cliente corrente.
+ * ModuliContext — quali moduli e quali funzionalità (schede dei moduli) sono attivi per il cliente corrente.
  *
- * Oggi lo stato è in memoria (persistito in localStorage per comodità della
- * demo). In una fase successiva questo insieme arriverà dal DB come campo
- * per-cliente (entitlements): cambierà solo la sorgente, non le pagine.
+ * Stato in localStorage e, con Supabase, nella riga `moduli` di `beachin.impostazioni`
+ * (`valori = { attivi, spente }`, aggiornata dal vivo su tutti i dispositivi). Se la riga non c'è
+ * vale lo stato locale finché l'amministratore non cambia qualcosa.
  *
  * I moduli CORE sono sempre attivi. Gli altri si attivano/disattivano dal vivo
- * (utile per mostrare l'upsell al cliente) o applicando un piano.
+ * (utile per mostrare l'upsell al cliente) o applicando un piano. Le funzionalità nascono
+ * attive: si salvano solo quelle spente (`spente`, id `modulo.scheda`).
  */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { MODULI_CORE, PIANI, PIANO_DEFAULT, type ModuloId } from '@/config/moduli'
+import { FUNZIONI, MODULI_CORE, PIANI, PIANO_DEFAULT, type ModuloId } from '@/config/moduli'
+import { SCHEMA, supabase } from '@/lib/supabase'
 
 const CHIAVE = 'beachin.moduli.v1'
 const CHIAVE_SALA = 'beachin.moduli.sala'
 const CHIAVE_BAR_TAVOLO = 'beachin.moduli.bartavolo'
+const CHIAVE_SPENTE = 'beachin.funzioni.spente'
+const ID_DB = 'moduli'
+
+function caricaSpente(): string[] {
+  try {
+    const arr = JSON.parse(localStorage.getItem(CHIAVE_SPENTE) ?? '[]')
+    if (Array.isArray(arr)) return arr.filter((x) => typeof x === 'string')
+  } catch { /* no-op */ }
+  return []
+}
 
 function carica(): ModuloId[] {
   try {
@@ -64,18 +76,50 @@ interface ModuliValue {
   disattiva: (id: ModuloId) => void
   toggle: (id: ModuloId) => void
   applicaPiano: (pianoId: string) => void
+  /** Funzionalità `modulo.scheda` attiva: modulo attivo e funzionalità non spenta. Id sconosciuti = il modulo. */
+  funzioneAttiva: (id: string) => boolean
+  toggleFunzione: (id: string) => void
 }
 
 const ModuliContext = createContext<ModuliValue | null>(null)
 
 export function ModuliProvider({ children }: { children: ReactNode }) {
   const [attivi, setAttivi] = useState<ModuloId[]>(() => conCore(carica()))
+  const [spente, setSpente] = useState<string[]>(caricaSpente)
 
-  const salva = useCallback((next: ModuloId[]) => {
-    const v = conCore(next)
-    setAttivi(v)
-    try { localStorage.setItem(CHIAVE, JSON.stringify(v)) } catch { /* no-op */ }
+  const applica = useCallback((a: ModuloId[], sp: string[]) => {
+    setAttivi(a)
+    setSpente(sp)
+    try {
+      localStorage.setItem(CHIAVE, JSON.stringify(a))
+      localStorage.setItem(CHIAVE_SPENTE, JSON.stringify(sp))
+    } catch { /* no-op */ }
   }, [])
+
+  const salva = useCallback((next: ModuloId[], sp: string[] = spente) => {
+    const v = conCore(next)
+    applica(v, sp)
+    if (supabase) void supabase.from('impostazioni').upsert({ id: ID_DB, valori: { attivi: v, spente: sp }, aggiornato: new Date().toISOString() })
+      .then(({ error }) => error && console.error('[supabase] moduli:', error.message))
+  }, [spente, applica])
+
+  // Stato del cliente dal database, aggiornato dal vivo
+  useEffect(() => {
+    if (!supabase) return
+    const db = supabase
+    const lettura = async () => {
+      const { data, error } = await db.from('impostazioni').select('valori').eq('id', ID_DB).maybeSingle()
+      if (error) { console.error('[supabase] moduli:', error.message); return }
+      const v = data?.valori as { attivi?: unknown; spente?: unknown } | undefined
+      if (!v || !Array.isArray(v.attivi)) return
+      applica(conCore(v.attivi as ModuloId[]), Array.isArray(v.spente) ? (v.spente as string[]) : [])
+    }
+    void lettura()
+    const ch = db.channel('sync-moduli')
+      .on('postgres_changes', { event: '*', schema: SCHEMA, table: 'impostazioni', filter: `id=eq.${ID_DB}` }, () => void lettura())
+      .subscribe()
+    return () => { void db.removeChannel(ch) }
+  }, [applica])
 
   const moduloAttivo = useCallback((id: ModuloId) => attivi.includes(id), [attivi])
 
@@ -90,13 +134,25 @@ export function ModuliProvider({ children }: { children: ReactNode }) {
     (id: ModuloId) => (attivi.includes(id) ? disattiva(id) : attiva(id)),
     [attivi, attiva, disattiva]
   )
+  // Un piano accende tutte le funzionalità dei suoi moduli
   const applicaPiano = useCallback(
-    (pianoId: string) => { const p = PIANI[pianoId]; if (p) salva(p.moduli) },
+    (pianoId: string) => { const p = PIANI[pianoId]; if (p) salva(p.moduli, []) },
     [salva]
   )
 
-  // Il piano corrente è quello i cui moduli coincidono esattamente con gli attivi.
+  const funzioneAttiva = useCallback((id: string) => {
+    const fz = FUNZIONI.find((x) => x.id === id)
+    const modulo = (fz?.modulo ?? id.split('.')[0]) as ModuloId
+    return attivi.includes(modulo) && !spente.includes(id)
+  }, [attivi, spente])
+  const toggleFunzione = useCallback(
+    (id: string) => salva(attivi, spente.includes(id) ? spente.filter((x) => x !== id) : [...spente, id]),
+    [attivi, spente, salva]
+  )
+
+  // Il piano corrente è quello i cui moduli coincidono esattamente con gli attivi (e nessuna funzionalità spenta).
   const pianoCorrente = useMemo(() => {
+    if (spente.some((id) => FUNZIONI.some((x) => x.id === id && attivi.includes(x.modulo)))) return null
     const set = new Set(attivi)
     const match = Object.values(PIANI).find(
       (p) => {
@@ -105,11 +161,11 @@ export function ModuliProvider({ children }: { children: ReactNode }) {
       }
     )
     return match ? match.id : null
-  }, [attivi])
+  }, [attivi, spente])
 
   const value = useMemo<ModuliValue>(
-    () => ({ attivi, pianoCorrente, moduloAttivo, attiva, disattiva, toggle, applicaPiano }),
-    [attivi, pianoCorrente, moduloAttivo, attiva, disattiva, toggle, applicaPiano]
+    () => ({ attivi, pianoCorrente, moduloAttivo, attiva, disattiva, toggle, applicaPiano, funzioneAttiva, toggleFunzione }),
+    [attivi, pianoCorrente, moduloAttivo, attiva, disattiva, toggle, applicaPiano, funzioneAttiva, toggleFunzione]
   )
 
   return <ModuliContext.Provider value={value}>{children}</ModuliContext.Provider>
