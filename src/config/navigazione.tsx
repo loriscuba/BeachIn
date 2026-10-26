@@ -17,6 +17,17 @@ import {
   ChefHat,
   Beer,
   Bell,
+  BookOpen,
+  Wallet,
+  LayoutGrid,
+  Tablet,
+  QrCode,
+  Package,
+  CalendarX2,
+  ScanLine,
+  Megaphone,
+  Smartphone,
+  UsersRound,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ModuloId } from './moduli'
@@ -42,6 +53,8 @@ export interface SottoVoce {
   badge?: 'richieste' | 'comande' | 'cucina' | 'bar'
   /** Permesso diverso da quello del modulo (es. Impostazioni → Utenti e ruoli). */
   permesso?: 'utenti'
+  /** Icona propria (pulsanti di "Altro" sul telefono); senza, quella della voce padre. */
+  icona?: LucideIcon
 }
 
 /**
@@ -53,24 +66,24 @@ export const navigazione: VoceNav[] = [
   {
     percorso: '/bar', etichetta: 'Bar', icona: Coffee, modulo: 'bar', fase: 5, gruppo: 'Operatività',
     figli: [
-      { percorso: '/bar?tab=listino', etichetta: 'Listino', modulo: 'bar' },
-      { percorso: '/bar?tab=conti', etichetta: 'Conti', modulo: 'bar' },
-      { percorso: '/comande', etichetta: 'Comande', modulo: 'comande', badge: 'comande' },
+      { percorso: '/bar?tab=listino', etichetta: 'Listino', icona: BookOpen, modulo: 'bar' },
+      { percorso: '/bar?tab=conti', etichetta: 'Conti', icona: Wallet, modulo: 'bar' },
+      { percorso: '/comande', etichetta: 'Comande', icona: Bell, modulo: 'comande', badge: 'comande' },
     ],
   },
   {
     percorso: '/ristorante', etichetta: 'Ristorante', icona: UtensilsCrossed, modulo: 'ristorante', fase: 5, gruppo: 'Operatività',
     figli: [
-      { percorso: '/ristorante?tab=prenotazioni', etichetta: 'Prenotazioni', modulo: 'ristorante', badge: 'richieste' },
-      { percorso: '/ristorante?tab=tavoli', etichetta: 'Tavoli', modulo: 'ristorante' },
-      { percorso: '/sala?tab=cameriere', etichetta: 'Comande sala', modulo: 'sala' },
-      { percorso: '/sala?tab=cucina', etichetta: 'Cucina', modulo: 'sala', badge: 'cucina' },
-      { percorso: '/sala?tab=self', etichetta: 'Tablet self', modulo: 'sala' },
-      { percorso: '/sala?tab=qr', etichetta: 'QR tavoli', modulo: 'sala' },
-      { percorso: '/sala?tab=bar', etichetta: 'Coda bar', modulo: 'bar-tavolo', badge: 'bar' },
-      { percorso: '/ristorante?tab=menu', etichetta: 'Menu', modulo: 'ristorante' },
-      { percorso: '/ristorante?tab=magazzino', etichetta: 'Magazzino', modulo: 'ristorante' },
-      { percorso: '/ristorante?tab=giorni', etichetta: 'Gestione giorni', modulo: 'ristorante' },
+      { percorso: '/ristorante?tab=prenotazioni', etichetta: 'Prenotazioni', icona: Inbox, modulo: 'ristorante', badge: 'richieste' },
+      { percorso: '/ristorante?tab=tavoli', etichetta: 'Tavoli', icona: LayoutGrid, modulo: 'ristorante' },
+      { percorso: '/sala?tab=cameriere', etichetta: 'Comande sala', icona: ConciergeBell, modulo: 'sala' },
+      { percorso: '/sala?tab=cucina', etichetta: 'Cucina', icona: ChefHat, modulo: 'sala', badge: 'cucina' },
+      { percorso: '/sala?tab=self', etichetta: 'Tablet self', icona: Tablet, modulo: 'sala' },
+      { percorso: '/sala?tab=qr', etichetta: 'QR tavoli', icona: QrCode, modulo: 'sala' },
+      { percorso: '/sala?tab=bar', etichetta: 'Coda bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
+      { percorso: '/ristorante?tab=menu', etichetta: 'Menu', icona: UtensilsCrossed, modulo: 'ristorante' },
+      { percorso: '/ristorante?tab=magazzino', etichetta: 'Magazzino', icona: Package, modulo: 'ristorante' },
+      { percorso: '/ristorante?tab=giorni', etichetta: 'Gestione giorni', icona: CalendarX2, modulo: 'ristorante' },
     ],
   },
   { percorso: '/cruscotto', etichetta: 'Cruscotto completo', icona: LayoutDashboard, modulo: 'cruscotto', fase: 4, gruppo: 'Operatività' },
@@ -84,25 +97,25 @@ export const navigazione: VoceNav[] = [
   {
     percorso: '/eventi', etichetta: 'Eventi', icona: CalendarDays, modulo: 'eventi', fase: 7, gruppo: 'Gestione',
     figli: [
-      { percorso: '/eventi?tab=calendario', etichetta: 'Calendario', modulo: 'eventi' },
-      { percorso: '/eventi?tab=presenze', etichetta: 'Presenze', modulo: 'eventi' },
+      { percorso: '/eventi?tab=calendario', etichetta: 'Calendario', icona: CalendarDays, modulo: 'eventi' },
+      { percorso: '/eventi?tab=presenze', etichetta: 'Presenze', icona: ScanLine, modulo: 'eventi' },
     ],
   },
 
   {
     percorso: '/sito', etichetta: 'Sito internet', icona: Globe, modulo: 'sito', fase: 8, gruppo: 'Presenza online',
     figli: [
-      { percorso: '/sito?tab=panoramica', etichetta: 'Panoramica', modulo: 'sito' },
-      { percorso: '/sito?tab=marketing', etichetta: 'Sito e marketing', modulo: 'sito' },
-      { percorso: '/sito?tab=app', etichetta: 'App clienti', modulo: 'sito' },
+      { percorso: '/sito?tab=panoramica', etichetta: 'Panoramica', icona: Globe, modulo: 'sito' },
+      { percorso: '/sito?tab=marketing', etichetta: 'Sito e marketing', icona: Megaphone, modulo: 'sito' },
+      { percorso: '/sito?tab=app', etichetta: 'App clienti', icona: Smartphone, modulo: 'sito' },
     ],
   },
 
   {
     percorso: '/impostazioni', etichetta: 'Impostazioni', icona: Settings, modulo: 'impostazioni', fase: 1, gruppo: 'Impostazioni',
     figli: [
-      { percorso: '/impostazioni?tab=generali', etichetta: 'Generali', modulo: 'impostazioni' },
-      { percorso: '/impostazioni?tab=utenti', etichetta: 'Utenti e ruoli', modulo: 'impostazioni', permesso: 'utenti' },
+      { percorso: '/impostazioni?tab=generali', etichetta: 'Generali', icona: Settings, modulo: 'impostazioni' },
+      { percorso: '/impostazioni?tab=utenti', etichetta: 'Utenti e ruoli', icona: UsersRound, modulo: 'impostazioni', permesso: 'utenti' },
     ],
   },
 ]

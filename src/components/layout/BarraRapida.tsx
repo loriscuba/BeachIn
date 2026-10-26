@@ -53,7 +53,7 @@ export function BarraRapida({ onAltro }: { onAltro: () => void }) {
         </button>
       </nav>
       {/* Telefono: barra in basso */}
-      <nav aria-label="Schede rapide" className="fixed inset-x-0 bottom-0 z-30 border-t border-calce-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_-12px_rgba(15,59,76,0.35)] backdrop-blur md:hidden">
+      <nav aria-label="Schede rapide" className="barra-basso fixed inset-x-0 bottom-0 z-30 border-t border-calce-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_-12px_rgba(15,59,76,0.35)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-xl" style={{ gridTemplateColumns: `repeat(${telefono.length + 1}, minmax(0, 1fr))` }}>
           {telefono.map((s) => voce(s, false))}
           <button type="button" onClick={onAltro} className="flex min-h-[56px] flex-col items-center justify-center gap-1 py-1.5 text-[11px] font-semibold text-profondo/45">

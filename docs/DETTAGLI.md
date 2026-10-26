@@ -25,7 +25,13 @@ Aggiornare qui quando cambia un modulo.
   Senza Supabase utenti demo `admin`, `cameriere`, `cucina`, `barista` (password `lido`, tasti rapidi sotto il login); la sessione
   demo è per scheda (sessionStorage, ultima usata in localStorage): tre schede dello stesso browser possono essere tre utenti.
 - `Sidebar`: su PC a scomparsa (hamburger nella `Topbar`, colonna che scorre fuori `lg:-ml-64`, scelta ricordata in
-  localStorage `beachin.menu.v1`); su telefono e tablet pannello sopra i contenuti aperto da Altro/Menu.
+  localStorage `beachin.menu.v1`); su tablet pannello da sinistra aperto da Menu; sul telefono non c'è (`max-md:hidden`).
+- **Telefono, "Altro"** (`components/layout/MenuGriglia.tsx`, richiesta di Loris 26/10: niente menu a elenco, poco ergonomico):
+  pannello dal basso con tutte le sezioni come pulsanti con icona uguali a quelli della barra in basso (griglia a 4 colonne,
+  icone a linee neutre, colore dell'area solo sulla sezione aperta come puntino accanto al titolo e come velo leggero del riquadro di ogni gruppo, badge), divise per area
+  ("Generale" per le voci senza sottomenu, poi una per voce con sottomenu); voci da `useVociMenu()`. Si chiude toccando
+  fuori, con la X, scegliendo una sezione o cambiando pagina. Barra delle schede scura in tema scuro (`.barra-basso`);
+  pulsante Esci della topbar con stile proprio in tema scuro (`.bi-esci`); badge "Dati dimostrativi" solo da `sm`.
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
 - (ott 2026) **Nuovo look + tema chiaro/scuro**: interruttore sole/luna nella `Topbar` (hook `useTema`, localStorage
   `beachin.tema.v1`, default scuro) → `data-tema` sulla radice di `AppShell`. In `styles/index.css`: sfondo a luci sfumate
@@ -330,9 +336,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   in app portano lo stesso link.
 - **Pagina pubblica** `/invito?c=` (`src/pages/InvitoEvento.tsx`): QR grande + codice + dettagli; dice se l'ingresso è registrato.
 - **App admin → Ingressi** (tab visibile col modulo `eventi`, `src/components/eventi/IngressiEventi.tsx`): scelta evento (default
-  oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore `ideal`, ripiego `video:true`; errore spiegato per tipo
-  con Riprova) o codice a mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento / non confermata / sconosciuto
-  (campanello). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
+  oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore `ideal` 1920×1080, ripiego `video:true`; ~11 letture/s alternando riquadro centrale
+  a piena risoluzione e fotogramma intero ridotto, ogni 4 giri anche colori invertiti; errore spiegato per tipo con Riprova) o codice a mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento (tasto "Passa a quell'evento") / non confermata / sconosciuto
+  (campanello); l'esito viene portato in vista (sta sotto la fotocamera). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
 - **Gestionale Eventi** a sottomenu `?tab=calendario|presenze`: Presenze (`src/components/eventi/PresenzeEventi.tsx`) con KPI
   (inviti, attese, entrate, mancanti) e tabella invitati: codice (link all'invito), stato, segna/annulla a mano.
   **Reinvia invito** (se c'è l'email): `reinviaInvito(id)` imposta `invioTs` → colonna `invio_ts` (migrazione `0007_reinvia_invito.sql`),

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { BarraRapida } from './BarraRapida'
+import { MenuGriglia } from './MenuGriglia'
 import { useSchedeRapide } from '@/hooks/useNavStaff'
 import { attivaCacheApp, impostaManifest } from '@/lib/notifichePush'
 import { precaricaPagine } from '@/lib/precarica'
@@ -82,6 +83,7 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
   const { pathname } = useLocation()
   const [tema] = useTema()
   const schede = useSchedeRapide()
+  const [griglia, setGriglia] = useState(false)
   // a riposo il telefono scarica in anticipo le pagine delle schede del ruolo: il primo tocco è immediato
   useEffect(() => precaricaPagine(schede.map((s) => s.percorso)), [schede.map((s) => s.id).join()]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -100,7 +102,9 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
   return (
     <div className="shell-bg flex h-[100dvh] overflow-hidden" data-tema={tema} style={{ ['--accento' as string]: coloreArea }}>
       <Sidebar aperta={menuAperto} onChiudi={() => impostaMenu(false)} />
-      <BarraRapida onAltro={() => impostaMenu(true)} />
+      {/* telefono: "Altro" apre la griglia di pulsanti; tablet: "Menu" apre il pannello laterale */}
+      <BarraRapida onAltro={() => (window.matchMedia('(min-width: 768px)').matches ? impostaMenu(true) : setGriglia(true))} />
+      <MenuGriglia aperto={griglia} onChiudi={() => setGriglia(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar

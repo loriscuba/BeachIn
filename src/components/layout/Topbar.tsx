@@ -95,7 +95,7 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
       )}
       <button
         onClick={onEsci}
-        className="grid h-9 w-9 shrink-0 place-content-center rounded-full border border-calce-200 bg-white text-profondo/70 hover:text-profondo"
+        className="bi-esci grid h-9 w-9 shrink-0 place-content-center rounded-full border border-calce-200 bg-white text-profondo/70 hover:text-profondo"
         aria-label="Esci"
         title="Esci"
       >
@@ -104,12 +104,12 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
 
       {/* Badge dati dimostrativi — sempre visibile */}
       <div
-        className="flex items-center gap-1.5 rounded-full bg-tenda/20 px-2.5 py-1 text-xs font-semibold text-[#7A5A12]"
+        // sul telefono non c'è spazio: il badge esce dallo schermo
+        className="hidden items-center gap-1.5 rounded-full bg-tenda/20 px-2.5 py-1 text-xs font-semibold text-[#7A5A12] sm:flex"
         title="Tutti i dati sono statici e mockati: le modifiche restano in memoria e al refresh tornano allo stato iniziale."
       >
         <FlaskConical className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">Dati dimostrativi</span>
-        <span className="sm:hidden">Demo</span>
       </div>
     </header>
   )

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ScanLine, Check, RotateCcw, X, Search, TriangleAlert, OctagonX, Minus, Plus, Users } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
@@ -6,6 +6,7 @@ import { ScannerQr } from '@/components/ScannerQr'
 import { codiceDaTesto, eventoPredefinito, oraDa, verificaInvito, type EsitoInvito } from '@/lib/invitiEventi'
 import { campanello, ding } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
+import type { RichiestaEvento } from '@/data/types'
 
 const dataIt = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 
@@ -27,8 +28,12 @@ export function IngressiEventi() {
     .filter((r) => !cerca || `${r.nome} ${r.codice ?? ''}`.toLowerCase().includes(cerca.toLowerCase()))
     .sort((a, b) => (a.arrivati ?? 0) - (b.arrivati ?? 0) || a.nome.localeCompare(b.nome))
 
-  const controlla = (testo: string) => {
-    const e = verificaInvito(richiesteEventi, codiceDaTesto(testo), eventoId)
+  const riquadro = useRef<HTMLDivElement>(null)
+  // l'esito sta sotto la fotocamera: sul telefono lo porto in vista, se no sembra che la lettura non sia avvenuta
+  useEffect(() => { if (esito) riquadro.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }, [esito])
+
+  const controlla = (testo: string, evento = eventoId) => {
+    const e = verificaInvito(richiesteEventi, codiceDaTesto(testo), evento)
     setEsito(e)
     if (e.tipo === 'ok') { setQuanti(e.r.persone - (e.r.arrivati ?? 0)); ding() } else campanello()
   }
@@ -63,8 +68,9 @@ export function IngressiEventi() {
         <button className="h-11 rounded-xl bg-white px-4 font-semibold text-cabina shadow-sm">Verifica</button>
       </form>
 
-      {esito && <EsitoCard esito={esito} quanti={quanti} setQuanti={setQuanti} onConferma={conferma}
-        onAnnullaIngresso={(id) => { segnaArrivoEvento(id, 0); setEsito(undefined) }} onChiudi={() => setEsito(undefined)} />}
+      {esito && <div ref={riquadro} className="scroll-mb-24"><EsitoCard esito={esito} quanti={quanti} setQuanti={setQuanti} onConferma={conferma}
+        onAnnullaIngresso={(id) => { segnaArrivoEvento(id, 0); setEsito(undefined) }} onChiudi={() => setEsito(undefined)}
+        onCambiaEvento={(r) => { setEventoId(r.eventoId); controlla(r.codice ?? '', r.eventoId) }} /></div>}
 
       <div className="rounded-2xl bg-white p-3 shadow-sm">
         <div className="mb-2 flex items-center gap-2 rounded-xl bg-calce px-3"><Search className="h-4 w-4 text-profondo/40" />
@@ -92,8 +98,9 @@ export function IngressiEventi() {
   )
 }
 
-function EsitoCard({ esito, quanti, setQuanti, onConferma, onAnnullaIngresso, onChiudi }: {
+function EsitoCard({ esito, quanti, setQuanti, onConferma, onAnnullaIngresso, onChiudi, onCambiaEvento }: {
   esito: EsitoInvito; quanti: number; setQuanti: (n: number) => void; onConferma: () => void; onAnnullaIngresso: (id: string) => void; onChiudi: () => void
+  onCambiaEvento: (r: RichiestaEvento) => void
 }) {
   if (esito.tipo === 'ok') {
     const r = esito.r
@@ -131,6 +138,7 @@ function EsitoCard({ esito, quanti, setQuanti, onConferma, onAnnullaIngresso, on
       <p className="mt-1 text-profondo/70">{messaggi.testo}</p>
       <div className="mt-3 flex gap-2">
         {esito.tipo === 'gia_entrato' && <button onClick={() => onAnnullaIngresso(esito.r.id)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-calce-300 px-3 font-semibold text-profondo/70"><RotateCcw className="h-4 w-4" /> Annulla ingresso</button>}
+        {esito.tipo === 'altro_evento' && <button onClick={() => onCambiaEvento(esito.r)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-calce-300 px-3 font-semibold text-cabina">Passa a quell’evento</button>}
         <button onClick={onChiudi} className="ml-auto h-11 rounded-xl bg-profondo px-5 font-semibold text-white">OK</button>
       </div>
     </div>
