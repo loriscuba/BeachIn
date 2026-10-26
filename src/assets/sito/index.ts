@@ -36,3 +36,12 @@ export { logoLido }
  */
 const video = import.meta.glob('./hero.{mp4,webm}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 export const videoHero: string | undefined = Object.values(video)[0]
+
+/**
+ * Foto del sito nel database: le immagini incluse nell'app hanno un indirizzo che cambia a ogni build
+ * (e tra GitHub Pages e Cloudflare), quindi si salvano come `sito:<nome>`; le foto caricate restano il loro URL.
+ */
+const nomeDiFoto = new Map(Object.entries(fotoSito).map(([k, v]) => [v as string, k]))
+export const rifFoto = (url?: string | null) => (url && nomeDiFoto.has(url) ? `sito:${nomeDiFoto.get(url)}` : url ?? null)
+export const fotoDaRif = (rif?: unknown) =>
+  typeof rif === 'string' && rif ? (rif.startsWith('sito:') ? (fotoSito as Record<string, string>)[rif.slice(5)] ?? undefined : rif) : undefined

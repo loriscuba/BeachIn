@@ -27,7 +27,14 @@ Aggiornare qui quando cambia un modulo.
 - **Foto** (`src/lib/immagini.ts`, `fileAImmagine(file, cartella)` → `salvaFoto`): ridimensionate e caricate nello
   Storage Supabase, bucket pubblico `beachin` (cartelle `menu/`, `notizie/`, `eventi/`, `sito/`; migrazione 0004,
   anon può solo inserire). Nei dati resta l'URL; senza Supabase o se l'upload fallisce resta il data URI.
-  Eventi e galleria del sito non sono ancora sincronizzati su DB (le foto restano su Storage, i riferimenti in memoria).
+  Le foto incluse nell'app (`fotoSito`) vanno su DB come `sito:<nome>` (`rifFoto`/`fotoDaRif` in `src/assets/sito`).
+- **Contenuti del sito su DB** (migrazione 0024, ott 2026): `beachin.eventi`, `beachin.galleria_sito` e
+  `beachin.sito_contenuti` (righe `canali` = prenotazioni online attive, `home` = titolo/sottotitolo/testo/foto di apertura,
+  `listino` = `{prezzi: {idVoce: prezzo}}` pubblicati da Tariffe). Il sito (`/sito/anteprima`) e la ComandApp le leggono.
+  Nel context: `homeSito`/`salvaHomeSito`, `prezziListino`, `bozzaListino`/`modificaPrezzoListino` (bozza locale finché non
+  si preme «Pubblica listino»). Sito → Contenuti: editor homepage con Salva e scelta foto, News = le `notizie` vere.
+  Il riquadro «Pagine del sito» è stato tolto (il sito è una pagina sola). Facebook vuoto = pulsante nascosto; sul sito
+  compaiono anche WhatsApp, orari bar e nota orari.
 - `src/data/api.ts`: getter async (150–300ms simulati) per i dati read-only.
 - `src/data/types.ts`: tipi. `src/data/seed/*`: dati iniziali.
 - Palette: NAVY `#0F3B4C`, CABINA `#2E7D9A`, ACQUA `#7FB7A8`, TENDA `#F2C14E`,

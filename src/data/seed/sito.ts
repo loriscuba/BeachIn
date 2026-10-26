@@ -143,12 +143,12 @@ const rng = creaRng(5151)
 export const statoSito: StatoSito = {
   pagine,
   home: {
-    titolo: 'Lido dei Pini — il tuo angolo di Riviera',
-    sottotitolo: 'Spiaggia, bar e ristorante di pesce in Via Nizza, a Savona',
+    titolo: 'Lido dei Pini',
+    sottotitolo: 'il tuo angolo di Riviera',
     testo:
       'A tre chilometri dal centro di Savona, in riva al mare: docce calde, beach volley, area relax ' +
       'e un ristorante dove il pesce freschissimo lo scegli direttamente dal banco.',
-    immagine: 'hero-spiaggia-alba',
+    immagine: '',
   },
   galleria,
   news,

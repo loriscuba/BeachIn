@@ -29,6 +29,7 @@ import type {
   StatoComanda,
   Evento,
   FotoGalleria,
+  ContenutoHome,
   PaginaSito,
   Piatto,
   SezioneMenu,
@@ -54,6 +55,7 @@ import { costi as seedCosti } from '@/data/seed/costi'
 import { menu as seedMenu, sezioniMenu as seedSezioni, tavoli as seedTavoli, prenotazioniRistorante as seedPrenotazioniRist, magazzino as seedMagazzino } from '@/data/seed/ristorante'
 import { traduciNome } from '@/lib/menuLingue'
 import { supabase, supabaseAttivo } from '@/lib/supabase'
+import { rifFoto, fotoDaRif } from '@/assets/sito'
 import { useSyncSupabase, type AccessoSync } from '@/hooks/useSyncSupabase'
 import { ricalcolaStato, statoRiga, uscitaChiamata, uscitaDi } from '@/lib/sala'
 
@@ -83,6 +85,7 @@ const SITO: Record<string, AccessoSync> = {
   prenotazioni_ristorante: { modo: 'lettura', colonne: 'id,data,turno,ora,coperti,tavolo_id,stato' },
   richieste_ristorante: { modo: 'nuove', colonne: 'id,ricevuta_il,data,turno,ora,coperti,stato,ts' },
   richieste_eventi: { modo: 'scrittura' },
+  eventi: LETTURA, galleria_sito: LETTURA, sito_contenuti: LETTURA,
 }
 export const PAGINE_CLIENTI: Record<string, (cerca: URLSearchParams) => Record<string, AccessoSync>> = {
   '/tavolo': () => ({ ...LISTINI, tavoli_qr: { modo: 'nuove' }, comande_sala: { modo: 'nuove' } }),
@@ -111,6 +114,15 @@ import { codiceDaTesto, nuovoCodiceInvito, urlInvito } from '@/lib/invitiEventi'
 
 const clona = <T,>(v: T): T =>
   typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v))
+
+/** Riga di `beachin.sito_contenuti`: `canali`, `home`, `listino`. */
+interface ContenutoSito { id: string; valore: unknown }
+const CANALI_INIZIALI = { ombrelloni: true, ristorante: true, eventi: true }
+const contenutiIniziali = (): ContenutoSito[] => [
+  { id: 'canali', valore: { ...CANALI_INIZIALI } },
+  { id: 'home', valore: clona(statoSito.home) },
+  { id: 'listino', valore: { prezzi: {} } },
+]
 
 export interface AssegnaOpzioni {
   clienteId?: string
@@ -207,6 +219,14 @@ interface DemoDataValue {
   listinoPubblicato: boolean
   canaliPrenotazione: CanaliPrenotazione
   impostaCanalePrenotazione: (canale: CanalePrenotazione, attivo: boolean) => void
+  /** Titolo, sottotitolo, testo e foto di apertura del sito (Sito → Contenuti). */
+  homeSito: ContenutoHome
+  salvaHomeSito: (home: ContenutoHome) => void
+  /** Prezzi del listino ombrelloni pubblicati sul sito (id voce → prezzo), sopra quelli iniziali. */
+  prezziListino: Record<string, number>
+  /** Prezzi cambiati in Tariffe e non ancora pubblicati. `null` toglie la modifica. */
+  bozzaListino: Record<string, number>
+  modificaPrezzoListino: (id: string, prezzo: number | null) => void
 
   // Azioni arenile
   assegnaPostazione: (id: string, opz: AssegnaOpzioni) => void
@@ -433,8 +453,28 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     clona(statoSito.prenotazioni)
   )
   const [pagine, setPagine] = useState<PaginaSito[]>(() => clona(statoSito.pagine))
-  const [listinoPubblicato, setListinoPubblicato] = useState(true)
-  const [canaliPrenotazione, setCanaliPrenotazione] = useState<CanaliPrenotazione>({ ombrelloni: true, ristorante: true, eventi: true })
+  // Contenuti del sito su Supabase (`sito_contenuti`, una riga per voce): canali di prenotazione, homepage, prezzi del listino.
+  const [contenutiSito, setContenutiSito] = useState<ContenutoSito[]>(contenutiIniziali)
+  useSyncSupabase({
+    tabella: 'sito_contenuti', accesso: accessoDi('sito_contenuti'), righe: contenutiSito, setRighe: setContenutiSito, semina: true,
+    aRiga: (c) => ({ id: c.id, valore: c.id === 'home' ? { ...(c.valore as ContenutoHome), immagine: rifFoto((c.valore as ContenutoHome).immagine) ?? '' } : c.valore }),
+    daRiga: (r) => ({ id: r.id, valore: r.id === 'home' ? { ...(r.valore as ContenutoHome), immagine: fotoDaRif((r.valore as ContenutoHome).immagine) ?? '' } : r.valore }),
+    ordina: (a, b) => a.id.localeCompare(b.id),
+  })
+  const contenuto = <T,>(id: string, base: T): T => ({ ...base, ...(contenutiSito.find((c) => c.id === id)?.valore as T | undefined) })
+  const canaliPrenotazione = contenuto<CanaliPrenotazione>('canali', CANALI_INIZIALI)
+  const homeSito = contenuto<ContenutoHome>('home', statoSito.home)
+  const prezziListino = contenuto<{ prezzi: Record<string, number> }>('listino', { prezzi: {} }).prezzi ?? {}
+  const scriviContenuto = useCallback((id: string, valore: (prima: unknown) => unknown) => {
+    setContenutiSito((prev) => {
+      const prima = prev.find((c) => c.id === id)
+      return prima ? prev.map((c) => (c.id === id ? { id, valore: valore(c.valore) } : c)) : [...prev, { id, valore: valore(undefined) }]
+    })
+  }, [])
+  const [bozzaListino, setBozzaListino] = useState<Record<string, number>>({})
+  const listinoPubblicato = Object.keys(bozzaListino).length === 0
+  const bozzaRef = useRef(bozzaListino)
+  bozzaRef.current = bozzaListino
   const [clientiAggiunti, setClientiAggiunti] = useState<Cliente[]>([])
   const [richiesteRistorante, setRichiesteRistorante] = useState<RichiestaRistorante[]>([])
   const [giorniChiusi, setGiorniChiusi] = useState<GiornoChiuso[]>([])
@@ -442,6 +482,23 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const [postaCliente, setPostaCliente] = useState<Email[]>([])
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
+  useSyncSupabase({
+    tabella: 'eventi', accesso: accessoDi('eventi'), righe: eventi, setRighe: setEventi, semina: true,
+    aRiga: (e) => ({
+      id: e.id, nome: e.nome, tipo: e.tipo, data: e.data, budget: e.budget, costi_sostenuti: e.costiSostenuti, ricavi: e.ricavi,
+      partecipanti: e.partecipanti, descrizione: e.descrizione, foto: rifFoto(e.foto), prezzo: e.prezzo ?? null,
+      galleria: (e.galleria ?? []).map((f) => rifFoto(f)),
+    }),
+    daRiga: (r) => ({
+      id: r.id, nome: r.nome as string, tipo: r.tipo as Evento['tipo'], data: r.data as string, budget: Number(r.budget),
+      costiSostenuti: Number(r.costi_sostenuti), ricavi: Number(r.ricavi), partecipanti: Number(r.partecipanti),
+      descrizione: (r.descrizione as string) ?? '',
+      ...(fotoDaRif(r.foto) ? { foto: fotoDaRif(r.foto) } : {}),
+      ...(r.prezzo != null ? { prezzo: Number(r.prezzo) } : {}),
+      ...((r.galleria as unknown[] | null)?.length ? { galleria: (r.galleria as unknown[]).map(fotoDaRif).filter((f): f is string => !!f) } : {}),
+    }),
+    ordina: (a, b) => String(a.data).localeCompare(String(b.data)),
+  })
   const [menu, setMenu] = useState<Piatto[]>(() => clona(seedMenu))
   const [sezioniMenu, setSezioniMenu] = useState<SezioneMenu[]>(() => clona(seedSezioni))
   // Sync Supabase (se configurato): menu + sezioni (editor/assistente vocale) e comande (ComandApp ↔ bar)
@@ -466,6 +523,12 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
   const [galleria, setGalleria] = useState<FotoGalleria[]>(() => clona(statoSito.galleria))
+  useSyncSupabase({
+    tabella: 'galleria_sito', accesso: accessoDi('galleria_sito'), righe: galleria, setRighe: setGalleria, semina: true,
+    aRiga: (f, i) => ({ id: f.id, titolo: f.titolo, immagine: rifFoto(f.immagine), ordine: i }),
+    daRiga: (r) => ({ id: r.id, titolo: (r.titolo as string) ?? '', ordine: Number(r.ordine), ...(fotoDaRif(r.immagine) ? { immagine: fotoDaRif(r.immagine) } : {}) }),
+    ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
+  })
   // App clienti: news e lavagnetta, condivise via Supabase (il gestore pubblica, i telefoni dei clienti leggono)
   const [notizie, setNotizie] = useState<Notizia[]>(() => clona(seedNotizie))
   const [lavagnetta, setLavagnetta] = useState<VoceLavagnetta[]>(() => clona(seedLavagnetta))
@@ -1314,11 +1377,26 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     setPagine((prev) => prev.map((p) => (p.id === id ? { ...p, pubblicata: true } : p)))
   }, [])
 
-  const pubblicaListino = useCallback(() => setListinoPubblicato(true), [])
+  const modificaPrezzoListino = useCallback((id: string, prezzo: number | null) => {
+    setBozzaListino((b) => {
+      const n = { ...b }
+      if (prezzo === null || !Number.isFinite(prezzo)) delete n[id]
+      else n[id] = prezzo
+      return n
+    })
+  }, [])
+  const pubblicaListino = useCallback(() => {
+    const bozza = bozzaRef.current
+    scriviContenuto('listino', (v) => ({ prezzi: { ...((v as { prezzi?: Record<string, number> } | undefined)?.prezzi ?? {}), ...bozza } }))
+    setBozzaListino({})
+  }, [scriviContenuto])
 
   const impostaCanalePrenotazione = useCallback((canale: CanalePrenotazione, attivo: boolean) => {
-    setCanaliPrenotazione((c) => ({ ...c, [canale]: attivo }))
-  }, [])
+    scriviContenuto('canali', (v) => ({ ...CANALI_INIZIALI, ...(v as CanaliPrenotazione | undefined), [canale]: attivo }))
+  }, [scriviContenuto])
+  const salvaHomeSito = useCallback((home: ContenutoHome) => {
+    scriviContenuto('home', () => home)
+  }, [scriviContenuto])
 
   const reset = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
@@ -1327,17 +1405,18 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     setCosti(clona(seedCosti))
     setPrenotazioni(clona(statoSito.prenotazioni))
     setPagine(clona(statoSito.pagine))
-    setListinoPubblicato(true)
-    setCanaliPrenotazione({ ombrelloni: true, ristorante: true, eventi: true })
+    setBozzaListino({})
+    // con Supabase canali, homepage, listino, eventi e galleria sono contenuti reali del gestore: il reset demo non li tocca
+    if (!supabaseAttivo) setContenutiSito(contenutiIniziali())
     setClientiAggiunti([])
     if (!supabaseAttivo) setRichiesteRistorante([])
     setRichiesteEventi([])
     setPostaCliente([])
     setPostaAdmin([])
-    setEventi(clona(seedEventi))
+    if (!supabaseAttivo) setEventi(clona(seedEventi))
     // con Supabase menu e sezioni sono dati reali condivisi: il reset demo non li tocca
     if (!supabaseAttivo) { setMenu(clona(seedMenu)); setSezioniMenu(clona(seedSezioni)) }
-    setGalleria(clona(statoSito.galleria))
+    if (!supabaseAttivo) setGalleria(clona(statoSito.galleria))
     // con Supabase news e lavagnetta sono contenuti reali del gestore: il reset demo non li tocca
     if (!supabaseAttivo) { setNotizie(clona(seedNotizie)); setLavagnetta(clona(seedLavagnetta)) }
     if (!supabaseAttivo) { setComande([]); setComandeSala([]) }
@@ -1451,6 +1530,11 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       listinoPubblicato,
       canaliPrenotazione,
       impostaCanalePrenotazione,
+      homeSito,
+      salvaHomeSito,
+      prezziListino,
+      bozzaListino,
+      modificaPrezzoListino,
       assegnaPostazione,
       liberaPostazione,
       spostaPostazione,
@@ -1566,6 +1650,11 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       listinoPubblicato,
       canaliPrenotazione,
       impostaCanalePrenotazione,
+      homeSito,
+      salvaHomeSito,
+      prezziListino,
+      bozzaListino,
+      modificaPrezzoListino,
       assegnaPostazione,
       liberaPostazione,
       spostaPostazione,

@@ -21,14 +21,13 @@ const tipologie: TipologiaPostazione[] = [
 ]
 
 export default function Tariffe() {
-  const { listinoPubblicato, pubblicaListino } = useDemoData()
+  const { listinoPubblicato, pubblicaListino, prezziListino, bozzaListino, modificaPrezzoListino } = useDemoData()
   const [tariffe, setTariffe] = useState<VoceTariffa[]>([])
   const [accessorie, setAccessorie] = useState<TariffaAccessoria[]>([])
   const [caricato, setCaricato] = useState(false)
 
   const [periodo, setPeriodo] = useState<Periodo>('alta')
   const [durata, setDurata] = useState<Durata>('giornaliera')
-  const [override, setOverride] = useState<Record<string, number>>({})
 
   useEffect(() => {
     Promise.all([getTariffe(), getTariffeAccessorie()]).then(([t, a]) => {
@@ -124,15 +123,17 @@ export default function Tariffe() {
                           <td key={t} className="px-2 py-1 text-right text-profondo/25">—</td>
                         )
                       }
-                      const val = override[voce.id] ?? voce.prezzo
+                      const pubblicato = prezziListino[voce.id] ?? voce.prezzo
+                      const val = bozzaListino[voce.id] ?? pubblicato
                       return (
                         <td key={t} className="px-2 py-1 text-right">
                           <input
                             type="number"
                             value={val}
-                            onChange={(e) =>
-                              setOverride((o) => ({ ...o, [voce.id]: Number(e.target.value) }))
-                            }
+                            onChange={(e) => {
+                              const n = Number(e.target.value)
+                              modificaPrezzoListino(voce.id, e.target.value === '' || n === pubblicato ? null : n)
+                            }}
                             className="num w-20 rounded-md border border-transparent bg-transparent px-2 py-1 text-right font-medium text-profondo hover:border-calce-200 focus-visible:focus-ring"
                           />
                         </td>

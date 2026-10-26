@@ -528,7 +528,8 @@ export interface ContenutoHome {
   titolo: string
   sottotitolo: string
   testo: string
-  immagine: string // etichetta descrittiva (placeholder)
+  /** Foto di apertura del sito (URL; vuoto = video o foto dal drone predefinita). */
+  immagine: string
 }
 
 export interface FotoGalleria {
