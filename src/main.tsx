@@ -9,6 +9,7 @@ import { ModuliProvider } from './context/ModuliContext'
 import { SessioneProvider, useSessione } from './context/SessioneContext'
 import { caricaImpostazioni, sottoscriviImpostazioni } from './lib/impostazioni'
 import './styles/index.css'
+import './lib/bloccoZoom'
 
 // Le pagine leggono `config` direttamente: quando cambiano le impostazioni (salvataggio o Realtime) rimonto il router.
 function Router() {
