@@ -988,7 +988,7 @@ function ConsensoPrivacy({ checked, onChange }: { checked: boolean; onChange: (v
       <label className="col-span-2 flex items-start gap-2.5 text-sm text-profondo/75">
         <input type="checkbox" required checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-boa" />
         <span>
-          Ho letto l’<button type="button" onClick={() => setAperta(true)} className="font-semibold text-cabina underline underline-offset-2">informativa sul trattamento dei dati personali</button> e acconsento al trattamento per gestire la mia richiesta. <span className="text-boa">*</span>
+          Ho letto l’<span role="button" tabIndex={0} onClick={() => setAperta(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAperta(true) } }} className="cursor-pointer font-semibold text-cabina underline underline-offset-2">informativa sul trattamento dei dati personali</span> e acconsento al trattamento per gestire la mia richiesta. <span className="text-boa">*</span>
         </span>
       </label>
       {aperta && (
