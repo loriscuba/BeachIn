@@ -8,6 +8,7 @@ import { DemoDataProvider, PAGINE_CLIENTI } from './context/DemoDataContext'
 import { ModuliProvider } from './context/ModuliContext'
 import { SessioneProvider, useSessione } from './context/SessioneContext'
 import { caricaImpostazioni, sottoscriviImpostazioni } from './lib/impostazioni'
+import { avviaPresenza } from './lib/presenza'
 import './styles/index.css'
 import './lib/bloccoZoom'
 
@@ -36,6 +37,8 @@ function Dati({ children }: { children: React.ReactNode }) {
     </DemoDataProvider>
   )
 }
+
+avviaPresenza()
 
 void caricaImpostazioni().finally(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(

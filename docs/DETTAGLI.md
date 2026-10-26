@@ -130,6 +130,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   lettura iniziale (semina i seed se tabella vuota), upsert/delete delle differenze a ogni cambio di stato, ricarica su
   evento Realtime. Progetto: **Demo IPA** (`exchjppslwhbnbzuhfqs`, eu-west-1, condiviso tra demo), schema già creato via connettore MCP Supabase (migration `beachin_schema`). Senza env → tutto come prima (localStorage per le comande). Con Supabase il `reset()` non tocca menu/comande.
 - **IPA Monitor**: vista `beachin.monitor_riepilogo` (migrazione 0009, solo conteggi/date, nessun grant ad anon/authenticated) letta dal collettore `ipa-collect` del cruscotto IPA Monitor (schema `ipamonitor` nello stesso progetto Demo IPA).
+  Utenti online (migrazione 0014): `src/lib/presenza.ts` chiama `beachin.monitor_segnale` ogni minuto a pagina visibile se lo staff è collegato → tabella `beachin.presenze_staff`, vista `beachin.monitor_utenti` (nome, ruolo, ultimo accesso, ultima attività) letta dal collettore.
 
 - **Prenotazioni operative** (`/prenotazioni` nell'app staff, `src/pages/Prenotazioni.tsx`, ex app admin `/adminapp`; `?tab=`
   prenotazioni/menu/app/ingressi; campanello globale nella `Sidebar`), tab **Prenotazioni** (richieste tavolo dal sito da confermare/rifiutare, campanello all'arrivo; **Conferma** apre
