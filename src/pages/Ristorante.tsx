@@ -24,6 +24,7 @@ import { etichetteAllergene, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
 import { urlAdminApp } from '@/lib/adminapp'
 import { GiorniChiusi } from '@/components/GiorniChiusi'
+import { useSchede, SchedaProtetta } from '@/hooks/useFunzioni'
 import { BadgeConta } from '@/components/layout/Sidebar'
 import { disponibilitaTurno, suggerisciTavoli } from '@/lib/disponibilita'
 import { CalendarioMese } from '@/pages/ristorante/CalendarioMese'
@@ -56,7 +57,9 @@ export default function Ristorante() {
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
   const [q, setQ] = useSearchParams()
   // I tavoli ora si gestiscono per giorno dentro Prenotazioni: il vecchio ?tab=tavoli porta lì.
-  const tab = (sezioni.find((x) => x.valore === q.get('tab'))?.valore ?? 'prenotazioni') as Sezione
+  // schede secondo le funzionalità attive del cliente e i permessi del ruolo
+  const { visibili, tab: tabVisibile, livello: livScheda } = useSchede('ristorante', sezioni.map((x) => x.valore), q.get('tab'))
+  const tab = (tabVisibile ?? 'prenotazioni') as Sezione
 
   const oggi = config.oggi
   // Giorno scelto (di default oggi; ?giorno= arriva dalla campanella delle notifiche).
@@ -106,7 +109,8 @@ export default function Ristorante() {
 
   return (
     <div className="space-y-4">
-      <Tabs opzioni={sezioni.map((x) => (x.valore === 'prenotazioni' ? { ...x, badge: daConfermare.length } : x))} valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />
+      {visibili.length > 1 && <Tabs opzioni={sezioni.filter((x) => visibili.includes(x.valore)).map((x) => (x.valore === 'prenotazioni' ? { ...x, badge: daConfermare.length } : x))} valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />}
+      <SchedaProtetta modulo="ristorante" livello={livScheda}>
 
       {tab === 'menu' && (
         <>
@@ -398,6 +402,7 @@ export default function Ristorante() {
           </CardBody>
         </Card>
       )}
+      </SchedaProtetta>
     </div>
   )
 }

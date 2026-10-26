@@ -19,6 +19,7 @@ import { cn } from '@/lib/cn'
 import Marketing from './sito/Marketing'
 import { GestioneLavagnetta, GestioneNews } from '@/components/app/GestioneAppClienti'
 import { QrCodice } from '@/components/QrCodice'
+import { useSchede, SchedaProtetta } from '@/hooks/useFunzioni'
 import { urlComandApp } from '@/lib/comandapp'
 import { fotoSito } from '@/assets/sito'
 
@@ -41,7 +42,9 @@ export default function Sito() {
   const [disp, setDisp] = useState<{ libere: number; totali: number; occupazione: number }>()
   // Sezione da `?tab=` (sottomenu laterale), default Panoramica.
   const [q, setQ] = useSearchParams()
-  const sez = SEZIONI.find((x) => x === q.get('tab')) ?? 'panoramica'
+  // schede secondo le funzionalità attive del cliente e i permessi del ruolo
+  const { visibili, tab: tabVisibile, livello: livScheda } = useSchede('sito', SEZIONI, q.get('tab'))
+  const sez: Sezione = tabVisibile ?? 'panoramica'
   const setSez = (v: Sezione) => setQ({ tab: v })
   // Bozza dell'editor homepage: si pubblica con «Salva» (finché non cambia, segue quella salvata)
   const [bozzaHome, setBozzaHome] = useState<ContenutoHome>()
@@ -86,7 +89,7 @@ export default function Sito() {
         <Tabs
           valore={sez}
           onChange={setSez}
-          opzioni={[
+          opzioni={([
             { valore: 'panoramica', etichetta: 'Panoramica' },
             { valore: 'prenotazioni', etichetta: `Prenotazioni${daConfermare ? ` (${daConfermare})` : ''}` },
             { valore: 'posta', etichetta: `Posta${postaNonLetta ? ` (${postaNonLetta})` : ''}` },
@@ -94,13 +97,14 @@ export default function Sito() {
             { valore: 'interazioni', etichetta: 'Recensioni e messaggi' },
             { valore: 'marketing', etichetta: 'Sito e marketing' },
             { valore: 'app', etichetta: 'App clienti' },
-          ]}
+          ] as { valore: Sezione; etichetta: string }[]).filter((x) => visibili.includes(x.valore))}
         />
         <Link to="/sito/anteprima" target="_blank" rel="noopener noreferrer">
           <Button variante="primario" dimensione="sm"><ExternalLink className="h-4 w-4" /> Anteprima sito</Button>
         </Link>
       </div>
 
+      <SchedaProtetta modulo="sito" livello={livScheda}>
       {sez === 'marketing' && <Marketing />}
 
       {sez === 'app' && (
@@ -388,7 +392,7 @@ export default function Sito() {
               <CardHeader
                 titolo={<span className="inline-flex items-center gap-2"><Newspaper className="h-4 w-4 text-cabina" /> News</span>}
                 sottotitolo="Quelle che i clienti vedono nell'app"
-                azione={<Link to="/sito?tab=app" className="text-xs font-semibold text-cabina hover:underline">Gestisci</Link>}
+                azione={visibili.includes('app') && <Link to="/sito?tab=app" className="text-xs font-semibold text-cabina hover:underline">Gestisci</Link>}
               />
               <CardBody className="pt-1">
                 {notizie.length === 0 ? <Vuoto testo="Nessuna news. Scrivila da App clienti." /> : (
@@ -448,6 +452,7 @@ export default function Sito() {
           </Card>
         </div>
       )}
+      </SchedaProtetta>
     </div>
   )
 }

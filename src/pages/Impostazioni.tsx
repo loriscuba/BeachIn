@@ -4,13 +4,13 @@ import { useSessione } from '@/context/SessioneContext'
 import { AccessoNegato } from '@/components/AccessoNegato'
 import { SolaLettura } from '@/components/SolaLettura'
 import UtentiRuoli from '@/pages/impostazioni/UtentiRuoli'
-import { Settings2, Save, Umbrella, CalendarRange, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check } from 'lucide-react'
+import { Settings2, Save, Umbrella, CalendarRange, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check, ChevronDown } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
-import { MODULI, PIANI, type InfoModulo } from '@/config/moduli'
+import { MODULI, PIANI, funzioniDi, type InfoModulo } from '@/config/moduli'
 import { config, STATI_POSTAZIONE } from '@/data/config'
 import { data } from '@/lib/formatters'
 import { GRUPPI, valoriCorrenti, salvaImpostazioni, type Valori, type Campo } from '@/lib/impostazioni'
@@ -108,13 +108,18 @@ export default function Impostazioni() {
   const tab = params.get('tab') ?? (lGen > 0 ? 'generali' : 'utenti')
   if (tab === 'utenti') return lUt > 0 ? <UtentiRuoli /> : <AccessoNegato />
   if (lGen === 0) return <AccessoNegato />
-  return lGen === 1 ? <SolaLettura><Generali /></SolaLettura> : <Generali />
+  const pagina = tab === 'moduli' ? <ModuliFunzionalita /> : <Generali />
+  return lGen === 1 ? <SolaLettura>{pagina}</SolaLettura> : pagina
 }
 
-function Generali() {
-  const { reset } = useDemoData()
-  const { moduloAttivo, toggle, applicaPiano, pianoCorrente } = useModuli()
+/**
+ * Moduli e funzionalità del cliente: piani rapidi, moduli on/off e, aprendo un modulo, le sue funzionalità
+ * (le schede della pagina) on/off. Vale per tutti gli utenti; i permessi per ruolo si danno in Utenti e ruoli.
+ */
+function ModuliFunzionalita() {
+  const { moduloAttivo, toggle, applicaPiano, pianoCorrente, funzioneAttiva, toggleFunzione } = useModuli()
   const moduliVendibili = (Object.values(MODULI) as InfoModulo[]).filter((m) => !m.core)
+  const [aperto, setAperto] = useState<string | null>(null)
 
   return (
     <div className="space-y-4">
@@ -123,10 +128,10 @@ function Generali() {
         <CardHeader
           titolo={
             <span className="inline-flex items-center gap-2">
-              <Boxes className="h-4 w-4 text-cabina" /> Moduli e piano
+              <Boxes className="h-4 w-4 text-cabina" /> Moduli e funzionalità
             </span>
           }
-          sottotitolo="BeachIn si vende a moduli: attiva ciò che serve al cliente, il resto è upsell."
+          sottotitolo="BeachIn si vende a moduli: attiva ciò che serve al cliente, fino alle singole funzionalità. Il resto è upsell."
         />
         <CardBody className="space-y-4 pt-1">
           {/* Piani rapidi */}
@@ -146,41 +151,87 @@ function Generali() {
             {pianoCorrente === null && <Badge tono="tenda">Piano personalizzato</Badge>}
           </div>
 
-          {/* Elenco moduli con attivazione dal vivo */}
+          {/* Elenco moduli con attivazione dal vivo; aprendo un modulo, le sue funzionalità */}
           <ul className="divide-y divide-calce-200">
             {moduliVendibili.map((m) => {
               const attivo = moduloAttivo(m.id)
+              const funzioni = funzioniDi(m.id)
+              const accese = funzioni.filter((x) => funzioneAttiva(x.id)).length
+              const espanso = aperto === m.id && funzioni.length > 0
               return (
-                <li key={m.id} className="flex items-center justify-between gap-4 py-2.5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-profondo">{m.nome}</p>
-                    <p className="truncate text-xs text-profondo/55">{m.sottotitolo}</p>
+                <li key={m.id} className="py-2.5">
+                  <div className="flex items-center justify-between gap-4">
+                    <button
+                      type="button"
+                      data-naviga
+                      disabled={!funzioni.length}
+                      onClick={() => setAperto(espanso ? null : m.id)}
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      aria-expanded={espanso}
+                    >
+                      <ChevronDown className={cn('h-4 w-4 shrink-0 text-profondo/40 transition-transform', espanso && 'rotate-180', !funzioni.length && 'invisible')} />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-profondo">
+                          {m.nome}
+                          {attivo && funzioni.length > 0 && (
+                            <span className={cn('ml-2 text-xs font-normal', accese < funzioni.length ? 'text-[#7A5A12]' : 'text-profondo/45')}>
+                              {accese}/{funzioni.length} funzionalità
+                            </span>
+                          )}
+                        </span>
+                        <span className="block truncate text-xs text-profondo/55">{m.sottotitolo}</span>
+                      </span>
+                    </button>
+                    <Interruttore attivo={attivo} onClick={() => toggle(m.id)} si="Attivo" no="Bloccato" />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggle(m.id)}
-                    className={cn(
-                      'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-                      attivo
-                        ? 'bg-acqua/25 text-profondo hover:bg-acqua/40'
-                        : 'bg-calce-200 text-profondo/60 hover:bg-calce-300'
-                    )}
-                    aria-pressed={attivo}
-                  >
-                    {attivo ? <Check className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                    {attivo ? 'Attivo' : 'Bloccato'}
-                  </button>
+                  {espanso && (
+                    <ul className="mt-2 ml-6 space-y-1 border-l border-calce-200 pl-3">
+                      {funzioni.map((x) => (
+                        <li key={x.id} className="flex items-center justify-between gap-3 py-1">
+                          <span className={cn('text-sm', attivo ? 'text-profondo' : 'text-profondo/40')}>{x.nome}</span>
+                          <Interruttore attivo={funzioneAttiva(x.id)} disabilitato={!attivo} onClick={() => toggleFunzione(x.id)} si="Attiva" no="Spenta" piccolo />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               )
             })}
           </ul>
           <p className="text-xs text-profondo/45">
-            In produzione i moduli attivi arrivano dal piano del cliente (dal database). Qui puoi
-            attivarli/disattivarli dal vivo per la demo.
+            Moduli e funzionalità valgono per tutto lo stabilimento{supabaseAttivo ? ' e si salvano nel database (tutti i dispositivi si aggiornano subito)' : ''}.
+            Apri un modulo per accendere o spegnere le singole funzionalità. Cosa può fare ogni ruolo si decide in Utenti e ruoli.
           </p>
         </CardBody>
       </Card>
 
+    </div>
+  )
+}
+
+function Interruttore({ attivo, onClick, si, no, disabilitato, piccolo }: { attivo: boolean; onClick: () => void; si: string; no: string; disabilitato?: boolean; piccolo?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabilitato}
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full font-semibold transition-colors disabled:opacity-40',
+        piccolo ? 'px-2.5 py-0.5 text-[11px]' : 'px-3 py-1 text-xs',
+        attivo ? 'bg-acqua/25 text-profondo hover:bg-acqua/40' : 'bg-calce-200 text-profondo/60 hover:bg-calce-300'
+      )}
+      aria-pressed={attivo}
+    >
+      {attivo ? <Check className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+      {attivo ? si : no}
+    </button>
+  )
+}
+
+function Generali() {
+  const { reset } = useDemoData()
+  return (
+    <div className="space-y-4">
       <ParametriModificabili />
 
       {/* Dati dimostrativi */}

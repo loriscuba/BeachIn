@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
 import { Tabs } from '@/components/ui/Tabs'
+import { useSchede, SchedaProtetta } from '@/hooks/useFunzioni'
 import { euroCent, numero, percento } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { fileAImmagine } from '@/lib/immagini'
@@ -21,11 +22,15 @@ import { etichettaStatoComanda } from '@/lib/comandapp'
  */
 export default function Bar() {
   const [q, setQ] = useSearchParams()
-  const tab = q.get('tab') === 'conti' ? 'conti' : 'listino'
+  // schede secondo le funzionalità attive del cliente e i permessi del ruolo
+  const { visibili, tab, livello } = useSchede('bar', ['listino', 'conti'] as const, q.get('tab'))
+  const nomi = { listino: 'Listino', conti: 'Conti' }
   return (
     <div className="space-y-4">
-      <Tabs valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} opzioni={[{ valore: 'listino', etichetta: 'Listino' }, { valore: 'conti', etichetta: 'Conti' }]} />
-      {tab === 'conti' ? <><Conti /><Giornata /></> : <Listino />}
+      {visibili.length > 1 && tab && <Tabs valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} opzioni={visibili.map((v) => ({ valore: v, etichetta: nomi[v] }))} />}
+      <SchedaProtetta modulo="bar" livello={livello}>
+        {tab === 'conti' ? <><Conti /><Giornata /></> : <Listino />}
+      </SchedaProtetta>
     </div>
   )
 }

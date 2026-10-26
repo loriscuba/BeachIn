@@ -9,7 +9,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { credenzialiValide, entraGestore, esciGestore, profiloDemo, sessioneGestore } from '@/lib/adminapp'
-import { emailAccesso, livelloDi, sezioneDi, type Livello, type Profilo, type Sezione } from '@/lib/permessi'
+import { emailAccesso, livelloDi, livelloFunzioneDi, sezioneDi, type Livello, type Profilo, type Sezione } from '@/lib/permessi'
 import type { ModuloId } from '@/config/moduli'
 
 interface Sessione {
@@ -22,6 +22,8 @@ interface Sessione {
   livello: (sezione: Sezione | null) => Livello
   /** Permesso su un modulo del menu (Panoramica sempre). */
   puo: (modulo: ModuloId | 'utenti', minimo?: Livello) => boolean
+  /** Livello su una funzionalità `modulo.scheda` (mai più alto di quello del modulo). */
+  livelloFunzione: (id: string) => Livello
 }
 
 const Ctx = createContext<Sessione | null>(null)
@@ -97,6 +99,7 @@ export function SessioneProvider({ children }: { children: ReactNode }) {
     return {
       profilo, caricamento, accedi, esci, livello,
       puo: (m, minimo = 1) => livello(m === 'utenti' ? 'utenti' : sezioneDi(m)) >= minimo,
+      livelloFunzione: (id) => livelloFunzioneDi(profilo, id),
     }
   }, [profilo, caricamento, accedi, esci])
 

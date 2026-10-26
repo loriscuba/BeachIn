@@ -1,8 +1,9 @@
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { useSessione } from '@/context/SessioneContext'
-import { SCHEDE_PER_RUOLO, SCHEDE_RAPIDE, navigazione, type SchedaRapida, type SottoVoce, type VoceNav } from '@/config/navigazione'
+import { SCHEDE_PER_RUOLO, SCHEDE_RAPIDE, funzioneDiVoce, navigazione, type SchedaRapida, type SottoVoce, type VoceNav } from '@/config/navigazione'
 import { codaBar, daFareCucina } from '@/lib/sala'
+import { useFunzioni } from '@/hooks/useFunzioni'
 
 /** Contatori dei badge del menu (stile iPhone). */
 export function useConteggiNav(): Record<NonNullable<SottoVoce['badge']>, number> {
@@ -29,7 +30,9 @@ export function useSchedeRapide(): SchedaRapida[] {
   const { moduloAttivo } = useModuli()
   const { puo, profilo } = useSessione()
   const conHome = useConHome()
-  const visibili = SCHEDE_RAPIDE.filter((s) => (s.id === 'home' ? conHome : moduloAttivo(s.modulo) && puo(s.modulo, s.minimo ?? 1)))
+  const { ok } = useFunzioni()
+  const fz = (s: SchedaRapida) => { const id = funzioneDiVoce(s); return !id || ok(id, s.minimo ?? 1) }
+  const visibili = SCHEDE_RAPIDE.filter((s) => (s.id === 'home' ? conHome : moduloAttivo(s.modulo) && puo(s.modulo, s.minimo ?? 1) && fz(s)))
   const ordine = profilo && SCHEDE_PER_RUOLO[profilo.ruolo_id]
   if (!ordine) return visibili
   const prima = ordine.map((id) => visibili.find((s) => s.id === id)).filter((s): s is SchedaRapida => !!s)
@@ -50,8 +53,10 @@ export function useVociMenu(): VoceNav[] {
   const { moduloAttivo } = useModuli()
   const { puo } = useSessione()
   const conHome = useConHome()
+  const { ok } = useFunzioni()
   const visibile = (m: VoceNav['modulo'], permesso?: 'utenti') => (m !== 'panoramica' || conHome) && moduloAttivo(m) && puo(permesso ?? m)
+  const figlioVisibile = (f: SottoVoce) => { const id = funzioneDiVoce(f); return visibile(f.modulo, f.permesso) && (!id || ok(id)) }
   return navigazione
-    .map((v) => (v.figli ? { ...v, figli: v.figli.filter((f) => visibile(f.modulo, f.permesso)) } : v))
+    .map((v) => (v.figli ? { ...v, figli: v.figli.filter(figlioVisibile) } : v))
     .filter((v) => (v.figli ? v.figli.length > 0 : visibile(v.modulo)))
 }

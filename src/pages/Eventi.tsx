@@ -18,6 +18,7 @@ import { etichetteTipoEvento } from '@/lib/etichette'
 import { fileAImmagine, importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 import { Tabs } from '@/components/ui/Tabs'
+import { useSchede, SchedaProtetta } from '@/hooks/useFunzioni'
 import { PresenzeEventi } from '@/components/eventi/PresenzeEventi'
 
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
@@ -26,12 +27,25 @@ const iconaTipo: Record<TipoEvento, typeof Trophy> = {
 const mesiLabel = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 
 export default function Eventi() {
+  // Sottosezione da `?tab=` (sottomenu laterale): calendario o presenze, secondo funzionalità attive e permessi.
+  const [q, setQ] = useSearchParams()
+  const { visibili, tab, livello } = useSchede('eventi', ['calendario', 'presenze'] as const, q.get('tab'))
+  const nomi = { calendario: 'Calendario', presenze: 'Presenze' }
+  return (
+    <div className="space-y-4">
+      {visibili.length > 1 && tab && <Tabs opzioni={visibili.map((v) => ({ valore: v, etichetta: nomi[v] }))}
+        valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />}
+      <SchedaProtetta modulo="eventi" livello={livello}>
+        {tab === 'presenze' ? <PresenzeEventi /> : <CalendarioEventi />}
+      </SchedaProtetta>
+    </div>
+  )
+}
+
+function CalendarioEventi() {
   const { eventi, aggiungiEvento, modificaEvento, eliminaEvento, richiesteEventi, aggiungiPartecipanteEvento, rimuoviPartecipanteEvento, aggiungiFotoEvento, rimuoviFotoEvento } = useDemoData()
   const [sel, setSel] = useState<Evento>()
   const [form, setForm] = useState<{ open: boolean; evento?: Evento }>({ open: false })
-  // Sottosezione da `?tab=` (sottomenu laterale): calendario (default) o presenze.
-  const [q, setQ] = useSearchParams()
-  const tab = q.get('tab') === 'presenze' ? 'presenze' : 'calendario'
   // Calendario diviso in "In corso e prossimi" (da oggi in poi) e "Passati".
   const [periodo, setPeriodo] = useState<'prossimi' | 'passati'>('prossimi')
 
@@ -64,15 +78,8 @@ export default function Eventi() {
   // Versione "viva" dell'evento selezionato: si aggiorna quando cambia l'album.
   const selLive = sel ? eventi.find((x) => x.id === sel.id) ?? sel : undefined
 
-  const schede = (
-    <Tabs opzioni={[{ valore: 'calendario', etichetta: 'Calendario' }, { valore: 'presenze', etichetta: 'Presenze' }]}
-      valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />
-  )
-  if (tab === 'presenze') return <div className="space-y-4">{schede}<PresenzeEventi /></div>
-
   return (
     <div className="space-y-4">
-      {schede}
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi icona={CalendarDays} etichetta="Eventi in stagione" valore={String(eventi.length)} />

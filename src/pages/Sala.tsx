@@ -18,6 +18,8 @@ import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { useSessione } from '@/context/SessioneContext'
 import CodaBar from './sala/CodaBar'
+import { useFunzioni, SchedaProtetta } from '@/hooks/useFunzioni'
+import type { Livello } from '@/lib/permessi'
 import QrTavoli from './sala/QrTavoli'
 import Cameriere from './sala/Cameriere'
 import Cucina from './sala/Cucina'
@@ -30,12 +32,15 @@ export default function Sala() {
   const [params, setParams] = useSearchParams()
   const { comande, comandeSala } = useDemoData()
   const { moduloAttivo } = useModuli()
-  const { puo } = useSessione()
+  const { puo, livello } = useSessione()
+  const { livello: livFunzione } = useFunzioni()
   const conBar = moduloAttivo('bar-tavolo') && puo('bar-tavolo', 1)
-  // chi ha solo la Coda bar (es. Responsabile senza Sala) vede solo quella
-  const conSala = moduloAttivo('sala') && puo('sala', 1)
-  const schede: Scheda[] = [...(conSala ? ['cameriere', 'cucina', 'self', 'qr'] as const : []), ...(conBar ? ['bar' as const] : [])]
+  // chi ha solo la Coda bar (es. Responsabile senza Sala) vede solo quella; le schede della Sala seguono le funzionalità
+  const schedeSala = (['cameriere', 'cucina', 'self', 'qr'] as const).filter((x) => moduloAttivo('sala') && livFunzione(`sala.${x}`) > 0)
+  const conSala = schedeSala.length > 0
+  const schede: Scheda[] = [...schedeSala, ...(conBar ? ['bar' as const] : [])]
   const tab = schede.includes(params.get('tab') as Scheda) ? (params.get('tab') as Scheda) : schede[0]
+  const livScheda = !tab ? 0 : tab === 'bar' ? livello('bar-tavolo') : livFunzione(`sala.${tab}`)
   // tablet in modalità self: resta bloccato anche se si ricarica la pagina
   const [self, setSelf] = useState<StatoSelf | null>(leggiSelf)
 
@@ -48,20 +53,22 @@ export default function Sala() {
         valore={tab}
         onChange={(v) => setParams({ tab: v })}
         opzioni={[
-          ...(conSala ? [
-            { valore: 'cameriere', etichetta: 'Cameriere' },
-            { valore: 'cucina', etichetta: 'Cucina', badge: daFareCucina(comandeSala) },
-            { valore: 'self', etichetta: 'Tablet self' },
-            { valore: 'qr', etichetta: 'QR tavoli' },
-          ] : []),
+          ...[
+            { valore: 'cameriere' as const, etichetta: 'Cameriere' },
+            { valore: 'cucina' as const, etichetta: 'Cucina', badge: daFareCucina(comandeSala) },
+            { valore: 'self' as const, etichetta: 'Tablet self' },
+            { valore: 'qr' as const, etichetta: 'QR tavoli' },
+          ].filter((x) => schedeSala.includes(x.valore)),
           ...(conBar ? [{ valore: 'bar', etichetta: 'Bar', badge: codaBar(comande, comandeSala).daFare.length }] : []),
         ]}
       />}
-      {tab === 'cameriere' && <Cameriere />}
-      {tab === 'cucina' && <Cucina />}
-      {tab === 'self' && <AvvioSelf onAvvia={setSelf} />}
-      {tab === 'qr' && <QrTavoli />}
-      {tab === 'bar' && <CodaBar />}
+      <SchedaProtetta modulo={tab === 'bar' ? 'bar-tavolo' : 'sala'} livello={livScheda as Livello}>
+        {tab === 'cameriere' && <Cameriere />}
+        {tab === 'cucina' && <Cucina />}
+        {tab === 'self' && <AvvioSelf onAvvia={setSelf} />}
+        {tab === 'qr' && <QrTavoli />}
+        {tab === 'bar' && <CodaBar />}
+      </SchedaProtetta>
     </div>
   )
 }

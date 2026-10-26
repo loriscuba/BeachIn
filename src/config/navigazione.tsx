@@ -28,9 +28,10 @@ import {
   Megaphone,
   Smartphone,
   UsersRound,
+  Boxes,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import type { ModuloId } from './moduli'
+import { FUNZIONI, idFunzione, type ModuloId } from './moduli'
 
 export interface VoceNav {
   percorso: string
@@ -115,6 +116,7 @@ export const navigazione: VoceNav[] = [
     percorso: '/impostazioni', etichetta: 'Impostazioni', icona: Settings, modulo: 'impostazioni', fase: 1, gruppo: 'Impostazioni',
     figli: [
       { percorso: '/impostazioni?tab=generali', etichetta: 'Generali', icona: Settings, modulo: 'impostazioni' },
+      { percorso: '/impostazioni?tab=moduli', etichetta: 'Moduli e funzionalità', icona: Boxes, modulo: 'impostazioni' },
       { percorso: '/impostazioni?tab=utenti', etichetta: 'Utenti e ruoli', icona: UsersRound, modulo: 'impostazioni', permesso: 'utenti' },
     ],
   },
@@ -141,11 +143,13 @@ export interface SchedaRapida {
   /** Livello minimo del permesso (1 lettura, 2 modifica). */
   minimo?: 1 | 2
   badge?: SottoVoce['badge']
+  /** Funzionalità da controllare quando il percorso non ha `?tab=` del modulo (es. Prenota = Ristorante → Prenotazioni). */
+  funzione?: string
 }
 
 export const SCHEDE_RAPIDE: SchedaRapida[] = [
   { id: 'home', percorso: '/', etichetta: 'Home', icona: Home, modulo: 'panoramica' },
-  { id: 'prenotazioni', percorso: '/prenotazioni', etichetta: 'Prenota', icona: Inbox, modulo: 'ristorante', minimo: 2, badge: 'richieste' },
+  { id: 'prenotazioni', percorso: '/prenotazioni', etichetta: 'Prenota', icona: Inbox, modulo: 'ristorante', minimo: 2, badge: 'richieste', funzione: 'ristorante.prenotazioni' },
   { id: 'cameriere', percorso: '/sala?tab=cameriere', etichetta: 'Cameriere', icona: ConciergeBell, modulo: 'sala' },
   { id: 'cucina', percorso: '/sala?tab=cucina', etichetta: 'Cucina', icona: ChefHat, modulo: 'sala', badge: 'cucina' },
   { id: 'bar', percorso: '/sala?tab=bar', etichetta: 'Bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
@@ -159,4 +163,12 @@ export const SCHEDE_PER_RUOLO: Record<string, SchedaRapida['id'][]> = {
   cucina: ['cucina', 'cameriere'],
   barista: ['bar', 'comande', 'cucina'],
   bar: ['comande', 'bar'],
+}
+
+/** Funzionalità a cui porta una voce del menu (`/modulo?tab=scheda`), se è nel catalogo `FUNZIONI`. */
+export function funzioneDiVoce(v: { modulo: ModuloId; percorso: string; funzione?: string }): string | null {
+  if (v.funzione) return v.funzione
+  const tab = new URLSearchParams(v.percorso.split('?')[1]).get('tab')
+  const id = tab ? idFunzione(v.modulo, tab) : null
+  return id && FUNZIONI.some((x) => x.id === id) ? id : null
 }

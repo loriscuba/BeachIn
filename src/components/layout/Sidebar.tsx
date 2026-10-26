@@ -3,7 +3,7 @@ import { NavLink, Link, useLocation } from 'react-router-dom'
 import { X, Lock, ChevronDown } from 'lucide-react'
 import { useSessione } from '@/context/SessioneContext'
 import type { ModuloId } from '@/config/moduli'
-import { navigazione, gruppiNav, type SottoVoce, type VoceNav } from '@/config/navigazione'
+import { navigazione, gruppiNav, funzioneDiVoce, type SottoVoce, type VoceNav } from '@/config/navigazione'
 import { useModuli } from '@/context/ModuliContext'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
@@ -11,6 +11,7 @@ import { Logo } from './Logo'
 import { accento } from '@/config/accenti'
 import { cn } from '@/lib/cn'
 import { useConHome, useConteggiNav } from '@/hooks/useNavStaff'
+import { useFunzioni } from '@/hooks/useFunzioni'
 import { campanello, sbloccaAudio } from '@/lib/suoni'
 
 interface SidebarProps {
@@ -42,6 +43,9 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   // la Panoramica (numeri di tutta la struttura) solo per chi gestisce
   const conHome = useConHome()
   const visibile = (m: ModuloId, permesso?: 'utenti') => (m !== 'panoramica' || conHome) && moduloAttivo(m) && puo(permesso ?? m)
+  // e, per le sottovoci, funzionalità attiva per il cliente e permessa al ruolo
+  const { ok } = useFunzioni()
+  const figlioVisibile = (f: SottoVoce) => { const id = funzioneDiVoce(f); return visibile(f.modulo, f.permesso) && (!id || ok(id)) }
   const { richiesteRistorante } = useDemoData()
   const { pathname, search } = useLocation()
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
@@ -100,7 +104,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
             // Si mostrano solo i moduli attivi (i bloccati restano raggiungibili da Impostazioni → Moduli)
             const voci = navigazione
               .filter((v) => v.gruppo === gruppo)
-              .map((v) => (v.figli ? { ...v, figli: v.figli.filter((f) => visibile(f.modulo, f.permesso)) } : v))
+              .map((v) => (v.figli ? { ...v, figli: v.figli.filter(figlioVisibile) } : v))
               .filter((v) => (v.figli ? v.figli.length > 0 : visibile(v.modulo)))
             if (voci.length === 0) return null
             return (

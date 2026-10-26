@@ -13,13 +13,12 @@ import { disponibilitaTurno, sistemazionePer } from '@/lib/disponibilita'
 import { GiorniChiusi } from '@/components/GiorniChiusi'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
-import { useSessione } from '@/context/SessioneContext'
 import { GestioneLavagnetta, GestioneNews } from '@/components/app/GestioneAppClienti'
 import { cn } from '@/lib/cn'
 import AttivaNotifiche from '@/components/AttivaNotifiche'
 import { Caricamento } from '@/components/ui/Caricamento'
 import { lazyRiprova } from '@/lib/lazyRiprova'
-import { useModuli } from '@/context/ModuliContext'
+import { useFunzioni } from '@/hooks/useFunzioni'
 
 // menu a voce e lettore QR degli ingressi (jsQR) solo quando si aprono: la pagina sul telefono parte leggera
 const AssistenteVocale = lazyRiprova(() => import('@/pages/AssistenteVocale').then((m) => ({ default: () => <m.default /> })))
@@ -32,18 +31,18 @@ export default function Prenotazioni() {
   const [daConfermareTavolo, setDaConfermareTavolo] = useState<RichiestaRistorante>()
   const [chiusureAperte, setChiusureAperte] = useState(false)
   const chiusureFuture = giorniChiusi.filter((g) => g.data >= config.oggi).length
-  const { moduloAttivo } = useModuli()
-  const { puo } = useSessione()
-  // schede secondo il ruolo: la pagina è operativa, serve il permesso di modifica
-  const conRistorante = puo('ristorante', 2)
-  const conApp = puo('sito', 2)
-  const conEventi = moduloAttivo('eventi') && puo('eventi', 2)
+  const { ok } = useFunzioni()
+  // schede secondo funzionalità attive e ruolo: la pagina è operativa, serve il permesso di modifica
+  const conRistorante = ok('ristorante.prenotazioni', 2)
+  const conMenu = ok('ristorante.menu', 2)
+  const conApp = ok('sito.app', 2)
+  const conEventi = ok('eventi.presenze', 2)
   type Scheda = 'prenotazioni' | 'menu' | 'app' | 'ingressi'
   // `?tab=` per i link diretti (es. Eventi → Presenze apre gli ingressi)
   const richiesta = new URLSearchParams(useLocation().search).get('tab') as Scheda | null
-  const ammessa = (t: Scheda | null) => (t === 'prenotazioni' || t === 'menu' ? conRistorante : t === 'app' ? conApp : t === 'ingressi' ? conEventi : false)
-  const [tab, setTab] = useState<Scheda>(ammessa(richiesta) ? richiesta! : conRistorante ? 'prenotazioni' : conApp ? 'app' : 'ingressi')
-  const colonne = [conRistorante && '1.5fr', conRistorante && '1fr', conApp && '1fr', conEventi && '1.2fr'].filter(Boolean).join('_')
+  const ammessa = (t: Scheda | null) => (t === 'prenotazioni' ? conRistorante : t === 'menu' ? conMenu : t === 'app' ? conApp : t === 'ingressi' ? conEventi : false)
+  const [tab, setTab] = useState<Scheda>(ammessa(richiesta) ? richiesta! : conRistorante ? 'prenotazioni' : conMenu ? 'menu' : conApp ? 'app' : 'ingressi')
+  const colonne = [conRistorante && '1.5fr', conMenu && '1fr', conApp && '1fr', conEventi && '1.2fr'].filter(Boolean).join('_')
   const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
   // il campanello delle richieste nuove suona in tutta l'app staff (menu laterale), non solo qui
 
@@ -54,7 +53,7 @@ export default function Prenotazioni() {
           {conRistorante && <button onClick={() => setTab('prenotazioni')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'prenotazioni' ? 'bg-profondo text-white' : 'text-profondo/60')}>
             <Inbox className="h-4 w-4" /> Prenotazioni {daConfermare.length > 0 && <span className="rounded-full bg-boa px-1.5 text-xs text-white">{daConfermare.length}</span>}
           </button>}
-          {conRistorante && <button onClick={() => setTab('menu')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'menu' ? 'bg-profondo text-white' : 'text-profondo/60')}><Mic className="h-4 w-4" /> Menu</button>}
+          {conMenu && <button onClick={() => setTab('menu')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'menu' ? 'bg-profondo text-white' : 'text-profondo/60')}><Mic className="h-4 w-4" /> Menu</button>}
           {conApp && <button onClick={() => setTab('app')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'app' ? 'bg-profondo text-white' : 'text-profondo/60')}><Newspaper className="h-4 w-4" /> App</button>}
           {conEventi && <button onClick={() => setTab('ingressi')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'ingressi' ? 'bg-profondo text-white' : 'text-profondo/60')}><ScanLine className="h-4 w-4" /> Ingressi</button>}
         </div>
@@ -62,7 +61,7 @@ export default function Prenotazioni() {
 
       <AttivaNotifiche app="admin" descrizione="Ricevi le nuove prenotazioni come notifica, anche a telefono bloccato." />
 
-      {!conRistorante && !conApp && !conEventi && (
+      {!conRistorante && !conMenu && !conApp && !conEventi && (
         <p className="rounded-2xl bg-white p-4 text-sm text-profondo/70 shadow-sm">Il tuo ruolo non ha sezioni in Prenotazioni. Chiedi all'amministratore.</p>
       )}
       {tab === 'prenotazioni' && conRistorante && (
@@ -121,7 +120,7 @@ export default function Prenotazioni() {
       )}
 
       <Suspense fallback={<Caricamento />}>
-        {tab === 'menu' && conRistorante && <AssistenteVocale />}
+        {tab === 'menu' && conMenu && <AssistenteVocale />}
         {tab === 'ingressi' && conEventi && <IngressiEventi />}
       </Suspense>
       {tab === 'app' && conApp && (
