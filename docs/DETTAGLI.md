@@ -15,6 +15,7 @@ Aggiornare qui quando cambia un modulo.
 - **Schede per ruolo**: `SCHEDE_RAPIDE` e `SCHEDE_PER_RUOLO` in `config/navigazione.tsx`, hook `hooks/useNavStaff.ts`
   (`useSchedeRapide`, `useConteggiNav` per i badge, `useConHome`). Home (Panoramica) solo per amministratore o chi vede le
   Impostazioni; gli altri ruoli aprono la loro prima scheda (cameriere → Cameriere, cucina → Cucina, barista → Bar) e non vedono Panoramica nel menu.
+  Con la scheda Bar (Coda bar) visibile, la scheda "Ombrelloni" (`/comande`) resta solo all'amministratore (la pagina resta nel menu).
 - **Velocità**: service worker `public/sw-admin.js` registrato da `attivaCacheApp()` (`lib/notifichePush.ts`, solo build di
   produzione, non single-file): pagina dalla rete con ripiego sulla copia dopo 3 s o offline, `/assets/` con hash dalla cache,
   icone e font dalla cache aggiornata in sottofondo; dati Supabase mai in cache. `lib/precarica.ts` scarica a riposo il codice

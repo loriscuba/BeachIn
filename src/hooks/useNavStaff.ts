@@ -32,7 +32,10 @@ export function useSchedeRapide(): SchedaRapida[] {
   const conHome = useConHome()
   const { ok } = useFunzioni()
   const fz = (s: SchedaRapida) => { const id = funzioneDiVoce(s); return !id || ok(id, s.minimo ?? 1) }
-  const visibili = SCHEDE_RAPIDE.filter((s) => (s.id === 'home' ? conHome : moduloAttivo(s.modulo) && puo(s.modulo, s.minimo ?? 1) && fz(s)))
+  const tutte = SCHEDE_RAPIDE.filter((s) => (s.id === 'home' ? conHome : moduloAttivo(s.modulo) && puo(s.modulo, s.minimo ?? 1) && fz(s)))
+  // con la Coda bar le comande degli ombrelloni sono già lì: la scheda "Ombrelloni" resta solo all'amministratore
+  const conBar = tutte.some((s) => s.id === 'bar')
+  const visibili = conBar && !profilo?.amministratore ? tutte.filter((s) => s.id !== 'comande') : tutte
   const ordine = profilo && SCHEDE_PER_RUOLO[profilo.ruolo_id]
   if (!ordine) return visibili
   const prima = ordine.map((id) => visibili.find((s) => s.id === id)).filter((s): s is SchedaRapida => !!s)
