@@ -166,6 +166,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Tocco notifica con app aperta → SW `postMessage({tipo:"aggiorna"})` → reload; `useSyncSupabase` rilegge anche su visibilitychange/online/pageshow e alla (ri)sottoscrizione del canale (app sospesa su telefono = canale live caduto).
   iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `src/lib/hashInPercorso.ts` (primo import di `main.tsx`, prima che il router legga l'indirizzo) converte `#/percorso` in path con BrowserRouter: start_url delle app installate.
 
+- **60 secondi per ripensarci** (27/10/2026): gli ordini dall'ombrellone (ComandApp) e dal QR del tavolo (`TabletSelf qr`) restano
+  fermi sul telefono del cliente per `SECONDI_SOSPESO` (60 s, `hooks/useOrdineInSospeso.ts`, localStorage
+  `beachin.sospeso.ombrellone.<omb>` / `beachin.sospeso.tavolo.<n>`): bar e cucina non li vedono. Riquadro `OrdineInSospeso`
+  (MenuLido) con conto alla rovescia, **Modifica** (rimette tutto nel carrello), **Annulla**, **Invia ora**. Allo scadere parte il
+  normale invio (dal QR con la verifica del conto). Se il cliente chiude la pagina, l'ordine parte quando la riapre. Tablet self invariato.
+
 ## Comande ristorante (sala → cucina, ott 2026)
 - Modulo **`sala`** "Comande ristorante" (dipende da `ristorante`: con `sala` attivo resta attivo il Ristorante; chi aveva già il
   Ristorante lo trova attivo una volta, flag `beachin.moduli.sala`). Permesso `sala` nella griglia ruoli; ruolo **Cucina** (`sala`=2).

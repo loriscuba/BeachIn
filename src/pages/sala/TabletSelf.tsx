@@ -17,7 +17,8 @@ import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { urlTavoloQr, delConto, articoliComePiatti, etichettaStatoSala, uscitaPredefinita } from '@/lib/sala'
 import { logoLido } from '@/assets/sito'
-import { PaginaMenu, CopertinaMenu, ChipSezioni, TitoloSezione, SchedaVoce, Stepper, TendaRighe, PiedeMenu, GRIGLIA_VOCI } from '@/components/menu/MenuLido'
+import { PaginaMenu, CopertinaMenu, ChipSezioni, TitoloSezione, SchedaVoce, Stepper, TendaRighe, PiedeMenu, OrdineInSospeso, GRIGLIA_VOCI } from '@/components/menu/MenuLido'
+import { useOrdineInSospeso } from '@/hooks/useOrdineInSospeso'
 import { salvaSelf, type StatoSelf } from './AvvioSelf'
 import { useQrTavolo } from './QrTavoli'
 
@@ -73,13 +74,27 @@ export default function TabletSelf({ stato, onEsci, qr = false, seduta }: { stat
     return n
   })
   const vai = (id: string) => document.getElementById(`self-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  const invia = async () => {
-    if (!righe.length) return
+  const manda = async (r: RigaComandaSala[], n: string) => {
     // dal QR: prima di inviare si chiede al DB se il conto è ancora aperto (il telefono può avere dati vecchi);
     // se è chiuso la pagina passa a «Conto chiuso»
-    if (qr && seduta && !(await verificaContoTavolo(stato.tavolo, seduta))) return
-    if (!inviaComandaSala(stato.tavolo, righe, { origine: qr ? 'qr' : 'self', note, seduta: seduta || undefined })) return
+    if (qr && seduta && !(await verificaContoTavolo(stato.tavolo, seduta))) return false
+    return !!inviaComandaSala(stato.tavolo, r, { origine: qr ? 'qr' : 'self', note: n, seduta: seduta || undefined })
+  }
+  // dal QR l'ordine resta 60 secondi sul telefono (cucina e bar non lo vedono): il cliente può correggerlo o annullarlo
+  const attesa = useOrdineInSospeso<{ qta: Record<string, number>; note: string; righe: RigaComandaSala[] }>(`beachin.sospeso.tavolo.${stato.tavolo}`, (d) => {
+    void manda(d.righe, d.note).then((ok) => { if (ok) setGrazie(true) })
+  })
+  const invia = async () => {
+    if (!righe.length) return
+    if (qr) { attesa.metti({ qta, note, righe }); setQta({}); setNote(''); setCarrello(false); return }
+    if (!(await manda(righe, note))) return
     setQta({}); setNote(''); setCarrello(false); setGrazie(true)
+  }
+  const modifica = () => {
+    const d = attesa.riprendi()
+    if (!d) return
+    setQta((q) => { const n = { ...d.qta }; Object.entries(q).forEach(([id, v]) => { n[id] = (n[id] ?? 0) + v }); return n })
+    setNote((x) => x || d.note); setCarrello(true)
   }
 
   const voce = (p: Piatto) => ({ ...p, dettaglio: p.allergeni.length ? p.allergeni.map((a) => ALLERGENI[a] ?? a).join(' · ') : undefined })
@@ -118,8 +133,17 @@ export default function TabletSelf({ stato, onEsci, qr = false, seduta }: { stat
       </main>
       <PiedeMenu><p className="mt-3 text-xs text-[#3B2A20]/55">Per allergie e intolleranze chiedi al personale di sala.</p></PiedeMenu>
 
+      {/* Ordine dal QR in attesa dei 60 secondi */}
+      {attesa.sospeso && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center p-4">
+          <OrdineInSospeso restanti={attesa.restanti} totale={attesa.sospeso.righe.reduce((x, r) => x + r.quantita * r.prezzoUnitario, 0)}
+            riepilogo={attesa.sospeso.righe.map((r) => `${r.quantita}× ${r.nome}`).join(' · ')}
+            onModifica={modifica} onAnnulla={attesa.annulla} onInviaOra={attesa.inviaSubito} />
+        </div>
+      )}
+
       {/* Barra ordine */}
-      {(pezzi > 0 || ordini.length > 0) && (
+      {!attesa.sospeso && (pezzi > 0 || ordini.length > 0) && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center p-4">
           <button type="button" onClick={() => setCarrello(true)} className={cn('pointer-events-auto flex items-center gap-3 rounded-full px-6 py-3.5 text-sm font-semibold shadow-2xl', BTN)}>
             <ShoppingBag className="h-5 w-5" />

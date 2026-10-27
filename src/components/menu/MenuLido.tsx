@@ -7,11 +7,12 @@
  * mare per il ristorante, spritz al tramonto per bar e ombrellone (stesso listino, stessa grafica), pineta per la lavagna.
  */
 import { useState, type CSSProperties, type ReactNode } from 'react'
-import { Minus, Plus, UtensilsCrossed } from 'lucide-react'
+import { Minus, Pencil, Plus, Send, Timer, UtensilsCrossed, X } from 'lucide-react'
 import { fotoSito, logoLido } from '@/assets/sito'
 import { config } from '@/data/config'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
+import { SECONDI_SOSPESO } from '@/hooks/useOrdineInSospeso'
 
 export type TemaMenu = 'ristorante' | 'bar' | 'ombrellone' | 'lavagnetta'
 
@@ -179,5 +180,32 @@ export function PiedeMenu({ children }: { children?: ReactNode }) {
         <p className="mt-2 text-xs text-[#3B2A20]/55">{config.indirizzo} {config.localita} · {config.telefono}</p>
       </div>
     </footer>
+  )
+}
+
+/** Ordine fermo sul telefono del cliente (vedi `useOrdineInSospeso`): conto alla rovescia, Modifica, Annulla, Invia ora. */
+export function OrdineInSospeso({ restanti, totale, riepilogo, onModifica, onAnnulla, onInviaOra, className }: {
+  restanti: number; totale: number; riepilogo: string; onModifica: () => void; onAnnulla: () => void; onInviaOra: () => void; className?: string
+}) {
+  return (
+    <div className={cn('pointer-events-auto w-full max-w-md overflow-hidden rounded-3xl bg-[#FBF7F0] text-[#3B2A20] shadow-2xl ring-1 ring-[#3B2A20]/10', className)}>
+      <div className="h-1 bg-[#3B2A20]/10"><div className="h-full bg-[var(--acc)] transition-[width] duration-500" style={{ width: `${(restanti / SECONDI_SOSPESO) * 100}%` }} /></div>
+      <div className="space-y-3 p-4">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-content-center rounded-full bg-[var(--acc-chiaro)] text-[color:var(--acc)]"><Timer className="h-5 w-5" /></span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">Parte tra <span className="num">{restanti}</span> s</p>
+            <p className="truncate text-sm text-[#3B2A20]/65">{riepilogo}</p>
+          </div>
+          <span className="num font-semibold">{euroCent(totale)}</span>
+        </div>
+        <p className="text-xs text-[#3B2A20]/55">Hai sbagliato? Finché il tempo non scade puoi ancora cambiarlo o annullarlo.</p>
+        <div className="grid grid-cols-3 gap-2 text-sm font-semibold">
+          <button type="button" onClick={onModifica} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full ring-1 ring-[#3B2A20]/15"><Pencil className="h-4 w-4" /> Modifica</button>
+          <button type="button" onClick={onAnnulla} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full text-[#B5432A] ring-1 ring-[#B5432A]/30"><X className="h-4 w-4" /> Annulla</button>
+          <button type="button" onClick={onInviaOra} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-[var(--acc)] text-white"><Send className="h-4 w-4" /> Invia ora</button>
+        </div>
+      </div>
+    </div>
   )
 }
