@@ -3,6 +3,7 @@
  * (Safari non permette di aprire il proprio Condividi) e link "continua nel browser". Nascosto se già installata.
  */
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Download, X, Share, PlusSquare, ArrowDown, Copy } from 'lucide-react'
 import { isInstallata, isIos } from '@/lib/notifichePush'
 
@@ -57,8 +58,9 @@ function ModalIos({ nome, icona: file, perche, onSalta }: { nome: string; icona:
   const salta = () => { try { sessionStorage.setItem(CHIAVE_SALTA, '1') } catch { /* */ } onSalta() }
   const copia = async () => { try { await navigator.clipboard.writeText(window.location.href); setCopiato(true) } catch { /* */ } }
   const icona = `${import.meta.env.BASE_URL}${file}`
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center bg-profondo px-6 pb-6 pt-12 text-center text-white">
+  // su body: dentro la pagina (animata) il riquadro fisso verrebbe ritagliato e coperto da testata e barra
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex flex-col items-center overflow-y-auto bg-profondo pt-[calc(3rem+env(safe-area-inset-top))] px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center text-white">
       <img src={icona} alt="" className="h-20 w-20 rounded-2xl shadow-lg" />
       <h2 className="mt-4 font-display text-2xl font-semibold">Installa {nome}</h2>
       <p className="mt-1 text-sm text-white/70">Aggiungila alla schermata Home {perche} come una vera app.</p>
@@ -87,6 +89,7 @@ function ModalIos({ nome, icona: file, perche, onSalta }: { nome: string; icona:
       )}
       <button onClick={salta} className="mt-auto text-xs text-white/50 underline">continua nel browser</button>
       {!inApp() && <ArrowDown className="mt-2 h-8 w-8 animate-bounce text-tenda" aria-hidden />}
-    </div>
+    </div>,
+    document.body
   )
 }

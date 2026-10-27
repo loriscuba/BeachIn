@@ -179,6 +179,8 @@
 /* Altezza della barra delle schede in basso (solo telefono): i pulsanti fluttuanti e il fondo pagina le stanno sopra. */
 .shell-bg { --barra-basso: calc(3.5rem + env(safe-area-inset-bottom)); }
 @media (min-width: 768px) { .shell-bg { --barra-basso: 0px; } }
+/* logo del lido (marrone scuro) chiaro sulla testata in tema scuro */
+[data-tema='scuro'] .logo-testata { filter: brightness(0) invert(1); opacity: 0.9; }
 /* in tema scuro anche la barra delle schede è scura */
 [data-tema='scuro'] .barra-basso { background: rgba(6, 22, 29, 0.94); border-color: rgba(255, 255, 255, 0.08); }
 [data-tema='scuro'] .barra-basso .text-profondo { color: #fff; }
