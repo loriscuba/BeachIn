@@ -3,11 +3,11 @@
  * A sinistra si compone l'ordine (numero ombrellone + articoli del bar) e si
  * invia; a destra, al bar, arriva la coda delle comande con lo stato
  * (nuova → presa in carico → in preparazione → pronta). Le comande arrivano anche
- * da ComandApp (`/comandapp`, app del bagnante): all'arrivo suona il campanello.
+ * da ComandApp (`/comandapp`, app del bagnante): all'arrivo suona il campanello del centro notifiche.
  * Con il modulo Bar al tavolo la coda è unica: ci sono anche le bevande dei tavoli del ristorante.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Minus, Send, Check, Umbrella, Coffee, Search, Bell, BellOff, Smartphone, ExternalLink, Copy } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, Minus, Send, Check, Umbrella, Coffee, Search, Smartphone, ExternalLink, Copy } from 'lucide-react'
 import type { CategoriaBar, RigaComanda } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
@@ -22,7 +22,6 @@ import { euroCent, numero } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { QrCodice } from '@/components/QrCodice'
 import { supabaseAttivo } from '@/lib/supabase'
-import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { urlComandApp, UTENTI_COMANDAPP } from '@/lib/comandapp'
 
 export default function Comande() {
@@ -39,17 +38,9 @@ export default function Comande() {
   const [filtro, setFiltro] = useState<CategoriaBar | 'tutte'>('tutte')
   const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
-  const [suoni, setSuoni] = useState(false)
   const [copiato, setCopiato] = useState(false)
   const link = urlComandApp()
 
-  // Campanello quando arriva una comanda nuova (es. da ComandApp in un'altra scheda).
-  const visti = useRef(new Set(comande.map((c) => c.id)))
-  useEffect(() => {
-    const nuove = comande.filter((c) => !visti.current.has(c.id))
-    nuove.forEach((c) => visti.current.add(c.id))
-    if (suoni && !unica && nuove.some((c) => c.stato === 'in_attesa')) campanello()
-  }, [comande, suoni, unica])
 
   const q = cerca.trim().toLowerCase()
   const mostrati = articoli.filter(
@@ -100,9 +91,6 @@ export default function Comande() {
           <div className="flex flex-wrap gap-2">
             <Button dimensione="sm" onClick={() => { navigator.clipboard?.writeText(link); setCopiato(true); window.setTimeout(() => setCopiato(false), 2000) }}><Copy className="h-4 w-4" /> {copiato ? 'Copiato!' : 'Copia link'}</Button>
             <a href={link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-calce-200 px-3 py-1.5 text-sm font-medium text-profondo hover:bg-calce/50"><ExternalLink className="h-4 w-4" /> Apri</a>
-            <Button dimensione="sm" variante={suoni ? 'primario' : 'secondario'} onClick={() => { if (!suoni) { sbloccaAudio(); campanello() } setSuoni(!suoni) }}>
-              {suoni ? <><Bell className="h-4 w-4" /> Suoni attivi</> : <><BellOff className="h-4 w-4" /> Attiva suoni</>}
-            </Button>
           </div>
         </CardBody>
       </Card>
@@ -193,7 +181,7 @@ export default function Comande() {
           azione={<Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge>}
         />
         <CardBody className="space-y-2 pt-2">
-          {unica ? <div className="max-h-[30rem] overflow-y-auto pr-1"><CodaBar compatta suoni={suoni} /></div> : <>
+          {unica ? <div className="max-h-[30rem] overflow-y-auto pr-1"><CodaBar compatta /></div> : <>
           {comande.length === 0 && (
             <p className="py-10 text-center text-sm text-profondo/45">Nessuna comanda. Invia il primo ordine dall'ombrellone.</p>
           )}

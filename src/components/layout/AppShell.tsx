@@ -8,6 +8,7 @@ import { useSchedeRapide } from '@/hooks/useNavStaff'
 import { attivaCacheApp, impostaManifest } from '@/lib/notifichePush'
 import { precaricaPagine } from '@/lib/precarica'
 import { Topbar } from './Topbar'
+import { NotificheProvider } from '@/context/NotificheContext'
 import { DemoPlayer } from '@/components/demo/DemoPlayer'
 import { navigazione } from '@/config/navigazione'
 import { config } from '@/data/config'
@@ -100,6 +101,7 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
   if (pathname === '/' && schede.length > 0 && schede[0].id !== 'home') return <Navigate to={schede[0].percorso} replace />
 
   return (
+    <NotificheProvider>
     <div className="shell-bg flex h-[100dvh] overflow-hidden" data-tema={tema} style={{ ['--accento' as string]: coloreArea }}>
       <Sidebar aperta={menuAperto} onChiudi={() => impostaMenu(false)} />
       {/* telefono: "Altro" apre la griglia di pulsanti; tablet: "Menu" apre il pannello laterale */}
@@ -125,5 +127,6 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
       <DemoPlayer />
       <AnteprimaWhatsApp />
     </div>
+    </NotificheProvider>
   )
 }

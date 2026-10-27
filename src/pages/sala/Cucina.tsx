@@ -6,15 +6,14 @@
  * le comande dagli ombrelloni: nuova = Da fare, presa in carico/in preparazione = In lavorazione, pronta = Pronte.
  * Campanello a ogni comanda nuova, minuti di attesa sulla scheda.
  */
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { Bell, BellOff, Check, ChefHat, Clock, Hourglass, Smartphone, Tablet, Users, X } from 'lucide-react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Check, ChefHat, Clock, Hourglass, Smartphone, Tablet, Users, X } from 'lucide-react'
 import type { Comanda, ComandaSala, StatoComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { supabaseAttivo } from '@/lib/supabase'
-import { campanello, sbloccaAudio } from '@/lib/suoni'
 import { cn } from '@/lib/cn'
 import { aspettaVia, azioneStatoSala, daPreparare, minutiDa, nomeUscita, perReparto, statoRiga, uscitaChiamata, uscitaDi, usciteDi, type Reparto } from '@/lib/sala'
 import { ComandaCard } from './ComandaOmbrellone'
@@ -31,7 +30,6 @@ const colonnaOmbrellone = (c: Comanda): StatoComandaSala => (c.stato === 'in_att
 
 export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
   const { comandeSala, comande, avanzaComanda, annullaComanda, annullaComandaSala, segnaRigheSala, chiamaUscitaSala } = useDemoData()
-  const [suoni, setSuoni] = useState(false)
   const [ora, setOra] = useState(Date.now())
   // su telefono si vede una colonna alla volta (tablet e computer: tutte e tre)
   const [colonna, setColonna] = useState<StatoComandaSala>('inviata')
@@ -49,15 +47,8 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
     const pronti = new Set(ombrelloni.filter((v) => v.stato === 'pronta').sort((a, b) => b.ts - a.ts).slice(0, 12))
     return [...tavoli, ...ombrelloni.filter((v) => v.stato !== 'pronta' || pronti.has(v))]
   }, [comandeSala, comande, reparto])
-
-  // campanello quando arriva una comanda nuova da fare (anche da un altro dispositivo)
   const chiave = (v: Voce) => `${v.tipo}-${v.c.id}`
-  const visti = useRef(new Set(voci.map(chiave)))
-  useEffect(() => {
-    const nuove = voci.filter((v) => !visti.current.has(chiave(v)))
-    nuove.forEach((v) => visti.current.add(chiave(v)))
-    if (suoni && nuove.some((v) => v.stato === 'inviata' && !(v.tipo === 'tavolo' && v.via))) campanello()
-  }, [voci, suoni])
+
 
   return (
     <div className="space-y-4">
@@ -67,9 +58,6 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
             ? reparto === 'bar' ? '● Coda unica del bar: tavoli del ristorante e ombrelloni, su tutti i dispositivi' : '● Comande condivise tra tutti i dispositivi (sala, tablet, cucina)'
             : '● Modalità demo: comande condivise solo tra schede di questo browser'}
         </p>
-        <Button dimensione="sm" className="ml-auto" variante={suoni ? 'primario' : 'secondario'} onClick={() => { if (!suoni) { sbloccaAudio(); campanello() } setSuoni(!suoni) }}>
-          {suoni ? <><Bell className="h-4 w-4" /> Campanello attivo</> : <><BellOff className="h-4 w-4" /> Attiva campanello</>}
-        </Button>
       </div>
       <div className="grid grid-cols-3 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm md:hidden">
         {COLONNE.map((col) => {

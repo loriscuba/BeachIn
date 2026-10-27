@@ -109,6 +109,7 @@ gestire chiavi e costi.
 ---
 
 ## 5. Idee / sviluppi futuri
+- [ ] Finestra utente (tocco sulla foto in alto a sinistra): capire cosa metterci dentro oltre a nome, ruolo ed Esci
 - Risposte dell'admin al cliente dalla casella di posta
 - Modifica di una prenotazione prima della conferma
 - [ ] Spazio foto esterno se Supabase Storage (1 GB free) non basta; si cambia solo `src/lib/immagini.ts`:
