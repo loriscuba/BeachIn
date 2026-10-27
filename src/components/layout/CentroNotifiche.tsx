@@ -129,7 +129,7 @@ function Preferenze({ scuro }: { scuro: boolean }) {
   )
 }
 
-/** Notifiche push (anche a telefono bloccato): oggi il server le manda per le nuove prenotazioni tavolo. */
+/** Notifiche push (anche a telefono bloccato): il server le manda per prenotazioni tavolo e ombrellone e richieste eventi. */
 function NotifichePush({ riga, tenue }: { riga: string; tenue: string }) {
   const [stato, setStato] = useState<StatoPush>()
   const [lavoro, setLavoro] = useState(false)
@@ -138,7 +138,7 @@ function NotifichePush({ riga, tenue }: { riga: string; tenue: string }) {
   if (!stato) return null
   const spiegazione: Record<StatoPush, React.ReactNode> = {
     attivo: 'Attive su questo dispositivo',
-    'da-attivare': 'Le nuove prenotazioni arrivano anche a schermo bloccato',
+    'da-attivare': 'Prenotazioni (tavolo e ombrellone) e richieste eventi anche a schermo bloccato',
     'serve-installazione': <>Su iPhone: <Share className="inline h-3.5 w-3.5" /> Condividi → Aggiungi alla schermata Home, poi apri l'app dall'icona</>,
     negato: 'Bloccate: riattivale dalle impostazioni del browser per questo sito',
     'non-supportato': 'Questo browser non le supporta',
