@@ -152,6 +152,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `beachin_vapid_private`, mai nel repo). Iscrizioni in `beachin.push_iscrizioni` (non leggibile da anon, scrittura via RPC
   `beachin.registra_push`). Trigger `notifica_nuova_richiesta` su `richieste_ristorante` → `pg_net` → Edge Function
   `beachin-push` (`supabase/functions/beachin-push`, legge DB via `SUPABASE_DB_URL`, rimuove iscrizioni 404/410).
+  Migrazione 0025: stessa funzione `notifica_nuova_richiesta(tipo)` anche per `prenotazioni_online` (tabella nuova: prenotazioni ombrellone dal
+  sito, prima solo locali; i dati seminati `PO-01…` non notificano) e `richieste_eventi` (non quelle `origine = manuale`) → tipi `ombrellone`/`evento`.
   Tocco notifica con app aperta → SW `postMessage({tipo:"aggiorna"})` → reload; `useSyncSupabase` rilegge anche su visibilitychange/online/pageshow e alla (ri)sottoscrizione del canale (app sospesa su telefono = canale live caduto).
   iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `src/lib/hashInPercorso.ts` (primo import di `main.tsx`, prima che il router legga l'indirizzo) converte `#/percorso` in path con BrowserRouter: start_url delle app installate.
 

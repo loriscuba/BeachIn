@@ -1,5 +1,6 @@
 // Edge Function "beachin-push": chiamata dai trigger del DB, invia notifiche Web Push ai telefoni iscritti (beachin.push_iscrizioni).
-// - tipo "richiesta" (default, trigger su beachin.richieste_ristorante): nuova prenotazione → app admin
+// - tipo "richiesta" (default, trigger su beachin.richieste_ristorante): nuova prenotazione tavolo → app admin
+// - tipo "ombrellone" (beachin.prenotazioni_online) ed "evento" (beachin.richieste_eventi) → app admin
 // - tipo "notizia" (insert su beachin.notizie) e "lavagnetta" (beachin.lavagnetta) → app clienti
 // Chiave privata VAPID nel Vault di Supabase (segreto `beachin_vapid_private`), mai nel repository.
 import webpush from 'npm:web-push@3.6.7'
@@ -16,12 +17,16 @@ const taglia = (t?: string) => (t && t.length > 120 ? `${t.slice(0, 117)}…` : 
 Deno.serve(async (req) => {
   try {
     const { record: r, tipo = 'richiesta' } = await req.json()
-    const app = tipo === 'richiesta' ? 'admin' : 'clienti'
+    const app = ['richiesta', 'ombrellone', 'evento'].includes(tipo) ? 'admin' : 'clienti'
     const messaggio = tipo === 'notizia'
       ? { titolo: `📰 ${r?.titolo ?? 'Nuova news'}`, corpo: taglia(r?.testo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
       : tipo === 'lavagnetta'
         ? { titolo: '🍽️ Lavagna del giorno aggiornata', corpo: 'Scopri le proposte di oggi', tag: 'lavagnetta' }
-        : {
+        : tipo === 'ombrellone'
+          ? { titolo: 'Prenotazione ombrellone ⛱️', corpo: `${r?.nome ?? 'Cliente'} · ${r?.persone ?? '?'} persone · dal ${r?.dal ? dataIt(r.dal) : '?'} al ${r?.al ? dataIt(r.al) : '?'}`, tag: `ombrellone-${r?.id ?? Date.now()}` }
+          : tipo === 'evento'
+            ? { titolo: `Richiesta per ${r?.evento_nome ?? 'un evento'} 🎉`, corpo: `${r?.nome ?? 'Cliente'} · ${r?.persone ?? '?'} persone${r?.evento_data ? ` · ${dataIt(r.evento_data)}` : ''}`, tag: `evento-${r?.id ?? Date.now()}` }
+            : {
             titolo: 'Nuova prenotazione 🍽️',
             corpo: `${r?.nome ?? 'Cliente'} · ${r?.coperti ?? '?'} persone · ${r?.turno ?? ''} ${r?.data ? dataIt(r.data) : ''}`.trim(),
             tag: `richiesta-${r?.id ?? Date.now()}`,
