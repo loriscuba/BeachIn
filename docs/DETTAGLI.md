@@ -96,7 +96,9 @@ Aggiornare qui quando cambia un modulo.
 - **Edge Function `beachin-utenti`**: crea (nome utente → account confermato con email sintetica + profilo), aggiorna (nome/ruolo/attivo; disattivare = blocco
   account Auth `ban_duration`), password, elimina (solo disattivati). Controlla `ha_permesso('utenti', 2)` di chi chiama.
 - **App**: `src/lib/permessi.ts` (sezioni, livelli, tipi), `src/context/SessioneContext.tsx` (`profilo`, `accedi`, `esci`,
-  `livello`, `puo`; profilo ricaricato al ritorno in primo piano e via Realtime sulla propria riga), `DemoDataProvider` rimontato
+  `livello`, `puo`; profilo ricaricato al ritorno in primo piano/rete e via Realtime sulla propria riga;
+  ultimo profilo in `localStorage` `beachin.profilo`: un errore di rete alla riapertura non fa uscire, si esce solo con Esci o
+  se `mio_profilo` risponde null), `DemoDataProvider` rimontato
   a login/logout (`main.tsx`, rilegge i dati col nuovo ruolo). `Sidebar` = modulo attivo **e** permesso; `ModuloGate` →
   `AccessoNegato` (livello 0) o `SolaLettura` (livello 1: blocca clic/digitazione tranne schede `data-naviga`, select e filtri data).
   Impostazioni a schede `?tab=generali|utenti`; **Utenti e ruoli** = `src/pages/impostazioni/UtentiRuoli.tsx` (elenco utenti,
