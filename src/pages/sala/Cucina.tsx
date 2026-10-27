@@ -92,7 +92,7 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
     </div>
   )
 
-  if (intero.attivo) return <SchermoIntero onEsci={intero.esci}>{tabellone}</SchermoIntero>
+  if (intero.attivo) return <SchermoIntero titolo={reparto === 'bar' ? 'Coda bar' : 'Cucina'} onEsci={intero.esci}>{tabellone}</SchermoIntero>
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">

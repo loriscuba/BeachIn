@@ -37,7 +37,7 @@ Aggiornare qui quando cambia un modulo.
   alto); in `Sala.tsx` le schede Cameriere/Cucina/Tablet self/QR compaiono solo col permesso `sala` (es. Responsabile vede solo Bar).
 - **Schermo intero** (Cucina, Coda bar e coda di Comande; `src/components/SchermoIntero.tsx`): pulsante "Schermo intero" apre
   un velo `fixed inset-0 z-[90]` in portale dentro `[data-tema]` (sopra testata e barre, tema chiaro/scuro con `.schermo-intero`)
-  con solo le comande e una X; dove esiste chiede anche il fullscreen del browser (su iPhone no). Esc o uscita dal fullscreen
+  con solo una barra sottile (titolo + «Esci») e le comande a tutta larghezza (Comande con coda unica: tabellone a 3 colonne del bar); dove esiste chiede anche il fullscreen del browser (su iPhone no). Esc o uscita dal fullscreen
   chiudono. Permessi invariati (stessa scheda).
 - **Telefono, "Altro"** (`components/layout/MenuGriglia.tsx`, richiesta di Loris 26/10: niente menu a elenco, poco ergonomico):
   pannello dal basso con tutte le sezioni come pulsanti con icona uguali a quelli della barra in basso (griglia a 4 colonne,

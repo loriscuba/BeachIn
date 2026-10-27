@@ -79,26 +79,14 @@ export default function Comande() {
 
   const aperte = unica ? codaBar(comande, comandeSala).daFare.length : comande.filter((c) => c.stato !== 'pronta').length
 
-  // coda delle comande: nella card con altezza fissa, a schermo intero a tutta pagina
-  const coda = (inCard: boolean) => unica
-    ? <div className={cn(inCard && 'max-h-[30rem] overflow-y-auto pr-1')}><CodaBar compatta /></div>
-    : <>
-      {comande.length === 0 && (
-        <p className="py-10 text-center text-sm text-profondo/45">Nessuna comanda. Invia il primo ordine dall'ombrellone.</p>
-      )}
-      <div className={cn('space-y-2', inCard && 'max-h-[30rem] overflow-y-auto pr-1')}>
-        {comande.map((c) => (
-          <ComandaCard key={c.id} comanda={c} onAvanza={() => avanzaComanda(c.id)} onAnnulla={() => annullaComanda(c.id)} />
-        ))}
-      </div>
-    </>
-
+  // a schermo intero con la coda unica si usa il tabellone a tre colonne del bar; senza, le schede in griglia
   if (intero.attivo) return (
-    <SchermoIntero onEsci={intero.esci}>
-      <div className="mx-auto max-w-3xl space-y-2">
-        <p className="flex items-center gap-2 pb-1 text-sm font-semibold text-profondo"><Coffee className="h-4 w-4 text-cabina" /> Comande al bar <Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge></p>
-        {coda(false)}
-      </div>
+    <SchermoIntero titolo={<>Comande al bar · <span className="num">{aperte}</span> da evadere</>} onEsci={intero.esci}>
+      {unica ? <CodaBar /> : !comande.length
+        ? <p className="py-10 text-center text-sm text-profondo/45">Nessuna comanda.</p>
+        : <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {comande.map((c) => <ComandaCard key={c.id} comanda={c} onAvanza={() => avanzaComanda(c.id)} onAnnulla={() => annullaComanda(c.id)} />)}
+        </div>}
     </SchermoIntero>
   )
 
@@ -206,7 +194,16 @@ export default function Comande() {
           azione={<div className="flex flex-wrap items-center justify-end gap-2"><Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge><PulsanteSchermoIntero onClick={intero.entra} /></div>}
         />
         <CardBody className="space-y-2 pt-2">
-          {coda(true)}
+          {unica ? <div className="max-h-[30rem] overflow-y-auto pr-1"><CodaBar compatta /></div> : <>
+          {comande.length === 0 && (
+            <p className="py-10 text-center text-sm text-profondo/45">Nessuna comanda. Invia il primo ordine dall'ombrellone.</p>
+          )}
+          <div className="max-h-[30rem] space-y-2 overflow-y-auto pr-1">
+            {comande.map((c) => (
+              <ComandaCard key={c.id} comanda={c} onAvanza={() => avanzaComanda(c.id)} onAnnulla={() => annullaComanda(c.id)} />
+            ))}
+          </div>
+          </>}
         </CardBody>
       </Card>
     </div>
