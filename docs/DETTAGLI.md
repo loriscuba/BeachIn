@@ -97,7 +97,7 @@ Aggiornare qui quando cambia un modulo.
   permesso di modifica (Prenotazioni/Menu = ristorante, App = sito, Ingressi = eventi).
 - **Foto profilo** (migrazione 0013, `beachin.utenti.foto`): scelta toccando il cerchio in Nuovo/Modifica utente (`SceltaFoto`,
   `fileAImmagine(file, 'utenti', 320)` → Storage `beachin/utenti/`), salvata dalla Edge Function; `Avatar` tondo (iniziali se manca)
-  nell'elenco utenti e nella Topbar accanto a nome e ruolo.
+  nell'elenco utenti e nella Topbar in alto a sinistra (al posto del titolo pagina, che resta solo `sr-only`), con nome e ruolo da PC.
 - **Primo amministratore** (DB nuovo, es. produzione): creare l'utente in Auth (Studio → Authentication → Add user) e poi
   `insert into beachin.utenti (id, email, nome, ruolo_id) values ('<uuid>', '<email>', '<nome>', 'amministratore');`
 

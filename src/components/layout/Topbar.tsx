@@ -20,7 +20,7 @@ const meteoIcona: Record<Meteo, typeof Sun> = {
   sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
 }
 
-export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPagina }: TopbarProps) {
+export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
   const meteo = useMeteoOggi()
   const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
@@ -37,23 +37,19 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
         <Menu className="h-5 w-5" />
       </button>
 
-      {IconaPagina && (
-        <span
-          className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl text-[#0B2C39] sm:grid"
-          style={{ background: 'linear-gradient(135deg, var(--accento), color-mix(in srgb, var(--accento) 70%, #ffffff))', boxShadow: '0 8px 20px -10px var(--accento)' }}
-          aria-hidden
-        >
-          <IconaPagina className="h-5 w-5" strokeWidth={2.25} />
-        </span>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-xl font-semibold leading-tight text-profondo">{titolo}</h1>
-        {sottotitolo && (
-          <p className="truncate text-xs text-profondo/55">{sottotitolo}</p>
+      {/* foto dell'utente in alto a sinistra (iniziale se manca); il titolo resta solo per i lettori di schermo */}
+      <h1 className="sr-only">{titolo}</h1>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {profilo && (
+          <>
+            <Avatar nome={profilo.nome} foto={profilo.foto} className="h-10 w-10" />
+            <div className="hidden min-w-0 leading-tight md:block">
+              <p className="truncate text-sm font-medium text-profondo">{profilo.nome}</p>
+              <p className="truncate text-xs text-profondo/55">{profilo.ruolo}</p>
+            </div>
+          </>
         )}
       </div>
-
 
       {/* Data di oggi + meteo attuale a Savona */}
       <div className="flex items-center gap-2 rounded-lg border border-calce-200 bg-white px-2.5 py-1.5 text-sm text-profondo">
@@ -84,15 +80,6 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
         </button>
       )}
 
-      {profilo && (
-        <div className="flex items-center gap-2">
-          <div className="hidden text-right leading-tight md:block">
-            <p className="text-sm font-medium text-profondo">{profilo.nome}</p>
-            <p className="text-xs text-profondo/55">{profilo.ruolo}</p>
-          </div>
-          <Avatar nome={profilo.nome} foto={profilo.foto} />
-        </div>
-      )}
       <button
         onClick={onEsci}
         className="bi-esci grid h-9 w-9 shrink-0 place-content-center rounded-full border border-calce-200 bg-white text-profondo/70 hover:text-profondo"
