@@ -20,8 +20,13 @@ Aggiornare qui quando cambia un modulo.
   icone e font dalla cache aggiornata in sottofondo; dati Supabase mai in cache. `lib/precarica.ts` scarica a riposo il codice
   delle schede del ruolo (non con "risparmio dati"). In Prenotazioni menu a voce e lettore QR sono lazy (pagina 158 → 18 KB).
 - **Telefono**: `Tabella` sotto `sm` diventa una lista di schede (prima colonna titolo, le altre etichetta/valore).
-- **Accesso**: `AppShell` mostra `LoginGestore` finché `SessioneContext` non ha un profilo; Esci nella Topbar
-  (con nome e ruolo dell'utente). Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/tavolo`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
+- **Accesso**: `AppShell` mostra `LoginGestore` finché `SessioneContext` non ha un profilo; tocco sulla foto in alto a sinistra della Topbar
+  → `SchedaUtente` (nome, ruolo, Esci).
+- **Centro notifiche** (`context/NotificheContext.tsx` in `AppShell`, campanella `layout/CentroNotifiche.tsx` in alto a destra): unico punto per
+  tutti gli eventi (prenotazioni tavolo, ombrelloni dal sito, richieste eventi, comande ombrelloni, cucina, bar, piatti pronti), solo
+  le categorie con modulo attivo + permesso. Elenco (max 50) e preferenze (suono, categorie spente) in localStorage `beachin.notifiche.v1`
+  / `.pref.v1`; nei primi 5 s nessuna notifica (caricamento dati); le comande che hai inviato tu non suonano sul tuo dispositivo.
+  Pannello Preferenze: suono, notifiche push (`attivaPush('admin')`), categorie. Le pagine non hanno più interruttori di suono/notifiche. Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/tavolo`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
   Senza Supabase utenti demo `admin`, `cameriere`, `cucina`, `barista` (password `lido`, tasti rapidi sotto il login); la sessione
   demo è per scheda (sessionStorage, ultima usata in localStorage): tre schede dello stesso browser possono essere tre utenti.
 - `Sidebar`: su PC a scomparsa (hamburger nella `Topbar`, colonna che scorre fuori `lg:-ml-64`, scelta ricordata in
@@ -97,7 +102,7 @@ Aggiornare qui quando cambia un modulo.
   permesso di modifica (Prenotazioni/Menu = ristorante, App = sito, Ingressi = eventi).
 - **Foto profilo** (migrazione 0013, `beachin.utenti.foto`): scelta toccando il cerchio in Nuovo/Modifica utente (`SceltaFoto`,
   `fileAImmagine(file, 'utenti', 320)` → Storage `beachin/utenti/`), salvata dalla Edge Function; `Avatar` tondo (iniziali se manca)
-  nell'elenco utenti e nella Topbar accanto a nome e ruolo.
+  nell'elenco utenti e nella Topbar in alto a sinistra (al posto del titolo pagina, che resta solo `sr-only`), con nome e ruolo da PC.
 - **Primo amministratore** (DB nuovo, es. produzione): creare l'utente in Auth (Studio → Authentication → Add user) e poi
   `insert into beachin.utenti (id, email, nome, ruolo_id) values ('<uuid>', '<email>', '<nome>', 'amministratore');`
 
@@ -116,7 +121,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   vede solo lo stato dei propri ordini. Stati: `in_attesa → presa_in_carico → in_preparazione → pronta` (`SUCCESSIVO` nel context).
   Sync tra schede dello stesso browser: `comande` in localStorage `beachin.comande.v1` + evento `storage` (niente backend:
   tra dispositivi diversi serve un server). Suoni Web Audio in `src/lib/suoni.ts` (`campanello`/`ding`, sblocco al primo gesto);
-  la pagina Comande ha link+QR ComandApp, "Attiva suoni" e suona il campanello a ogni comanda nuova.
+  la pagina Comande ha link+QR ComandApp; il campanello delle comande nuove è nel centro notifiche.
   Installabile come PWA a sé: `public/comandapp.webmanifest` + `comandapp-icon-192/512.png` (logo Lido dei Pini blu su fondo
   giallo TENDA, ricolorato dalle icone admin), collegati da `impostaManifest()` in `src/lib/notifichePush.ts`.
   Banner "Aggiungi alla Home" (`src/components/PulsanteInstalla.tsx`): prompt nativo su Android/Chrome
@@ -133,7 +138,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Utenti online (migrazione 0014): `src/lib/presenza.ts` chiama `beachin.monitor_segnale` ogni minuto a pagina visibile se lo staff è collegato → tabella `beachin.presenze_staff`, vista `beachin.monitor_utenti` (nome, ruolo, ultimo accesso, ultima attività) letta dal collettore.
 
 - **Prenotazioni operative** (`/prenotazioni` nell'app staff, `src/pages/Prenotazioni.tsx`, ex app admin `/adminapp`; `?tab=`
-  prenotazioni/menu/app/ingressi; campanello globale nella `Sidebar`), tab **Prenotazioni** (richieste tavolo dal sito da confermare/rifiutare, campanello all'arrivo; **Conferma** apre
+  prenotazioni/menu/app/ingressi; campanello nel centro notifiche), tab **Prenotazioni** (richieste tavolo dal sito da confermare/rifiutare, campanello all'arrivo; **Conferma** apre
   `SceltaTavolo` a schermo intero: in orizzontale la pianta `PiantaTavoli` (estratta da `ristorante/ScegliTavolo.tsx`), in
   verticale invito a girare il telefono + elenco tavoli con consigliato; poi `confermaRistorante` + `assegnaTavolo(PR-<id>)`;
   card **Oggi al ristorante** `OggiRistorante`: coperti/posti e riempimento per turno, avvisi senza tavolo/richieste di oggi,
@@ -147,6 +152,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `beachin_vapid_private`, mai nel repo). Iscrizioni in `beachin.push_iscrizioni` (non leggibile da anon, scrittura via RPC
   `beachin.registra_push`). Trigger `notifica_nuova_richiesta` su `richieste_ristorante` → `pg_net` → Edge Function
   `beachin-push` (`supabase/functions/beachin-push`, legge DB via `SUPABASE_DB_URL`, rimuove iscrizioni 404/410).
+  Migrazione 0025: stessa funzione `notifica_nuova_richiesta(tipo)` anche per `prenotazioni_online` (tabella nuova: prenotazioni ombrellone dal
+  sito, prima solo locali; i dati seminati `PO-01…` non notificano) e `richieste_eventi` (non quelle `origine = manuale`) → tipi `ombrellone`/`evento`.
   Tocco notifica con app aperta → SW `postMessage({tipo:"aggiorna"})` → reload; `useSyncSupabase` rilegge anche su visibilitychange/online/pageshow e alla (ri)sottoscrizione del canale (app sospesa su telefono = canale live caduto).
   iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `src/lib/hashInPercorso.ts` (primo import di `main.tsx`, prima che il router legga l'indirizzo) converte `#/percorso` in path con BrowserRouter: start_url delle app installate.
 
@@ -410,7 +417,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - `Sidebar`: voce con figli = pulsante che apre/chiude (aperto di default se ci sei dentro), righe alte per iPad.
   `AppShell` ricava titolo/sottotitolo anche dai figli (es. `/comande`).
 - Il menu mostra **solo i moduli attivi** (niente voci col lucchetto; si attivano da Impostazioni → Moduli e piano).
-- La `Sidebar` suona il `campanello()` a ogni richiesta tavolo nuova dal sito (non al primo caricamento; audio sbloccato al primo tocco).
+- Il centro notifiche (`NotificheContext`) suona il `campanello()` a ogni richiesta tavolo nuova dal sito (non al primo caricamento; audio sbloccato al primo tocco).
 - `Bar.tsx`: solo schede Listino (giacenze) e Conti (per ombrellone); tolte vendite/KPI. Modulo `bar` aggiunto al piano `ristorante_web`.
 - Dipendenza moduli (`ModuliContext`): Comande usa il listino del Bar, quindi con `comande` attivo anche `bar` resta attivo; disattivare `bar` spegne anche `comande`.
 - **Listino bar condiviso** (ott 2026): `sezioniBar` + `articoliBar` nel context, sync Supabase `beachin.bar_sezioni` /

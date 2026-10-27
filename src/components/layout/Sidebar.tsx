@@ -1,18 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import { X, Lock, ChevronDown } from 'lucide-react'
 import { useSessione } from '@/context/SessioneContext'
 import type { ModuloId } from '@/config/moduli'
 import { navigazione, gruppiNav, funzioneDiVoce, type SottoVoce, type VoceNav } from '@/config/navigazione'
 import { useModuli } from '@/context/ModuliContext'
-import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Logo } from './Logo'
 import { accento } from '@/config/accenti'
 import { cn } from '@/lib/cn'
 import { useConHome, useConteggiNav } from '@/hooks/useNavStaff'
 import { useFunzioni } from '@/hooks/useFunzioni'
-import { campanello, sbloccaAudio } from '@/lib/suoni'
 
 interface SidebarProps {
   aperta: boolean
@@ -46,24 +44,10 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   // e, per le sottovoci, funzionalità attiva per il cliente e permessa al ruolo
   const { ok } = useFunzioni()
   const figlioVisibile = (f: SottoVoce) => { const id = funzioneDiVoce(f); return visibile(f.modulo, f.permesso) && (!id || ok(id)) }
-  const { richiesteRistorante } = useDemoData()
   const { pathname, search } = useLocation()
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
   const conta = useConteggiNav()
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
-  // Suono a ogni richiesta nuova dal sito (non al primo caricamento). Il browser
-  // permette l'audio solo dopo un gesto: lo sblocchiamo al primo tocco sulla pagina.
-  const viste = useRef<Set<string> | null>(null)
-  const idRichieste = richiesteRistorante.filter((r) => r.stato === 'da_confermare').map((r) => r.id)
-  useEffect(() => {
-    if (viste.current && moduloAttivo('ristorante') && puo('ristorante') && idRichieste.some((id) => !viste.current!.has(id))) campanello()
-    viste.current = new Set(idRichieste)
-  }, [idRichieste.join()]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    const sblocca = () => sbloccaAudio()
-    window.addEventListener('pointerdown', sblocca, { once: true })
-    return () => window.removeEventListener('pointerdown', sblocca)
-  }, [])
   const dentro = (v: VoceNav) => (v.figli ?? []).some((f) => pathname === f.percorso.split('?')[0])
   return (
     <>

@@ -1,6 +1,9 @@
 import { useSessione } from '@/context/SessioneContext'
 import { Avatar } from '@/components/ui/Avatar'
-import { LogOut, Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
+import { useState } from 'react'
+import { CentroNotifiche } from './CentroNotifiche'
+import { SchedaUtente } from './SchedaUtente'
+import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
 import { useTema } from '@/hooks/useTema'
 import type { Meteo } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
@@ -20,11 +23,12 @@ const meteoIcona: Record<Meteo, typeof Sun> = {
   sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
 }
 
-export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPagina }: TopbarProps) {
+export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
   const meteo = useMeteoOggi()
   const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
   const { profilo } = useSessione()
+  const [scheda, setScheda] = useState(false)
   return (
     <header className="shell-bar sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-calce-200 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:px-4 md:h-16 lg:px-6">
       {/* su telefono e tablet il menu completo si apre da "Altro"/"Menu" nella barra delle schede */}
@@ -37,23 +41,19 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
         <Menu className="h-5 w-5" />
       </button>
 
-      {IconaPagina && (
-        <span
-          className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl text-[#0B2C39] sm:grid"
-          style={{ background: 'linear-gradient(135deg, var(--accento), color-mix(in srgb, var(--accento) 70%, #ffffff))', boxShadow: '0 8px 20px -10px var(--accento)' }}
-          aria-hidden
-        >
-          <IconaPagina className="h-5 w-5" strokeWidth={2.25} />
-        </span>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-xl font-semibold leading-tight text-profondo">{titolo}</h1>
-        {sottotitolo && (
-          <p className="truncate text-xs text-profondo/55">{sottotitolo}</p>
+      {/* foto dell'utente in alto a sinistra (iniziale se manca); il titolo resta solo per i lettori di schermo */}
+      <h1 className="sr-only">{titolo}</h1>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {profilo && (
+          <button onClick={() => setScheda(true)} className="flex min-w-0 items-center gap-2 rounded-full text-left" aria-label="Apri il tuo profilo" title="Il tuo profilo">
+            <Avatar nome={profilo.nome} foto={profilo.foto} className="h-10 w-10" />
+            <span className="hidden min-w-0 leading-tight md:block">
+              <span className="block truncate text-sm font-medium text-profondo">{profilo.nome}</span>
+              <span className="block truncate text-xs text-profondo/55">{profilo.ruolo}</span>
+            </span>
+          </button>
         )}
       </div>
-
 
       {/* Data di oggi + meteo attuale a Savona */}
       <div className="flex items-center gap-2 rounded-lg border border-calce-200 bg-white px-2.5 py-1.5 text-sm text-profondo">
@@ -84,23 +84,8 @@ export function Topbar({ titolo, sottotitolo, onApriMenu, onEsci, icona: IconaPa
         </button>
       )}
 
-      {profilo && (
-        <div className="flex items-center gap-2">
-          <div className="hidden text-right leading-tight md:block">
-            <p className="text-sm font-medium text-profondo">{profilo.nome}</p>
-            <p className="text-xs text-profondo/55">{profilo.ruolo}</p>
-          </div>
-          <Avatar nome={profilo.nome} foto={profilo.foto} />
-        </div>
-      )}
-      <button
-        onClick={onEsci}
-        className="bi-esci grid h-9 w-9 shrink-0 place-content-center rounded-full border border-calce-200 bg-white text-profondo/70 hover:text-profondo"
-        aria-label="Esci"
-        title="Esci"
-      >
-        <LogOut className="h-4 w-4" />
-      </button>
+      <CentroNotifiche />
+      {profilo && <SchedaUtente profilo={profilo} aperta={scheda} onChiudi={() => setScheda(false)} onEsci={onEsci} />}
 
       {/* Badge dati dimostrativi — sempre visibile */}
       <div

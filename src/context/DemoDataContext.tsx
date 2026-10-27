@@ -84,7 +84,7 @@ const SITO: Record<string, AccessoSync> = {
   ...MENU, tavoli: LETTURA, tavoli_giorno: LETTURA, giorni_chiusi: LETTURA,
   prenotazioni_ristorante: { modo: 'lettura', colonne: 'id,data,turno,ora,coperti,tavolo_id,stato' },
   richieste_ristorante: { modo: 'nuove', colonne: 'id,ricevuta_il,data,turno,ora,coperti,stato,ts' },
-  richieste_eventi: { modo: 'scrittura' },
+  richieste_eventi: { modo: 'scrittura' }, prenotazioni_online: { modo: 'scrittura' },
   eventi: LETTURA, galleria_sito: LETTURA, sito_contenuti: LETTURA,
 }
 export const PAGINE_CLIENTI: Record<string, (cerca: URLSearchParams) => Record<string, AccessoSync>> = {
@@ -452,6 +452,20 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const [prenotazioniOnline, setPrenotazioni] = useState<PrenotazioneOnline[]>(() =>
     clona(statoSito.prenotazioni)
   )
+  // Prenotazioni ombrellone dal sito: su Supabase (il trigger manda la notifica push allo staff).
+  useSyncSupabase({
+    tabella: 'prenotazioni_online', accesso: accessoDi('prenotazioni_online'), righe: prenotazioniOnline, setRighe: setPrenotazioni, semina: true,
+    aRiga: (p) => ({
+      id: p.id, ricevuta_il: p.ricevutaIl, nome: p.nome, email: p.email, telefono: p.telefono, dal: p.dal, al: p.al,
+      tipologia_postazione: p.tipologiaPostazione, persone: p.persone, stato: p.stato, messaggio: p.messaggio ?? null,
+    }),
+    daRiga: (r) => ({
+      id: r.id, ricevutaIl: r.ricevuta_il as string, nome: r.nome as string, email: r.email as string, telefono: r.telefono as string,
+      dal: r.dal as string, al: r.al as string, tipologiaPostazione: r.tipologia_postazione as PrenotazioneOnline['tipologiaPostazione'],
+      persone: Number(r.persone), stato: r.stato as PrenotazioneOnline['stato'], messaggio: (r.messaggio as string) ?? undefined,
+    }),
+    ordina: (a, b) => String(b.ricevuta_il).localeCompare(String(a.ricevuta_il)) || Number(b.ts) - Number(a.ts),
+  })
   const [pagine, setPagine] = useState<PaginaSito[]>(() => clona(statoSito.pagine))
   // Contenuti del sito su Supabase (`sito_contenuti`, una riga per voce): canali di prenotazione, homepage, prezzi del listino.
   const [contenutiSito, setContenutiSito] = useState<ContenutoSito[]>(contenutiIniziali)

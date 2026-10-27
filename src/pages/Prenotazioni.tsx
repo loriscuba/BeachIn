@@ -15,7 +15,6 @@ import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { GestioneLavagnetta, GestioneNews } from '@/components/app/GestioneAppClienti'
 import { cn } from '@/lib/cn'
-import AttivaNotifiche from '@/components/AttivaNotifiche'
 import { Caricamento } from '@/components/ui/Caricamento'
 import { lazyRiprova } from '@/lib/lazyRiprova'
 import { useFunzioni } from '@/hooks/useFunzioni'
@@ -44,7 +43,6 @@ export default function Prenotazioni() {
   const [tab, setTab] = useState<Scheda>(ammessa(richiesta) ? richiesta! : conRistorante ? 'prenotazioni' : conMenu ? 'menu' : conApp ? 'app' : 'ingressi')
   const colonne = [conRistorante && '1.5fr', conMenu && '1fr', conApp && '1fr', conEventi && '1.2fr'].filter(Boolean).join('_')
   const daConfermare = richiesteRistorante.filter((r) => r.stato === 'da_confermare')
-  // il campanello delle richieste nuove suona in tutta l'app staff (menu laterale), non solo qui
 
   return (
     <div>
@@ -58,8 +56,6 @@ export default function Prenotazioni() {
           {conEventi && <button onClick={() => setTab('ingressi')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'ingressi' ? 'bg-profondo text-white' : 'text-profondo/60')}><ScanLine className="h-4 w-4" /> Ingressi</button>}
         </div>
       </div>
-
-      <AttivaNotifiche app="admin" descrizione="Ricevi le nuove prenotazioni come notifica, anche a telefono bloccato." />
 
       {!conRistorante && !conMenu && !conApp && !conEventi && (
         <p className="rounded-2xl bg-white p-4 text-sm text-profondo/70 shadow-sm">Il tuo ruolo non ha sezioni in Prenotazioni. Chiedi all'amministratore.</p>

@@ -1,34 +1,25 @@
 /**
  * Coda unica del bar (modulo Bar al tavolo): comande dagli ombrelloni e bevande dei tavoli del ristorante.
  * Schermata intera = la stessa della Cucina a tre colonne (`<Cucina reparto="bar" />`); `compatta` = un solo elenco,
- * dentro la pagina Comande (che ha già il suo bottone del campanello: `suoni`).
+ * dentro la pagina Comande. Il campanello delle voci nuove è nel centro notifiche (in alto a destra).
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDemoData } from '@/context/DemoDataContext'
-import { campanello } from '@/lib/suoni'
 import { codaBar, perReparto, type VoceBar } from '@/lib/sala'
 import Cucina, { SchedaComanda, azioniTavolo } from './Cucina'
 import { ComandaCard } from './ComandaOmbrellone'
 
-export default function CodaBar({ compatta = false, suoni = false }: { compatta?: boolean; suoni?: boolean }) {
+export default function CodaBar({ compatta = false }: { compatta?: boolean }) {
   if (!compatta) return <Cucina reparto="bar" />
-  return <Elenco suoni={suoni} />
+  return <Elenco />
 }
 
-function Elenco({ suoni }: { suoni: boolean }) {
+function Elenco() {
   const { comande, comandeSala } = useDemoData()
   const { daFare, pronte } = useMemo(() => codaBar(comande, comandeSala), [comande, comandeSala])
   const [ora, setOra] = useState(Date.now())
   useEffect(() => { const t = window.setInterval(() => setOra(Date.now()), 30000); return () => window.clearInterval(t) }, [])
-
-  // campanello a ogni voce nuova da preparare (ombrellone o tavolo, anche da un altro dispositivo)
   const chiave = (v: VoceBar) => `${v.tipo}-${v.c.id}`
-  const visti = useRef(new Set(daFare.map(chiave)))
-  useEffect(() => {
-    const nuove = daFare.filter((v) => !visti.current.has(chiave(v)))
-    nuove.forEach((v) => visti.current.add(chiave(v)))
-    if (suoni && nuove.length) campanello()
-  }, [daFare, suoni])
 
   return (
     <div className="space-y-2">
