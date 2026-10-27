@@ -3,8 +3,8 @@ import { Avatar } from '@/components/ui/Avatar'
 import { useState } from 'react'
 import { CentroNotifiche } from './CentroNotifiche'
 import { SchedaUtente } from './SchedaUtente'
-import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning, Moon } from 'lucide-react'
-import { useTema } from '@/hooks/useTema'
+import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning } from 'lucide-react'
+import { logoLido } from '@/assets/sito'
 import type { Meteo } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { config } from '@/data/config'
@@ -25,8 +25,9 @@ const meteoIcona: Record<Meteo, typeof Sun> = {
 
 export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
   const meteo = useMeteoOggi()
-  const [tema, cambiaTema] = useTema()
   const IconaMeteo = meteoIcona[meteo.meteo]
+  const gradi = meteo.temp ?? meteo.max
+  const dataBreve = `${config.oggi.slice(8, 10)}/${config.oggi.slice(5, 7)}`
   const { profilo } = useSessione()
   const [scheda, setScheda] = useState(false)
   return (
@@ -41,49 +42,44 @@ export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* foto dell'utente in alto a sinistra (iniziale se manca); il titolo resta solo per i lettori di schermo */}
+      {/* sinistra: foto (tocco = profilo), saluto con il nome del lido, data e meteo; il titolo resta per i lettori di schermo */}
       <h1 className="sr-only">{titolo}</h1>
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      {/* tre zone: sinistra e destra larghe uguali, così il logo sta al centro senza mai sovrapporsi */}
+      <div className="flex flex-1 basis-0 items-center gap-2.5">
         {profilo && (
-          <button onClick={() => setScheda(true)} className="flex min-w-0 items-center gap-2 rounded-full text-left" aria-label="Apri il tuo profilo" title="Il tuo profilo">
+          <button onClick={() => setScheda(true)} className="flex min-w-0 shrink-0 items-center gap-2.5 rounded-full text-left" aria-label="Apri il tuo profilo" title="Il tuo profilo">
             <Avatar nome={profilo.nome} foto={profilo.foto} className="h-10 w-10" />
-            <span className="hidden min-w-0 leading-tight md:block">
-              <span className="block truncate text-sm font-medium text-profondo">{profilo.nome}</span>
-              <span className="block truncate text-xs text-profondo/55">{profilo.ruolo}</span>
+            <span className="min-w-0 leading-tight">
+              <span className="block max-w-[7.5rem] truncate text-sm font-semibold text-profondo sm:max-w-[10rem]">Ciao {profilo.nome.trim().split(/\s+/)[0]}</span>
+              <span className="hidden truncate text-xs text-profondo/55 sm:block">{config.nome}</span>
+              {/* telefono: data e meteo sotto il saluto */}
+              <span className="flex items-center gap-1 text-xs text-profondo/55 sm:hidden">{dataBreve} · <IconaMeteo className="h-3.5 w-3.5 text-tenda" /> {gradi}°</span>
             </span>
           </button>
         )}
-      </div>
-
-      {/* Data di oggi + meteo attuale a Savona */}
-      <div className="flex items-center gap-2 rounded-lg border border-calce-200 bg-white px-2.5 py-1.5 text-sm text-profondo">
-        <CalendarClock className="hidden h-4 w-4 text-cabina sm:block" />
-        <span className="hidden font-medium capitalize md:inline">{dataEstesa(config.oggi)}</span>
-        <span className="font-medium md:hidden">{config.oggi.slice(8, 10)}/{config.oggi.slice(5, 7)}</span>
-        <span
-          className="flex items-center gap-1 border-l border-calce-200 pl-2"
+        {/* tablet e PC: data e meteo accanto al saluto */}
+        <div
+          className="hidden shrink-0 items-center gap-2 rounded-lg border border-calce-200 bg-white px-2.5 py-1.5 text-sm text-profondo sm:flex"
           title={meteo.reale ? `Meteo attuale a Savona (Open-Meteo)${meteo.min != null ? ` · min ${meteo.min}° max ${meteo.max}°` : ''}` : 'Meteo di esempio (rete non disponibile)'}
         >
-          <IconaMeteo className="h-4 w-4 text-tenda" />
-          {meteo.temp ?? meteo.max}°
-        </span>
+          <CalendarClock className="h-4 w-4 text-cabina" />
+          <span className="hidden font-medium capitalize xl:inline">{dataEstesa(config.oggi)}</span>
+          <span className="font-medium xl:hidden">{dataBreve}</span>
+          <span className="flex items-center gap-1 border-l border-calce-200 pl-2">
+            <IconaMeteo className="h-4 w-4 text-tenda" />
+            {gradi}°
+          </span>
+        </div>
       </div>
 
-      {(
-        <button
-          onClick={cambiaTema}
-          className="relative flex h-9 w-16 shrink-0 items-center rounded-full border border-calce-200 bg-white p-1 transition-colors"
-          aria-label={tema === 'scuro' ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
-          title={tema === 'scuro' ? 'Tema chiaro' : 'Tema scuro'}
-        >
-          <span
-            className={`grid h-7 w-7 place-items-center rounded-full shadow transition-transform duration-300 ${tema === 'scuro' ? 'translate-x-7 bg-profondo-600 text-tenda' : 'bg-tenda text-profondo'}`}
-          >
-            {tema === 'scuro' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          </span>
-        </button>
-      )}
+      {/* logo dello stabilimento al centro della testata (chiaro in tema scuro) */}
+      <img
+        src={logoLido}
+        alt={config.nome}
+        className="logo-testata h-9 w-auto shrink-0 select-none md:h-11"
+      />
 
+      <div className="flex flex-1 basis-0 items-center justify-end gap-3">
       <CentroNotifiche />
       {profilo && <SchedaUtente profilo={profilo} aperta={scheda} onChiudi={() => setScheda(false)} onEsci={onEsci} />}
 
@@ -95,6 +91,7 @@ export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
       >
         <FlaskConical className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">Dati dimostrativi</span>
+      </div>
       </div>
     </header>
   )
