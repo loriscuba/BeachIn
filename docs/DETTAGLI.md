@@ -21,7 +21,7 @@ Aggiornare qui quando cambia un modulo.
   delle schede del ruolo (non con "risparmio dati"). In Prenotazioni menu a voce e lettore QR sono lazy (pagina 158 → 18 KB).
 - **Telefono**: `Tabella` sotto `sm` diventa una lista di schede (prima colonna titolo, le altre etichetta/valore).
 - **Accesso**: `AppShell` mostra `LoginGestore` finché `SessioneContext` non ha un profilo; tocco sulla foto in alto a sinistra della Topbar
-  → `SchedaUtente` (nome, ruolo, interruttore tema chiaro/scuro, Esci). Testata a tre zone larghe uguali: sinistra foto + "Ciao <nome>"
+  → `SchedaUtente` (nome, ruolo, tema Automatico/Chiaro/Scuro, Esci; `useTema` di base segue `prefers-color-scheme` del telefono, scelta in localStorage `beachin.tema.v2`). Testata a tre zone larghe uguali: sinistra foto + "Ciao <nome>"
   + nome del lido + data/meteo (su telefono sotto il saluto), centro logo del lido (`logoLido`, `.logo-testata` schiarito in tema scuro),
   destra campanella notifiche e badge demo.
 - **Centro notifiche** (`context/NotificheContext.tsx` in `AppShell`, campanella `layout/CentroNotifiche.tsx` in alto a destra): unico punto per
