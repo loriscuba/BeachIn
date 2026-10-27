@@ -2,7 +2,7 @@
  * Ordine dal telefono col QR fisso del tavolo (rotta pubblica `/tavolo?c=<codice>`, fuori dallo shell).
  * Il codice individua il tavolo (`tavoliQr`); si ordina solo se il cameriere ha aperto il tavolo, così chi ha
  * la foto del QR non può ordinare da fuori. La pagina resta legata al conto (seduta) che ha trovato aperto: chiuso
- * il conto, chi la tiene aperta non ordina più sul conto dei clienti successivi. Menu = quello scelto per il tavolo in Comande sala → QR tavoli.
+ * il conto, chi la tiene aperta non ordina più sul conto dei clienti successivi. Menu = quello scelto per il tavolo in Comande sala → Cameriere (QR della card del tavolo).
  */
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'

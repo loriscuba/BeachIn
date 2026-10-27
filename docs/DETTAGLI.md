@@ -227,7 +227,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `/salaapp`, e al posto della coda nella pagina Comande quando il modulo è attivo (`<CodaBar compatta suoni />`).
 
 ## QR tavoli e scelta tavolo per zona (ott 2026)
-- **Scelta del tavolo per zona** (`src/pages/sala/TavoliPerZona.tsx`): cameriere, avvio tablet self e QR tavoli usano i tavoli del
+- **Scelta del tavolo per zona** (`src/pages/sala/TavoliPerZona.tsx`): cameriere e avvio tablet self usano i tavoli del
   giorno (`tavoliDelGiorno(config.oggi)`, gli stessi di Ristorante → Tavoli) divisi per le zone di `lib/zoneTavoli.ts`.
 - **QR fisso per tavolo**: tabella `beachin.tavoli_qr` (migrazione `0020_tavoli_qr.sql`: id = numero, `codice` casuale di 10 caratteri,
   `menu` ristorante/bar/lavagnetta, `aperto`; anche origine `qr` su `comande_sala`). Context `tavoliQr`, `assicuraTavoliQr(numeri)`
@@ -235,10 +235,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Link `urlTavoloQr(codice)` → rotta pubblica **`/tavolo?c=`** (`src/pages/TavoloQR.tsx`): se il tavolo è aperto apre `TabletSelf`
   con `qr` (niente lucchetto, comanda `origine: 'qr'`, badge "QR"), altrimenti "chiedi al cameriere". Il cameriere apre/chiude il tavolo
   dalla card del tavolo; si apre da solo alla prima comanda del cameriere.
-- Scheda **QR tavoli** (`/sala?tab=qr`, `sala/QrTavoli.tsx`): menu per tavolo, apri/chiudi, "Chiudi tutti", stampa (`stampaQr`).
+- Niente più scheda/voce **QR tavoli** (tolta 27/10/2026): tutto dentro **Cameriere**. Sulla card del tavolo il tasto QR apre
+  `DettaglioQr` (QR, menu del tavolo, apri/chiudi, stampa); nell'intestazione della scelta tavolo `AzioniQrTavoli` ("Chiudi tutti",
+  "Stampa QR" di tutti i tavoli, `stampaQr`). Vecchio link `/sala?tab=qr` → Cameriere. La funzionalità `sala.qr` ("Ordini col QR del
+  tavolo") resta l'interruttore che attiva QR e "Apri tavolo". `useQrTavolo(numero)` crea la riga mancante in un effect.
   Il tablet self ha il bottone telefono che mostra il QR del suo tavolo (`QrTelefono`).
-- Sala → scheda **QR tavoli** (prima nell'app BeachIn Sala sotto Cameriere); sulla card del tavolo del
-  cameriere il tasto QR apre `DettaglioQr` (QR, menu, apri/chiudi, stampa). `useQrTavolo(numero)` crea la riga mancante in un effect.
 - **Conto del tavolo** (migrazione 0021): `TavoloQr.seduta` = conto in corso; ogni comanda nasce con la `seduta` del tavolo.
   `delConto(comande, tavolo, seduta)` (lib/sala) = comande della seduta non `pagata` (anche servite): "già ordinato" e totale nel
   cameriere e nel tablet. Tasto **Chiudi conto** (card del tavolo, con riepilogo `RiepilogoConto`) → `chiudiContoTavolo(numero)`:
