@@ -23,6 +23,7 @@ import { cn } from '@/lib/cn'
 import { QrCodice } from '@/components/QrCodice'
 import { supabaseAttivo } from '@/lib/supabase'
 import { urlComandApp, UTENTI_COMANDAPP } from '@/lib/comandapp'
+import { PulsanteSchermoIntero, SchermoIntero, useSchermoIntero } from '@/components/SchermoIntero'
 
 export default function Comande() {
   const { comande, comandeSala, inviaComanda, avanzaComanda, annullaComanda, articoliBar, sezioniBar } = useDemoData()
@@ -38,6 +39,7 @@ export default function Comande() {
   const [filtro, setFiltro] = useState<CategoriaBar | 'tutte'>('tutte')
   const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
+  const intero = useSchermoIntero()
   const [copiato, setCopiato] = useState(false)
   const link = urlComandApp()
 
@@ -76,6 +78,29 @@ export default function Comande() {
   }
 
   const aperte = unica ? codaBar(comande, comandeSala).daFare.length : comande.filter((c) => c.stato !== 'pronta').length
+
+  // coda delle comande: nella card con altezza fissa, a schermo intero a tutta pagina
+  const coda = (inCard: boolean) => unica
+    ? <div className={cn(inCard && 'max-h-[30rem] overflow-y-auto pr-1')}><CodaBar compatta /></div>
+    : <>
+      {comande.length === 0 && (
+        <p className="py-10 text-center text-sm text-profondo/45">Nessuna comanda. Invia il primo ordine dall'ombrellone.</p>
+      )}
+      <div className={cn('space-y-2', inCard && 'max-h-[30rem] overflow-y-auto pr-1')}>
+        {comande.map((c) => (
+          <ComandaCard key={c.id} comanda={c} onAvanza={() => avanzaComanda(c.id)} onAnnulla={() => annullaComanda(c.id)} />
+        ))}
+      </div>
+    </>
+
+  if (intero.attivo) return (
+    <SchermoIntero onEsci={intero.esci}>
+      <div className="mx-auto max-w-3xl space-y-2">
+        <p className="flex items-center gap-2 pb-1 text-sm font-semibold text-profondo"><Coffee className="h-4 w-4 text-cabina" /> Comande al bar <Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge></p>
+        {coda(false)}
+      </div>
+    </SchermoIntero>
+  )
 
   return (
     <div className="space-y-4">
@@ -178,19 +203,10 @@ export default function Comande() {
         <CardHeader
           titolo={<span className="inline-flex items-center gap-2"><Coffee className="h-4 w-4 text-cabina" /> Comande al bar</span>}
           sottotitolo={unica ? 'Coda unica: ombrelloni e tavoli del ristorante' : 'Ordini in arrivo dagli ombrelloni'}
-          azione={<Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge>}
+          azione={<div className="flex flex-wrap items-center justify-end gap-2"><Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge><PulsanteSchermoIntero onClick={intero.entra} /></div>}
         />
         <CardBody className="space-y-2 pt-2">
-          {unica ? <div className="max-h-[30rem] overflow-y-auto pr-1"><CodaBar compatta /></div> : <>
-          {comande.length === 0 && (
-            <p className="py-10 text-center text-sm text-profondo/45">Nessuna comanda. Invia il primo ordine dall'ombrellone.</p>
-          )}
-          <div className="max-h-[30rem] space-y-2 overflow-y-auto pr-1">
-            {comande.map((c) => (
-              <ComandaCard key={c.id} comanda={c} onAvanza={() => avanzaComanda(c.id)} onAnnulla={() => annullaComanda(c.id)} />
-            ))}
-          </div>
-          </>}
+          {coda(true)}
         </CardBody>
       </Card>
     </div>

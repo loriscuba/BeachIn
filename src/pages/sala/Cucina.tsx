@@ -7,7 +7,7 @@
  * Campanello a ogni comanda nuova, minuti di attesa sulla scheda.
  */
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { Check, ChefHat, Clock, Hourglass, Maximize2, Smartphone, Tablet, Users, X } from 'lucide-react'
+import { Check, ChefHat, Clock, Hourglass, Smartphone, Tablet, Users, X } from 'lucide-react'
 import type { Comanda, ComandaSala, StatoComandaSala } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card } from '@/components/ui/Card'
@@ -17,6 +17,7 @@ import { supabaseAttivo } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
 import { aspettaVia, azioneStatoSala, daPreparare, minutiDa, nomeUscita, perReparto, statoRiga, uscitaChiamata, uscitaDi, usciteDi, type Reparto } from '@/lib/sala'
 import { ComandaCard } from './ComandaOmbrellone'
+import { PulsanteSchermoIntero, SchermoIntero, useSchermoIntero } from '@/components/SchermoIntero'
 
 const COLONNE: { stato: StatoComandaSala; titolo: string; colore: string }[] = [
   { stato: 'inviata', titolo: 'Da fare', colore: 'bg-boa' },
@@ -50,21 +51,8 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
   const chiave = (v: Voce) => `${v.tipo}-${v.c.id}`
   const intero = useSchermoIntero()
 
-  return (
-    <div className={cn('space-y-4', intero.attivo && 'schermo-intero fixed inset-0 z-[90] overflow-y-auto px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(3.75rem+env(safe-area-inset-top))] sm:px-4')}>
-      {intero.attivo
-        ? <button type="button" onClick={intero.esci} aria-label="Esci dallo schermo intero" title="Esci dallo schermo intero"
-            className="fixed right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[91] grid h-11 w-11 place-items-center rounded-full bg-profondo text-white shadow-lg">
-            <X className="h-5 w-5" />
-          </button>
-        : <div className="flex flex-wrap items-center gap-3">
-            <p className={cn('min-w-0 flex-1 text-xs font-medium', supabaseAttivo ? 'text-acqua' : 'text-tenda')}>
-              {supabaseAttivo
-                ? reparto === 'bar' ? '● Coda unica del bar: tavoli del ristorante e ombrelloni, su tutti i dispositivi' : '● Comande condivise tra tutti i dispositivi (sala, tablet, cucina)'
-                : '● Modalità demo: comande condivise solo tra schede di questo browser'}
-            </p>
-            <Button dimensione="sm" onClick={intero.entra}><Maximize2 className="h-4 w-4" /> Schermo intero</Button>
-          </div>}
+  const tabellone = (
+    <div className="space-y-4">
       <div className="grid grid-cols-3 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm md:hidden">
         {COLONNE.map((col) => {
           const n = voci.filter((v) => v.stato === col.stato && !(v.tipo === 'tavolo' && v.via)).length
@@ -103,36 +91,21 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
       </div>
     </div>
   )
-}
 
-/**
- * Schermo intero per cucina e bar: la coda copre testata, menu e barre e resta solo una X per uscire.
- * Dove c'è l'API Fullscreen (PC, Android, iPad) si nasconde anche il browser; su iPhone basta coprire l'app.
- */
-function useSchermoIntero() {
-  const [attivo, setAttivo] = useState(false)
-  const esci = () => {
-    setAttivo(false)
-    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
-  }
-  const entra = () => {
-    setAttivo(true)
-    document.documentElement.requestFullscreen?.().catch(() => {})
-  }
-  useEffect(() => {
-    if (!attivo) return
-    // uscita dal fullscreen del browser (Esc, gesto di sistema) = uscita anche dall'app
-    const cambio = () => { if (!document.fullscreenElement) setAttivo(false) }
-    const tasto = (e: KeyboardEvent) => { if (e.key === 'Escape') setAttivo(false) }
-    document.addEventListener('fullscreenchange', cambio)
-    window.addEventListener('keydown', tasto)
-    return () => {
-      document.removeEventListener('fullscreenchange', cambio)
-      window.removeEventListener('keydown', tasto)
-      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
-    }
-  }, [attivo])
-  return { attivo, entra, esci }
+  if (intero.attivo) return <SchermoIntero onEsci={intero.esci}>{tabellone}</SchermoIntero>
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <p className={cn('min-w-0 flex-1 text-xs font-medium', supabaseAttivo ? 'text-acqua' : 'text-tenda')}>
+          {supabaseAttivo
+            ? reparto === 'bar' ? '● Coda unica del bar: tavoli del ristorante e ombrelloni, su tutti i dispositivi' : '● Comande condivise tra tutti i dispositivi (sala, tablet, cucina)'
+            : '● Modalità demo: comande condivise solo tra schede di questo browser'}
+        </p>
+        <PulsanteSchermoIntero onClick={intero.entra} />
+      </div>
+      {tabellone}
+    </div>
+  )
 }
 
 /**
