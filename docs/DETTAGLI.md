@@ -15,6 +15,7 @@ Aggiornare qui quando cambia un modulo.
 - **Schede per ruolo**: `SCHEDE_RAPIDE` e `SCHEDE_PER_RUOLO` in `config/navigazione.tsx`, hook `hooks/useNavStaff.ts`
   (`useSchedeRapide`, `useConteggiNav` per i badge, `useConHome`). Home (Panoramica) solo per amministratore o chi vede le
   Impostazioni; gli altri ruoli aprono la loro prima scheda (cameriere → Cameriere, cucina → Cucina, barista → Bar) e non vedono Panoramica nel menu.
+  Con la scheda Bar (Coda bar) visibile, la scheda "Ombrelloni" (`/comande`) resta solo all'amministratore (la pagina resta nel menu).
 - **Velocità**: service worker `public/sw-admin.js` registrato da `attivaCacheApp()` (`lib/notifichePush.ts`, solo build di
   produzione, non single-file): pagina dalla rete con ripiego sulla copia dopo 3 s o offline, `/assets/` con hash dalla cache,
   icone e font dalla cache aggiornata in sottofondo; dati Supabase mai in cache. `lib/precarica.ts` scarica a riposo il codice
@@ -165,6 +166,12 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Tocco notifica con app aperta → SW `postMessage({tipo:"aggiorna"})` → reload; `useSyncSupabase` rilegge anche su visibilitychange/online/pageshow e alla (ri)sottoscrizione del canale (app sospesa su telefono = canale live caduto).
   iPhone: solo con app aggiunta alla Home (iOS ≥16.4). Rotte lazy con `lazyRiprova` (`src/lib/lazyRiprova.ts`): se un chunk manca dopo un deploy ricarica la pagina una volta. `src/lib/hashInPercorso.ts` (primo import di `main.tsx`, prima che il router legga l'indirizzo) converte `#/percorso` in path con BrowserRouter: start_url delle app installate.
 
+- **60 secondi per ripensarci** (27/10/2026): gli ordini dall'ombrellone (ComandApp) e dal QR del tavolo (`TabletSelf qr`) restano
+  fermi sul telefono del cliente per `SECONDI_SOSPESO` (60 s, `hooks/useOrdineInSospeso.ts`, localStorage
+  `beachin.sospeso.ombrellone.<omb>` / `beachin.sospeso.tavolo.<n>`): bar e cucina non li vedono. Riquadro `OrdineInSospeso`
+  (MenuLido) con conto alla rovescia, **Modifica** (rimette tutto nel carrello), **Annulla**, **Invia ora**. Allo scadere parte il
+  normale invio (dal QR con la verifica del conto). Se il cliente chiude la pagina, l'ordine parte quando la riapre. Tablet self invariato.
+
 ## Comande ristorante (sala → cucina, ott 2026)
 - Modulo **`sala`** "Comande ristorante" (dipende da `ristorante`: con `sala` attivo resta attivo il Ristorante; chi aveva già il
   Ristorante lo trova attivo una volta, flag `beachin.moduli.sala`). Permesso `sala` nella griglia ruoli; ruolo **Cucina** (`sala`=2).
@@ -227,7 +234,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `/salaapp`, e al posto della coda nella pagina Comande quando il modulo è attivo (`<CodaBar compatta suoni />`).
 
 ## QR tavoli e scelta tavolo per zona (ott 2026)
-- **Scelta del tavolo per zona** (`src/pages/sala/TavoliPerZona.tsx`): cameriere, avvio tablet self e QR tavoli usano i tavoli del
+- **Scelta del tavolo per zona** (`src/pages/sala/TavoliPerZona.tsx`): cameriere e avvio tablet self usano i tavoli del
   giorno (`tavoliDelGiorno(config.oggi)`, gli stessi di Ristorante → Tavoli) divisi per le zone di `lib/zoneTavoli.ts`.
 - **QR fisso per tavolo**: tabella `beachin.tavoli_qr` (migrazione `0020_tavoli_qr.sql`: id = numero, `codice` casuale di 10 caratteri,
   `menu` ristorante/bar/lavagnetta, `aperto`; anche origine `qr` su `comande_sala`). Context `tavoliQr`, `assicuraTavoliQr(numeri)`
@@ -235,10 +242,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - Link `urlTavoloQr(codice)` → rotta pubblica **`/tavolo?c=`** (`src/pages/TavoloQR.tsx`): se il tavolo è aperto apre `TabletSelf`
   con `qr` (niente lucchetto, comanda `origine: 'qr'`, badge "QR"), altrimenti "chiedi al cameriere". Il cameriere apre/chiude il tavolo
   dalla card del tavolo; si apre da solo alla prima comanda del cameriere.
-- Scheda **QR tavoli** (`/sala?tab=qr`, `sala/QrTavoli.tsx`): menu per tavolo, apri/chiudi, "Chiudi tutti", stampa (`stampaQr`).
+- Niente più scheda/voce **QR tavoli** (tolta 27/10/2026): tutto dentro **Cameriere**. Sulla card del tavolo il tasto QR apre
+  `DettaglioQr` (QR, menu del tavolo, apri/chiudi, stampa); nell'intestazione della scelta tavolo `AzioniQrTavoli` ("Chiudi tutti",
+  "Stampa QR" di tutti i tavoli, `stampaQr`). Vecchio link `/sala?tab=qr` → Cameriere. La funzionalità `sala.qr` ("Ordini col QR del
+  tavolo") resta l'interruttore che attiva QR e "Apri tavolo". `useQrTavolo(numero)` crea la riga mancante in un effect.
   Il tablet self ha il bottone telefono che mostra il QR del suo tavolo (`QrTelefono`).
-- Sala → scheda **QR tavoli** (prima nell'app BeachIn Sala sotto Cameriere); sulla card del tavolo del
-  cameriere il tasto QR apre `DettaglioQr` (QR, menu, apri/chiudi, stampa). `useQrTavolo(numero)` crea la riga mancante in un effect.
 - **Conto del tavolo** (migrazione 0021): `TavoloQr.seduta` = conto in corso; ogni comanda nasce con la `seduta` del tavolo.
   `delConto(comande, tavolo, seduta)` (lib/sala) = comande della seduta non `pagata` (anche servite): "già ordinato" e totale nel
   cameriere e nel tablet. Tasto **Chiudi conto** (card del tavolo, con riepilogo `RiepilogoConto`) → `chiudiContoTavolo(numero)`:

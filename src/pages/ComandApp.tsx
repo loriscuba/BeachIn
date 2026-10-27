@@ -26,7 +26,8 @@ import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 import { prezzoLavagna } from '@/components/app/GestioneAppClienti'
 import { EventoModal, FormRistorante, Sospese } from '@/pages/SitoAnteprima'
 import { fotoSito, logoLido } from '@/assets/sito'
-import { PaginaMenu, CopertinaMenu, ChipSezioni, TitoloSezione, SchedaVoce, GRIGLIA_VOCI } from '@/components/menu/MenuLido'
+import { PaginaMenu, CopertinaMenu, ChipSezioni, TitoloSezione, SchedaVoce, OrdineInSospeso, GRIGLIA_VOCI } from '@/components/menu/MenuLido'
+import { useOrdineInSospeso } from '@/hooks/useOrdineInSospeso'
 
 type Utente = (typeof UTENTI_COMANDAPP)[number]
 type Sez = 'news' | 'ombrellone' | 'prenota' | 'eventi' | 'lavagna' | 'contatti'
@@ -385,10 +386,21 @@ function Area({ utente }: { utente: Utente }) {
   const totale = righe.reduce((s, r) => s + r.quantita * r.prezzoUnitario, 0)
   const pezzi = righe.reduce((s, r) => s + r.quantita, 0)
   const cambia = (id: string, d: number) => setQta((q) => { const v = Math.max(0, (q[id] ?? 0) + d); const n = { ...q }; if (v) n[id] = v; else delete n[id]; return n })
+  // l'ordine resta 60 secondi sul telefono (il bar non lo vede): il cliente può correggerlo o annullarlo
+  const attesa = useOrdineInSospeso<{ qta: Record<string, number>; note: string; righe: typeof righe }>(`beachin.sospeso.ombrellone.${utente.ombrellone}`, (d) => {
+    inviaComanda(utente.ombrellone, d.righe, d.note, { origine: 'app', cliente: utente.nome })
+    ding(); setTab('ordini')
+  })
   const invia = () => {
     if (!righe.length) return
-    inviaComanda(utente.ombrellone, righe, note, { origine: 'app', cliente: utente.nome })
-    ding(); setQta({}); setNote(''); setTab('ordini')
+    attesa.metti({ qta, note, righe })
+    setQta({}); setNote('')
+  }
+  const modifica = () => {
+    const d = attesa.riprendi()
+    if (!d) return
+    setQta((q) => { const n = { ...d.qta }; Object.entries(q).forEach(([id, v]) => { n[id] = (n[id] ?? 0) + v }); return n })
+    setNote((x) => x || d.note); setTab('ordina')
   }
 
   const vai = (id: string) => { setCat(id); document.getElementById(`ombr-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
@@ -419,7 +431,7 @@ function Area({ utente }: { utente: Utente }) {
               </section>
             ))}
           </div>
-          {pezzi > 0 && (
+          {pezzi > 0 && !attesa.sospeso && (
             <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 border-t border-[#3B2A20]/10 bg-[#F6EFE3] p-3">
               <div className="mx-auto max-w-md space-y-2 md:max-w-xl">
                 <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (es. senza ghiaccio)" className="h-10 w-full rounded-full border border-[#3B2A20]/15 bg-white px-4 text-sm" />
@@ -465,6 +477,14 @@ function Area({ utente }: { utente: Utente }) {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {attesa.sospeso && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-20 flex justify-center p-3">
+          <OrdineInSospeso restanti={attesa.restanti} totale={attesa.sospeso.righe.reduce((x, r) => x + r.quantita * r.prezzoUnitario, 0)}
+            riepilogo={attesa.sospeso.righe.map((r) => `${r.quantita}× ${r.nome}`).join(' · ')}
+            onModifica={modifica} onAnnulla={attesa.annulla} onInviaOra={attesa.inviaSubito} />
         </div>
       )}
     </PaginaMenu>

@@ -3,7 +3,7 @@
  * - **Cameriere**: sceglie il tavolo, compone la comanda dal menu del Ristorante e la manda in cucina;
  * - **Tablet self**: il tablet resta al tavolo bloccato sul menu con foto, il cliente ordina da solo.
  * In entrambi i casi la comanda arriva nella scheda **Cucina** (stati, campanello). Schede `?tab=`.
- * **QR tavoli**: QR fisso per tavolo, il cliente ordina dal telefono quando il tavolo è aperto.
+ * QR fisso per tavolo (il cliente ordina dal telefono quando il tavolo è aperto): si gestisce dentro **Cameriere**.
  * Con il modulo Bar al tavolo c'è anche la scheda **Bar**: coda unica di bevande dei tavoli e comande degli ombrelloni.
  */
 import { useState } from 'react'
@@ -20,13 +20,12 @@ import { useSessione } from '@/context/SessioneContext'
 import CodaBar from './sala/CodaBar'
 import { useFunzioni, SchedaProtetta } from '@/hooks/useFunzioni'
 import type { Livello } from '@/lib/permessi'
-import QrTavoli from './sala/QrTavoli'
 import Cameriere from './sala/Cameriere'
 import Cucina from './sala/Cucina'
 import AvvioSelf, { leggiSelf, type StatoSelf } from './sala/AvvioSelf'
 import TabletSelf from './sala/TabletSelf'
 
-type Scheda = 'cameriere' | 'cucina' | 'self' | 'qr' | 'bar'
+type Scheda = 'cameriere' | 'cucina' | 'self' | 'bar'
 
 export default function Sala() {
   const [params, setParams] = useSearchParams()
@@ -36,10 +35,12 @@ export default function Sala() {
   const { livello: livFunzione } = useFunzioni()
   const conBar = moduloAttivo('bar-tavolo') && puo('bar-tavolo', 1)
   // chi ha solo la Coda bar (es. Responsabile senza Sala) vede solo quella; le schede della Sala seguono le funzionalità
-  const schedeSala = (['cameriere', 'cucina', 'self', 'qr'] as const).filter((x) => moduloAttivo('sala') && livFunzione(`sala.${x}`) > 0)
+  const schedeSala = (['cameriere', 'cucina', 'self'] as const).filter((x) => moduloAttivo('sala') && livFunzione(`sala.${x}`) > 0)
   const conSala = schedeSala.length > 0
   const schede: Scheda[] = [...schedeSala, ...(conBar ? ['bar' as const] : [])]
-  const tab = schede.includes(params.get('tab') as Scheda) ? (params.get('tab') as Scheda) : schede[0]
+  // il vecchio link ?tab=qr (QR tavoli) porta al Cameriere, dove ora stanno i QR
+  const richiesta = params.get('tab') === 'qr' ? 'cameriere' : params.get('tab')
+  const tab = schede.includes(richiesta as Scheda) ? (richiesta as Scheda) : schede[0]
   const livScheda = !tab ? 0 : tab === 'bar' ? livello('bar-tavolo') : livFunzione(`sala.${tab}`)
   // tablet in modalità self: resta bloccato anche se si ricarica la pagina
   const [self, setSelf] = useState<StatoSelf | null>(leggiSelf)
@@ -57,7 +58,6 @@ export default function Sala() {
             { valore: 'cameriere' as const, etichetta: 'Cameriere' },
             { valore: 'cucina' as const, etichetta: 'Cucina', badge: daFareCucina(comandeSala) },
             { valore: 'self' as const, etichetta: 'Tablet self' },
-            { valore: 'qr' as const, etichetta: 'QR tavoli' },
           ].filter((x) => schedeSala.includes(x.valore)),
           ...(conBar ? [{ valore: 'bar', etichetta: 'Bar', badge: codaBar(comande, comandeSala).daFare.length }] : []),
         ]}
@@ -66,7 +66,6 @@ export default function Sala() {
         {tab === 'cameriere' && <Cameriere />}
         {tab === 'cucina' && <Cucina />}
         {tab === 'self' && <AvvioSelf onAvvia={setSelf} />}
-        {tab === 'qr' && <QrTavoli />}
         {tab === 'bar' && <CodaBar />}
       </SchedaProtetta>
     </div>

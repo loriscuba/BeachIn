@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { config } from '@/data/config'
 import TavoliPerZona from './TavoliPerZona'
-import { DettaglioQr } from './QrTavoli'
+import { DettaglioQr, AzioniQrTavoli } from './QrTavoli'
 import { euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
 import { aperteDelTavolo, delConto, articoliComePiatti, etichettaStatoSala, nomeUscita, repartoDi, statoRiga, tonoStatoSala, USCITE, uscitaPredefinita, usciteDi, type Reparto } from '@/lib/sala'
@@ -175,7 +175,7 @@ export default function Cameriere() {
           </Card>
         ) : (
         <Card>
-          <CardHeader titolo="Tavolo" sottotitolo="Tocca il tavolo per cui prendi la comanda" />
+          <CardHeader titolo="Tavolo" sottotitolo="Tocca il tavolo per cui prendi la comanda" azione={conQr && <AzioniQrTavoli />} />
           <CardBody className="pt-2">
             <TavoliPerZona tavoli={tavoli} scelto={tavolo} onScegli={(n) => { setTavolo(n); setCoperti('') }}
               badge={(t) => aperteDelTavolo(comandeSala, t.numero).length} evidenzia={(t) => aperto(t.numero) || aperteDelTavolo(comandeSala, t.numero).length > 0}
