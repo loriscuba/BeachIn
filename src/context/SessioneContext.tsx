@@ -5,6 +5,8 @@
  * - Senza Supabase: utenti demo nel codice (`src/lib/adminapp.ts`): amministratore, cameriere, cucina, barista.
  * Il profilo si ricarica quando la finestra torna in primo piano e quando cambia la propria riga (Realtime):
  * un utente disattivato esce subito.
+ * Si esce solo con Esci o quando il server dice che l'utente non è (più) abilitato: un errore di rete alla riapertura
+ * dell'app (tipico della PWA su iPhone, rete non ancora pronta) non fa più uscire; resta l'ultimo profilo salvato.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -28,11 +30,23 @@ interface Sessione {
 
 const Ctx = createContext<Sessione | null>(null)
 
-async function leggiProfilo(): Promise<Profilo | null> {
+/** `undefined` = non si sa (errore di rete o del server), `null` = utente non abilitato. */
+async function leggiProfilo(): Promise<Profilo | null | undefined> {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('mio_profilo')
-  if (error) { console.error('profilo', error.message); return null }
-  return (data as Profilo | null) ?? null
+  try {
+    const { data, error } = await supabase.rpc('mio_profilo')
+    if (error) { console.error('profilo', error.message); return undefined }
+    return (data as Profilo | null) ?? null
+  } catch { return undefined }
+}
+
+// Ultimo profilo letto, per riaprire l'app subito (e senza rete) finché la sessione Auth è salvata.
+const CHIAVE_PROFILO = 'beachin.profilo'
+function profiloSalvato(): Profilo | null {
+  try { const v = localStorage.getItem(CHIAVE_PROFILO); return v ? (JSON.parse(v) as Profilo) : null } catch { return null }
+}
+function salvaProfilo(p: Profilo | null) {
+  try { if (p) localStorage.setItem(CHIAVE_PROFILO, JSON.stringify(p)); else localStorage.removeItem(CHIAVE_PROFILO) } catch { /* */ }
 }
 
 export function SessioneProvider({ children }: { children: ReactNode }) {
@@ -41,10 +55,13 @@ export function SessioneProvider({ children }: { children: ReactNode }) {
 
   const aggiorna = useCallback(async () => {
     if (!supabase) return
-    const { data } = await supabase.auth.getSession()
-    if (!data.session) { setProfilo(null); return }
+    const { data, error } = await supabase.auth.getSession()
+    if (error) { setProfilo((x) => x ?? profiloSalvato()); return } // rinnovo token non riuscito per rete: si riprova dopo
+    if (!data.session) { salvaProfilo(null); setProfilo(null); return }
     const p = await leggiProfilo()
+    if (p === undefined) { setProfilo((x) => x ?? profiloSalvato()); return }
     if (!p) await supabase.auth.signOut() // disattivato o senza profilo BeachIn
+    salvaProfilo(p)
     setProfilo(p)
   }, [])
 
@@ -53,11 +70,17 @@ export function SessioneProvider({ children }: { children: ReactNode }) {
     const db = supabase
     void aggiorna().finally(() => setCaricamento(false))
     const { data: sub } = db.auth.onAuthStateChange((evento) => {
-      if (evento === 'SIGNED_OUT') setProfilo(null)
+      if (evento === 'SIGNED_OUT') { salvaProfilo(null); setProfilo(null) }
     })
     const inPrimoPiano = () => { if (document.visibilityState === 'visible') void aggiorna() }
+    const ritornoRete = () => void aggiorna()
     document.addEventListener('visibilitychange', inPrimoPiano)
-    return () => { sub.subscription.unsubscribe(); document.removeEventListener('visibilitychange', inPrimoPiano) }
+    window.addEventListener('online', ritornoRete)
+    return () => {
+      sub.subscription.unsubscribe()
+      document.removeEventListener('visibilitychange', inPrimoPiano)
+      window.removeEventListener('online', ritornoRete)
+    }
   }, [aggiorna])
 
   // Modifiche alla propria riga (ruolo cambiato, disattivazione) → ricarico il profilo.
@@ -83,13 +106,16 @@ export function SessioneProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithPassword({ email: emailAccesso(utente), password })
     if (error) return error.message.includes('banned') ? 'Utente disattivato.' : 'Utente o password non corretti.'
     const p = await leggiProfilo()
+    if (p === undefined) { await supabase.auth.signOut(); return 'Connessione assente, riprova.' }
     if (!p) { await supabase.auth.signOut(); return 'Utente non abilitato al gestionale o disattivato.' }
+    salvaProfilo(p)
     setProfilo(p)
     return null
   }, [])
 
   const esci = useCallback(async () => {
     esciGestore()
+    salvaProfilo(null)
     if (supabase) await supabase.auth.signOut()
     setProfilo(null)
   }, [])
