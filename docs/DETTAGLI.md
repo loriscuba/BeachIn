@@ -35,6 +35,10 @@ Aggiornare qui quando cambia un modulo.
   localStorage `beachin.menu.v1`); su tablet pannello da sinistra aperto da Menu; sul telefono non c'è (`max-md:hidden`).
 - **Sala per chi ha solo la Coda bar**: la rotta `/sala` usa `ModuloGate` con `oppure={['bar-tavolo']}` (vale il livello più
   alto); in `Sala.tsx` le schede Cameriere/Cucina/Tablet self/QR compaiono solo col permesso `sala` (es. Responsabile vede solo Bar).
+- **Schermo intero** (Cucina, Coda bar e coda di Comande; `src/components/SchermoIntero.tsx`): pulsante "Schermo intero" apre
+  un velo `fixed inset-0 z-[90]` in portale dentro `[data-tema]` (sopra testata e barre, tema chiaro/scuro con `.schermo-intero`)
+  con solo una barra sottile (titolo + «Esci») e le comande a tutta larghezza (Comande con coda unica: tabellone a 3 colonne del bar); dove esiste chiede anche il fullscreen del browser (su iPhone no). Esc o uscita dal fullscreen
+  chiudono. Permessi invariati (stessa scheda).
 - **Telefono, "Altro"** (`components/layout/MenuGriglia.tsx`, richiesta di Loris 26/10: niente menu a elenco, poco ergonomico):
   pannello dal basso con tutte le sezioni come pulsanti con icona uguali a quelli della barra in basso (griglia a 4 colonne,
   icone a linee neutre, colore dell'area solo sulla sezione aperta come puntino accanto al titolo e come velo leggero del riquadro di ogni gruppo, badge), divise per area

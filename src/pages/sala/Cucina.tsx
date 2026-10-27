@@ -17,6 +17,7 @@ import { supabaseAttivo } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
 import { aspettaVia, azioneStatoSala, daPreparare, minutiDa, nomeUscita, perReparto, statoRiga, uscitaChiamata, uscitaDi, usciteDi, type Reparto } from '@/lib/sala'
 import { ComandaCard } from './ComandaOmbrellone'
+import { PulsanteSchermoIntero, SchermoIntero, useSchermoIntero } from '@/components/SchermoIntero'
 
 const COLONNE: { stato: StatoComandaSala; titolo: string; colore: string }[] = [
   { stato: 'inviata', titolo: 'Da fare', colore: 'bg-boa' },
@@ -48,17 +49,10 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
     return [...tavoli, ...ombrelloni.filter((v) => v.stato !== 'pronta' || pronti.has(v))]
   }, [comandeSala, comande, reparto])
   const chiave = (v: Voce) => `${v.tipo}-${v.c.id}`
+  const intero = useSchermoIntero()
 
-
-  return (
+  const tabellone = (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <p className={cn('text-xs font-medium', supabaseAttivo ? 'text-acqua' : 'text-tenda')}>
-          {supabaseAttivo
-            ? reparto === 'bar' ? '● Coda unica del bar: tavoli del ristorante e ombrelloni, su tutti i dispositivi' : '● Comande condivise tra tutti i dispositivi (sala, tablet, cucina)'
-            : '● Modalità demo: comande condivise solo tra schede di questo browser'}
-        </p>
-      </div>
       <div className="grid grid-cols-3 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm md:hidden">
         {COLONNE.map((col) => {
           const n = voci.filter((v) => v.stato === col.stato && !(v.tipo === 'tavolo' && v.via)).length
@@ -95,6 +89,21 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
           )
         })}
       </div>
+    </div>
+  )
+
+  if (intero.attivo) return <SchermoIntero titolo={reparto === 'bar' ? 'Coda bar' : 'Cucina'} onEsci={intero.esci}>{tabellone}</SchermoIntero>
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <p className={cn('min-w-0 flex-1 text-xs font-medium', supabaseAttivo ? 'text-acqua' : 'text-tenda')}>
+          {supabaseAttivo
+            ? reparto === 'bar' ? '● Coda unica del bar: tavoli del ristorante e ombrelloni, su tutti i dispositivi' : '● Comande condivise tra tutti i dispositivi (sala, tablet, cucina)'
+            : '● Modalità demo: comande condivise solo tra schede di questo browser'}
+        </p>
+        <PulsanteSchermoIntero onClick={intero.entra} />
+      </div>
+      {tabellone}
     </div>
   )
 }

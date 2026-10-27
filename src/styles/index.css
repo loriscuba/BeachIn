@@ -332,3 +332,6 @@
 
 /* Telefono: le celle delle griglie possono stringersi (di base min-width:auto le fa uscire dallo schermo con contenuti lunghi). */
 .bi-pagina .grid > * { min-width: 0; }
+/* cucina e coda bar a schermo intero: sfondo pieno sopra testata e barre */
+.schermo-intero { background: #edf1f2; }
+[data-tema='scuro'] .schermo-intero { background: #06161d; }

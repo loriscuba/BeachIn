@@ -23,6 +23,7 @@ import { cn } from '@/lib/cn'
 import { QrCodice } from '@/components/QrCodice'
 import { supabaseAttivo } from '@/lib/supabase'
 import { urlComandApp, UTENTI_COMANDAPP } from '@/lib/comandapp'
+import { PulsanteSchermoIntero, SchermoIntero, useSchermoIntero } from '@/components/SchermoIntero'
 
 export default function Comande() {
   const { comande, comandeSala, inviaComanda, avanzaComanda, annullaComanda, articoliBar, sezioniBar } = useDemoData()
@@ -38,6 +39,7 @@ export default function Comande() {
   const [filtro, setFiltro] = useState<CategoriaBar | 'tutte'>('tutte')
   const [cerca, setCerca] = useState('')
   const [inviata, setInviata] = useState(false)
+  const intero = useSchermoIntero()
   const [copiato, setCopiato] = useState(false)
   const link = urlComandApp()
 
@@ -76,6 +78,17 @@ export default function Comande() {
   }
 
   const aperte = unica ? codaBar(comande, comandeSala).daFare.length : comande.filter((c) => c.stato !== 'pronta').length
+
+  // a schermo intero con la coda unica si usa il tabellone a tre colonne del bar; senza, le schede in griglia
+  if (intero.attivo) return (
+    <SchermoIntero titolo={<>Comande al bar · <span className="num">{aperte}</span> da evadere</>} onEsci={intero.esci}>
+      {unica ? <CodaBar /> : !comande.length
+        ? <p className="py-10 text-center text-sm text-profondo/45">Nessuna comanda.</p>
+        : <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {comande.map((c) => <ComandaCard key={c.id} comanda={c} onAvanza={() => avanzaComanda(c.id)} onAnnulla={() => annullaComanda(c.id)} />)}
+        </div>}
+    </SchermoIntero>
+  )
 
   return (
     <div className="space-y-4">
@@ -178,7 +191,7 @@ export default function Comande() {
         <CardHeader
           titolo={<span className="inline-flex items-center gap-2"><Coffee className="h-4 w-4 text-cabina" /> Comande al bar</span>}
           sottotitolo={unica ? 'Coda unica: ombrelloni e tavoli del ristorante' : 'Ordini in arrivo dagli ombrelloni'}
-          azione={<Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge>}
+          azione={<div className="flex flex-wrap items-center justify-end gap-2"><Badge tono={aperte > 0 ? 'boa' : 'neutro'}>{aperte} da evadere</Badge><PulsanteSchermoIntero onClick={intero.entra} /></div>}
         />
         <CardBody className="space-y-2 pt-2">
           {unica ? <div className="max-h-[30rem] overflow-y-auto pr-1"><CodaBar compatta /></div> : <>
