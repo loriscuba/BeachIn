@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const { record: r, tipo = 'richiesta' } = await req.json()
     const app = ['richiesta', 'ombrellone', 'evento'].includes(tipo) ? 'admin' : 'clienti'
     const messaggio = tipo === 'notizia'
-      ? { titolo: `📰 ${r?.titolo ?? 'Nuova news'}`, corpo: taglia(r?.testo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
+      ? { titolo: '📰 Nuova news', corpo: taglia(r?.titolo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
       : tipo === 'lavagnetta'
         ? { titolo: `🍽️ Lavagnetta aggiornata${r?.valore?.lido ? ` dal ${r.valore.lido}` : ''}`, corpo: 'Scopri le proposte di oggi', tag: 'lavagnetta' }
         : tipo === 'ombrellone'
