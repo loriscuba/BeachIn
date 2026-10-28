@@ -147,7 +147,7 @@ export interface SchedaRapida {
 
 export const SCHEDE_RAPIDE: SchedaRapida[] = [
   { id: 'home', percorso: '/', etichetta: 'Home', icona: Home, modulo: 'panoramica' },
-  { id: 'prenotazioni', percorso: '/prenotazioni', etichetta: 'Prenota', icona: Inbox, modulo: 'ristorante', minimo: 2, badge: 'richieste', funzione: 'ristorante.prenotazioni' },
+  { id: 'prenotazioni', percorso: '/prenotazioni', etichetta: 'Prenota', icona: Inbox, modulo: 'ristorante', minimo: 2, funzione: 'ristorante.prenotazioni' },
   { id: 'cameriere', percorso: '/sala?tab=cameriere', etichetta: 'Cameriere', icona: ConciergeBell, modulo: 'sala' },
   { id: 'cucina', percorso: '/sala?tab=cucina', etichetta: 'Cucina', icona: ChefHat, modulo: 'sala', badge: 'cucina' },
   { id: 'bar', percorso: '/sala?tab=bar', etichetta: 'Bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },

@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     const iscrizioni = await sql`select endpoint, p256dh, auth, url from beachin.push_iscrizioni where app = ${app}`
     let inviate = 0
     for (const s of iscrizioni) {
-      const payload = JSON.stringify({ ...messaggio, url: s.url, app })
+      const payload = JSON.stringify({ ...messaggio, url: s.url, app, sez: tipo === 'lavagnetta' ? 'lavagna' : tipo === 'notizia' ? 'news' : undefined })
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 3600, urgency: 'high' })
         inviate++

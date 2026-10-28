@@ -68,6 +68,13 @@ export default function ComandApp() {
   const richiesta = q.get('sez') as Sez | null
   const sez: Sez = voci.some((v) => v.id === richiesta) ? richiesta! : utente && voci.some((v) => v.id === 'ombrellone') ? 'ombrellone' : 'news'
   const vai = (s: Sez) => { setQ({ sez: s }); window.scrollTo({ top: 0 }) }
+  // tocco su una notifica con l'app già aperta: il service worker chiede di andare alla sezione (es. lavagnetta → Lavagna)
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const onMsg = (e: MessageEvent) => { if (e.data?.tipo === 'apri' && e.data.sez) { setQ({ sez: e.data.sez }); window.scrollTo({ top: 0 }) } }
+    navigator.serviceWorker.addEventListener('message', onMsg)
+    return () => navigator.serviceWorker.removeEventListener('message', onMsg)
+  }, [setQ])
   // pallino sulle news nuove (per dispositivo)
   const ultimaNews = notizie.reduce((m, n) => Math.max(m, n.ts), 0)
   const [vista, setVista] = useState(() => { try { return Number(localStorage.getItem('comandapp.news.vista') ?? 0) } catch { return 0 } })

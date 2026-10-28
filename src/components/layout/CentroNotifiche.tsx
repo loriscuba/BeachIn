@@ -126,7 +126,7 @@ function Preferenze({ scuro }: { scuro: boolean }) {
 }
 
 /** Notifiche push (anche a telefono bloccato): il server le manda per prenotazioni tavolo e ombrellone e richieste eventi. */
-function NotifichePush({ riga, tenue }: { riga: string; tenue: string }) {
+export function NotifichePush({ riga, tenue }: { riga: string; tenue: string }) {
   const [stato, setStato] = useState<StatoPush>()
   const [lavoro, setLavoro] = useState(false)
   const [errore, setErrore] = useState<string>()
