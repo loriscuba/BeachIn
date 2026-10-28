@@ -74,7 +74,7 @@ export const navigazione: VoceNav[] = [
   {
     percorso: '/ristorante', etichetta: 'Ristorante', icona: UtensilsCrossed, modulo: 'ristorante', fase: 5, gruppo: 'Operatività',
     figli: [
-      { percorso: '/ristorante?tab=prenotazioni', etichetta: 'Prenotazioni', icona: Inbox, modulo: 'ristorante', badge: 'richieste' },
+      { percorso: '/ristorante?tab=prenotazioni', etichetta: 'Prenotazioni', icona: Inbox, modulo: 'ristorante' },
       { percorso: '/ristorante?tab=tavoli', etichetta: 'Tavoli', icona: LayoutGrid, modulo: 'ristorante' },
       { percorso: '/sala?tab=cameriere', etichetta: 'Comande sala', icona: ConciergeBell, modulo: 'sala' },
       { percorso: '/sala?tab=cucina', etichetta: 'Cucina', icona: ChefHat, modulo: 'sala', badge: 'cucina' },
