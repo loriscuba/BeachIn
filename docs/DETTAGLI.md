@@ -309,7 +309,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   Client Supabase senza sessione Auth (`persistSession:false`, `storageKey` proprio): su github.io altre demo dello stesso
   progetto lasciano un login in localStorage che faceva partire le richieste come `authenticated` (policy solo anon → tutto vuoto).
 - **Notifiche push clienti** (migrazione `0005_push_clienti.sql`): finestra `InvitoNotifiche` all'entrata dell'app
-  (`src/components/AttivaNotifiche.tsx`; "Non ora" la nasconde 3 giorni, `beachin.push.clienti.rimandata`). `push_iscrizioni` ha colonna `app` (PK endpoint+app:
+  (`src/components/AttivaNotifiche.tsx`; "Non ora" la nasconde 3 giorni, `beachin.push.clienti.rimandata`). In testata `CampanellaNotifiche` (rossa = da attivare, gialla = attive): un tocco attiva o rinnova l'iscrizione sul server. `push_iscrizioni` ha colonna `app` (PK endpoint+app:
   stesso telefono = stesso SW per le due app), RPC `registra_push(..., p_app)`. Trigger `notifica_app_clienti`: insert su `notizie`
   → "📰 titolo" (la news può collegare un evento pubblicato e non passato, `Notizia.eventoId` → colonna `evento_id`, migrazione
   0027: nell'app clienti pulsante "Vedi l'evento" che apre `EventoModal`); pubblicazione lavagnetta (riga `lavagnetta_pubblicata` di `sito_contenuti`, dalla 0026) → "Lavagna del giorno aggiornata", max 1 al minuto

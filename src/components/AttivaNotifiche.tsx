@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BellRing, Share } from 'lucide-react'
+import { BellPlus, BellRing, Share } from 'lucide-react'
 import { attivaPush, statoPush, type AppPush, type StatoPush } from '@/lib/notifichePush'
 
 const RIMANDA_GIORNI = 3
@@ -43,6 +43,40 @@ export function InvitoNotifiche({ app, titolo, descrizione }: { app: AppPush; ti
         {errore && <p className="mt-2 text-xs text-boa">Errore: {errore}</p>}
         <button onClick={nonOra} className="mt-2 h-10 w-full rounded-xl text-sm font-medium text-profondo/60">{stato === 'da-attivare' ? 'Non ora' : 'Ho capito'}</button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Campanella in testata: attiva le notifiche quando si vuole (anche dopo "Non ora"). Un tocco con le notifiche già attive
+ * rinnova l'iscrizione sul server, utile se il telefono risulta attivo ma non riceve più nulla.
+ */
+export function CampanellaNotifiche({ app }: { app: AppPush }) {
+  const [stato, setStato] = useState<StatoPush>()
+  const [avviso, setAvviso] = useState<string>()
+  const [lavoro, setLavoro] = useState(false)
+  useEffect(() => { statoPush(app).then(setStato).catch(() => setStato('non-supportato')) }, [])
+  if (!stato || stato === 'senza-server') return null
+  const mostra = (t: string) => { setAvviso(t); window.setTimeout(() => setAvviso(undefined), 5000) }
+  const tocca = async () => {
+    if (stato === 'serve-installazione') return mostra('Su iPhone: Condividi → Aggiungi alla schermata Home, poi apri l\'app dall\'icona e tocca di nuovo la campanella.')
+    if (stato === 'non-supportato') return mostra('Questo browser non supporta le notifiche.')
+    if (stato === 'negato') return mostra('Notifiche bloccate: riattivale da Impostazioni → Notifiche del telefono.')
+    setLavoro(true)
+    try {
+      const s = await attivaPush(app)
+      setStato(s)
+      mostra(s === 'attivo' ? 'Notifiche attive: ti avvisiamo per news e lavagna del giorno.' : 'Notifiche non attivate.')
+    } catch (e) { mostra(`Errore: ${(e as Error).message}`) } finally { setLavoro(false) }
+  }
+  const attivo = stato === 'attivo'
+  return (
+    <div className="relative">
+      <button onClick={tocca} disabled={lavoro} aria-label={attivo ? 'Notifiche attive' : 'Attiva notifiche'}
+        className={`grid h-9 w-9 place-content-center rounded-full ${attivo ? 'bg-tenda/40 text-profondo' : 'bg-boa text-white'} disabled:opacity-60`}>
+        {attivo ? <BellRing className="h-4 w-4" /> : <BellPlus className="h-4 w-4" />}
+      </button>
+      {avviso && <p className="absolute right-0 top-11 z-30 w-64 rounded-xl bg-profondo px-3 py-2 text-xs text-white shadow-lg">{avviso}</p>}
     </div>
   )
 }
