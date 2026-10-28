@@ -46,7 +46,7 @@ Aggiornare qui quando cambia un modulo.
   ("Generale" per le voci senza sottomenu, poi una per voce con sottomenu); voci da `useVociMenu()`. Si chiude toccando
   fuori, con la X, trascinando giù la maniglia, con Esc, scegliendo una sezione o cambiando pagina. Aperto, l'elenco scorre
   da solo (`min-h-0` + `overscroll-contain`) e il `<main>` dietro è bloccato. Barra delle schede scura in tema scuro (`.barra-basso`);
-  pulsante Esci della topbar con stile proprio in tema scuro (`.bi-esci`); badge "Dati dimostrativi" solo da `sm`.
+  pulsante Esci della topbar con stile proprio in tema scuro (`.bi-esci`).
 - `Logo` = icona del manifest dell'app (`src/assets/logo-app.png`, copia di `public/admin-icon-192.png`) + "BeachIn" e sotto `config.nome`.
 - (ott 2026) **Nuovo look + tema chiaro/scuro**: interruttore sole/luna nella `Topbar` (hook `useTema`, localStorage
   `beachin.tema.v1`, default scuro) → `data-tema` sulla radice di `AppShell`. In `styles/index.css`: sfondo a luci sfumate
