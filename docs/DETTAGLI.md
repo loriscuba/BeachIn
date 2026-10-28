@@ -30,7 +30,7 @@ Aggiornare qui quando cambia un modulo.
   le categorie con modulo attivo + permesso (nessun interruttore per sezione). Elenco (max 50), preferenze (solo suono) ed eventi già visti
   in localStorage `beachin.notifiche.v1` / `.pref.v1` / `.visti.v1`: quello che arriva ad app chiusa compare alla riapertura; solo al
   primissimo avvio sul dispositivo i primi 5 s non notificano. Le comande che hai inviato tu non suonano sul tuo dispositivo.
-  Niente più pannello Preferenze nella campanella: suono (Sì/No), notifiche push (`NotifichePush`, `attivaPush('admin')`) ed elenco di cosa si riceve stanno nella finestra del profilo (`SchedaUtente`). Le pagine non hanno interruttori di suono/notifiche.
+  Suono (Sì/No), notifiche push (`NotifichePush`, `attivaPush('admin')`) ed elenco di cosa si riceve sono anche nella finestra del profilo (`SchedaUtente`), oltre che nelle preferenze della campanella. La scheda "Prenota" della barra in basso non ha più il bollino rosso del conteggio richieste.
 - **Richieste dal sito** (tavolo, ombrellone, evento): `inviaRichiesta*` sono async e scrivono subito con `inserisci` di `useSyncSupabase`
   (client `supabaseInvii` senza sessione e con `keepalive`): il form mostra "Invio in corso…" e la conferma solo quando il DB l'ha presa
   (da lì i trigger mandano push e mail), altrimenti "Riprova". Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/tavolo`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
