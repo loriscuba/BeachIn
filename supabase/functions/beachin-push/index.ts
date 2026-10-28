@@ -1,7 +1,8 @@
 // Edge Function "beachin-push": chiamata dai trigger del DB, invia notifiche Web Push ai telefoni iscritti (beachin.push_iscrizioni).
 // - tipo "richiesta" (default, trigger su beachin.richieste_ristorante): nuova prenotazione tavolo → app admin
 // - tipo "ombrellone" (beachin.prenotazioni_online) ed "evento" (beachin.richieste_eventi) → app admin
-// - tipo "notizia" (insert su beachin.notizie) e "lavagnetta" (beachin.lavagnetta) → app clienti
+// - tipo "notizia" (insert su beachin.notizie), "lavagnetta" (pubblicata, riga lavagnetta_pubblicata di beachin.sito_contenuti)
+//   ed "evento_pubblicato" (beachin.eventi uscito dalla bozza) → app clienti
 // Chiave privata VAPID nel Vault di Supabase (segreto `beachin_vapid_private`), mai nel repository.
 import webpush from 'npm:web-push@3.6.7'
 import postgres from 'npm:postgres@3.4.5'
@@ -22,6 +23,8 @@ Deno.serve(async (req) => {
       ? { titolo: `📰 ${r?.titolo ?? 'Nuova news'}`, corpo: taglia(r?.testo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
       : tipo === 'lavagnetta'
         ? { titolo: '🍽️ Lavagna del giorno aggiornata', corpo: 'Scopri le proposte di oggi', tag: 'lavagnetta' }
+        : tipo === 'evento_pubblicato'
+          ? { titolo: `🎉 Nuovo evento: ${r?.nome ?? 'scoprilo'}`, corpo: [r?.data ? dataIt(r.data) : '', taglia(r?.descrizione)].filter(Boolean).join(' · ') || 'Apri l\'app per i dettagli', tag: `evento-pubblicato-${r?.id ?? Date.now()}` }
         : tipo === 'ombrellone'
           ? { titolo: 'Prenotazione ombrellone ⛱️', corpo: `${r?.nome ?? 'Cliente'} · ${r?.persone ?? '?'} persone · dal ${r?.dal ? dataIt(r.dal) : '?'} al ${r?.al ? dataIt(r.al) : '?'}`, tag: `ombrellone-${r?.id ?? Date.now()}` }
           : tipo === 'evento'

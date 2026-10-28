@@ -198,7 +198,7 @@ function Prenota({ ristorante, eventiOn }: { ristorante: boolean; eventiOn: bool
   const [scelta, setScelta] = useState(opzioni[0])
   const tipo = opzioni.includes(scelta) ? scelta : opzioni[0]
   const [aperto, setAperto] = useState<Evento>()
-  const prossimi = useMemo(() => eventi.filter((e) => e.data >= config.oggi).sort((a, b) => a.data.localeCompare(b.data)), [eventi])
+  const prossimi = useMemo(() => eventi.filter((e) => e.pubblicato !== false && e.data >= config.oggi).sort((a, b) => a.data.localeCompare(b.data)), [eventi])
   return (
     <div>
       <Titolo sotto="Ti confermiamo noi" accento="posto">Prenota il tuo</Titolo>
@@ -244,8 +244,8 @@ function Eventi() {
   const { eventi, canaliPrenotazione } = useDemoData()
   const [aperto, setAperto] = useState<Evento>()
   const oggi = config.oggi // data reale, come nel gestionale
-  const prossimi = useMemo(() => eventi.filter((e) => e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data)), [eventi, oggi])
-  const passati = useMemo(() => eventi.filter((e) => e.data < oggi).sort((a, b) => b.data.localeCompare(a.data)), [eventi, oggi])
+  const prossimi = useMemo(() => eventi.filter((e) => e.pubblicato !== false && e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data)), [eventi, oggi])
+  const passati = useMemo(() => eventi.filter((e) => e.pubblicato !== false && e.data < oggi).sort((a, b) => b.data.localeCompare(a.data)), [eventi, oggi])
   return (
     <div>
       <Titolo sotto="Tornei, musica, cene sotto le stelle" accento="spiaggia">Eventi in</Titolo>

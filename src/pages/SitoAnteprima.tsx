@@ -38,7 +38,8 @@ const temiRecensioni = [
 const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 
 export default function SitoAnteprima() {
-  const { eventi, canaliPrenotazione, galleria, menu, sezioniMenu, homeSito, prezziListino } = useDemoData()
+  const { eventi: tuttiEventi, canaliPrenotazione, galleria, menu, sezioniMenu, homeSito, prezziListino } = useDemoData()
+  const eventi = tuttiEventi.filter((e) => e.pubblicato !== false) // le bozze non si vedono
   // Gestione ombrelloni (modulo Arenile): se spento, dal sito spariscono prenotazione, listino e disponibilità.
   const ombrelloni = useModuli().moduloAttivo('arenile')
   // Prenotazione ombrellone dal sito: doppio controllo, modulo Arenile attivo E canale "Ombrelloni" acceso (Sito → Prenotazioni).

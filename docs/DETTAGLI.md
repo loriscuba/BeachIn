@@ -302,14 +302,16 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Prenota** Ristorante/Eventi riusa `FormRistorante`, `EventoModal`, `Sospese` esportati da `SitoAnteprima` (stessi flussi
   del sito, rispetta `canaliPrenotazione`). `FormRistorante` ora parte da `config.oggi` (ristorante aperto tutto l'anno).
 - **News** (`notizie`: `pubblicaNotizia/modificaNotizia/eliminaNotizia`, `fissata` = in evidenza, foto su Storage) e
-  **Lavagnetta** (`lavagnetta`: `aggiungi/modifica/rimuovi/spostaVoceLavagnetta`, prezzo `null` = senza prezzo) nel context,
+  **Lavagnetta** (`lavagnetta` = pubblicata, prezzo `null` = senza prezzo) nel context. Editor su copia locale con **Salva**
+  (`salvaBozzaLavagnetta` → `sito_contenuti` riga `lavagnetta_bozza`, `bozzaLavagnetta` nel context) e **Pubblica**
+  (`pubblicaLavagnetta`: sostituisce `lavagnetta`, svuota la bozza, scrive la riga `lavagnetta_pubblicata` = trigger push, migrazione 0026),
   seed `src/data/seed/app.ts`, sync Supabase `beachin.notizie` / `beachin.lavagnetta` (migrazione `0002_app_clienti.sql`).
   Client Supabase senza sessione Auth (`persistSession:false`, `storageKey` proprio): su github.io altre demo dello stesso
   progetto lasciano un login in localStorage che faceva partire le richieste come `authenticated` (policy solo anon → tutto vuoto).
 - **Notifiche push clienti** (migrazione `0005_push_clienti.sql`): finestra `InvitoNotifiche` all'entrata dell'app
   (`src/components/AttivaNotifiche.tsx`; "Non ora" la nasconde 3 giorni, `beachin.push.clienti.rimandata`). `push_iscrizioni` ha colonna `app` (PK endpoint+app:
   stesso telefono = stesso SW per le due app), RPC `registra_push(..., p_app)`. Trigger `notifica_app_clienti`: insert su `notizie`
-  → "📰 titolo"; insert/modifica di nome/descrizione/prezzo su `lavagnetta` → "Lavagna del giorno aggiornata", max 1 ogni 15 min
+  → "📰 titolo"; pubblicazione lavagnetta (riga `lavagnetta_pubblicata` di `sito_contenuti`, dalla 0026) → "Lavagna del giorno aggiornata", max 1 al minuto
   (`beachin.push_invii`). `beachin-push` riceve `tipo` e filtra le iscrizioni per app; SW apre/porta in primo piano la pagina giusta.
   Il gestore li scrive da **Sito → App clienti** (`?tab=app`, con QR dell'app) e dall'**app admin** (tab "App"), componenti
   `src/components/app/GestioneAppClienti.tsx`. Lavagna in stile ardesia con font Caveat (`font-gesso`).
@@ -553,6 +555,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Eventi sul sito pubblico**: `SitoAnteprima` mostra sia i prossimi eventi sia quelli **conclusi**
   (badge "Concluso" + link "Rivedi le foto"); per un evento passato il modal nasconde il form di
   prenotazione e mostra l'album. (Prima filtrava solo `data >= oggi`, quindi i conclusi sparivano.)
+- **Bozze eventi** (migrazione `0026_bozze_eventi_lavagnetta.sql`): `Evento.pubblicato` (assente = pubblicato, colonna
+  `eventi.pubblicato` default true). Form: evento nuovo/bozza → **Salva** (bozza) o **Pubblica**; evento pubblicato → "Salva
+  modifiche". Scheda: Pubblica / Nascondi. Sito e app clienti mostrano solo `pubblicato !== false`. Trigger su `eventi`
+  (insert pubblicato non seed `E-NN`, o update bozza→pubblicato, data non passata) → `beachin-push` tipo `evento_pubblicato` → app clienti.
 - **Album foto evento**: `Evento.galleria?: string[]` (data URI); mutazioni context
   `aggiungiFotoEvento/rimuoviFotoEvento`; upload multiplo nella scheda evento (Drawer di `Eventi`, usa
   l'evento "live" da `eventi`); il sito pubblico mostra l'album nella scheda evento (es. foto di un torneo).

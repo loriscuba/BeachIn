@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Trophy, Music, PartyPopper, UtensilsCrossed, Flower2, Gift, CalendarDays, Users, TrendingUp, Wallet,
-  Plus, Pencil, Trash2, ImagePlus, X, Ticket,
+  Plus, Pencil, Trash2, ImagePlus, X, Ticket, Send, EyeOff,
 } from 'lucide-react'
 import type { Evento, RichiestaEvento, TipoEvento } from '@/data/types'
 import { useDemoData, type DatiPartecipanteEvento } from '@/context/DemoDataContext'
@@ -122,7 +122,7 @@ function CalendarioEventi() {
                           <p className="num text-xs text-profondo/55">{giornoMese(e.data)} · {e.prezzo ? euro(e.prezzo) : (e.partecipanti > 0 ? `${e.partecipanti} partecipanti` : 'in programma')}</p>
                         </div>
                         <div className="shrink-0 text-right">
-                          {futuro && e.ricavi === 0 ? <Badge tono="tenda">In programma</Badge> : (
+                          {e.pubblicato === false ? <Badge tono="tenda">Bozza</Badge> : futuro && e.ricavi === 0 ? <Badge tono="acqua">In programma</Badge> : (
                             <><p className={cn('num text-sm font-bold', margine >= 0 ? 'text-profondo' : 'text-boa')}>{euro(margine)}</p><p className="text-[11px] text-profondo/45">margine</p></>
                           )}
                         </div>
@@ -141,6 +141,7 @@ function CalendarioEventi() {
         partecipanti={selLive ? richiesteEventi.filter((r) => r.eventoId === selLive.id && r.stato === 'confermata') : []}
         onChiudi={() => setSel(undefined)}
         onModifica={(e) => { setSel(undefined); setForm({ open: true, evento: e }) }}
+        onPubblica={(e, pubblicato) => modificaEvento({ ...e, pubblicato })}
         onElimina={(e) => { if (confirm(`Eliminare l’evento “${e.nome}”?`)) { eliminaEvento(e.id); setSel(undefined) } }}
         onAggiungiPartecipante={aggiungiPartecipanteEvento}
         onRimuoviPartecipante={rimuoviPartecipanteEvento}
@@ -157,11 +158,12 @@ function CalendarioEventi() {
   )
 }
 
-function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina, onAggiungiPartecipante, onRimuoviPartecipante, onAggiungiFoto, onRimuoviFoto }: {
+function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onPubblica, onElimina, onAggiungiPartecipante, onRimuoviPartecipante, onAggiungiFoto, onRimuoviFoto }: {
   evento?: Evento
   partecipanti: RichiestaEvento[]
   onChiudi: () => void
   onModifica: (e: Evento) => void
+  onPubblica: (e: Evento, pubblicato: boolean) => void
   onElimina: (e: Evento) => void
   onAggiungiPartecipante: (d: DatiPartecipanteEvento) => void
   onRimuoviPartecipante: (id: string) => void
@@ -187,12 +189,15 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onElimina
           <span className="grid h-10 w-10 place-items-center rounded-lg bg-profondo text-white"><Icona className="h-5 w-5" /></span>
           <div>
             <h2 className="text-base font-bold text-profondo">{e.nome}</h2>
-            <div className="mt-0.5 flex items-center gap-2"><Badge tono="stagionale">{etichetteTipoEvento[e.tipo]}</Badge><span className="num text-xs text-profondo/50 capitalize">{dataEstesa(e.data)}</span></div>
+            <div className="mt-0.5 flex items-center gap-2"><Badge tono="stagionale">{etichetteTipoEvento[e.tipo]}</Badge>{e.pubblicato === false && <Badge tono="tenda">Bozza</Badge>}<span className="num text-xs text-profondo/50 capitalize">{dataEstesa(e.data)}</span></div>
           </div>
         </div>
       ) : undefined}
       piede={e ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {e.pubblicato === false
+            ? <Button variante="primario" onClick={() => onPubblica(e, true)}><Send className="h-4 w-4" /> Pubblica</Button>
+            : <Button variante="secondario" onClick={() => { if (confirm(`Togliere “${e.nome}” dal sito e dall'app clienti? Resta qui come bozza.`)) onPubblica(e, false) }}><EyeOff className="h-4 w-4" /> Nascondi</Button>}
           <Button variante="secondario" onClick={() => onModifica(e)}><Pencil className="h-4 w-4" /> Modifica</Button>
           <Button variante="pericolo" onClick={() => onElimina(e)}><Trash2 className="h-4 w-4" /> Elimina</Button>
         </div>
@@ -323,12 +328,12 @@ function FormEvento({ stato, onChiudi, onSalva }: { stato: { open: boolean; even
     ? { nome: e.nome, tipo: e.tipo, data: e.data, budget: String(e.budget), costiSostenuti: String(e.costiSostenuti), ricavi: String(e.ricavi), partecipanti: String(e.partecipanti), descrizione: e.descrizione, prezzo: String(e.prezzo ?? 0), foto: e.foto ?? '' }
     : vuoto
   // chiave per re-inizializzare lo stato del form quando cambia l'evento
-  return <FormEventoInterno key={e?.id ?? 'nuovo'} iniziale={iniziale} open={stato.open} modifica={!!e} idEsistente={e?.id} onChiudi={onChiudi} onSalva={onSalva} />
+  return <FormEventoInterno key={e?.id ?? 'nuovo'} iniziale={iniziale} open={stato.open} modifica={!!e} idEsistente={e?.id} onChiudi={onChiudi} pubblicato={!!e && e.pubblicato !== false} onSalva={onSalva} />
 }
 
-function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, onSalva }: {
+function FormEventoInterno({ iniziale, open, modifica, idEsistente, pubblicato, onChiudi, onSalva }: {
   iniziale: { nome: string; tipo: TipoEvento; data: string; budget: string; costiSostenuti: string; ricavi: string; partecipanti: string; descrizione: string; prezzo: string; foto: string }
-  open: boolean; modifica: boolean; idEsistente?: string; onChiudi: () => void; onSalva: (e: Evento) => void
+  open: boolean; modifica: boolean; idEsistente?: string; pubblicato: boolean; onChiudi: () => void; onSalva: (e: Evento) => void
 }) {
   const [f, setF] = useState(iniziale)
   const [caricando, setCaricando] = useState(false)
@@ -341,7 +346,8 @@ function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, on
     catch { alert(messaggioFileFalliti([file.name])) }
     finally { setCaricando(false) }
   }
-  const salva = () => onSalva({
+  // "Salva" tiene l'evento in bozza (non lo vedono i clienti), "Pubblica" lo mette su sito e app clienti con notifica
+  const salva = (pubblica: boolean) => onSalva({
     id: idEsistente ?? `E-NEW-${Date.now()}`,
     nome: f.nome.trim(), tipo: f.tipo, data: f.data,
     budget: Number(f.budget) || 0, costiSostenuti: Number(f.costiSostenuti) || 0,
@@ -349,10 +355,13 @@ function FormEventoInterno({ iniziale, open, modifica, idEsistente, onChiudi, on
     descrizione: f.descrizione.trim(),
     prezzo: Number(f.prezzo) || 0,
     foto: f.foto || undefined,
+    pubblicato: pubblica,
   })
   return (
     <Modal aperto={open} onChiudi={onChiudi} titolo={modifica ? 'Modifica evento' : 'Nuovo evento'}
-      piede={<div className="flex justify-end gap-2"><Button variante="secondario" onClick={onChiudi}>Annulla</Button><Button variante="primario" onClick={salva} disabled={!valido}>{modifica ? 'Salva modifiche' : 'Crea evento'}</Button></div>}>
+      piede={<div className="flex justify-end gap-2"><Button variante="secondario" onClick={onChiudi}>Annulla</Button>{pubblicato
+        ? <Button variante="primario" onClick={() => salva(true)} disabled={!valido}>Salva modifiche</Button>
+        : <><Button variante="secondario" onClick={() => salva(false)} disabled={!valido}>Salva</Button><Button variante="primario" onClick={() => salva(true)} disabled={!valido}><Send className="h-4 w-4" /> Pubblica</Button></>}</div>}>
       <div className="grid grid-cols-2 gap-3">
         <CampoE label="Foto evento" span2>
           {f.foto ? (
