@@ -122,7 +122,6 @@ const contenutiIniziali = (): ContenutoSito[] => [
   { id: 'canali', valore: { ...CANALI_INIZIALI } },
   { id: 'home', valore: clona(statoSito.home) },
   { id: 'listino', valore: { prezzi: {} } },
-  { id: 'lido', valore: { nome: config.nome } },
 ]
 
 export interface AssegnaOpzioni {
@@ -1282,9 +1281,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   // — App clienti: news e lavagnetta —
   const pubblicaNotizia = useCallback((d: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata' | 'eventoId'>) => {
     setNotizie((prev) => [{ id: nuovoId('NW'), data: config.oggi, ts: Date.now(), ...d }, ...prev])
-    // nome del lido per il titolo della notifica ("Nuova news dal …"), letto dalla funzione beachin-push
-    scriviContenuto('lido', (prima) => ((prima as { nome?: string } | undefined)?.nome === config.nome ? prima : { nome: config.nome }))
-  }, [scriviContenuto])
+  }, [])
   const modificaNotizia = useCallback((id: string, patch: Partial<Omit<Notizia, 'id'>>) => {
     setNotizie((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)))
   }, [])

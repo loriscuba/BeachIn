@@ -19,12 +19,8 @@ Deno.serve(async (req) => {
   try {
     const { record: r, tipo = 'richiesta' } = await req.json()
     const app = ['richiesta', 'ombrellone', 'evento'].includes(tipo) ? 'admin' : 'clienti'
-    // nome del lido (riga `lido` di sito_contenuti, scritta dall'app) per i titoli delle notifiche ai clienti
-    const lido = tipo === 'notizia'
-      ? (await sql`select valore->>'nome' as nome from beachin.sito_contenuti where id = 'lido'`)[0]?.nome as string | undefined
-      : undefined
     const messaggio = tipo === 'notizia'
-      ? { titolo: `📰 Nuova news${lido ? ` dal ${lido}` : ''}`, corpo: taglia(r?.titolo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
+      ? { titolo: '📰 Nuova news', corpo: taglia(r?.titolo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
       : tipo === 'lavagnetta'
         ? { titolo: `🍽️ Lavagnetta aggiornata${r?.valore?.lido ? ` dal ${r.valore.lido}` : ''}`, corpo: 'Scopri le proposte di oggi', tag: 'lavagnetta' }
         : tipo === 'ombrellone'
