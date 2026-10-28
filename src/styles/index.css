@@ -237,6 +237,17 @@
 [data-tema='scuro'] .shell-bar .border-calce-200 { border-color: rgba(255, 255, 255, 0.1); }
 [data-tema='scuro'] .shell-bar .hover\:bg-profondo\/5:hover { background: rgba(255, 255, 255, 0.08); }
 [data-tema='scuro'] .shell-bar .text-\[\#7A5A12\] { color: #f2c14e; }
+/* testata: contatore e scorciatoie (chiaro e scuro) */
+.testata-pill { background: #fff; border-color: #dfe7ea; color: #0F3B4C; }
+.testata-pill:hover { background: #f4f7f8; }
+.testata-pill.attiva { background: rgba(242, 193, 78, 0.18); border-color: rgba(242, 193, 78, 0.55); }
+.testata-menu { background: #fff; border-color: #dfe7ea; color: #0F3B4C; }
+.testata-menu button:hover { background: #EDF1F2; }
+[data-tema='scuro'] .testata-pill { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: #eaf3f5; }
+[data-tema='scuro'] .testata-pill:hover { background: rgba(255, 255, 255, 0.14); }
+[data-tema='scuro'] .testata-pill.attiva { background: rgba(242, 193, 78, 0.2); border-color: rgba(242, 193, 78, 0.5); color: #f2c14e; }
+[data-tema='scuro'] .testata-menu { background: #10303c; border-color: rgba(255, 255, 255, 0.12); color: #eaf3f5; }
+[data-tema='scuro'] .testata-menu button:hover { background: rgba(255, 255, 255, 0.08); }
 
 /* Card "vetro" usate da tutte le pagine */
 .bi-card {
