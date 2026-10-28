@@ -3,13 +3,14 @@
  * Usata dal gestionale (Sito → App clienti) e dall'app admin (tab "App"): layout mobile-first.
  */
 import { useEffect, useState } from 'react'
-import { ArrowDown, ArrowUp, ImagePlus, Pin, PinOff, Plus, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CalendarDays, ImagePlus, Pin, PinOff, Plus, Trash2, X } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
 import type { VoceLavagnetta } from '@/data/types'
 import { useModuli } from '@/context/ModuliContext'
 import { fileAImmagine } from '@/lib/immagini'
 import { data as fmtData, euro, euroCent } from '@/lib/formatters'
 import { cn } from '@/lib/cn'
+import { config } from '@/data/config'
 
 const campo = 'h-10 w-full rounded-lg border border-calce-200 bg-white px-3 text-sm focus-visible:focus-ring'
 
@@ -17,14 +18,17 @@ const campo = 'h-10 w-full rounded-lg border border-calce-200 bg-white px-3 text
 export const prezzoLavagna = (p: number) => (Number.isInteger(p) ? euro(p) : euroCent(p))
 
 export function GestioneNews() {
-  const { notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia } = useDemoData()
-  const [f, setF] = useState({ titolo: '', testo: '', foto: '' as string | undefined, fissata: false })
+  const { notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia, eventi } = useDemoData()
+  const [f, setF] = useState({ titolo: '', testo: '', foto: '' as string | undefined, fissata: false, eventoId: '' })
+  // si collegano solo gli eventi pubblicati e non passati: le bozze i clienti non le vedono
+  const collegabili = eventi.filter((e) => e.pubblicato !== false && e.data >= config.oggi).sort((a, b) => a.data.localeCompare(b.data))
+  const nomeEvento = (id?: string) => eventi.find((e) => e.id === id)?.nome
   const ordinate = [...notizie].sort((a, b) => Number(!!b.fissata) - Number(!!a.fissata) || b.ts - a.ts)
   const pubblica = (e: React.FormEvent) => {
     e.preventDefault()
     if (!f.titolo.trim()) return
-    pubblicaNotizia({ titolo: f.titolo.trim(), testo: f.testo.trim(), foto: f.foto || undefined, fissata: f.fissata })
-    setF({ titolo: '', testo: '', foto: undefined, fissata: false })
+    pubblicaNotizia({ titolo: f.titolo.trim(), testo: f.testo.trim(), foto: f.foto || undefined, fissata: f.fissata, eventoId: f.eventoId || undefined })
+    setF({ titolo: '', testo: '', foto: undefined, fissata: false, eventoId: '' })
   }
   const caricaFoto = async (file?: File) => {
     if (!file) return
@@ -42,6 +46,12 @@ export function GestioneNews() {
             <img src={f.foto} alt="" className="h-36 w-full rounded-lg object-cover" />
             <button type="button" onClick={() => setF({ ...f, foto: undefined })} className="absolute right-2 top-2 grid h-7 w-7 place-content-center rounded-full bg-black/50 text-white" aria-label="Togli foto"><X className="h-4 w-4" /></button>
           </div>
+        )}
+        {collegabili.length > 0 && (
+          <select value={f.eventoId} onChange={(e) => setF({ ...f, eventoId: e.target.value, titolo: f.titolo || (nomeEvento(e.target.value) ?? '') })} className={campo} aria-label="Evento collegato">
+            <option value="">Nessun evento collegato</option>
+            {collegabili.map((e) => <option key={e.id} value={e.id}>{e.nome} · {fmtData(e.data)}</option>)}
+          </select>
         )}
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg bg-calce px-3 text-sm font-medium text-profondo/75">
@@ -63,6 +73,7 @@ export function GestioneNews() {
             <p className="font-semibold text-profondo">{n.fissata && <Pin className="mr-1 inline h-3.5 w-3.5 text-boa" />}{n.titolo}</p>
             <p className="text-xs text-profondo/45">{fmtData(n.data)}</p>
             {n.testo && <p className="mt-1 line-clamp-2 text-sm text-profondo/70">{n.testo}</p>}
+            {nomeEvento(n.eventoId) && <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-cabina"><CalendarDays className="h-3.5 w-3.5" /> {nomeEvento(n.eventoId)}</p>}
           </div>
           <div className="flex shrink-0 flex-col gap-1">
             <button onClick={() => modificaNotizia(n.id, { fissata: !n.fissata })} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/50 hover:bg-calce" aria-label={n.fissata ? 'Togli evidenza' : 'Metti in evidenza'}>
@@ -104,7 +115,15 @@ export function GestioneLavagnetta() {
 
   return (
     <div className="space-y-3">
-      <p className={cn('text-xs font-semibold', modificata || bozzaLavagnetta ? 'text-boa' : 'text-cabina')}>{stato}</p>
+      {/* Salva e Pubblica in alto, sempre a vista anche su telefono */}
+      <div className="space-y-2 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-calce-200">
+        <p className={cn('text-xs font-semibold', modificata || bozzaLavagnetta ? 'text-boa' : 'text-cabina')}>{stato}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={salva} disabled={!modificata} className="h-11 rounded-lg border border-cabina bg-white text-sm font-semibold text-cabina disabled:border-calce-200 disabled:text-profondo/35">Salva</button>
+          <button type="button" onClick={pubblica} className="h-11 rounded-lg bg-cabina text-sm font-semibold text-white">Pubblica</button>
+        </div>
+        {esito && <p className="text-center text-xs text-profondo/60">{esito}</p>}
+      </div>
       <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-calce-200">
         {voci.length === 0 && <p className="py-4 text-center text-sm text-profondo/50">Lavagnetta vuota: scrivi le proposte di oggi.</p>}
         {voci.map((v, i) => (
@@ -134,11 +153,6 @@ export function GestioneLavagnetta() {
         <input value={f.descrizione} onChange={(e) => setF({ ...f, descrizione: e.target.value })} placeholder="descrizione (facoltativa)" className={cn(campo, 'col-span-2')} />
         <button disabled={!f.nome.trim()} className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-cabina text-sm font-semibold text-white disabled:opacity-40"><Plus className="h-4 w-4" /> Scrivi sulla lavagnetta</button>
       </form>
-      <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={salva} disabled={!modificata} className="h-11 rounded-lg border border-cabina bg-white text-sm font-semibold text-cabina disabled:opacity-40">Salva</button>
-        <button type="button" onClick={pubblica} disabled={!modificata && !bozzaLavagnetta} className="h-11 rounded-lg bg-cabina text-sm font-semibold text-white disabled:opacity-40">Pubblica</button>
-      </div>
-      {esito && <p className="text-center text-xs text-profondo/60">{esito}</p>}
     </div>
   )
 }

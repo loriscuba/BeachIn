@@ -390,7 +390,7 @@ interface DemoDataValue {
 
   // App clienti (/comandapp): news del gestore e lavagnetta del giorno
   notizie: Notizia[]
-  pubblicaNotizia: (dati: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata'>) => void
+  pubblicaNotizia: (dati: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata' | 'eventoId'>) => void
   modificaNotizia: (id: string, patch: Partial<Omit<Notizia, 'id'>>) => void
   eliminaNotizia: (id: string) => void
   lavagnetta: VoceLavagnetta[]
@@ -551,10 +551,10 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const [lavagnetta, setLavagnetta] = useState<VoceLavagnetta[]>(() => clona(seedLavagnetta))
   useSyncSupabase({
     tabella: 'notizie', accesso: accessoDi('notizie'), righe: notizie, setRighe: setNotizie, semina: true,
-    aRiga: (n) => ({ id: n.id, titolo: n.titolo, testo: n.testo, data: n.data, ts: n.ts, foto: n.foto ?? null, fissata: !!n.fissata }),
+    aRiga: (n) => ({ id: n.id, titolo: n.titolo, testo: n.testo, data: n.data, ts: n.ts, foto: n.foto ?? null, fissata: !!n.fissata, evento_id: n.eventoId ?? null }),
     daRiga: (r) => ({
       id: r.id, titolo: r.titolo as string, testo: r.testo as string, data: r.data as string, ts: Number(r.ts),
-      foto: (r.foto as string) ?? undefined, fissata: !!r.fissata,
+      foto: (r.foto as string) ?? undefined, fissata: !!r.fissata, eventoId: (r.evento_id as string) ?? undefined,
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
@@ -1278,7 +1278,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   }, [])
 
   // — App clienti: news e lavagnetta —
-  const pubblicaNotizia = useCallback((d: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata'>) => {
+  const pubblicaNotizia = useCallback((d: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata' | 'eventoId'>) => {
     setNotizie((prev) => [{ id: nuovoId('NW'), data: config.oggi, ts: Date.now(), ...d }, ...prev])
   }, [])
   const modificaNotizia = useCallback((id: string, patch: Partial<Omit<Notizia, 'id'>>) => {

@@ -311,7 +311,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Notifiche push clienti** (migrazione `0005_push_clienti.sql`): finestra `InvitoNotifiche` all'entrata dell'app
   (`src/components/AttivaNotifiche.tsx`; "Non ora" la nasconde 3 giorni, `beachin.push.clienti.rimandata`). `push_iscrizioni` ha colonna `app` (PK endpoint+app:
   stesso telefono = stesso SW per le due app), RPC `registra_push(..., p_app)`. Trigger `notifica_app_clienti`: insert su `notizie`
-  → "📰 titolo"; pubblicazione lavagnetta (riga `lavagnetta_pubblicata` di `sito_contenuti`, dalla 0026) → "Lavagna del giorno aggiornata", max 1 al minuto
+  → "📰 titolo" (la news può collegare un evento pubblicato e non passato, `Notizia.eventoId` → colonna `evento_id`, migrazione
+  0027: nell'app clienti pulsante "Vedi l'evento" che apre `EventoModal`); pubblicazione lavagnetta (riga `lavagnetta_pubblicata` di `sito_contenuti`, dalla 0026) → "Lavagna del giorno aggiornata", max 1 al minuto
   (`beachin.push_invii`). `beachin-push` riceve `tipo` e filtra le iscrizioni per app; SW apre/porta in primo piano la pagina giusta.
   Il gestore li scrive da **Sito → App clienti** (`?tab=app`, con QR dell'app) e dall'**app admin** (tab "App"), componenti
   `src/components/app/GestioneAppClienti.tsx`. Lavagna in stile ardesia con font Caveat (`font-gesso`).
@@ -557,8 +558,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   prenotazione e mostra l'album. (Prima filtrava solo `data >= oggi`, quindi i conclusi sparivano.)
 - **Bozze eventi** (migrazione `0026_bozze_eventi_lavagnetta.sql`): `Evento.pubblicato` (assente = pubblicato, colonna
   `eventi.pubblicato` default true). Form: evento nuovo/bozza → **Salva** (bozza) o **Pubblica**; evento pubblicato → "Salva
-  modifiche". Scheda: Pubblica / Nascondi. Sito e app clienti mostrano solo `pubblicato !== false`. Trigger su `eventi`
-  (insert pubblicato non seed `E-NN`, o update bozza→pubblicato, data non passata) → `beachin-push` tipo `evento_pubblicato` → app clienti.
+  modifiche". Scheda: Pubblica / Nascondi. Sito e app clienti mostrano solo `pubblicato !== false`. La pubblicazione non
+  notifica (trigger tolti dalla 0027): si notifica scrivendo una news con l'evento collegato.
 - **Album foto evento**: `Evento.galleria?: string[]` (data URI); mutazioni context
   `aggiungiFotoEvento/rimuoviFotoEvento`; upload multiplo nella scheda evento (Drawer di `Eventi`, usa
   l'evento "live" da `eventi`); il sito pubblico mostra l'album nella scheda evento (es. foto di un torneo).
