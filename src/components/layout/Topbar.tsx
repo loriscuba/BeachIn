@@ -5,6 +5,11 @@ import { CentroNotifiche } from './CentroNotifiche'
 import { SchedaUtente } from './SchedaUtente'
 import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning } from 'lucide-react'
 import { logoLido } from '@/assets/sito'
+import logoBeachIn from '@/assets/logo-beachin.png'
+import logoBeachInChiaro from '@/assets/logo-beachin-chiaro.png'
+import iconaBeachIn from '@/assets/logo-beachin-icona.png'
+import iconaBeachInChiaro from '@/assets/logo-beachin-icona-chiaro.png'
+import { ScorciatoieTestata } from './ScorciatoieTestata'
 import type { Meteo } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { config } from '@/data/config'
@@ -50,7 +55,7 @@ export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
           <button onClick={() => setScheda(true)} className="flex min-w-0 shrink-0 items-center gap-2.5 rounded-full text-left" aria-label="Apri il tuo profilo" title="Il tuo profilo">
             <Avatar nome={profilo.nome} foto={profilo.foto} className="h-10 w-10" />
             <span className="min-w-0 leading-tight">
-              <span className="block max-w-[7.5rem] truncate text-sm font-semibold text-profondo sm:max-w-[10rem]">Ciao {profilo.nome.trim().split(/\s+/)[0]}</span>
+              <span className="block max-w-[6rem] truncate text-sm font-semibold text-profondo sm:max-w-[10rem]">Ciao {profilo.nome.trim().split(/\s+/)[0]}</span>
               <span className="hidden truncate text-xs text-profondo/55 sm:block">{config.nome}</span>
               {/* telefono: data e meteo sotto il saluto */}
               <span className="flex items-center gap-1 text-xs text-profondo/55 sm:hidden">{dataBreve} · <IconaMeteo className="h-3.5 w-3.5 text-tenda" /> {gradi}°</span>
@@ -72,14 +77,26 @@ export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
         </div>
       </div>
 
-      {/* logo dello stabilimento al centro della testata (chiaro in tema scuro) */}
+      {/* logo BeachIn al centro della testata (versione chiara in tema scuro); su telefono solo l'icona */}
+      <span className="shrink-0 select-none">
+        <span className="hidden sm:block">
+          <img src={logoBeachIn} alt="BeachIn" className="logo-bi h-8 w-auto md:h-9" />
+          <img src={logoBeachInChiaro} alt="BeachIn" className="logo-bi-chiaro h-8 w-auto md:h-9" />
+        </span>
+        <span className="sm:hidden">
+          <img src={iconaBeachIn} alt="BeachIn" className="logo-bi h-8 w-8" />
+          <img src={iconaBeachInChiaro} alt="BeachIn" className="logo-bi-chiaro h-8 w-8" />
+        </span>
+      </span>
+
+      <div className="flex flex-1 basis-0 items-center justify-end gap-3">
+      {/* logo dello stabilimento subito a destra di BeachIn, poi i contatori in tempo reale fino alla campanella */}
       <img
         src={logoLido}
         alt={config.nome}
-        className="logo-testata h-9 w-auto shrink-0 select-none md:h-11"
+        className="logo-testata h-8 w-auto shrink-0 select-none md:h-11"
       />
-
-      <div className="flex flex-1 basis-0 items-center justify-end gap-3">
+      <div className="mr-auto flex min-w-0 flex-1 justify-center"><ScorciatoieTestata /></div>
       <CentroNotifiche />
       {profilo && <SchedaUtente profilo={profilo} aperta={scheda} onChiudi={() => setScheda(false)} onEsci={onEsci} />}
 

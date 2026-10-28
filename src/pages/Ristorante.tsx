@@ -60,6 +60,12 @@ export default function Ristorante() {
   // schede secondo le funzionalità attive del cliente e i permessi del ruolo
   const { visibili, tab: tabVisibile, livello: livScheda } = useSchede('ristorante', sezioni.map((x) => x.valore), q.get('tab'))
   const tab = (tabVisibile ?? 'prenotazioni') as Sezione
+  // scorciatoia "Nuova prenotazione" della testata: ?nuova=1 apre subito il modulo
+  useEffect(() => {
+    if (q.get('nuova') !== '1') return
+    setNuovaAperta(true)
+    const r = new URLSearchParams(q); r.delete('nuova'); setQ(r, { replace: true })
+  }, [q, setQ])
 
   const oggi = config.oggi
   // Giorno scelto (di default oggi; ?giorno= arriva dalla campanella delle notifiche).
