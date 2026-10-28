@@ -312,7 +312,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (`src/components/AttivaNotifiche.tsx`; "Non ora" la nasconde 3 giorni, `beachin.push.clienti.rimandata`). In testata `CampanellaNotifiche` (rossa = da attivare, gialla = attive): un tocco attiva o rinnova l'iscrizione sul server. `push_iscrizioni` ha colonna `app` (PK endpoint+app:
   stesso telefono = stesso SW per le due app), RPC `registra_push(..., p_app)`. Trigger `notifica_app_clienti`: insert su `notizie`
   → "📰 titolo" (la news può collegare un evento pubblicato e non passato, `Notizia.eventoId` → colonna `evento_id`, migrazione
-  0027: nell'app clienti pulsante "Vedi l'evento" che apre `EventoModal`); pubblicazione lavagnetta (riga `lavagnetta_pubblicata` di `sito_contenuti`, dalla 0026) → "Lavagna del giorno aggiornata", max 1 al minuto
+  0027: nell'app clienti pulsante "Vedi l'evento" che apre `EventoModal`); pubblicazione lavagnetta (riga `lavagnetta_pubblicata` di `sito_contenuti`, dalla 0026) → "Lavagnetta aggiornata dal <nome lido>" (nome da `config.nome`, scritto nella riga insieme a `ts`), max 1 al minuto
   (`beachin.push_invii`). `beachin-push` riceve `tipo` e filtra le iscrizioni per app; SW apre/porta in primo piano la pagina giusta.
   Il gestore li scrive da **Sito → App clienti** (`?tab=app`, con QR dell'app) e dall'**app admin** (tab "App"), componenti
   `src/components/app/GestioneAppClienti.tsx`. Lavagna in stile ardesia con font Caveat (`font-gesso`).
