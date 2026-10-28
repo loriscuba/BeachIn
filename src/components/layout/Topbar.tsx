@@ -3,7 +3,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { useState } from 'react'
 import { CentroNotifiche } from './CentroNotifiche'
 import { SchedaUtente } from './SchedaUtente'
-import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning } from 'lucide-react'
+import { Menu, CalendarClock, Sun, CloudSun, Cloud, CloudRain, CloudLightning } from 'lucide-react'
 import { logoLido } from '@/assets/sito'
 import logoBeachIn from '@/assets/logo-beachin.png'
 import logoBeachInChiaro from '@/assets/logo-beachin-chiaro.png'
@@ -100,15 +100,6 @@ export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
       <CentroNotifiche />
       {profilo && <SchedaUtente profilo={profilo} aperta={scheda} onChiudi={() => setScheda(false)} onEsci={onEsci} />}
 
-      {/* Badge dati dimostrativi — sempre visibile */}
-      <div
-        // sul telefono non c'è spazio: il badge esce dallo schermo
-        className="hidden items-center gap-1.5 rounded-full bg-tenda/20 px-2.5 py-1 text-xs font-semibold text-[#7A5A12] sm:flex"
-        title="Tutti i dati sono statici e mockati: le modifiche restano in memoria e al refresh tornano allo stato iniziale."
-      >
-        <FlaskConical className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Dati dimostrativi</span>
-      </div>
       </div>
     </header>
   )

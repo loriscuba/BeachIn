@@ -4,11 +4,10 @@ import { useSessione } from '@/context/SessioneContext'
 import { AccessoNegato } from '@/components/AccessoNegato'
 import { SolaLettura } from '@/components/SolaLettura'
 import UtentiRuoli from '@/pages/impostazioni/UtentiRuoli'
-import { Settings2, Save, Umbrella, CalendarRange, ShieldCheck, RotateCcw, FlaskConical, Boxes, Lock, Check, ChevronDown } from 'lucide-react'
+import { Settings2, Save, Umbrella, CalendarRange, ShieldCheck, Boxes, Lock, Check, ChevronDown } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
 import { MODULI, PIANI, funzioniDi, type InfoModulo } from '@/config/moduli'
 import { config, STATI_POSTAZIONE } from '@/data/config'
@@ -229,28 +228,9 @@ function Interruttore({ attivo, onClick, si, no, disabilitato, piccolo }: { atti
 }
 
 function Generali() {
-  const { reset } = useDemoData()
   return (
     <div className="space-y-4">
       <ParametriModificabili />
-
-      {/* Dati dimostrativi */}
-      <Card>
-        <CardBody className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-tenda" />
-            <div>
-              <p className="text-sm font-semibold text-profondo">Dati dimostrativi</p>
-              <p className="text-xs text-profondo/55">
-                Le modifiche fatte in demo (assegnazioni, incassi, costi, prenotazioni) restano in memoria. Ripristina per ripartire da capo.
-              </p>
-            </div>
-          </div>
-          <Button variante="secondario" dimensione="sm" onClick={reset}>
-            <RotateCcw className="h-4 w-4" /> Ripristina dati demo
-          </Button>
-        </CardBody>
-      </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Arenile */}
