@@ -81,16 +81,25 @@ self.addEventListener('push', (e) => {
   }))
 })
 
+/** Aggiunge (o sostituisce) ?sez= all'indirizzo, anche con HashRouter (…/#/comandapp?sez=lavagna). */
+function conSezione(url, sez) {
+  if (!sez) return url
+  const [base, hash] = url.split('#')
+  const metti = (s) => `${s.split('?')[0]}?sez=${encodeURIComponent(sez)}`
+  return hash !== undefined ? `${base}#${metti(hash)}` : metti(base)
+}
+
 self.addEventListener('notificationclick', (e) => {
   e.notification.close()
   const dati = e.notification.data || {}
-  const url = dati.url || self.registration.scope
   const clienti = dati.app === 'clienti'
+  // app clienti: la notifica apre la sezione giusta (lavagnetta → Lavagna, news → News) con ?sez=
+  const url = conSezione(dati.url || self.registration.scope, dati.sez)
   e.waitUntil((async () => {
     const finestre = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     for (const f of finestre) {
       // app già aperta (magari sospesa): la porto in primo piano e le chiedo di aggiornarsi (staff = tutto tranne ComandApp)
-      if (f.url.includes('comandapp') === clienti) { await f.focus(); f.postMessage({ tipo: 'aggiorna' }); return }
+      if (f.url.includes('comandapp') === clienti) { await f.focus(); f.postMessage(dati.sez ? { tipo: 'apri', sez: dati.sez } : { tipo: 'aggiorna' }); return }
     }
     await self.clients.openWindow(url)
   })())

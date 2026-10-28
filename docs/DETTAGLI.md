@@ -30,7 +30,7 @@ Aggiornare qui quando cambia un modulo.
   le categorie con modulo attivo + permesso (nessun interruttore per sezione). Elenco (max 50), preferenze (solo suono) ed eventi già visti
   in localStorage `beachin.notifiche.v1` / `.pref.v1` / `.visti.v1`: quello che arriva ad app chiusa compare alla riapertura; solo al
   primissimo avvio sul dispositivo i primi 5 s non notificano. Le comande che hai inviato tu non suonano sul tuo dispositivo.
-  Pannello Preferenze: suono, notifiche push (`attivaPush('admin')`), elenco di cosa si riceve. Le pagine non hanno interruttori di suono/notifiche.
+  Niente più pannello Preferenze nella campanella: suono (Sì/No), notifiche push (`NotifichePush`, `attivaPush('admin')`) ed elenco di cosa si riceve stanno nella finestra del profilo (`SchedaUtente`). Le pagine non hanno interruttori di suono/notifiche.
 - **Richieste dal sito** (tavolo, ombrellone, evento): `inviaRichiesta*` sono async e scrivono subito con `inserisci` di `useSyncSupabase`
   (client `supabaseInvii` senza sessione e con `keepalive`): il form mostra "Invio in corso…" e la conferma solo quando il DB l'ha presa
   (da lì i trigger mandano push e mail), altrimenti "Riprova". Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/tavolo`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
@@ -317,7 +317,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   stesso telefono = stesso SW per le due app), RPC `registra_push(..., p_app)`. Trigger `notifica_app_clienti`: insert su `notizie`
   → "📰 Nuova news" con il titolo della news come testo (iPhone aggiunge da solo "from <nome app>") (la news può collegare un evento pubblicato e non passato, `Notizia.eventoId` → colonna `evento_id`, migrazione
   0027: nell'app clienti pulsante "Vedi l'evento" che apre `EventoModal`); pubblicazione lavagnetta (riga `lavagnetta_pubblicata` di `sito_contenuti`, dalla 0026) → "Lavagnetta aggiornata dal <nome lido>" (nome da `config.nome`, scritto nella riga insieme a `ts`), max 1 al minuto
-  (`beachin.push_invii`). `beachin-push` riceve `tipo` e filtra le iscrizioni per app; SW apre/porta in primo piano la pagina giusta.
+  (`beachin.push_invii`). `beachin-push` riceve `tipo` e filtra le iscrizioni per app; SW apre/porta in primo piano la pagina giusta. Il payload ha `sez` (lavagnetta → `lavagna`, news → `news`): il SW apre `?sez=` (`conSezione`, anche con HashRouter) o, con l'app clienti già aperta, le manda `{ tipo: 'apri', sez }`.
   Il gestore li scrive da **Sito → App clienti** (`?tab=app`, con QR dell'app) e dall'**app admin** (tab "App"), componenti
   `src/components/app/GestioneAppClienti.tsx`. Lavagna in stile ardesia con font Caveat (`font-gesso`).
 - **Contatti**: da `config` (telefono, WhatsApp, email se c'è, indirizzo/Maps, Facebook, orari).

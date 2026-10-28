@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { Bell, BellRing, CheckCheck, Settings2, Share, Trash2, X } from 'lucide-react'
+import { Bell, BellRing, CheckCheck, Share, Trash2, X } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useNotifiche } from '@/context/NotificheContext'
@@ -34,7 +34,6 @@ function Pannello({ onChiudi }: { onChiudi: () => void }) {
   const { notifiche, nonLette, segnaLetta, segnaTutteLette, svuota } = useNotifiche()
   const [tema] = useTema()
   const scuro = tema === 'scuro'
-  const [impostazioni, setImpostazioni] = useState(false)
   const vai = useNavigate()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onChiudi()
@@ -56,15 +55,14 @@ function Pannello({ onChiudi }: { onChiudi: () => void }) {
         )}
       >
         <div className={cn('flex items-center gap-1 border-b px-3 py-2.5', scuro ? 'border-white/10' : 'border-calce-200')}>
-          <h2 className="flex-1 font-display text-lg font-semibold">{impostazioni ? 'Preferenze notifiche' : 'Notifiche'}</h2>
-          {!impostazioni && nonLette > 0 && <button className={icona} onClick={segnaTutteLette} title="Segna tutte come lette" aria-label="Segna tutte come lette"><CheckCheck className="h-5 w-5" /></button>}
-          {!impostazioni && notifiche.length > 0 && <button className={icona} onClick={svuota} title="Svuota l'elenco" aria-label="Svuota l'elenco"><Trash2 className="h-5 w-5" /></button>}
-          <button className={cn(icona, impostazioni && (scuro ? 'bg-white/10 text-white' : 'bg-profondo/5 text-profondo'))} onClick={() => setImpostazioni(!impostazioni)} title="Preferenze" aria-label="Preferenze"><Settings2 className="h-5 w-5" /></button>
+          <h2 className="flex-1 font-display text-lg font-semibold">Notifiche</h2>
+          {nonLette > 0 && <button className={icona} onClick={segnaTutteLette} title="Segna tutte come lette" aria-label="Segna tutte come lette"><CheckCheck className="h-5 w-5" /></button>}
+          {notifiche.length > 0 && <button className={icona} onClick={svuota} title="Svuota l'elenco" aria-label="Svuota l'elenco"><Trash2 className="h-5 w-5" /></button>}
           <button className={icona} onClick={onChiudi} aria-label="Chiudi"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="overflow-y-auto overscroll-contain">
-          {impostazioni ? <Preferenze scuro={scuro} /> : notifiche.length === 0 ? (
+          {notifiche.length === 0 ? (
             <p className={cn('px-4 py-10 text-center text-sm', tenue)}>Nessuna notifica. Qui arrivano prenotazioni, richieste e comande appena succedono.</p>
           ) : (
             <ul>
@@ -92,41 +90,8 @@ function Pannello({ onChiudi }: { onChiudi: () => void }) {
   )
 }
 
-function Interruttore({ acceso, onCambia, etichetta, scuro }: { acceso: boolean; onCambia: (v: boolean) => void; etichetta: string; scuro: boolean }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={acceso}
-      aria-label={etichetta}
-      onClick={() => onCambia(!acceso)}
-      className={cn('relative h-6 w-11 shrink-0 rounded-full transition-colors', acceso ? 'bg-cabina' : scuro ? 'bg-white/20' : 'bg-calce-300')}
-    >
-      <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform', acceso ? 'translate-x-[1.375rem]' : 'translate-x-0.5')} />
-    </button>
-  )
-}
-
-function Preferenze({ scuro }: { scuro: boolean }) {
-  const { categorie, preferenze, impostaSuono } = useNotifiche()
-  const riga = cn('flex items-center gap-3 border-b px-4 py-3 text-sm', scuro ? 'border-white/10' : 'border-calce-200')
-  const tenue = scuro ? 'text-white/55' : 'text-profondo/55'
-  return (
-    <div>
-      <div className={riga}>
-        <span className="flex-1">Suono del campanello<span className={cn('block text-xs', tenue)}>A ogni notifica nuova, su questo dispositivo</span></span>
-        <Interruttore acceso={preferenze.suono} onCambia={impostaSuono} etichetta="Suono del campanello" scuro={scuro} />
-      </div>
-      <NotifichePush riga={riga} tenue={tenue} />
-      <p className={cn('px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide', tenue)}>Ricevi</p>
-      {categorie.length === 0
-        ? <p className={cn('px-4 py-3 text-sm', tenue)}>Il tuo ruolo non riceve notifiche.</p>
-        : <p className={cn('px-4 pb-3 text-sm', tenue)}>{categorie.map((c) => c.nome).join(' · ')}</p>}
-    </div>
-  )
-}
-
 /** Notifiche push (anche a telefono bloccato): il server le manda per prenotazioni tavolo e ombrellone e richieste eventi. */
-function NotifichePush({ riga, tenue }: { riga: string; tenue: string }) {
+export function NotifichePush({ riga, tenue }: { riga: string; tenue: string }) {
   const [stato, setStato] = useState<StatoPush>()
   const [lavoro, setLavoro] = useState(false)
   const [errore, setErrore] = useState<string>()
