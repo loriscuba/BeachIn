@@ -21,7 +21,7 @@ import { cn } from '@/lib/cn'
 import { impostaManifest } from '@/lib/notifichePush'
 import { urlPubblico } from '@/lib/urlPubblico'
 import PulsanteInstalla from '@/components/PulsanteInstalla'
-import { InvitoNotifiche } from '@/components/AttivaNotifiche'
+import { CampanellaNotifiche, InvitoNotifiche } from '@/components/AttivaNotifiche'
 import { AnteprimaWhatsApp } from '@/components/AnteprimaWhatsApp'
 import { prezzoLavagna } from '@/components/app/GestioneAppClienti'
 import { EventoModal, FormRistorante, Sospese } from '@/pages/SitoAnteprima'
@@ -88,12 +88,15 @@ export default function ComandApp() {
               <p className="text-xs capitalize text-profondo/60">{dataEstesa(config.oggi)}</p>
             </div>
           </div>
+          <div className="flex items-center gap-1.5">
+          <CampanellaNotifiche app="clienti" />
           {utente && (
             <div className="flex items-center gap-1">
               <button onClick={() => vai('ombrellone')} className="inline-flex items-center gap-1 rounded-full bg-laguna px-3 py-1 text-sm font-bold text-white"><Umbrella className="h-4 w-4" /> {utente.ombrellone}</button>
               <button onClick={esci} className="grid h-8 w-8 place-content-center rounded-full hover:bg-profondo/10" aria-label="Esci"><LogOut className="h-4 w-4" /></button>
             </div>
           )}
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-md md:max-w-3xl lg:max-w-5xl px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
