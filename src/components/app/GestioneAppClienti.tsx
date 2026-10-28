@@ -115,7 +115,15 @@ export function GestioneLavagnetta() {
 
   return (
     <div className="space-y-3">
-      <p className={cn('text-xs font-semibold', modificata || bozzaLavagnetta ? 'text-boa' : 'text-cabina')}>{stato}</p>
+      {/* Salva e Pubblica in alto, sempre a vista anche su telefono */}
+      <div className="space-y-2 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-calce-200">
+        <p className={cn('text-xs font-semibold', modificata || bozzaLavagnetta ? 'text-boa' : 'text-cabina')}>{stato}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={salva} disabled={!modificata} className="h-11 rounded-lg border border-cabina bg-white text-sm font-semibold text-cabina disabled:border-calce-200 disabled:text-profondo/35">Salva</button>
+          <button type="button" onClick={pubblica} className="h-11 rounded-lg bg-cabina text-sm font-semibold text-white">Pubblica</button>
+        </div>
+        {esito && <p className="text-center text-xs text-profondo/60">{esito}</p>}
+      </div>
       <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-calce-200">
         {voci.length === 0 && <p className="py-4 text-center text-sm text-profondo/50">Lavagnetta vuota: scrivi le proposte di oggi.</p>}
         {voci.map((v, i) => (
@@ -145,11 +153,6 @@ export function GestioneLavagnetta() {
         <input value={f.descrizione} onChange={(e) => setF({ ...f, descrizione: e.target.value })} placeholder="descrizione (facoltativa)" className={cn(campo, 'col-span-2')} />
         <button disabled={!f.nome.trim()} className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-cabina text-sm font-semibold text-white disabled:opacity-40"><Plus className="h-4 w-4" /> Scrivi sulla lavagnetta</button>
       </form>
-      <div className="grid grid-cols-2 gap-2">
-        <button type="button" onClick={salva} disabled={!modificata} className="h-11 rounded-lg border border-cabina bg-white text-sm font-semibold text-cabina disabled:opacity-40">Salva</button>
-        <button type="button" onClick={pubblica} disabled={!modificata && !bozzaLavagnetta} className="h-11 rounded-lg bg-cabina text-sm font-semibold text-white disabled:opacity-40">Pubblica</button>
-      </div>
-      {esito && <p className="text-center text-xs text-profondo/60">{esito}</p>}
     </div>
   )
 }
