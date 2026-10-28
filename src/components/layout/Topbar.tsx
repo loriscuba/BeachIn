@@ -7,6 +7,9 @@ import { Menu, FlaskConical, CalendarClock, Sun, CloudSun, Cloud, CloudRain, Clo
 import { logoLido } from '@/assets/sito'
 import logoBeachIn from '@/assets/logo-beachin.png'
 import logoBeachInChiaro from '@/assets/logo-beachin-chiaro.png'
+import iconaBeachIn from '@/assets/logo-beachin-icona.png'
+import iconaBeachInChiaro from '@/assets/logo-beachin-icona-chiaro.png'
+import { ContatoriTestata } from './ContatoriTestata'
 import type { Meteo } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { config } from '@/data/config'
@@ -74,19 +77,26 @@ export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
         </div>
       </div>
 
-      {/* logo BeachIn al centro della testata (versione chiara in tema scuro) */}
+      {/* logo BeachIn al centro della testata (versione chiara in tema scuro); su telefono solo l'icona */}
       <span className="shrink-0 select-none">
-        <img src={logoBeachIn} alt="BeachIn" className="logo-bi h-7 w-auto md:h-9" />
-        <img src={logoBeachInChiaro} alt="BeachIn" className="logo-bi-chiaro h-7 w-auto md:h-9" />
+        <span className="hidden sm:block">
+          <img src={logoBeachIn} alt="BeachIn" className="logo-bi h-8 w-auto md:h-9" />
+          <img src={logoBeachInChiaro} alt="BeachIn" className="logo-bi-chiaro h-8 w-auto md:h-9" />
+        </span>
+        <span className="sm:hidden">
+          <img src={iconaBeachIn} alt="BeachIn" className="logo-bi h-8 w-8" />
+          <img src={iconaBeachInChiaro} alt="BeachIn" className="logo-bi-chiaro h-8 w-8" />
+        </span>
       </span>
 
       <div className="flex flex-1 basis-0 items-center justify-end gap-3">
-      {/* logo dello stabilimento subito a destra di BeachIn; lo spazio fino alla campanella resta libero */}
+      {/* logo dello stabilimento subito a destra di BeachIn, poi i contatori in tempo reale fino alla campanella */}
       <img
         src={logoLido}
         alt={config.nome}
-        className="logo-testata mr-auto h-8 w-auto shrink-0 select-none md:h-11"
+        className="logo-testata h-8 w-auto shrink-0 select-none md:h-11"
       />
+      <div className="mr-auto flex min-w-0 flex-1 justify-center"><ContatoriTestata /></div>
       <CentroNotifiche />
       {profilo && <SchedaUtente profilo={profilo} aperta={scheda} onChiudi={() => setScheda(false)} onEsci={onEsci} />}
 

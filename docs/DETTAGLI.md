@@ -23,7 +23,7 @@ Aggiornare qui quando cambia un modulo.
 - **Telefono**: `Tabella` sotto `sm` diventa una lista di schede (prima colonna titolo, le altre etichetta/valore).
 - **Accesso**: `AppShell` mostra `LoginGestore` finché `SessioneContext` non ha un profilo; tocco sulla foto in alto a sinistra della Topbar
   → `SchedaUtente` (nome, ruolo, tema Automatico/Chiaro/Scuro, Esci; `useTema` di base segue `prefers-color-scheme` del telefono, scelta in localStorage `beachin.tema.v2`). Testata a tre zone larghe uguali: sinistra foto + "Ciao <nome>"
-  + nome del lido + data/meteo (su telefono sotto il saluto), centro nuovo logo BeachIn (`assets/logo-beachin.png`, in tema scuro `logo-beachin-chiaro.png` via `.logo-bi`/`.logo-bi-chiaro`), subito a destra logo del lido (`logoLido`, `.logo-testata` schiarito in tema scuro) e spazio libero fino alla campanella,
+  + nome del lido + data/meteo (su telefono sotto il saluto), centro nuovo logo BeachIn (`assets/logo-beachin.png`, in tema scuro `logo-beachin-chiaro.png` via `.logo-bi`/`.logo-bi-chiaro`), subito a destra logo del lido (`logoLido`, `.logo-testata` schiarito in tema scuro) su telefono solo l'icona BeachIn (`logo-beachin-icona*.png`); fino alla campanella `ContatoriTestata` (stessi conteggi dei badge del menu, `useConteggiNav`, solo le code visibili al ruolo: da confermare, ombrelloni, cucina, coda bar; tocco = apre la sezione; telefono e tablet solo il più alto, PC tutti),
   destra campanella notifiche e badge demo.
 - **Centro notifiche** (`context/NotificheContext.tsx` in `AppShell`, campanella `layout/CentroNotifiche.tsx` in alto a destra): unico punto per
   tutti gli eventi (prenotazioni tavolo, ombrelloni dal sito, richieste eventi, comande ombrelloni, cucina, bar, piatti pronti), solo
