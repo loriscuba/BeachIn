@@ -1,8 +1,9 @@
 /**
  * Centro notifiche dell'app staff (campanella in alto a destra): un unico posto per tutti gli eventi
  * (prenotazioni, richieste eventi, comande, cucina, bar, piatti pronti) e per le preferenze
- * (suono, notifiche sul telefono, categorie). Le pagine non hanno più interruttori propri.
- * Elenco e preferenze restano nel browser di questo dispositivo.
+ * (suono, notifiche sul telefono). Arrivano tutte le categorie permesse al ruolo: niente interruttori per sezione.
+ * Elenco, eventi già visti e preferenze restano nel browser di questo dispositivo: quello che arriva
+ * ad app chiusa compare alla riapertura.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useDemoData } from '@/context/DemoDataContext'
@@ -35,7 +36,7 @@ export interface Notifica {
   letta: boolean
 }
 
-interface Preferenze { suono: boolean; spente: CategoriaNotifica[] }
+interface Preferenze { suono: boolean }
 
 interface NotificheValue {
   notifiche: Notifica[]
@@ -43,7 +44,6 @@ interface NotificheValue {
   categorie: typeof CATEGORIE_NOTIFICA
   preferenze: Preferenze
   impostaSuono: (on: boolean) => void
-  impostaCategoria: (c: CategoriaNotifica, on: boolean) => void
   segnaLetta: (id: string) => void
   segnaTutteLette: () => void
   svuota: () => void
@@ -51,8 +51,10 @@ interface NotificheValue {
 
 const CHIAVE_ELENCO = 'beachin.notifiche.v1'
 const CHIAVE_PREF = 'beachin.notifiche.pref.v1'
+const CHIAVE_VISTI = 'beachin.notifiche.visti.v1'
 const MAX = 50
-/** Dati che arrivano nei primi secondi (caricamento dal database) non sono eventi nuovi. */
+const MAX_VISTI = 500
+/** Al primo avvio su un dispositivo, i dati dei primi secondi (caricamento dal database) non sono eventi nuovi. */
 const AVVIO_MS = 5000
 
 function leggi<T>(chiave: string, ripiego: T): T {
@@ -71,7 +73,7 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
   const { moduloAttivo } = useModuli()
   const { puo, profilo } = useSessione()
   const [notifiche, setNotifiche] = useState<Notifica[]>(() => leggi(CHIAVE_ELENCO, []))
-  const [preferenze, setPreferenze] = useState<Preferenze>(() => ({ suono: true, spente: [], ...leggi<Partial<Preferenze>>(CHIAVE_PREF, {}) }))
+  const [preferenze, setPreferenze] = useState<Preferenze>(() => ({ suono: leggi<Partial<Preferenze>>(CHIAVE_PREF, {}).suono ?? true }))
   useEffect(() => scrivi(CHIAVE_ELENCO, notifiche), [notifiche])
   useEffect(() => scrivi(CHIAVE_PREF, preferenze), [preferenze])
 
@@ -119,18 +121,27 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
     })),
   ], [richiesteRistorante, prenotazioniOnline, richiesteEventi, comande, comandeSala, mio, senzaOmbrelloni])
 
+  // eventi già visti su questo dispositivo (salvati): una richiesta arrivata ad app chiusa è nuova alla riapertura.
+  // Al primo avvio in assoluto quello che c'è già (caricamento dei primi secondi) non notifica.
   const visti = useRef<Set<string> | null>(null)
-  const avvio = useRef(Date.now())
+  const silenzioFino = useRef(0)
   const prefRef = useRef(preferenze)
   prefRef.current = preferenze
   const ammesse = useRef(categorie)
   ammesse.current = categorie
   useEffect(() => {
-    const prima = !visti.current || Date.now() - avvio.current < AVVIO_MS
-    const nuove = visti.current ? sorgenti.filter((s) => !visti.current!.has(s.id)) : []
-    visti.current = new Set([...(visti.current ?? []), ...sorgenti.map((s) => s.id)])
-    if (prima) return
-    const accese = nuove.filter((s) => ammesse.current.some((c) => c.id === s.categoria) && !prefRef.current.spente.includes(s.categoria))
+    if (!visti.current) {
+      const salvati = leggi<string[] | null>(CHIAVE_VISTI, null)
+      visti.current = new Set(salvati ?? [])
+      if (!salvati) silenzioFino.current = Date.now() + AVVIO_MS
+    }
+    const nuove = sorgenti.filter((s) => !visti.current!.has(s.id))
+    if (!nuove.length) return
+    // i più recenti in fondo: oltre il limite si dimenticano i più vecchi
+    visti.current = new Set([...visti.current, ...nuove.map((s) => s.id)].slice(-MAX_VISTI))
+    scrivi(CHIAVE_VISTI, [...visti.current])
+    if (Date.now() < silenzioFino.current) return
+    const accese = nuove.filter((s) => ammesse.current.some((c) => c.id === s.categoria))
     if (!accese.length) return
     const ora = Date.now()
     setNotifiche((l) => [...accese.map((s) => ({ ...s, id: `${s.id}-${ora}`, ts: ora, letta: false })).reverse(), ...l].slice(0, MAX))
@@ -145,8 +156,6 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const impostaSuono = useCallback((on: boolean) => { if (on) campanello(); setPreferenze((p) => ({ ...p, suono: on })) }, [])
-  const impostaCategoria = useCallback((c: CategoriaNotifica, on: boolean) =>
-    setPreferenze((p) => ({ ...p, spente: on ? p.spente.filter((x) => x !== c) : [...p.spente.filter((x) => x !== c), c] })), [])
   const segnaLetta = useCallback((id: string) => setNotifiche((l) => l.map((n) => (n.id === id ? { ...n, letta: true } : n))), [])
   const segnaTutteLette = useCallback(() => setNotifiche((l) => l.map((n) => ({ ...n, letta: true }))), [])
   const svuota = useCallback(() => setNotifiche([]), [])
@@ -155,8 +164,8 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
   const visibili = useMemo(() => notifiche.filter((n) => categorie.some((c) => c.id === n.categoria)), [notifiche, categorie])
   const value = useMemo<NotificheValue>(() => ({
     notifiche: visibili, nonLette: visibili.filter((n) => !n.letta).length, categorie, preferenze,
-    impostaSuono, impostaCategoria, segnaLetta, segnaTutteLette, svuota,
-  }), [visibili, categorie, preferenze, impostaSuono, impostaCategoria, segnaLetta, segnaTutteLette, svuota])
+    impostaSuono, segnaLetta, segnaTutteLette, svuota,
+  }), [visibili, categorie, preferenze, impostaSuono, segnaLetta, segnaTutteLette, svuota])
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
