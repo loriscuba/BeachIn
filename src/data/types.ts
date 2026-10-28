@@ -726,6 +726,7 @@ export interface Notizia {
   ts: number
   foto?: string // data URI
   fissata?: boolean // in cima al feed
+  eventoId?: string // evento collegato: nell'app clienti la news ha il pulsante per aprirlo
 }
 
 /** Riga della lavagnetta (piatti/proposte del giorno scritti dal gestore). */

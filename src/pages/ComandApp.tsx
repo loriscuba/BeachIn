@@ -140,7 +140,10 @@ const vuoto = 'rounded-3xl bg-white shadow-[0_4px_20px_rgba(15,59,76,0.07)] p-6 
 
 /** Home: scorciatoie colorate alle sezioni (come le categorie delle app di viaggio) e poi le news. */
 function News({ scorciatoie, vai }: { scorciatoie: { id: Sez; etichetta: string; icona: LucideIcon }[]; vai: (s: Sez) => void }) {
-  const { notizie } = useDemoData()
+  const { notizie, eventi, canaliPrenotazione } = useDemoData()
+  const [aperto, setAperto] = useState<Evento>()
+  // evento collegato alla news, solo se è pubblicato
+  const eventoDi = (id?: string) => eventi.find((e) => e.id === id && e.pubblicato !== false)
   const lista = useMemo(() => [...notizie].sort((a, b) => Number(!!b.fissata) - Number(!!a.fissata) || b.ts - a.ts), [notizie])
   return (
     <div>
@@ -184,10 +187,16 @@ function News({ scorciatoie, vai }: { scorciatoie: { id: Sez; etichetta: string;
               </p>
               <h2 className="mt-2 text-lg font-bold leading-snug">{n.titolo}</h2>
               {n.testo && <p className={cn('mt-1 whitespace-pre-line text-sm', n.fissata ? 'text-white/90' : 'text-profondo/75')}>{n.testo}</p>}
+              {eventoDi(n.eventoId) && (
+                <button onClick={() => setAperto(eventoDi(n.eventoId))} className={cn('mt-3 inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold', n.fissata ? 'bg-tenda text-profondo' : 'bg-laguna text-white')}>
+                  <PartyPopper className="h-4 w-4" /> Vedi l’evento <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </article>
         ))}
       </div>
+      <EventoModal evento={aperto} prenotabile={canaliPrenotazione.eventi} onChiudi={() => setAperto(undefined)} onPrenotato={() => undefined} />
     </div>
   )
 }
