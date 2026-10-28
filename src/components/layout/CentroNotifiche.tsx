@@ -107,7 +107,7 @@ function Interruttore({ acceso, onCambia, etichetta, scuro }: { acceso: boolean;
 }
 
 function Preferenze({ scuro }: { scuro: boolean }) {
-  const { categorie, preferenze, impostaSuono, impostaCategoria } = useNotifiche()
+  const { categorie, preferenze, impostaSuono } = useNotifiche()
   const riga = cn('flex items-center gap-3 border-b px-4 py-3 text-sm', scuro ? 'border-white/10' : 'border-calce-200')
   const tenue = scuro ? 'text-white/55' : 'text-profondo/55'
   return (
@@ -117,14 +117,10 @@ function Preferenze({ scuro }: { scuro: boolean }) {
         <Interruttore acceso={preferenze.suono} onCambia={impostaSuono} etichetta="Suono del campanello" scuro={scuro} />
       </div>
       <NotifichePush riga={riga} tenue={tenue} />
-      <p className={cn('px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide', tenue)}>Cosa notificare</p>
-      {categorie.length === 0 && <p className={cn('px-4 py-3 text-sm', tenue)}>Il tuo ruolo non riceve notifiche.</p>}
-      {categorie.map((c) => (
-        <div key={c.id} className={riga}>
-          <span className="flex-1">{c.nome}</span>
-          <Interruttore acceso={!preferenze.spente.includes(c.id)} onCambia={(v) => impostaCategoria(c.id, v)} etichetta={c.nome} scuro={scuro} />
-        </div>
-      ))}
+      <p className={cn('px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide', tenue)}>Ricevi</p>
+      {categorie.length === 0
+        ? <p className={cn('px-4 py-3 text-sm', tenue)}>Il tuo ruolo non riceve notifiche.</p>
+        : <p className={cn('px-4 pb-3 text-sm', tenue)}>{categorie.map((c) => c.nome).join(' · ')}</p>}
     </div>
   )
 }

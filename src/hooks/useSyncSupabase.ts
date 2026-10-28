@@ -1,5 +1,5 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
-import { supabase, SCHEMA } from '@/lib/supabase'
+import { supabase, supabaseInvii, SCHEMA } from '@/lib/supabase'
 
 type Riga = Record<string, unknown> & { id: string }
 type Filtro = { or: () => string; tieni: (r: Riga) => boolean }
@@ -56,8 +56,8 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
   const colonne = accesso?.colonne ?? '*'
   const pronto = useRef(false)
   const foto = useRef(new Map<string, string>()) // id → JSON dell'ultima riga nota al DB
-  const opz = useRef({ aRiga, daRiga, ordina, filtro })
-  opz.current = { aRiga, daRiga, ordina, filtro }
+  const opz = useRef({ aRiga, daRiga, ordina, filtro, tabella })
+  opz.current = { aRiga, daRiga, ordina, filtro, tabella }
   const righeRef = useRef(righe)
   righeRef.current = righe
   const ricaricaRef = useRef(async () => {})
@@ -168,6 +168,21 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
     ricarica: () => ricaricaRef.current(),
     /** La riga è già stata salvata per altra via (es. una funzione del DB): la scrittura automatica la salta. */
     allinea: (x: T) => { foto.current.set(x.id, JSON.stringify(opz.current.aRiga(x, 0))) },
+    /**
+     * Riga nuova di un cliente (richiesta dal sito): la scrive subito sul DB e dice se l'ha presa, così la pagina
+     * conferma l'invio solo quando è arrivato (e i trigger di notifica e mail partono). La scrittura automatica la salta.
+     */
+    inserisci: async (x: T) => {
+      if (!supabaseInvii) return true
+      const riga = opz.current.aRiga(x, 0)
+      foto.current.set(x.id, JSON.stringify(riga))
+      const { error } = await supabaseInvii.from(opz.current.tabella).insert(riga)
+      // 23505: la riga c'è già (risposta persa di un invio arrivato)
+      if (!error || error.code === '23505') return true
+      console.error(`[supabase] ${opz.current.tabella}:`, error.message)
+      foto.current.delete(x.id)
+      return false
+    },
   })
   return api.current
 }

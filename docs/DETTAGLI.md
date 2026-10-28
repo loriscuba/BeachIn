@@ -27,9 +27,13 @@ Aggiornare qui quando cambia un modulo.
   destra campanella notifiche e badge demo.
 - **Centro notifiche** (`context/NotificheContext.tsx` in `AppShell`, campanella `layout/CentroNotifiche.tsx` in alto a destra): unico punto per
   tutti gli eventi (prenotazioni tavolo, ombrelloni dal sito, richieste eventi, comande ombrelloni, cucina, bar, piatti pronti), solo
-  le categorie con modulo attivo + permesso. Elenco (max 50) e preferenze (suono, categorie spente) in localStorage `beachin.notifiche.v1`
-  / `.pref.v1`; nei primi 5 s nessuna notifica (caricamento dati); le comande che hai inviato tu non suonano sul tuo dispositivo.
-  Pannello Preferenze: suono, notifiche push (`attivaPush('admin')`), categorie. Le pagine non hanno più interruttori di suono/notifiche. Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/tavolo`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
+  le categorie con modulo attivo + permesso (nessun interruttore per sezione). Elenco (max 50), preferenze (solo suono) ed eventi già visti
+  in localStorage `beachin.notifiche.v1` / `.pref.v1` / `.visti.v1`: quello che arriva ad app chiusa compare alla riapertura; solo al
+  primissimo avvio sul dispositivo i primi 5 s non notificano. Le comande che hai inviato tu non suonano sul tuo dispositivo.
+  Pannello Preferenze: suono, notifiche push (`attivaPush('admin')`), elenco di cosa si riceve. Le pagine non hanno interruttori di suono/notifiche.
+- **Richieste dal sito** (tavolo, ombrellone, evento): `inviaRichiesta*` sono async e scrivono subito con `inserisci` di `useSyncSupabase`
+  (client `supabaseInvii` senza sessione e con `keepalive`): il form mostra "Invio in corso…" e la conferma solo quando il DB l'ha presa
+  (da lì i trigger mandano push e mail), altrimenti "Riprova". Pagine pubbliche (`/sito/anteprima`, `/menu`, `/comandapp`, `/tavolo`, `/invito`) libere. Vedi "Utenti, ruoli e permessi".
   Senza Supabase utenti demo `admin`, `cameriere`, `cucina`, `barista` (password `lido`, tasti rapidi sotto il login); la sessione
   demo è per scheda (sessionStorage, ultima usata in localStorage): tre schede dello stesso browser possono essere tre utenti.
 - `Sidebar`: su PC a scomparsa (hamburger nella `Topbar`, colonna che scorre fuori `lg:-ml-64`, scelta ricordata in

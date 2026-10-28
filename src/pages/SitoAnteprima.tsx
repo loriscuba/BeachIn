@@ -744,16 +744,18 @@ export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: {
   // reset del form quando cambia l'evento selezionato
   useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false }); setInviato(false) }, [e?.id])
 
+  const invio = useInvio()
   const invia = (ev: React.FormEvent) => {
     ev.preventDefault()
     if (!e) return
-    inviaRichiestaEvento({
+    void invio.invia(() => inviaRichiestaEvento({
       nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(),
       eventoId: e.id, eventoNome: e.nome, eventoData: e.data,
       persone: Math.max(1, Number(f.persone) || 1), note: f.note.trim() || undefined,
+    }), () => {
+      setInviato(true)
+      onPrenotato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono))
     })
-    setInviato(true)
-    onPrenotato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono))
   }
 
   return (
@@ -799,7 +801,7 @@ export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: {
               <Campo label="Persone"><input type="number" min={1} className={pc} value={f.persone} onChange={(ev) => set('persone', ev.target.value)} /></Campo>
               <Campo label="Note"><input className={pc} value={f.note} onChange={(ev) => set('note', ev.target.value)} placeholder="facoltative" /></Campo>
               <ConsensoPrivacy checked={f.privacy} onChange={(v) => set('privacy', v)} />
-              <button type="submit" disabled={!valido} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">Invia richiesta</button>
+              <PulsanteInvio valido={!!valido} invio={invio} />
             </form>
           )}
         </div>
@@ -810,6 +812,29 @@ export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: {
 
 // ————————————————— Form di prenotazione —————————————————
 
+/** Invio di una richiesta: la conferma compare solo quando il DB l'ha ricevuta (da lì partono notifica e mail). */
+function useInvio() {
+  const [stato, setStato] = useState<'pronto' | 'in_corso' | 'errore'>('pronto')
+  const invia = async (manda: () => Promise<boolean>, fatto: () => void) => {
+    if (stato === 'in_corso') return
+    setStato('in_corso')
+    const ok = await manda().catch(() => false)
+    setStato(ok ? 'pronto' : 'errore')
+    if (ok) fatto()
+  }
+  return { stato, invia }
+}
+
+function PulsanteInvio({ valido, invio }: { valido: boolean; invio: ReturnType<typeof useInvio> }) {
+  const inCorso = invio.stato === 'in_corso'
+  return (
+    <>
+      {invio.stato === 'errore' && <p className="col-span-2 rounded-xl bg-boa/10 px-3 py-2 text-sm text-boa">Invio non riuscito: controlla la connessione e riprova.</p>}
+      <button type="submit" disabled={!valido || inCorso} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">{inCorso ? 'Invio in corso…' : invio.stato === 'errore' ? 'Riprova' : 'Invia richiesta'}</button>
+    </>
+  )
+}
+
 function FormOmbrellone({ onInviato }: { onInviato: (nome: string, dove: string) => void }) {
   const { inviaRichiestaOmbrellone } = useDemoData()
   const oggi = config.stagione.oggi
@@ -817,11 +842,12 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string, dove: string)
   const [inviato, setInviato] = useState(false)
   const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy
+  const invio = useInvio()
 
   if (inviato) return <Successo testo={`La tua richiesta di ombrellone è partita. Ti abbiamo mandato la ricevuta ${doveScritto(f.email, f.telefono)}: appena la confermiamo dal gestionale ti scriviamo di nuovo.`} onAltro={() => setInviato(false)} />
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaOmbrellone({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), dal: f.dal, al: f.al, tipologiaPostazione: f.tipologia, persone: Math.max(1, Number(f.persone) || 1) }); setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }}
+    <form onSubmit={(e) => { e.preventDefault(); void invio.invia(() => inviaRichiestaOmbrellone({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), dal: f.dal, al: f.al, tipologiaPostazione: f.tipologia, persone: Math.max(1, Number(f.persone) || 1) }), () => { setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }) }}
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 text-profondo shadow-2xl shadow-profondo-900/30 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold">Richiedi il tuo ombrellone</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
@@ -841,7 +867,7 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string, dove: string)
       </Campo>
       <Campo label="Persone"><input type="number" min={1} className={pc} value={f.persone} onChange={(e) => set('persone', e.target.value)} /></Campo>
       <ConsensoPrivacy checked={f.privacy} onChange={(v) => set('privacy', v)} />
-      <button type="submit" disabled={!valido} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">Invia richiesta</button>
+      <PulsanteInvio valido={!!valido} invio={invio} />
     </form>
   )
 }
@@ -861,6 +887,7 @@ export function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: 
   }
   const [f, setF] = useState({ nome: '', email: '', telefono: '', data: oggi, turno: 'cena' as Turno, ora: '', coperti: '2', note: '', privacy: false })
   const [inviato, setInviato] = useState(false)
+  const invio = useInvio()
   const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const sel = statoDi(f.data)
   const turnoPieno = sel.pieno[f.turno]
@@ -878,7 +905,7 @@ export function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: 
   if (inviato) return <Successo testo={`La tua richiesta di tavolo è partita. Ti abbiamo mandato la ricevuta ${doveScritto(f.email, f.telefono)}; ti confermiamo il tavolo dal gestionale.`} onAltro={() => setInviato(false)} />
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, ora: f.ora, coperti: Math.max(1, nCoperti), note: f.note.trim() || undefined }); setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }}
+    <form onSubmit={(e) => { e.preventDefault(); void invio.invia(() => inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, ora: f.ora, coperti: Math.max(1, nCoperti), note: f.note.trim() || undefined }), () => { setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }) }}
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 shadow-xl shadow-profondo/10 ring-1 ring-calce-200 sm:p-8">
       <p className="col-span-2 font-display text-2xl font-semibold text-profondo">Prenota un tavolo</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
@@ -930,7 +957,7 @@ export function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: 
         </p>
       )}
       <ConsensoPrivacy checked={f.privacy} onChange={(v) => set('privacy', v)} />
-      <button type="submit" disabled={!valido} className="col-span-2 mt-2 h-12 rounded-full bg-boa font-semibold text-white shadow-lg shadow-boa/30 transition-all hover:scale-[1.01] hover:bg-[#ee6440] disabled:opacity-50 disabled:shadow-none">Invia richiesta</button>
+      <PulsanteInvio valido={!!valido} invio={invio} />
     </form>
   )
 }
