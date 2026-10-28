@@ -18,7 +18,7 @@ export function CentroNotifiche() {
     <>
       <button
         onClick={() => setAperto(!aperto)}
-        className="relative grid h-9 w-9 shrink-0 place-content-center rounded-full border border-calce-200 bg-white text-profondo/70 hover:text-profondo"
+        className="testata-pill relative grid h-9 w-9 shrink-0 place-content-center rounded-full border"
         aria-label={nonLette ? `Notifiche, ${nonLette} da leggere` : 'Notifiche'}
         title="Notifiche"
       >

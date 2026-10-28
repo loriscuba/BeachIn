@@ -9,7 +9,7 @@ import logoBeachIn from '@/assets/logo-beachin.png'
 import logoBeachInChiaro from '@/assets/logo-beachin-chiaro.png'
 import iconaBeachIn from '@/assets/logo-beachin-icona.png'
 import iconaBeachInChiaro from '@/assets/logo-beachin-icona-chiaro.png'
-import { ContatoriTestata } from './ContatoriTestata'
+import { ScorciatoieTestata } from './ScorciatoieTestata'
 import type { Meteo } from '@/data/types'
 import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { config } from '@/data/config'
@@ -96,7 +96,7 @@ export function Topbar({ titolo, onApriMenu, onEsci }: TopbarProps) {
         alt={config.nome}
         className="logo-testata h-8 w-auto shrink-0 select-none md:h-11"
       />
-      <div className="mr-auto flex min-w-0 flex-1 justify-center"><ContatoriTestata /></div>
+      <div className="mr-auto flex min-w-0 flex-1 justify-center"><ScorciatoieTestata /></div>
       <CentroNotifiche />
       {profilo && <SchedaUtente profilo={profilo} aperta={scheda} onChiudi={() => setScheda(false)} onEsci={onEsci} />}
 
