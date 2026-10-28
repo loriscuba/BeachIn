@@ -2,9 +2,10 @@
  * Gestione dei contenuti dell'app clienti (/comandapp): news e lavagnetta del giorno.
  * Usata dal gestionale (Sito → App clienti) e dall'app admin (tab "App"): layout mobile-first.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp, ImagePlus, Pin, PinOff, Plus, Trash2, X } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
+import type { VoceLavagnetta } from '@/data/types'
 import { useModuli } from '@/context/ModuliContext'
 import { fileAImmagine } from '@/lib/immagini'
 import { data as fmtData, euro, euroCent } from '@/lib/formatters'
@@ -76,7 +77,19 @@ export function GestioneNews() {
 }
 
 export function GestioneLavagnetta() {
-  const { lavagnetta, aggiungiVoceLavagnetta, modificaVoceLavagnetta, rimuoviVoceLavagnetta, spostaVoceLavagnetta } = useDemoData()
+  const { lavagnetta, bozzaLavagnetta, salvaBozzaLavagnetta, pubblicaLavagnetta } = useDemoData()
+  // Si lavora su una copia: "Salva" la tiene come bozza (non la vedono i clienti), "Pubblica" la manda all'app clienti.
+  const base = bozzaLavagnetta ?? lavagnetta
+  const [voci, setVoci] = useState<VoceLavagnetta[]>(base)
+  const [modificata, setModificata] = useState(false)
+  const [esito, setEsito] = useState('')
+  // finché non tocco nulla seguo quello che arriva dagli altri dispositivi
+  useEffect(() => { if (!modificata) setVoci(base) }, [base, modificata])
+  const cambia = (fn: (v: VoceLavagnetta[]) => VoceLavagnetta[]) => { setVoci(fn); setModificata(true); setEsito('') }
+  const modifica = (id: string, patch: Partial<VoceLavagnetta>) => cambia((p) => p.map((v) => (v.id === id ? { ...v, ...patch } : v)))
+  const sposta = (i: number, verso: -1 | 1) => cambia((p) => { const n = [...p]; [n[i], n[i + verso]] = [n[i + verso], n[i]]; return n })
+  const salva = () => { salvaBozzaLavagnetta(voci); setModificata(false); setEsito('Bozza salvata: i clienti vedono ancora la lavagnetta pubblicata.') }
+  const pubblica = () => { pubblicaLavagnetta(voci); setModificata(false); setEsito('Pubblicata: i clienti con le notifiche attive ricevono un avviso.') }
   const [f, setF] = useState({ nome: '', descrizione: '', prezzo: '' })
   // ordinata dal tablet self con il menu Lavagnetta: la voce va in cucina o al bar
   const conReparto = useModuli().moduloAttivo('sala')
@@ -84,31 +97,33 @@ export function GestioneLavagnetta() {
   const aggiungi = (e: React.FormEvent) => {
     e.preventDefault()
     if (!f.nome.trim()) return
-    aggiungiVoceLavagnetta({ nome: f.nome.trim(), descrizione: f.descrizione.trim() || undefined, prezzo: leggiPrezzo(f.prezzo) })
+    cambia((p) => [...p, { id: `LV-${Date.now().toString(36)}`, nome: f.nome.trim(), descrizione: f.descrizione.trim() || undefined, prezzo: leggiPrezzo(f.prezzo) }])
     setF({ nome: '', descrizione: '', prezzo: '' })
   }
+  const stato = modificata ? 'Modifiche non salvate' : bozzaLavagnetta ? 'Bozza salvata, non ancora pubblicata' : 'Pubblicata: è quella che vedono i clienti'
 
   return (
     <div className="space-y-3">
+      <p className={cn('text-xs font-semibold', modificata || bozzaLavagnetta ? 'text-boa' : 'text-cabina')}>{stato}</p>
       <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-calce-200">
-        {lavagnetta.length === 0 && <p className="py-4 text-center text-sm text-profondo/50">Lavagnetta vuota: scrivi le proposte di oggi.</p>}
-        {lavagnetta.map((v, i) => (
+        {voci.length === 0 && <p className="py-4 text-center text-sm text-profondo/50">Lavagnetta vuota: scrivi le proposte di oggi.</p>}
+        {voci.map((v, i) => (
           <div key={v.id} className="flex items-start gap-2 border-b border-calce-200 p-2 last:border-0">
             <div className="grid min-w-0 flex-1 grid-cols-[1fr_5rem] gap-1.5">
-              <input value={v.nome} onChange={(e) => modificaVoceLavagnetta(v.id, { nome: e.target.value })} className={cn(campo, 'font-medium')} aria-label="Piatto" />
-              <input key={`${v.id}-${v.prezzo}`} defaultValue={v.prezzo ?? ''} inputMode="decimal" onBlur={(e) => modificaVoceLavagnetta(v.id, { prezzo: leggiPrezzo(e.target.value) })} placeholder="€" className={cn(campo, 'num text-right')} aria-label="Prezzo" />
-              <input value={v.descrizione ?? ''} onChange={(e) => modificaVoceLavagnetta(v.id, { descrizione: e.target.value || undefined })} placeholder="descrizione (facoltativa)" className={cn(campo, 'h-9 text-xs', !conReparto && 'col-span-2')} aria-label="Descrizione" />
+              <input value={v.nome} onChange={(e) => modifica(v.id, { nome: e.target.value })} className={cn(campo, 'font-medium')} aria-label="Piatto" />
+              <input key={`${v.id}-${v.prezzo}`} defaultValue={v.prezzo ?? ''} inputMode="decimal" onBlur={(e) => { const p = leggiPrezzo(e.target.value); if (p !== v.prezzo) modifica(v.id, { prezzo: p }) }} placeholder="€" className={cn(campo, 'num text-right')} aria-label="Prezzo" />
+              <input value={v.descrizione ?? ''} onChange={(e) => modifica(v.id, { descrizione: e.target.value || undefined })} placeholder="descrizione (facoltativa)" className={cn(campo, 'h-9 text-xs', !conReparto && 'col-span-2')} aria-label="Descrizione" />
               {conReparto && (
-                <button type="button" onClick={() => modificaVoceLavagnetta(v.id, { reparto: v.reparto === 'bar' ? 'cucina' : 'bar' })} title="Chi la prepara quando la ordinano dal tablet al tavolo"
+                <button type="button" onClick={() => modifica(v.id, { reparto: v.reparto === 'bar' ? 'cucina' : 'bar' })} title="Chi la prepara quando la ordinano dal tablet al tavolo"
                   className={cn('h-9 rounded-lg border text-xs font-semibold', v.reparto === 'bar' ? 'border-cabina bg-cabina/10 text-cabina' : 'border-calce-200 text-profondo/60')}>
                   {v.reparto === 'bar' ? 'Bar' : 'Cucina'}
                 </button>
               )}
             </div>
             <div className="flex shrink-0 flex-col">
-              <button onClick={() => spostaVoceLavagnetta(v.id, -1)} disabled={i === 0} className="grid h-7 w-7 place-content-center rounded text-profondo/50 hover:bg-calce disabled:opacity-25" aria-label="Su"><ArrowUp className="h-4 w-4" /></button>
-              <button onClick={() => spostaVoceLavagnetta(v.id, 1)} disabled={i === lavagnetta.length - 1} className="grid h-7 w-7 place-content-center rounded text-profondo/50 hover:bg-calce disabled:opacity-25" aria-label="Giù"><ArrowDown className="h-4 w-4" /></button>
-              <button onClick={() => rimuoviVoceLavagnetta(v.id)} className="grid h-7 w-7 place-content-center rounded text-boa hover:bg-boa/10" aria-label="Cancella"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => sposta(i, -1)} disabled={i === 0} className="grid h-7 w-7 place-content-center rounded text-profondo/50 hover:bg-calce disabled:opacity-25" aria-label="Su"><ArrowUp className="h-4 w-4" /></button>
+              <button onClick={() => sposta(i, 1)} disabled={i === voci.length - 1} className="grid h-7 w-7 place-content-center rounded text-profondo/50 hover:bg-calce disabled:opacity-25" aria-label="Giù"><ArrowDown className="h-4 w-4" /></button>
+              <button onClick={() => cambia((p) => p.filter((x) => x.id !== v.id))} className="grid h-7 w-7 place-content-center rounded text-boa hover:bg-boa/10" aria-label="Cancella"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}
@@ -119,6 +134,11 @@ export function GestioneLavagnetta() {
         <input value={f.descrizione} onChange={(e) => setF({ ...f, descrizione: e.target.value })} placeholder="descrizione (facoltativa)" className={cn(campo, 'col-span-2')} />
         <button disabled={!f.nome.trim()} className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-cabina text-sm font-semibold text-white disabled:opacity-40"><Plus className="h-4 w-4" /> Scrivi sulla lavagnetta</button>
       </form>
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={salva} disabled={!modificata} className="h-11 rounded-lg border border-cabina bg-white text-sm font-semibold text-cabina disabled:opacity-40">Salva</button>
+        <button type="button" onClick={pubblica} disabled={!modificata && !bozzaLavagnetta} className="h-11 rounded-lg bg-cabina text-sm font-semibold text-white disabled:opacity-40">Pubblica</button>
+      </div>
+      {esito && <p className="text-center text-xs text-profondo/60">{esito}</p>}
     </div>
   )
 }

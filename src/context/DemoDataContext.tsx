@@ -394,10 +394,11 @@ interface DemoDataValue {
   modificaNotizia: (id: string, patch: Partial<Omit<Notizia, 'id'>>) => void
   eliminaNotizia: (id: string) => void
   lavagnetta: VoceLavagnetta[]
-  aggiungiVoceLavagnetta: (dati: Omit<VoceLavagnetta, 'id'>) => void
-  modificaVoceLavagnetta: (id: string, patch: Partial<Omit<VoceLavagnetta, 'id'>>) => void
-  rimuoviVoceLavagnetta: (id: string) => void
-  spostaVoceLavagnetta: (id: string, verso: -1 | 1) => void
+  /** Bozza salvata e non ancora pubblicata (null = nessuna bozza: si modifica partendo da quella pubblicata). */
+  bozzaLavagnetta: VoceLavagnetta[] | null
+  salvaBozzaLavagnetta: (voci: VoceLavagnetta[]) => void
+  /** La rende visibile ai clienti e al tablet self; il DB manda la notifica all'app clienti. */
+  pubblicaLavagnetta: (voci: VoceLavagnetta[]) => void
 
   // Demo guidata
   incassoDemo: number
@@ -479,6 +480,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const canaliPrenotazione = contenuto<CanaliPrenotazione>('canali', CANALI_INIZIALI)
   const homeSito = contenuto<ContenutoHome>('home', statoSito.home)
   const prezziListino = contenuto<{ prezzi: Record<string, number> }>('listino', { prezzi: {} }).prezzi ?? {}
+  const bozzaLavagnetta = contenuto<{ voci: VoceLavagnetta[] | null }>('lavagnetta_bozza', { voci: null }).voci ?? null
   const scriviContenuto = useCallback((id: string, valore: (prima: unknown) => unknown) => {
     setContenutiSito((prev) => {
       const prima = prev.find((c) => c.id === id)
@@ -501,7 +503,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     aRiga: (e) => ({
       id: e.id, nome: e.nome, tipo: e.tipo, data: e.data, budget: e.budget, costi_sostenuti: e.costiSostenuti, ricavi: e.ricavi,
       partecipanti: e.partecipanti, descrizione: e.descrizione, foto: rifFoto(e.foto), prezzo: e.prezzo ?? null,
-      galleria: (e.galleria ?? []).map((f) => rifFoto(f)),
+      galleria: (e.galleria ?? []).map((f) => rifFoto(f)), pubblicato: e.pubblicato !== false,
     }),
     daRiga: (r) => ({
       id: r.id, nome: r.nome as string, tipo: r.tipo as Evento['tipo'], data: r.data as string, budget: Number(r.budget),
@@ -510,6 +512,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       ...(fotoDaRif(r.foto) ? { foto: fotoDaRif(r.foto) } : {}),
       ...(r.prezzo != null ? { prezzo: Number(r.prezzo) } : {}),
       ...((r.galleria as unknown[] | null)?.length ? { galleria: (r.galleria as unknown[]).map(fotoDaRif).filter((f): f is string => !!f) } : {}),
+      ...(r.pubblicato === false ? { pubblicato: false } : {}),
     }),
     ordina: (a, b) => String(a.data).localeCompare(String(b.data)),
   })
@@ -1185,7 +1188,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     setEventi((prev) => [...prev, e].sort((a, b) => a.data.localeCompare(b.data)))
   }, [])
   const modificaEvento = useCallback((e: Evento) => {
-    setEventi((prev) => prev.map((x) => (x.id === e.id ? e : x)).sort((a, b) => a.data.localeCompare(b.data)))
+    setEventi((prev) => prev.map((x) => (x.id === e.id ? { ...x, ...e } : x)).sort((a, b) => a.data.localeCompare(b.data)))
   }, [])
   const eliminaEvento = useCallback((id: string) => {
     setEventi((prev) => prev.filter((x) => x.id !== id))
@@ -1284,25 +1287,16 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const eliminaNotizia = useCallback((id: string) => {
     setNotizie((prev) => prev.filter((n) => n.id !== id))
   }, [])
-  const aggiungiVoceLavagnetta = useCallback((d: Omit<VoceLavagnetta, 'id'>) => {
-    setLavagnetta((prev) => [...prev, { id: nuovoId('LV'), ...d }])
-  }, [])
-  const modificaVoceLavagnetta = useCallback((id: string, patch: Partial<Omit<VoceLavagnetta, 'id'>>) => {
-    setLavagnetta((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)))
-  }, [])
-  const rimuoviVoceLavagnetta = useCallback((id: string) => {
-    setLavagnetta((prev) => prev.filter((v) => v.id !== id))
-  }, [])
-  const spostaVoceLavagnetta = useCallback((id: string, verso: -1 | 1) => {
-    setLavagnetta((prev) => {
-      const i = prev.findIndex((v) => v.id === id)
-      const j = i + verso
-      if (i < 0 || j < 0 || j >= prev.length) return prev
-      const n = [...prev]
-      ;[n[i], n[j]] = [n[j], n[i]]
-      return n
-    })
-  }, [])
+  // Bozza in `sito_contenuti` (riga `lavagnetta_bozza`, vista da tutti i dispositivi dello staff); la pubblicazione scrive
+  // la riga `lavagnetta_pubblicata` (data e ora), che fa partire la notifica push ai clienti (trigger sul DB).
+  const salvaBozzaLavagnetta = useCallback((voci: VoceLavagnetta[]) => {
+    scriviContenuto('lavagnetta_bozza', () => ({ voci }))
+  }, [scriviContenuto])
+  const pubblicaLavagnetta = useCallback((voci: VoceLavagnetta[]) => {
+    setLavagnetta(voci)
+    scriviContenuto('lavagnetta_bozza', () => ({ voci: null }))
+    scriviContenuto('lavagnetta_pubblicata', () => ({ ts: Date.now() }))
+  }, [scriviContenuto])
 
   // — Ristorante: tavoli e prenotazioni —
   // Standard = `tavoli`; un giorno modificato ha la sua copia in `tavoliGiorno` (stessi id,
@@ -1629,7 +1623,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       rimuoviFoto,
       rinominaFoto,
       notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia,
-      lavagnetta, aggiungiVoceLavagnetta, modificaVoceLavagnetta, rimuoviVoceLavagnetta, spostaVoceLavagnetta,
+      lavagnetta, bozzaLavagnetta, salvaBozzaLavagnetta, pubblicaLavagnetta,
       tavoli,
       tavoliGiorno,
       tavoliDelGiorno,
@@ -1749,7 +1743,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       rimuoviFoto,
       rinominaFoto,
       notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia,
-      lavagnetta, aggiungiVoceLavagnetta, modificaVoceLavagnetta, rimuoviVoceLavagnetta, spostaVoceLavagnetta,
+      lavagnetta, bozzaLavagnetta, salvaBozzaLavagnetta, pubblicaLavagnetta,
       tavoli,
       tavoliGiorno,
       tavoliDelGiorno,
