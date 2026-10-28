@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     const messaggio = tipo === 'notizia'
       ? { titolo: `📰 ${r?.titolo ?? 'Nuova news'}`, corpo: taglia(r?.testo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
       : tipo === 'lavagnetta'
-        ? { titolo: '🍽️ Lavagna del giorno aggiornata', corpo: 'Scopri le proposte di oggi', tag: 'lavagnetta' }
+        ? { titolo: `🍽️ Lavagnetta aggiornata${r?.valore?.lido ? ` dal ${r.valore.lido}` : ''}`, corpo: 'Scopri le proposte di oggi', tag: 'lavagnetta' }
         : tipo === 'ombrellone'
           ? { titolo: 'Prenotazione ombrellone ⛱️', corpo: `${r?.nome ?? 'Cliente'} · ${r?.persone ?? '?'} persone · dal ${r?.dal ? dataIt(r.dal) : '?'} al ${r?.al ? dataIt(r.al) : '?'}`, tag: `ombrellone-${r?.id ?? Date.now()}` }
           : tipo === 'evento'

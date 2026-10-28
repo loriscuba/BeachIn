@@ -1296,7 +1296,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const pubblicaLavagnetta = useCallback((voci: VoceLavagnetta[]) => {
     setLavagnetta(voci)
     scriviContenuto('lavagnetta_bozza', () => ({ voci: null }))
-    scriviContenuto('lavagnetta_pubblicata', () => ({ ts: Date.now() }))
+    scriviContenuto('lavagnetta_pubblicata', () => ({ ts: Date.now(), lido: config.nome })) // il nome va nel titolo della notifica
   }, [scriviContenuto])
 
   // — Ristorante: tavoli e prenotazioni —
