@@ -21,3 +21,13 @@ export const supabase = url && chiave
     })
   : null
 export const supabaseAttivo = !!supabase
+
+// Client senza sessione per le richieste dei clienti dal sito: non aspetta il rinnovo del login dello staff salvato sullo
+// stesso dominio, e con keepalive la richiesta arriva al DB anche se il telefono mette subito la pagina in background.
+export const supabaseInvii = url && chiave
+  ? createClient(url, chiave, {
+      db: { schema: SCHEMA },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'beachin.invii' },
+      global: { fetch: (input, init) => fetch(input, { ...init, keepalive: true }) },
+    })
+  : null

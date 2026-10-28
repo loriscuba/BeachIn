@@ -293,7 +293,8 @@ interface DemoDataValue {
   // Sito — prenotazioni ombrellone
   confermaPrenotazione: (id: string) => void
   rifiutaPrenotazione: (id: string) => void
-  inviaRichiestaOmbrellone: (dati: DatiRichiestaOmbrellone) => void
+  /** Richieste dal sito: `true` quando il DB l'ha ricevuta (da lì partono notifica allo staff e mail al cliente). */
+  inviaRichiestaOmbrellone: (dati: DatiRichiestaOmbrellone) => Promise<boolean>
   // Sito — prenotazioni ristorante
   richiesteRistorante: RichiestaRistorante[]
   /** Giorni di chiusura del ristorante (condivisi via Supabase): il sito non accetta richieste. */
@@ -303,12 +304,12 @@ interface DemoDataValue {
   riapriGiorno: (data: string) => void
   confermaRistorante: (id: string) => void
   rifiutaRistorante: (id: string) => void
-  inviaRichiestaRistorante: (dati: DatiRichiestaRistorante) => void
+  inviaRichiestaRistorante: (dati: DatiRichiestaRistorante) => Promise<boolean>
   // Sito — richieste eventi
   richiesteEventi: RichiestaEvento[]
   confermaEvento: (id: string) => void
   rifiutaEvento: (id: string) => void
-  inviaRichiestaEvento: (dati: DatiRichiestaEvento) => void
+  inviaRichiestaEvento: (dati: DatiRichiestaEvento) => Promise<boolean>
   aggiungiPartecipanteEvento: (dati: DatiPartecipanteEvento) => void
   /** Ingresso all'evento: quante persone dell'invito sono entrate (0 = annulla). */
   segnaArrivoEvento: (id: string, arrivati: number) => void
@@ -454,7 +455,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     clona(statoSito.prenotazioni)
   )
   // Prenotazioni ombrellone dal sito: su Supabase (il trigger manda la notifica push allo staff).
-  useSyncSupabase({
+  const syncOmbrelloni = useSyncSupabase({
     tabella: 'prenotazioni_online', accesso: accessoDi('prenotazioni_online'), righe: prenotazioniOnline, setRighe: setPrenotazioni, semina: true,
     aRiga: (p) => ({
       id: p.id, ricevuta_il: p.ricevutaIl, nome: p.nome, email: p.email, telefono: p.telefono, dal: p.dal, al: p.al,
@@ -710,7 +711,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     ordina: (a, b) => String(a.data).localeCompare(String(b.data)) || String(a.id).localeCompare(String(b.id)),
   })
   // Richieste tavolo dal sito: su Supabase (arrivano dal telefono del cliente, si confermano dall'app admin).
-  useSyncSupabase({
+  const syncRistorante = useSyncSupabase({
     tabella: 'richieste_ristorante', accesso: accessoDi('richieste_ristorante'), righe: richiesteRistorante, setRighe: setRichiesteRistorante,
     aRiga: (r) => ({
       id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, data: r.data,
@@ -724,7 +725,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
   // Richieste eventi dal sito: su Supabase (i trigger mandano le mail al cliente via Brevo).
-  useSyncSupabase({
+  const syncEventi = useSyncSupabase({
     tabella: 'richieste_eventi', accesso: accessoDi('richieste_eventi'), righe: richiesteEventi, setRighe: setRichiesteEventi,
     aRiga: (r) => ({
       id: r.id, ricevuta_il: r.ricevutaIl, nome: r.nome, email: r.email, telefono: r.telefono, evento_id: r.eventoId,
@@ -1056,29 +1057,29 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const chiudiWhatsapp = useCallback(() => setWhatsapp(null), [])
   const nomeBreve = (n: string) => n.trim().split(/\s+/)[0]
 
-  const inviaRichiestaOmbrellone = useCallback((d: DatiRichiestaOmbrellone) => {
-    setPrenotazioni((prev) => [
-      { id: nuovoId('PO'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, dal: d.dal, al: d.al, tipologiaPostazione: d.tipologiaPostazione, persone: d.persone, stato: 'da_confermare', messaggio: d.messaggio },
-      ...prev,
-    ])
+  const inviaRichiestaOmbrellone = useCallback(async (d: DatiRichiestaOmbrellone) => {
+    const nuova: PrenotazioneOnline = { id: nuovoId('PO'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, dal: d.dal, al: d.al, tipologiaPostazione: d.tipologiaPostazione, persone: d.persone, stato: 'da_confermare', messaggio: d.messaggio }
+    if (!(await syncOmbrelloni.inserisci(nuova))) return false
+    setPrenotazioni((prev) => [nuova, ...prev])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — ombrellone',
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di ombrellone per ${d.persone} persone dal ${gg(d.dal)} al ${gg(d.al)}.\nTi confermeremo la disponibilità a breve.\n\n${config.nome}`)
     pushMail('admin', 'notifica', `${d.nome} <${d.email || d.telefono}>`, config.email || 'gestione', 'Nuova richiesta ombrellone dal sito',
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nOmbrellone · ${d.persone} persone · dal ${gg(d.dal)} al ${gg(d.al)}${d.messaggio ? `\nNote: ${d.messaggio}` : ''}\n\nDa confermare in gestionale.`)
     pushWa('richiesta', d.nome, d.telefono, `Ciao ${nomeBreve(d.nome)} 👋\nabbiamo ricevuto la tua richiesta di ombrellone dal *${gg(d.dal)}* al *${gg(d.al)}* (${d.persone} persone).\nTi confermiamo a breve qui su WhatsApp ⏳\n${config.nome}`)
-  }, [pushMail, pushWa])
+    return true
+  }, [pushMail, pushWa, syncOmbrelloni])
 
-  const inviaRichiestaRistorante = useCallback((d: DatiRichiestaRistorante) => {
-    setRichiesteRistorante((prev) => [
-      { id: nuovoId('RR'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, ora: d.ora, coperti: d.coperti, stato: 'da_confermare', note: d.note, ts: Date.now() },
-      ...prev,
-    ])
+  const inviaRichiestaRistorante = useCallback(async (d: DatiRichiestaRistorante) => {
+    const nuova: RichiestaRistorante = { id: nuovoId('RR'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, data: d.data, turno: d.turno, ora: d.ora, coperti: d.coperti, stato: 'da_confermare', note: d.note, ts: Date.now() }
+    if (!(await syncRistorante.inserisci(nuova))) return false
+    setRichiesteRistorante((prev) => [nuova, ...prev])
     pushMail('cliente', 'richiesta', config.nome, d.email, 'Richiesta ricevuta — tavolo ristorante',
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di tavolo per ${d.coperti} coperti (${quandoTurno(d.turno, d.ora)}) del ${gg(d.data)}.\nTi confermeremo a breve.\n\n${config.nome}`)
     pushMail('admin', 'notifica', `${d.nome} <${d.email || d.telefono}>`, config.email || 'gestione', 'Nuova richiesta tavolo dal sito',
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nRistorante · ${d.coperti} coperti · ${quandoTurno(d.turno, d.ora)} del ${gg(d.data)}${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
     pushWa('richiesta', d.nome, d.telefono, `Ciao ${nomeBreve(d.nome)} 👋\nabbiamo ricevuto la tua richiesta di tavolo per *${d.coperti}* a *${quandoTurno(d.turno, d.ora)}* del *${gg(d.data)}*.\nTi confermiamo a breve qui su WhatsApp ⏳\n${config.nome}`)
-  }, [pushMail, pushWa])
+    return true
+  }, [pushMail, pushWa, syncRistorante])
 
   const confermaPrenotazione = useCallback((id: string) => {
     const r = prenRef.current.find((p) => p.id === id)
@@ -1122,17 +1123,17 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     if (r) pushWa('rifiuto', r.nome, r.telefono, `Ciao ${nomeBreve(r.nome)},\nci dispiace 😔 a ${quandoTurno(r.turno, r.ora)} del ${gg(r.data)} siamo al completo.\nVuoi provare un altro turno o un'altra data?\n${config.nome}`)
   }, [pushMail, pushWa])
 
-  const inviaRichiestaEvento = useCallback((d: DatiRichiestaEvento) => {
-    setRichiesteEventi((prev) => [
-      { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, eventoFoto: fotoEvento(d.eventoId), persone: d.persone, stato: 'da_confermare', note: d.note, origine: 'sito', codice: nuovoCodiceInvito() },
-      ...prev,
-    ])
+  const inviaRichiestaEvento = useCallback(async (d: DatiRichiestaEvento) => {
+    const nuova: RichiestaEvento = { id: nuovoId('RE'), ricevutaIl: config.oggi, nome: d.nome, email: d.email, telefono: d.telefono, eventoId: d.eventoId, eventoNome: d.eventoNome, eventoData: d.eventoData, eventoFoto: fotoEvento(d.eventoId), persone: d.persone, stato: 'da_confermare', note: d.note, origine: 'sito', codice: nuovoCodiceInvito() }
+    if (!(await syncEventi.inserisci(nuova))) return false
+    setRichiesteEventi((prev) => [nuova, ...prev])
     pushMail('cliente', 'richiesta', config.nome, d.email, `Richiesta ricevuta — ${d.eventoNome}`,
       `Gentile ${d.nome},\nabbiamo ricevuto la tua richiesta di partecipazione a “${d.eventoNome}” del ${gg(d.eventoData)} per ${d.persone} persone.\nTi confermeremo a breve.\n\n${config.nome}`)
     pushMail('admin', 'notifica', `${d.nome} <${d.email || d.telefono}>`, config.email || 'gestione', `Nuova richiesta evento: ${d.eventoNome}`,
       `Nuova richiesta dal sito:\nCliente: ${d.nome} (${d.telefono})\nEvento: ${d.eventoNome} del ${gg(d.eventoData)} · ${d.persone} persone${d.note ? `\nNote: ${d.note}` : ''}\n\nDa confermare in gestionale.`)
     pushWa('richiesta', d.nome, d.telefono, `Ciao ${nomeBreve(d.nome)} 👋\nabbiamo ricevuto la tua richiesta per *${d.eventoNome}* del *${gg(d.eventoData)}* (${d.persone} persone).\nTi confermiamo a breve qui su WhatsApp ⏳\n${config.nome}`)
-  }, [pushMail, pushWa])
+    return true
+  }, [pushMail, pushWa, syncEventi])
 
   const confermaEvento = useCallback((id: string) => {
     const r = evtRef.current.find((p) => p.id === id)
