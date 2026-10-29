@@ -672,3 +672,23 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
 ## Idee non ancora fatte (offerte)
 - Risposte admin al cliente dalla casella di posta.
 - Modifica di una prenotazione prima della conferma.
+
+## Modifica e annulla dal sito (migrazione 0028, ott 2026)
+- Chi prenota dal sito un **tavolo** o un **evento** trova nella mail di ricevuta e di conferma il pulsante **"Modifica o annulla"**
+  → `/prenotazione?t=<token>` (`src/pages/GestisciPrenotazione.tsx`, pagina pubblica fuori dallo shell, in `PAGINE_CLIENTI` scarica solo
+  tavoli/disponibilità come il sito). `token_cliente` = 64 caratteri casuali (default della colonna su `richieste_ristorante` e
+  `richieste_eventi`, mai mandato dall'app). Lettura e modifiche **solo** via funzioni security definer: `beachin.prenotazione_cliente(token)`,
+  `modifica_prenotazione_cliente(token, data, turno, ora, persone)` (evento: solo persone, 1–20; tavolo: giorno non chiuso, 1–12 persone,
+  disponibilità calcolata nella pagina con `prenotabilita` escludendo la propria prenotazione), `annulla_prenotazione_cliente(token)`.
+  Tavolo già confermato: aggiornata anche `PR-<id>` in `prenotazioni_ristorante` (tavolo tolto se cambia giorno/turno; annullata = stato `annullata`).
+- Nuovo stato `annullata` di `StatoPrenotazioneOnline` (badge "Annullata dal cliente"); `azione_cliente` (`modifica|annulla`) + `azione_ts`
+  (solo lettura nell'app, `azioneCliente/azioneTs`) → badge "Modificata dal cliente" in Sito → Prenotazioni.
+- **Limite** del gestore: impostazioni `prenotazioniCliente.oreTavolo` (predef. 2, ore prima dell'orario; senza ora 12:30/19:30) e
+  `.oreEvento` (predef. 24, dalla mezzanotte del giorno dell'evento; gli eventi non hanno orario). Si cambiano in **Sito → Modifiche clienti**
+  (`src/pages/sito/ModificheClienti.tsx`, con elenco ultime modifiche) o Impostazioni → Parametri. Ora di Roma.
+- **Funzionalità** `sito.modifiche` "Modifica e annulla dal sito" (Impostazioni → Moduli e funzionalità + livello per ruolo): spenta = niente
+  pulsante nelle mail e funzioni del DB che rifiutano (`beachin.modifiche_cliente_attive()` legge la riga `moduli`; senza riga = attiva).
+- Avvisi: trigger su `azione_ts` → `beachin-email` (mail "Prenotazione modificata/annullata", riconosciuta da `azione_ts` < 2 min) e
+  `beachin-push` tipo `cliente` (push allo staff); centro notifiche: categorie prenotazioni/eventi. Le funzioni trigger usate sono quelle già
+  esistenti (`email_richiesta`, `notifica_nuova_richiesta`), quindi sul Demo funzionano anche senza Vault.
+- Limite noto: finché manca la fase 2 RLS chi legge apposta le tabelle vede anche i token (come nomi e telefoni).

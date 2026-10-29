@@ -549,7 +549,10 @@ export interface NewsSito {
   pubblicata: boolean
 }
 
-export type StatoPrenotazioneOnline = 'da_confermare' | 'confermata' | 'rifiutata'
+/** `annullata` = annullata dal cliente col link personale della mail. */
+export type StatoPrenotazioneOnline = 'da_confermare' | 'confermata' | 'rifiutata' | 'annullata'
+/** Ultima modifica del cliente dal link personale (pagina `/prenotazione`). */
+export type AzioneCliente = 'modifica' | 'annulla'
 
 export interface PrenotazioneOnline {
   id: string
@@ -619,6 +622,9 @@ export interface RichiestaRistorante {
   note?: string
   /** Istante di arrivo (ms), per l'ordinamento tra dispositivi. */
   ts?: number
+  /** Ultima modifica fatta dal cliente dal suo link, e quando (ms). Solo lettura: la scrive il DB. */
+  azioneCliente?: AzioneCliente
+  azioneTs?: number
 }
 
 /** Richiesta di partecipazione a un evento, arrivata dal sito. */
@@ -646,6 +652,9 @@ export interface RichiestaEvento {
   arrivoTs?: number
   /** Ultimo "Reinvia invito" (ms): sul DB fa ripartire la mail con il QR. */
   invioTs?: number
+  /** Ultima modifica fatta dal cliente dal suo link, e quando (ms). Solo lettura: la scrive il DB. */
+  azioneCliente?: AzioneCliente
+  azioneTs?: number
 }
 
 // ————————————————————————————————————————————————————————————

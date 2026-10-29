@@ -50,6 +50,8 @@ export const config = {
     url: 'https://www.tripadvisor.it/Restaurant_Review-g194908-d2464057-Reviews-Lido_Dei_Pini-Savona_Italian_Riviera_Liguria.html',
   },
   prezzoMedioRistorante: 32,
+  // Modifica/annulla dal link della mail: fino a quante ore prima dell'inizio (evento: dalla mezzanotte del giorno)
+  prenotazioniCliente: { oreTavolo: 2, oreEvento: 24 },
 
   // Data reale di oggi (non limitata): intestazione, ristorante (aperto tutto l'anno), prenotazioni, eventi.
   oggi: oggiReale(),

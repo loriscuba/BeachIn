@@ -88,6 +88,17 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
       id: `prenotazioni-${r.id}`, categoria: 'prenotazioni' as const, titolo: 'Nuova prenotazione tavolo',
       testo: `${r.nome} · ${r.coperti} persone · ${fmtData(r.data)}${r.ora ? ` alle ${r.ora}` : ''}`, percorso: '/ristorante?tab=prenotazioni',
     })),
+    // modifiche e annullamenti fatti dal cliente col link della mail (una notifica per ogni azione)
+    ...richiesteRistorante.filter((r) => r.azioneCliente && r.azioneTs).map((r) => ({
+      id: `prenotazioni-cliente-${r.id}-${r.azioneTs}`, categoria: 'prenotazioni' as const,
+      titolo: r.azioneCliente === 'annulla' ? 'Tavolo annullato dal cliente' : 'Tavolo modificato dal cliente',
+      testo: `${r.nome} · ${r.coperti} persone · ${fmtData(r.data)}${r.ora ? ` alle ${r.ora}` : ''}`, percorso: '/ristorante?tab=prenotazioni',
+    })),
+    ...richiesteEventi.filter((r) => r.azioneCliente && r.azioneTs).map((r) => ({
+      id: `eventi-cliente-${r.id}-${r.azioneTs}`, categoria: 'eventi' as const,
+      titolo: r.azioneCliente === 'annulla' ? `${r.eventoNome}: annullata dal cliente` : `${r.eventoNome}: modificata dal cliente`,
+      testo: `${r.nome} · ${r.persone} persone`, percorso: '/eventi?tab=presenze',
+    })),
     ...prenotazioniOnline.filter((p) => p.stato === 'da_confermare').map((p) => ({
       id: `spiaggia-${p.id}`, categoria: 'spiaggia' as const, titolo: 'Prenotazione ombrellone dal sito',
       testo: `${p.nome} · dal ${fmtData(p.dal)} al ${fmtData(p.al)}`, percorso: '/sito?tab=panoramica',

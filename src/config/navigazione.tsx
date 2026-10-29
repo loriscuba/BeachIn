@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  CalendarClock,
   Home,
   Umbrella,
   Users,
@@ -105,6 +106,7 @@ export const navigazione: VoceNav[] = [
     percorso: '/sito', etichetta: 'Sito internet', icona: Globe, modulo: 'sito', fase: 8, gruppo: 'Presenza online',
     figli: [
       { percorso: '/sito?tab=panoramica', etichetta: 'Panoramica', icona: Globe, modulo: 'sito' },
+      { percorso: '/sito?tab=modifiche', etichetta: 'Modifiche clienti', icona: CalendarClock, modulo: 'sito' },
       { percorso: '/sito?tab=marketing', etichetta: 'Sito e marketing', icona: Megaphone, modulo: 'sito' },
       { percorso: '/sito?tab=app', etichetta: 'App clienti', icona: Smartphone, modulo: 'sito' },
     ],

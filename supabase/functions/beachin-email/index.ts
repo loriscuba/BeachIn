@@ -1,5 +1,8 @@
 // Edge Function "beachin-email": chiamata dai trigger su beachin.richieste_ristorante e beachin.richieste_eventi.
-// Manda al cliente, via Brevo, la mail "richiesta ricevuta" (insert) o "confermata/rifiutata" (cambio stato).
+// Manda al cliente, via Brevo, la mail "richiesta ricevuta" (insert) o "confermata/rifiutata" (cambio stato),
+// oppure "modificata/annullata" quando il cliente cambia la prenotazione dal suo link (trigger su azione_ts).
+// Ricevuta e conferma portano il pulsante "Modifica o annulla" (link personale col codice segreto) se la funzionalità è attiva
+// e non è scaduto il limite di tempo del gestore (beachin.prenotazione_cliente).
 // Segreti nel Vault di Supabase, mai nel repository:
 //   beachin_brevo_key       → chiave API Brevo (xkeysib-...)
 //   beachin_email_mittente  → indirizzo mittente verificato su Brevo (es. prenotazioni@lidodeipini.it)
@@ -20,6 +23,20 @@ type Richiesta = {
   data?: string; turno?: string; ora?: string | null; coperti?: number // ristorante
   evento_nome?: string; evento_data?: string; persone?: number; codice?: string | null; invio_ts?: number | null // eventi
   evento_foto?: string | null // URL pubblico della foto dell'evento (se caricata)
+  token_cliente?: string | null; azione_cliente?: string | null; azione_ts?: number | null // modifica/annulla dal link
+}
+
+/** Azione del cliente appena fatta dal suo link (la riga arriva dal trigger su azione_ts, non da un cambio di stato dello staff). */
+const azioneRecente = (r: Richiesta) => !!r.azione_cliente && !!r.azione_ts && Date.now() - Number(r.azione_ts) < 120_000
+  && (r.stato === 'annullata' ? r.azione_cliente === 'annulla' : r.azione_cliente === 'modifica')
+
+/** Pulsante "Modifica o annulla" con la scadenza (ora di Roma). */
+function bloccoModifica(token: string, scadenza: string, base: string): string {
+  const url = `${base.replace(/\/?$/, '/')}prenotazione?t=${encodeURIComponent(token)}`
+  const entro = new Date(scadenza).toLocaleString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+  return `<div style="margin:18px 0 4px;text-align:center">
+<a href="${url}" style="display:inline-block;background:#ffffff;color:#0F3B4C;border:1px solid #0F3B4C;padding:10px 18px;border-radius:10px;text-decoration:none">Modifica o annulla</a>
+<p style="margin:8px 0 0;font-size:12px;color:#6B8590">Puoi cambiare online fino a ${esc(entro)}.</p></div>`
 }
 
 /** Blocco invito con QR (solo eventi confermati): il QR contiene il link alla pagina dell'invito, letto all'ingresso dall'app admin. */
@@ -41,6 +58,10 @@ const OK = '#7FB7A8', ATTESA = '#F2C14E', NO = '#E4572E'
 function testo(tabella: string, r: Richiesta): Testo {
   if (tabella === 'richieste_eventi') {
     const ev = `“${esc(r.evento_nome ?? 'evento')}” di ${dataIt(r.evento_data ?? '')}`
+    if (azioneRecente(r) && r.stato === 'annullata')
+      return { oggetto: `Prenotazione annullata — ${r.evento_nome}`, titolo: 'Prenotazione annullata', colore: NO, righe: [`abbiamo annullato, come ci hai chiesto, la tua partecipazione a ${ev}.`, 'Speriamo di vederti a un prossimo evento!'] }
+    if (azioneRecente(r))
+      return { oggetto: `Prenotazione modificata — ${r.evento_nome}`, titolo: 'Prenotazione modificata', colore: OK, righe: [`abbiamo aggiornato la tua partecipazione a ${ev}: ora siete in <b>${r.persone}</b>.`, r.stato === 'confermata' ? 'Il tuo invito resta valido.' : 'Ti confermeremo a breve.'] }
     // "Reinvia invito" dalle Presenze: stessa mail col QR, testo da promemoria
     if (r.stato === 'confermata' && r.invio_ts)
       return { oggetto: `Il tuo invito — ${r.evento_nome}`, titolo: 'Il tuo invito', colore: OK, righe: [`ecco il tuo invito per ${ev} per ${r.persone} persone.`, 'All’ingresso mostra il QR qui sotto.'] }
@@ -51,6 +72,10 @@ function testo(tabella: string, r: Richiesta): Testo {
     return { oggetto: `Richiesta ricevuta — ${r.evento_nome}`, titolo: 'Richiesta ricevuta', colore: ATTESA, righe: [`abbiamo ricevuto la tua richiesta di partecipazione a ${ev} per ${r.persone} persone.`, 'Ti confermeremo a breve.'] }
   }
   const quando = `${r.turno === 'pranzo' ? 'pranzo' : 'cena'} di ${dataIt(r.data ?? '')}${r.ora ? ` alle <b>${esc(r.ora)}</b>` : ''}`
+  if (azioneRecente(r) && r.stato === 'annullata')
+    return { oggetto: 'Prenotazione annullata — tavolo ristorante', titolo: 'Prenotazione annullata', colore: NO, righe: [`abbiamo annullato, come ci hai chiesto, il tuo tavolo a ${quando}.`, 'Ti aspettiamo un’altra volta!'] }
+  if (azioneRecente(r))
+    return { oggetto: `Prenotazione modificata — ${dataIt(r.data ?? '')}${r.ora ? ` alle ${r.ora}` : ''}`, titolo: 'Prenotazione modificata', colore: OK, righe: [`abbiamo aggiornato il tuo tavolo: ${r.coperti} persone a ${quando}.`, r.stato === 'confermata' ? 'Ti aspettiamo!' : 'Ti confermeremo a breve.'] }
   if (r.stato === 'confermata')
     return { oggetto: `Tavolo confermato per ${dataIt(r.data ?? '')} ${r.ora ? `alle ${r.ora}` : `a ${r.turno === 'pranzo' ? 'pranzo' : 'cena'}`}`, titolo: 'Tavolo confermato', colore: OK, righe: [`il tuo tavolo per ${r.coperti} persone a ${quando} è <b>confermato</b>.`, 'Ti aspettiamo!'] }
   if (r.stato === 'rifiutata')
@@ -67,7 +92,7 @@ function riepilogo(tabella: string, r: Richiesta): [string, string][] {
 }
 
 /** Mail completa (tabelle e stili in linea, come vogliono i client di posta). */
-function pagina(tabella: string, r: Richiesta, t: Omit<Testo, 'oggetto'>, app: string, img: string): string {
+function pagina(tabella: string, r: Richiesta, t: Omit<Testo, 'oggetto'>, app: string, img: string, modifica: string): string {
   const evento = tabella === 'richieste_eventi'
   const foto = evento && r.evento_foto?.startsWith('https://') ? r.evento_foto : `${img}${evento ? 'evento' : 'ristorante'}.jpg`
   const righe = riepilogo(tabella, r).map(([k, v]) => `<tr><td style="padding:6px 0;color:#6B8590;font-size:13px;text-transform:uppercase;letter-spacing:.08em">${k}</td>
@@ -87,6 +112,7 @@ function pagina(tabella: string, r: Richiesta, t: Omit<Testo, 'oggetto'>, app: s
 ${t.righe.map((x) => `<p style="margin:0 0 12px;font-size:15px;line-height:1.6">${x}</p>`).join('')}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 8px;padding:12px 18px;background:#EDF1F2;border-radius:14px">${righe}</table>
 ${evento && r.stato === 'confermata' && r.codice ? bloccoInvito(r.codice, app) : ''}
+${modifica}
 </td></tr>
 <tr><td style="padding:16px 28px 28px;font-size:15px;line-height:1.6">A presto,<br><b>${NOME}</b></td></tr>
 <tr><td align="center" style="background:#0F3B4C;padding:16px 24px;color:#BFD6DE;font-size:12px;line-height:1.6">
@@ -106,7 +132,13 @@ Deno.serve(async (req) => {
 
     const app = s.beachin_app_url || 'https://beachin.pages.dev/'
     const { oggetto, ...t } = testo(tabella, r)
-    const html = pagina(tabella, r, t, app, s.beachin_email_img || `${app.replace(/\/?$/, '/')}email/`)
+    // link "Modifica o annulla" solo se la funzionalità è attiva e il limite non è scaduto (stessa regola della pagina)
+    let modifica = ''
+    if (r.token_cliente && r.stato !== 'rifiutata' && r.stato !== 'annullata') {
+      const [{ p }] = await sql`select beachin.prenotazione_cliente(${r.token_cliente}) as p`
+      if (p?.modificabile) modifica = bloccoModifica(r.token_cliente, p.scadenza, app)
+    }
+    const html = pagina(tabella, r, t, app, s.beachin_email_img || `${app.replace(/\/?$/, '/')}email/`, modifica)
 
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',

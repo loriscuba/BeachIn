@@ -27,6 +27,7 @@ const MenuPubblico = lazyRiprova(() => import('@/pages/MenuPubblico'))
 const ComandApp = lazyRiprova(() => import('@/pages/ComandApp'))
 const TavoloQR = lazyRiprova(() => import('@/pages/TavoloQR'))
 const InvitoEvento = lazyRiprova(() => import('@/pages/InvitoEvento'))
+const GestisciPrenotazione = lazyRiprova(() => import('@/pages/GestisciPrenotazione'))
 const Costi = lazyRiprova(() => import('@/pages/Costi'))
 const ContoEconomico = lazyRiprova(() => import('@/pages/ContoEconomico'))
 const Personale = lazyRiprova(() => import('@/pages/Personale'))
@@ -80,6 +81,8 @@ export const router = creaRouter([
   { path: '/tavolo', element: s(<TavoloQR />) },
   // Invito all'evento col QR (link nella mail di conferma), letto all'ingresso dall'app admin
   { path: '/invito', element: s(<InvitoEvento />) },
+  // Modifica o annulla la prenotazione dal link personale della mail (codice segreto)
+  { path: '/prenotazione', element: s(<GestisciPrenotazione />) },
 ])
 
 /** `/prenotazioni?tab=…` (ex sezione Prenota) → Ristorante → Prenotazioni, Eventi → Presenze o Sito → App clienti. */

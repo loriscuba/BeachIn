@@ -1,6 +1,7 @@
 // Edge Function "beachin-push": chiamata dai trigger del DB, invia notifiche Web Push ai telefoni iscritti (beachin.push_iscrizioni).
 // - tipo "richiesta" (default, trigger su beachin.richieste_ristorante): nuova prenotazione tavolo → app admin
 // - tipo "ombrellone" (beachin.prenotazioni_online) ed "evento" (beachin.richieste_eventi) → app admin
+// - tipo "cliente" (azione_ts su richieste_ristorante / richieste_eventi): il cliente ha modificato o annullato dal suo link → app admin
 // - tipo "notizia" (insert su beachin.notizie, anche con evento collegato) e "lavagnetta" (pubblicata, riga
 //   lavagnetta_pubblicata di beachin.sito_contenuti) → app clienti
 // Chiave privata VAPID nel Vault di Supabase (segreto `beachin_vapid_private`), mai nel repository.
@@ -18,8 +19,14 @@ const taglia = (t?: string) => (t && t.length > 120 ? `${t.slice(0, 117)}…` : 
 Deno.serve(async (req) => {
   try {
     const { record: r, tipo = 'richiesta' } = await req.json()
-    const app = ['richiesta', 'ombrellone', 'evento'].includes(tipo) ? 'admin' : 'clienti'
-    const messaggio = tipo === 'notizia'
+    const app = ['richiesta', 'ombrellone', 'evento', 'cliente'].includes(tipo) ? 'admin' : 'clienti'
+    const annullata = r?.azione_cliente === 'annulla'
+    const cosa = r?.evento_nome
+      ? `${r.evento_nome} · ${r?.persone ?? '?'} persone`
+      : `tavolo · ${r?.coperti ?? '?'} persone · ${r?.turno ?? ''} ${r?.data ? dataIt(r.data) : ''}${r?.ora ? ` ${r.ora}` : ''}`.trim()
+    const messaggio = tipo === 'cliente'
+      ? { titolo: annullata ? 'Prenotazione annullata dal cliente ❌' : 'Prenotazione modificata dal cliente ✏️', corpo: `${r?.nome ?? 'Cliente'} · ${cosa}`, tag: `cliente-${r?.id ?? ''}-${r?.azione_ts ?? Date.now()}` }
+      : tipo === 'notizia'
       ? { titolo: '📰 Nuova news', corpo: taglia(r?.titolo) || 'Apri l\'app per leggerla', tag: `notizia-${r?.id ?? Date.now()}` }
       : tipo === 'lavagnetta'
         ? { titolo: `🍽️ Lavagnetta aggiornata${r?.valore?.lido ? ` dal ${r.valore.lido}` : ''}`, corpo: 'Scopri le proposte di oggi', tag: 'lavagnetta' }
