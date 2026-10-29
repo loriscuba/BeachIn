@@ -11,6 +11,7 @@ import { caricaImpostazioni, sottoscriviImpostazioni } from './lib/impostazioni'
 import { avviaPresenza } from './lib/presenza'
 import './styles/index.css'
 import './lib/bloccoZoom'
+import './lib/barreFisseIos'
 
 // Le pagine leggono `config` direttamente: quando cambiano le impostazioni (salvataggio o Realtime) rimonto il router.
 function Router() {
