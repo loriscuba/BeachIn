@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import type { ReactNode } from 'react'
-import { createBrowserRouter, createHashRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter, Navigate, useLocation } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Caricamento } from '@/components/ui/Caricamento'
 import { ModuloGate } from '@/components/ModuloGate'
@@ -25,7 +25,6 @@ const Bar = lazyRiprova(() => import('@/pages/Bar'))
 const Ristorante = lazyRiprova(() => import('@/pages/Ristorante'))
 const MenuPubblico = lazyRiprova(() => import('@/pages/MenuPubblico'))
 const ComandApp = lazyRiprova(() => import('@/pages/ComandApp'))
-const Prenotazioni = lazyRiprova(() => import('@/pages/Prenotazioni'))
 const TavoloQR = lazyRiprova(() => import('@/pages/TavoloQR'))
 const InvitoEvento = lazyRiprova(() => import('@/pages/InvitoEvento'))
 const Costi = lazyRiprova(() => import('@/pages/Costi'))
@@ -52,8 +51,8 @@ export const router = creaRouter([
       { path: 'clienti', element: g('clienti', <Clienti />) },
       { path: 'comande', element: g('comande', <Comande />) },
       { path: 'sala', element: g('sala', <Sala />, ['bar-tavolo']) },
-      // Prenotazioni operative (ex app admin): richieste dal sito, oggi, menu a voce, news, ingressi
-      { path: 'prenotazioni', element: s(<Prenotazioni />) },
+      // La vecchia sezione Prenota non c'è più: i link salvati (notifiche, QR ingressi) portano alle pagine dei moduli
+      { path: 'prenotazioni', element: <VecchiaPrenota /> },
       { path: 'tariffe', element: g('tariffe', <Tariffe />) },
       { path: 'bar', element: g('bar', <Bar />) },
       { path: 'ristorante', element: g('ristorante', <Ristorante />) },
@@ -75,10 +74,22 @@ export const router = creaRouter([
   // ComandApp: app del bagnante per ordinare dall'ombrellone
   { path: '/comandapp', element: s(<ComandApp />) },
   // Le vecchie app admin e sala ora sono sezioni dell'app staff unica (link, QR e icone già installate continuano a funzionare)
-  { path: '/adminapp', element: <Navigate to="/prenotazioni" replace /> },
+  { path: '/adminapp', element: <Navigate to="/ristorante?tab=prenotazioni" replace /> },
   { path: '/salaapp', element: <Navigate to="/sala" replace /> },
   // Ordine dal telefono col QR fisso del tavolo (solo con tavolo aperto dal cameriere)
   { path: '/tavolo', element: s(<TavoloQR />) },
   // Invito all'evento col QR (link nella mail di conferma), letto all'ingresso dall'app admin
   { path: '/invito', element: s(<InvitoEvento />) },
 ])
+
+/** `/prenotazioni?tab=…` (ex sezione Prenota) → Ristorante → Prenotazioni, Eventi → Presenze o Sito → App clienti. */
+function VecchiaPrenota() {
+  const q = new URLSearchParams(useLocation().search)
+  const tab = q.get('tab')
+  const evento = q.get('evento')
+  const a = tab === 'ingressi' ? `/eventi?tab=presenze&ingressi=1${evento ? `&evento=${evento}` : ''}`
+    : tab === 'app' ? '/sito?tab=app'
+    : tab === 'menu' ? '/ristorante?tab=menu'
+    : '/ristorante?tab=prenotazioni'
+  return <Navigate to={a} replace />
+}

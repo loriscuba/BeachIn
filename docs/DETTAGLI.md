@@ -6,7 +6,7 @@ Aggiornare qui quando cambia un modulo.
 ## Shell: app staff unica su telefono, tablet e PC (26/10/2026)
 - **Un'unica app per lo staff** (gestionale + ex app Admin + ex app Sala): stessa rotta, stesso login, un solo manifest
   `public/staff.webmanifest` ("BeachIn", `id` `./?app=staff`, start_url e scope `./`, scorciatoie Prenotazioni/Cameriere/Cucina),
-  impostato da `AppShell` con `impostaManifest`. `/adminapp` → `/prenotazioni`, `/salaapp` → `/sala` (Navigate): link, QR e
+  impostato da `AppShell` con `impostaManifest`. `/adminapp` → `/ristorante?tab=prenotazioni`, `/salaapp` → `/sala` (Navigate): link, QR e
   icone già installate continuano a funzionare (le vecchie icone aprono fuori dal loro scope: meglio reinstallare "BeachIn").
 - **Forma per dispositivo** (`AppShell` + `components/layout/BarraRapida.tsx`): telefono (< `md`) barra in basso con 4 schede del
   ruolo + **Altro** (apre il menu completo); tablet (`md`–`lg`) colonna stretta a sinistra con fino a 6 schede + **Menu**; PC
@@ -19,7 +19,7 @@ Aggiornare qui quando cambia un modulo.
 - **Velocità**: service worker `public/sw-admin.js` registrato da `attivaCacheApp()` (`lib/notifichePush.ts`, solo build di
   produzione, non single-file): pagina dalla rete con ripiego sulla copia dopo 3 s o offline, `/assets/` con hash dalla cache,
   icone e font dalla cache aggiornata in sottofondo; dati Supabase mai in cache. `lib/precarica.ts` scarica a riposo il codice
-  delle schede del ruolo (non con "risparmio dati"). In Prenotazioni menu a voce e lettore QR sono lazy (pagina 158 → 18 KB).
+  delle schede del ruolo (non con "risparmio dati").
 - **Telefono**: `Tabella` sotto `sm` diventa una lista di schede (prima colonna titolo, le altre etichetta/valore).
 - **Accesso**: `AppShell` mostra `LoginGestore` finché `SessioneContext` non ha un profilo; tocco sulla foto in alto a sinistra della Topbar
   → `SchedaUtente` (nome, ruolo, tema Automatico/Chiaro/Scuro, Esci; `useTema` di base segue `prefers-color-scheme` del telefono, scelta in localStorage `beachin.tema.v2`). Testata a tre zone larghe uguali: sinistra foto + "Ciao <nome>"
@@ -150,13 +150,13 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **IPA Monitor**: vista `beachin.monitor_riepilogo` (migrazione 0009, solo conteggi/date, nessun grant ad anon/authenticated) letta dal collettore `ipa-collect` del cruscotto IPA Monitor (schema `ipamonitor` nello stesso progetto Demo IPA).
   Utenti online (migrazione 0014): `src/lib/presenza.ts` chiama `beachin.monitor_segnale` ogni minuto a pagina visibile se lo staff è collegato → tabella `beachin.presenze_staff`, vista `beachin.monitor_utenti` (nome, ruolo, ultimo accesso, ultima attività) letta dal collettore.
 
-- **Prenotazioni operative** (`/prenotazioni` nell'app staff, `src/pages/Prenotazioni.tsx`, ex app admin `/adminapp`; `?tab=`
-  prenotazioni/menu/app/ingressi; campanello nel centro notifiche), tab **Prenotazioni** (richieste tavolo dal sito da confermare/rifiutare, campanello all'arrivo; **Conferma** apre
-  `SceltaTavolo` a schermo intero: in orizzontale la pianta `PiantaTavoli` (estratta da `ristorante/ScegliTavolo.tsx`), in
-  verticale invito a girare il telefono + elenco tavoli con consigliato; poi `confermaRistorante` + `assegnaTavolo(PR-<id>)`;
-  card **Oggi al ristorante** `OggiRistorante`: coperti/posti e riempimento per turno, avvisi senza tavolo/richieste di oggi,
-  lista arrivi con tavolo assegnabile e spunta "arrivato") e **Menu a voce**
-  (`<AssistenteVocale />`). `richiesteRistorante` sincronizzate su Supabase (`beachin.richieste_ristorante`); un effect nel
+- **Sezione Prenota tolta** (29/10/2026, era `src/pages/Prenotazioni.tsx`, ex app admin): tutto vive nei moduli.
+  Richieste tavolo → Ristorante → Prenotazioni; news/lavagnetta → Sito → App clienti; ingressi col QR → Eventi → Presenze →
+  "Registra ingressi col QR" (`/eventi?tab=presenze&ingressi=1&evento=`, solo la parte QR con "‹ Presenze"); assistente
+  vocale solo in Ristorante → Menu. In Ristorante → Prenotazioni ogni richiesta dal sito mostra `Disponibilita` e **Conferma** apre
+  `SceltaTavolo` a schermo intero (`src/components/ristorante/SceltaTavolo.tsx`: pianta in orizzontale, elenco col consigliato in
+  verticale), poi `confermaRistorante` + `assegnaTavolo(PR-<id>)`. `/prenotazioni?tab=…` e `/adminapp` reindirizzano (`VecchiaPrenota` in `router.tsx`).
+  `richiesteRistorante` sincronizzate su Supabase (`beachin.richieste_ristorante`); un effect nel
   context crea la `PrenotazioneRistorante` `PR-<id>` per ogni richiesta confermata (anche da altro dispositivo).
   Link "Apri sul telefono" in Ristorante → Prenotazioni.
 - **Notifiche push app admin** (anche a schermo bloccato): PWA installabile (`public/admin.webmanifest`, icone

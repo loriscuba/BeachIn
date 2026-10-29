@@ -14,7 +14,7 @@
     { "src": "admin-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Prenotazioni", "url": "./prenotazioni", "icons": [{ "src": "admin-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Prenotazioni", "url": "./ristorante?tab=prenotazioni", "icons": [{ "src": "admin-icon-192.png", "sizes": "192x192" }] },
     { "name": "Cameriere", "url": "./sala?tab=cameriere", "icons": [{ "src": "sala-icon-192.png", "sizes": "192x192" }] },
     { "name": "Cucina", "url": "./sala?tab=cucina", "icons": [{ "src": "sala-icon-192.png", "sizes": "192x192" }] }
   ]

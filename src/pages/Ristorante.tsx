@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Star, ThumbsDown, X, Phone, Check, Smartphone, CalendarX2, Undo2, ChevronLeft, ChevronRight, Plus, Lightbulb, LayoutGrid } from 'lucide-react'
 import type {
-  CategoriaPiatto, Piatto, PrenotazioneRistorante, StatoPrenotazione, Tavolo, Turno,
+  CategoriaPiatto, Piatto, PrenotazioneRistorante, RichiestaRistorante, StatoPrenotazione, Tavolo, Turno,
 } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
@@ -16,6 +16,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { PannelloMenu } from '@/pages/ristorante/PannelloMenu'
 import { Planimetria } from '@/pages/ristorante/Planimetria'
 import { ScegliTavolo } from '@/pages/ristorante/ScegliTavolo'
+import { SceltaTavolo, Disponibilita } from '@/components/ristorante/SceltaTavolo'
 import { addDays, format, parseISO } from 'date-fns'
 import { it as itLocale } from 'date-fns/locale'
 import { Magazzino } from '@/pages/ristorante/Magazzino'
@@ -54,6 +55,8 @@ export default function Ristorante() {
     giorniChiusi, riapriGiorno,
   } = useDemoData()
   const [nuovaAperta, setNuovaAperta] = useState(false)
+  // richiesta dal sito che si sta confermando: prima si sceglie il tavolo a schermo intero
+  const [daConfermareTavolo, setDaConfermareTavolo] = useState<RichiestaRistorante>()
   const [filtroCat, setFiltroCat] = useState<CategoriaPiatto | 'tutte'>('tutte')
   const [q, setQ] = useSearchParams()
   // I tavoli ora si gestiscono per giorno dentro Prenotazioni: il vecchio ?tab=tavoli porta lì.
@@ -246,12 +249,31 @@ export default function Ristorante() {
                     </button>
                     <span className="flex gap-1.5">
                       <Button onClick={() => rifiutaRistorante(r.id)}><X className="h-4 w-4 text-boa" /> Rifiuta</Button>
-                      <Button variante="primario" onClick={() => confermaRistorante(r.id)}><Check className="h-4 w-4" /> Conferma</Button>
+                      <Button variante="primario" onClick={() => setDaConfermareTavolo(r)}><Check className="h-4 w-4" /> Conferma</Button>
                     </span>
+                    <div className="w-full [&>*]:mt-0"><Disponibilita r={r} /></div>
                   </li>
                 ))}
               </ul>
             </div>
+          )}
+
+          {daConfermareTavolo && (
+            <SceltaTavolo
+              titolo={`Conferma ${daConfermareTavolo.nome} · ${daConfermareTavolo.coperti}p`}
+              data={daConfermareTavolo.data}
+              turno={daConfermareTavolo.turno}
+              coperti={daConfermareTavolo.coperti}
+              etichettaSenza="Conferma senza tavolo"
+              onChiudi={() => setDaConfermareTavolo(undefined)}
+              onScegli={(tavoloId) => {
+                const r = daConfermareTavolo
+                confermaRistorante(r.id)
+                // la prenotazione `PR-<id>` nasce dalla conferma: le assegno subito il tavolo scelto
+                if (tavoloId) assegnaTavolo(`PR-${r.id}`, tavoloId)
+                setDaConfermareTavolo(undefined)
+              }}
+            />
           )}
 
           {/* Riepilogo del turno in grande */}
