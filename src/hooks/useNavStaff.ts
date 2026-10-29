@@ -43,7 +43,7 @@ export function useSchedeRapide(): SchedaRapida[] {
 }
 
 /** La scheda è quella aperta se percorso e `?tab=` coincidono (Sala senza tab = Cameriere). */
-export function schedaAttiva(s: SchedaRapida, pathname: string, search: string) {
+export function schedaAttiva(s: { percorso: string }, pathname: string, search: string) {
   const [base, qs] = s.percorso.split('?')
   if (pathname !== base) return false
   const tab = new URLSearchParams(qs).get('tab')

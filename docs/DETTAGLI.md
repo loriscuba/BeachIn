@@ -8,8 +8,8 @@ Aggiornare qui quando cambia un modulo.
   `public/staff.webmanifest` ("BeachIn", `id` `./?app=staff`, start_url e scope `./`, scorciatoie Prenotazioni/Cameriere/Cucina),
   impostato da `AppShell` con `impostaManifest`. `/adminapp` → `/ristorante?tab=prenotazioni`, `/salaapp` → `/sala` (Navigate): link, QR e
   icone già installate continuano a funzionare (le vecchie icone aprono fuori dal loro scope: meglio reinstallare "BeachIn").
-- **Forma per dispositivo** (`AppShell` + `components/layout/BarraRapida.tsx`): telefono (< `md`) barra in basso con 4 schede del
-  ruolo + **Altro** (apre il menu completo); tablet (`md`–`lg`) colonna stretta a sinistra con fino a 6 schede + **Menu**; PC
+- **Forma per dispositivo** (`AppShell` + `components/layout/BarraRapida.tsx`): telefono (< `md`) barra in basso con 1 posto fisso
+  (Home, o prima scheda del ruolo) + 3 **preferiti** scelti dall'utente + **Altro** (apre il menu completo); tablet (`md`–`lg`) colonna stretta a sinistra con fino a 6 schede + **Menu**; PC
   (≥ `lg`) menu laterale completo con hamburger. Variabile CSS `--barra-basso` (altezza della barra, 0 da `md`) per fondo pagina
   e pulsanti fluttuanti (DemoPlayer, WhatsApp); la barra della comanda del cameriere (portale) sta sopra la barra delle schede.
 - **Schede per ruolo**: `SCHEDE_RAPIDE` e `SCHEDE_PER_RUOLO` in `config/navigazione.tsx`, hook `hooks/useNavStaff.ts`
@@ -44,6 +44,12 @@ Aggiornare qui quando cambia un modulo.
   un velo `fixed inset-0 z-[90]` in portale dentro `[data-tema]` (sopra testata e barre, tema chiaro/scuro con `.schermo-intero`)
   con solo una barra sottile (titolo + «Esci») e le comande a tutta larghezza (Comande con coda unica: tabellone a 3 colonne del bar); dove esiste chiede anche il fullscreen del browser (su iPhone no). Esc o uscita dal fullscreen
   chiudono. Permessi invariati (stessa scheda).
+- **Preferiti della barra in basso** (`hooks/useBarraPreferiti.ts`, 29/10): in "Altro" la matita apre "La tua barra";
+  si tiene premuta una sezione (250 ms) e la si trascina su uno dei 3 posti, oppure la si tocca e poi si tocca il posto
+  (se è già nella barra i posti si scambiano). Solo sezioni visibili all'utente (`useVociMenu` + `useSchedeRapide`):
+  un preferito non più permesso è sostituito dalle schede del ruolo. Salvati per utente nei metadati Supabase Auth
+  (`user_metadata.barra_preferiti`, array di percorsi, `null` = barra del ruolo; nessuna migrazione) + copia sul dispositivo
+  `beachin.barra.<id utente>` (unica in demo locale). Il tablet mostra gli stessi 4 e poi le altre schede del ruolo.
 - **Telefono, "Altro"** (`components/layout/MenuGriglia.tsx`, richiesta di Loris 26/10: niente menu a elenco, poco ergonomico):
   pannello dal basso con tutte le sezioni come pulsanti con icona uguali a quelli della barra in basso (griglia a 4 colonne,
   icone a linee neutre, colore dell'area solo sulla sezione aperta come puntino accanto al titolo e come velo leggero del riquadro di ogni gruppo, badge), divise per area
