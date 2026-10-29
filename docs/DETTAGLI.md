@@ -153,7 +153,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Sezione Prenota tolta** (29/10/2026, era `src/pages/Prenotazioni.tsx`, ex app admin): tutto vive nei moduli.
   Richieste tavolo → Ristorante → Prenotazioni; news/lavagnetta → Sito → App clienti; ingressi col QR → Eventi → Presenze →
   "Registra ingressi col QR" (`/eventi?tab=presenze&ingressi=1&evento=`, solo la parte QR con "‹ Presenze"); assistente
-  vocale solo in Ristorante → Menu. `/prenotazioni?tab=…` e `/adminapp` reindirizzano (`VecchiaPrenota` in `router.tsx`).
+  vocale solo in Ristorante → Menu. In Ristorante → Prenotazioni ogni richiesta dal sito mostra `Disponibilita` e **Conferma** apre
+  `SceltaTavolo` a schermo intero (`src/components/ristorante/SceltaTavolo.tsx`: pianta in orizzontale, elenco col consigliato in
+  verticale), poi `confermaRistorante` + `assegnaTavolo(PR-<id>)`. `/prenotazioni?tab=…` e `/adminapp` reindirizzano (`VecchiaPrenota` in `router.tsx`).
   `richiesteRistorante` sincronizzate su Supabase (`beachin.richieste_ristorante`); un effect nel
   context crea la `PrenotazioneRistorante` `PR-<id>` per ogni richiesta confermata (anche da altro dispositivo).
   Link "Apri sul telefono" in Ristorante → Prenotazioni.
