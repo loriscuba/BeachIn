@@ -383,9 +383,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `beachin_app_url` (default https://beachin.pages.dev/; in produzione lo imposta il workflow Deploy). Posta/WhatsApp simulati
   in app portano lo stesso link.
 - **Pagina pubblica** `/invito?c=` (`src/pages/InvitoEvento.tsx`): QR grande + codice + dettagli; dice se l'ingresso è registrato.
-- **App admin → Ingressi** (tab visibile col modulo `eventi`, `src/components/eventi/IngressiEventi.tsx`): scelta evento (default
+- **App admin → Ingressi** (tab visibile col modulo `eventi`, `src/components/eventi/IngressiEventi.tsx`; Presenze ci porta con `?tab=ingressi&evento=<id>` nella stessa app: in quel caso si vede solo la parte QR, senza le altre schede, con "← Presenze"): scelta evento (default
   oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore `ideal` 1920×1080, ripiego `video:true`; ~11 letture/s alternando riquadro centrale
-  a piena risoluzione e fotogramma intero ridotto, ogni 4 giri anche colori invertiti; errore spiegato per tipo con Riprova) o codice a mano → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento (tasto "Passa a quell'evento") / non confermata / sconosciuto
+  a piena risoluzione e fotogramma intero ridotto, ogni 4 giri anche colori invertiti; errore spiegato per tipo con Riprova) o codice scritto nel campo unico "Cerca nome o codice invito" (Invio: verifica l'unico invitato trovato, altrimenti il testo come codice) → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento (tasto "Passa a quell'evento") / non confermata / sconosciuto
   (campanello); l'esito viene portato in vista (sta sotto la fotocamera). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
 - **Gestionale Eventi** a sottomenu `?tab=calendario|presenze`: Calendario con schede **In corso e prossimi** (data ≥ oggi reale, dal più vicino) e **Passati** (dal più recente), raggruppati per mese; Presenze (`src/components/eventi/PresenzeEventi.tsx`, tendina con solo eventi da oggi in poi, dal più vicino) con KPI
   (inviti, attese, entrate, mancanti) e tabella invitati: codice (link all'invito), stato, segna/annulla a mano.

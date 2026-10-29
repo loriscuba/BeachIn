@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Check, RotateCcw, Users, UserCheck, Clock, Ticket, ExternalLink, Smartphone, Mail } from 'lucide-react'
+import { Check, RotateCcw, Users, UserCheck, Clock, Ticket, ExternalLink, ScanLine, Mail } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -8,7 +9,6 @@ import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { dataEstesa, numero } from '@/lib/formatters'
 import { oraDa, urlInvito } from '@/lib/invitiEventi'
-import { urlPubblico } from '@/lib/urlPubblico'
 
 /** Eventi → Presenze: chi ha l'invito confermato e chi è già entrato (ingressi registrati dall'app admin col QR). */
 export function PresenzeEventi() {
@@ -38,9 +38,9 @@ export function PresenzeEventi() {
           <Select value={eventoId} onChange={(e) => setEventoId(e.target.value)}
             opzioni={ordinati.length ? ordinati.map((e) => ({ valore: e.id, etichetta: `${dataEstesa(e.data)} · ${e.nome}` })) : [{ valore: '', etichetta: 'Nessun evento in programma' }]} />
         </div>
-        <a href={urlPubblico('prenotazioni?tab=ingressi')} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline">
-          <Smartphone className="h-4 w-4" /> Ingressi col QR dal telefono
-        </a>
+        {eventoId && <Link to={`/prenotazioni?tab=ingressi&evento=${eventoId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline">
+          <ScanLine className="h-4 w-4" /> Registra ingressi col QR
+        </Link>}
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

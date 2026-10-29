@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ScanLine, Check, RotateCcw, X, Search, TriangleAlert, OctagonX, Minus, Plus, Users } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { ScannerQr } from '@/components/ScannerQr'
@@ -14,11 +15,12 @@ const dataIt = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('it-I
 export function IngressiEventi() {
   const { eventi, richiesteEventi, segnaArrivoEvento } = useDemoData()
   const ordinati = useMemo(() => [...eventi].sort((a, b) => a.data.localeCompare(b.data)), [eventi])
-  const [eventoId, setEventoId] = useState(() => eventoPredefinito(eventi, config.oggi)?.id ?? '')
+  // `?evento=` arriva da Eventi → Presenze: si apre sull'evento che si stava guardando
+  const daLink = new URLSearchParams(useLocation().search).get('evento')
+  const [eventoId, setEventoId] = useState(() => (daLink && eventi.some((e) => e.id === daLink) ? daLink : eventoPredefinito(eventi, config.oggi)?.id) ?? '')
   const [scansiona, setScansiona] = useState(false)
   const [esito, setEsito] = useState<EsitoInvito>()
   const [quanti, setQuanti] = useState(1)
-  const [codice, setCodice] = useState('')
   const [cerca, setCerca] = useState('')
 
   const invitati = richiesteEventi.filter((r) => r.eventoId === eventoId && r.stato === 'confermata')
@@ -36,6 +38,12 @@ export function IngressiEventi() {
     const e = verificaInvito(richiesteEventi, codiceDaTesto(testo), evento)
     setEsito(e)
     if (e.tipo === 'ok') { setQuanti(e.r.persone - (e.r.arrivati ?? 0)); ding() } else campanello()
+  }
+  // un solo campo per nome e codice: Invio verifica l'invitato trovato, o il codice scritto se non trova nessuno
+  const cercaOVerifica = () => {
+    if (!cerca.trim()) return
+    controlla(lista.length === 1 && lista[0].codice ? lista[0].codice : cerca)
+    setCerca('')
   }
   const conferma = () => {
     if (esito?.tipo !== 'ok') return
@@ -66,19 +74,13 @@ export function IngressiEventi() {
       {/* la fotocamera resta accesa: mentre c'è un esito a schermo le letture si ignorano */}
       {scansiona && <ScannerQr onLettura={(t) => { if (!esito) controlla(t) }} />}
 
-      <form onSubmit={(e) => { e.preventDefault(); if (codice.trim()) { controlla(codice); setCodice('') } }} className="flex gap-2">
-        <input value={codice} onChange={(e) => setCodice(e.target.value)} placeholder="oppure scrivi il codice" autoCapitalize="characters"
-          className="h-11 min-w-0 flex-1 rounded-xl border-0 bg-white px-3 font-mono uppercase tracking-widest shadow-sm" />
-        <button className="h-11 rounded-xl bg-white px-4 font-semibold text-cabina shadow-sm">Verifica</button>
-      </form>
-
       {esito && <div ref={riquadro} className="scroll-mb-24"><EsitoCard esito={esito} quanti={quanti} setQuanti={setQuanti} onConferma={conferma}
         onAnnullaIngresso={(id) => { segnaArrivoEvento(id, 0); setEsito(undefined) }} onChiudi={() => setEsito(undefined)}
         onCambiaEvento={(r) => { setEventoId(r.eventoId); controlla(r.codice ?? '', r.eventoId) }} /></div>}
 
       <div className="rounded-2xl bg-white p-3 shadow-sm">
-        <div className="mb-2 flex items-center gap-2 rounded-xl bg-calce px-3"><Search className="h-4 w-4 text-profondo/40" />
-          <input value={cerca} onChange={(e) => setCerca(e.target.value)} placeholder="Cerca invitato" className="h-10 min-w-0 flex-1 bg-transparent outline-none" /></div>
+        <form onSubmit={(e) => { e.preventDefault(); cercaOVerifica() }} className="mb-2 flex items-center gap-2 rounded-xl bg-calce px-3"><Search className="h-4 w-4 text-profondo/40" />
+          <input value={cerca} onChange={(e) => setCerca(e.target.value)} placeholder="Cerca nome o codice invito" enterKeyHint="search" className="h-10 min-w-0 flex-1 bg-transparent outline-none" /></form>
         {lista.length === 0 && <p className="py-4 text-center text-sm text-profondo/50">Nessun invito confermato per questo evento.</p>}
         <ul className="divide-y divide-calce-200">
           {lista.map((r) => {
