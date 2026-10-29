@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { accento } from '@/config/accenti'
-import { schedaAttiva, useConteggiNav, useSchedeRapide } from '@/hooks/useNavStaff'
+import { schedaAttiva, useConteggiNav } from '@/hooks/useNavStaff'
+import { useBarraPreferiti, type VoceBarra } from '@/hooks/useBarraPreferiti'
 import { cn } from '@/lib/cn'
 import { Logo } from './Logo'
 
@@ -12,18 +13,19 @@ function Bollino({ n }: { n: number }) {
 }
 
 /**
- * Navigazione rapida dell'app staff. Telefono: barra in basso (4 schede del ruolo + "Altro" che apre il menu completo).
- * Tablet: colonna stretta a sinistra (fino a 6 schede + "Menu"). Su PC non c'è: resta la barra laterale completa.
+ * Navigazione rapida dell'app staff. Telefono: barra in basso (Home o prima scheda del ruolo, fissa, + 3 preferiti
+ * scelti dall'utente in "Tutte le sezioni" + "Altro" che apre il menu completo).
+ * Tablet: colonna stretta a sinistra (gli stessi, poi le altre schede del ruolo, fino a 6 + "Menu"). Su PC non c'è: resta la barra laterale completa.
  */
 export function BarraRapida({ onAltro }: { onAltro: () => void }) {
-  const schede = useSchedeRapide()
+  const { fisso, posti, delRuolo } = useBarraPreferiti()
   const conta = useConteggiNav()
   const { pathname, search } = useLocation()
-  const voce = (s: (typeof schede)[number], tablet: boolean) => {
+  const voce = (s: VoceBarra, tablet: boolean) => {
     const att = schedaAttiva(s, pathname, search)
     return (
       <Link
-        key={s.id}
+        key={s.percorso}
         to={s.percorso}
         aria-current={att ? 'page' : undefined}
         className={cn(
@@ -40,8 +42,8 @@ export function BarraRapida({ onAltro }: { onAltro: () => void }) {
       </Link>
     )
   }
-  const telefono = schede.slice(0, 4)
-  const tablet = schede.slice(0, 6)
+  const telefono = fisso ? [fisso, ...posti] : posti
+  const tablet = [...telefono, ...delRuolo.filter((v) => !telefono.includes(v))].slice(0, 6)
   return (
     <>
       {/* Tablet: colonna stretta */}
