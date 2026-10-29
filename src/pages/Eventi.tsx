@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   Trophy, Music, PartyPopper, UtensilsCrossed, Flower2, Gift, CalendarDays, Users, TrendingUp, Wallet,
-  Plus, Pencil, Trash2, ImagePlus, X, Ticket, Send, EyeOff,
+  Plus, Pencil, Trash2, ImagePlus, X, Ticket, Send, EyeOff, ChevronLeft,
 } from 'lucide-react'
 import type { Evento, RichiestaEvento, TipoEvento } from '@/data/types'
 import { useDemoData, type DatiPartecipanteEvento } from '@/context/DemoDataContext'
@@ -20,6 +20,7 @@ import { cn } from '@/lib/cn'
 import { Tabs } from '@/components/ui/Tabs'
 import { useSchede, SchedaProtetta } from '@/hooks/useFunzioni'
 import { PresenzeEventi } from '@/components/eventi/PresenzeEventi'
+import { IngressiEventi } from '@/components/eventi/IngressiEventi'
 
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
   sport: Trophy, musica: Music, festa: PartyPopper, gastronomia: UtensilsCrossed, benessere: Flower2, privato: Gift,
@@ -31,12 +32,15 @@ export default function Eventi() {
   const [q, setQ] = useSearchParams()
   const { visibili, tab, livello } = useSchede('eventi', ['calendario', 'presenze'] as const, q.get('tab'))
   const nomi = { calendario: 'Calendario', presenze: 'Presenze' }
+  // Presenze → "Registra ingressi col QR" (`&ingressi=1&evento=`): solo la parte QR, con ritorno a Presenze
+  const ingressi = tab === 'presenze' && q.has('ingressi')
   return (
     <div className="space-y-4">
-      {visibili.length > 1 && tab && <Tabs opzioni={visibili.map((v) => ({ valore: v, etichetta: nomi[v] }))}
+      {ingressi && <Link to="/eventi?tab=presenze" className="inline-flex items-center gap-1 text-sm font-semibold text-cabina"><ChevronLeft className="h-4 w-4" /> Presenze</Link>}
+      {!ingressi && visibili.length > 1 && tab && <Tabs opzioni={visibili.map((v) => ({ valore: v, etichetta: nomi[v] }))}
         valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />}
       <SchedaProtetta modulo="eventi" livello={livello}>
-        {tab === 'presenze' ? <PresenzeEventi /> : <CalendarioEventi />}
+        {ingressi ? <IngressiEventi /> : tab === 'presenze' ? <PresenzeEventi /> : <CalendarioEventi />}
       </SchedaProtetta>
     </div>
   )

@@ -11,7 +11,7 @@ import type { RichiestaEvento } from '@/data/types'
 
 const dataIt = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 
-/** App admin → Ingressi: si scansiona il QR dell'invito ricevuto per mail e si registra l'ingresso all'evento. */
+/** Eventi → Presenze → Ingressi: si scansiona il QR dell'invito ricevuto per mail e si registra l'ingresso all'evento. */
 export function IngressiEventi() {
   const { eventi, richiesteEventi, segnaArrivoEvento } = useDemoData()
   const ordinati = useMemo(() => [...eventi].sort((a, b) => a.data.localeCompare(b.data)), [eventi])

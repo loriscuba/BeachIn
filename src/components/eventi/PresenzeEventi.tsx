@@ -38,7 +38,7 @@ export function PresenzeEventi() {
           <Select value={eventoId} onChange={(e) => setEventoId(e.target.value)}
             opzioni={ordinati.length ? ordinati.map((e) => ({ valore: e.id, etichetta: `${dataEstesa(e.data)} · ${e.nome}` })) : [{ valore: '', etichetta: 'Nessun evento in programma' }]} />
         </div>
-        {eventoId && <Link to={`/prenotazioni?tab=ingressi&evento=${eventoId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline">
+        {eventoId && <Link to={`/eventi?tab=presenze&ingressi=1&evento=${eventoId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-cabina hover:underline">
           <ScanLine className="h-4 w-4" /> Registra ingressi col QR
         </Link>}
       </div>

@@ -23,7 +23,6 @@ import PulsanteInstalla from '@/components/PulsanteInstalla'
 const sottotitoli: Record<string, string> = {
   '/': `Stagione ${config.stagione.anno} · panoramica dei moduli attivi`,
   '/cruscotto': `Stagione ${config.stagione.anno} · KPI di tutta la struttura`,
-  '/assistente-vocale': 'Modifica il menù del ristorante a voce',
   '/arenile': `${config.arenile.postazioniTotali} postazioni · ${config.arenile.file.length} file`,
   '/clienti': 'Anagrafiche, storico e saldi',
   '/comande': 'Ordini al bar dagli ombrelloni',
@@ -37,11 +36,7 @@ const sottotitoli: Record<string, string> = {
   '/eventi': 'Calendario e conto degli eventi',
   '/sito': 'Gestione del sito e prenotazioni online',
   '/impostazioni': 'Anagrafica, arenile, utenti e ruoli',
-  '/prenotazioni': 'Richieste dal sito, tavoli di oggi, menu a voce',
 }
-
-/** Pagine dell'app staff che non sono voci del menu laterale. */
-const altrePagine: Record<string, string> = { '/prenotazioni': 'Prenotazioni' }
 
 const CHIAVE_MENU = 'beachin.menu.v1'
 
@@ -93,7 +88,7 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
   )
   // pagine raggiungibili solo da un sottomenu (es. Comande sotto Bar)
   const figlio = voce ? undefined : navigazione.flatMap((v) => v.figli ?? []).find((f) => f.percorso === pathname)
-  const titolo = voce?.etichetta ?? figlio?.etichetta ?? altrePagine[pathname] ?? 'BeachIn'
+  const titolo = voce?.etichetta ?? figlio?.etichetta ?? 'BeachIn'
   const coloreArea = accento(figlio?.percorso ?? voce?.percorso)
   const sottotitolo = sottotitoli[voce?.percorso ?? figlio?.percorso ?? ''] ?? undefined
 

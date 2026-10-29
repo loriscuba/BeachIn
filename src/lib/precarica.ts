@@ -5,7 +5,6 @@
  */
 const PAGINE: Record<string, () => Promise<unknown>> = {
   '/': () => import('@/pages/Panoramica'),
-  '/prenotazioni': () => import('@/pages/Prenotazioni'),
   '/sala': () => import('@/pages/Sala'),
   '/comande': () => import('@/pages/Comande'),
   '/arenile': () => import('@/pages/Arenile'),

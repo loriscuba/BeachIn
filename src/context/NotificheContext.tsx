@@ -86,7 +86,7 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
   const sorgenti = useMemo<Sorgente[]>(() => [
     ...richiesteRistorante.filter((r) => r.stato === 'da_confermare').map((r) => ({
       id: `prenotazioni-${r.id}`, categoria: 'prenotazioni' as const, titolo: 'Nuova prenotazione tavolo',
-      testo: `${r.nome} · ${r.coperti} persone · ${fmtData(r.data)}${r.ora ? ` alle ${r.ora}` : ''}`, percorso: '/prenotazioni',
+      testo: `${r.nome} · ${r.coperti} persone · ${fmtData(r.data)}${r.ora ? ` alle ${r.ora}` : ''}`, percorso: '/ristorante?tab=prenotazioni',
     })),
     ...prenotazioniOnline.filter((p) => p.stato === 'da_confermare').map((p) => ({
       id: `spiaggia-${p.id}`, categoria: 'spiaggia' as const, titolo: 'Prenotazione ombrellone dal sito',
