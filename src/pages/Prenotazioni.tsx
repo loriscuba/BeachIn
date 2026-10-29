@@ -4,8 +4,8 @@
  * lavagnetta e legge gli ingressi agli eventi. Pensata per il telefono. Con Supabase i dati sono condivisi dal vivo.
  */
 import { Suspense, useState } from 'react'
-import { useLocation } from 'react-router-dom'
-import { Check, X, Users, Phone, CalendarDays, Mic, Inbox, CalendarX2, ChevronDown, CircleCheck, TriangleAlert, OctagonX, RotateCw, Sun, Moon, Clock, Newspaper, ScanLine } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { Check, X, Users, Phone, CalendarDays, Mic, Inbox, CalendarX2, ChevronDown, CircleCheck, TriangleAlert, OctagonX, RotateCw, Sun, Moon, Clock, Newspaper, ScanLine, ChevronLeft } from 'lucide-react'
 import type { PrenotazioneRistorante, RichiestaRistorante, StatoPrenotazione, Turno } from '@/data/types'
 import { PiantaTavoli } from '@/pages/ristorante/ScegliTavolo'
 import { nomeZona } from '@/lib/zoneTavoli'
@@ -38,7 +38,10 @@ export default function Prenotazioni() {
   const conEventi = ok('eventi.presenze', 2)
   type Scheda = 'prenotazioni' | 'menu' | 'app' | 'ingressi'
   // `?tab=` per i link diretti (es. Eventi → Presenze apre gli ingressi)
-  const richiesta = new URLSearchParams(useLocation().search).get('tab') as Scheda | null
+  const parametri = new URLSearchParams(useLocation().search)
+  const richiesta = parametri.get('tab') as Scheda | null
+  // da Eventi → Presenze (`?tab=ingressi&evento=`) si apre solo la parte QR, senza le altre schede
+  const soloIngressi = richiesta === 'ingressi' && parametri.has('evento') && conEventi
   const ammessa = (t: Scheda | null) => (t === 'prenotazioni' ? conRistorante : t === 'menu' ? conMenu : t === 'app' ? conApp : t === 'ingressi' ? conEventi : false)
   const [tab, setTab] = useState<Scheda>(ammessa(richiesta) ? richiesta! : conRistorante ? 'prenotazioni' : conMenu ? 'menu' : conApp ? 'app' : 'ingressi')
   const colonne = [conRistorante && '1.5fr', conMenu && '1fr', conApp && '1fr', conEventi && '1.2fr'].filter(Boolean).join('_')
@@ -46,7 +49,9 @@ export default function Prenotazioni() {
 
   return (
     <div>
-      <div className="mb-4 flex gap-2">
+      {soloIngressi ? (
+        <Link to="/eventi?tab=presenze" className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-cabina"><ChevronLeft className="h-4 w-4" /> Presenze</Link>
+      ) : <div className="mb-4 flex gap-2">
         <div className="grid flex-1 rounded-xl bg-white p-1 text-[13px] font-semibold shadow-sm" style={{ gridTemplateColumns: colonne.replace(/_/g, ' ') }}>
           {conRistorante && <button onClick={() => setTab('prenotazioni')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'prenotazioni' ? 'bg-profondo text-white' : 'text-profondo/60')}>
             <Inbox className="h-4 w-4" /> Prenotazioni {daConfermare.length > 0 && <span className="rounded-full bg-boa px-1.5 text-xs text-white">{daConfermare.length}</span>}
@@ -55,7 +60,7 @@ export default function Prenotazioni() {
           {conApp && <button onClick={() => setTab('app')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'app' ? 'bg-profondo text-white' : 'text-profondo/60')}><Newspaper className="h-4 w-4" /> App</button>}
           {conEventi && <button onClick={() => setTab('ingressi')} className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg py-2', tab === 'ingressi' ? 'bg-profondo text-white' : 'text-profondo/60')}><ScanLine className="h-4 w-4" /> Ingressi</button>}
         </div>
-      </div>
+      </div>}
 
       {!conRistorante && !conMenu && !conApp && !conEventi && (
         <p className="rounded-2xl bg-white p-4 text-sm text-profondo/70 shadow-sm">Il tuo ruolo non ha sezioni in Prenotazioni. Chiedi all'amministratore.</p>
