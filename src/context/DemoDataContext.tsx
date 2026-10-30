@@ -95,6 +95,12 @@ export const PAGINE_CLIENTI: Record<string, (cerca: URLSearchParams) => Record<s
     ...SITO, ...LISTINI, notizie: LETTURA,
     comande: { modo: 'nuove', colonne: 'id,ombrellone,righe,totale,stato,ora,note,origine,ts,pagata' },
   }),
+  // modifica/annulla dal link della mail: la prenotazione passa dalle funzioni del DB col codice segreto;
+  // qui solo quello che serve a mostrare la disponibilità (come il sito)
+  '/prenotazione': () => ({
+    tavoli: LETTURA, tavoli_giorno: LETTURA, giorni_chiusi: LETTURA,
+    prenotazioni_ristorante: SITO.prenotazioni_ristorante, richieste_ristorante: { modo: 'lettura', colonne: SITO.richieste_ristorante.colonne },
+  }),
   // l'invito legge solo la sua richiesta (codice nel link)
   '/invito': (cerca) => {
     const codice = codiceDaTesto(cerca.get('c') ?? '').replace(/[^A-Z0-9]/g, '') || '-'
@@ -102,6 +108,11 @@ export const PAGINE_CLIENTI: Record<string, (cerca: URLSearchParams) => Record<s
   },
 }
 const SPENTO: AccessoSync = { modo: 'spento' }
+/** Modifica/annullamento del cliente dal suo link (colonne scritte solo dal DB, mai rimandate da qui). */
+const azioneDa = (r: Record<string, unknown>) => ({
+  azioneCliente: (r.azione_cliente as RichiestaRistorante['azioneCliente']) ?? undefined,
+  azioneTs: r.azione_ts != null ? Number(r.azione_ts) : undefined,
+})
 
 const codiceQr = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('')
 import { statoSito } from '@/data/seed/sito'
@@ -720,7 +731,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     daRiga: (r) => ({
       id: r.id, ricevutaIl: r.ricevuta_il as string, nome: r.nome as string, email: r.email as string, telefono: r.telefono as string,
       data: r.data as string, turno: r.turno as Turno, ora: (r.ora as string) ?? undefined, coperti: Number(r.coperti), stato: r.stato as RichiestaRistorante['stato'],
-      note: (r.note as string) ?? undefined, ts: Number(r.ts),
+      note: (r.note as string) ?? undefined, ts: Number(r.ts), ...azioneDa(r),
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })
@@ -738,7 +749,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       eventoId: r.evento_id as string, eventoNome: r.evento_nome as string, eventoData: r.evento_data as string, eventoFoto: (r.evento_foto as string) ?? undefined, persone: Number(r.persone),
       stato: r.stato as RichiestaEvento['stato'], note: (r.note as string) ?? undefined, origine: (r.origine as RichiestaEvento['origine']) ?? undefined,
       codice: (r.codice as string) ?? undefined, arrivati: Number(r.arrivati ?? 0), arrivoTs: r.arrivo_ts != null ? Number(r.arrivo_ts) : undefined,
-      invioTs: r.invio_ts != null ? Number(r.invio_ts) : undefined,
+      invioTs: r.invio_ts != null ? Number(r.invio_ts) : undefined, ...azioneDa(r),
     }),
     ordina: (a, b) => Number(b.ts) - Number(a.ts),
   })

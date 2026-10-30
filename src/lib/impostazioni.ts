@@ -56,6 +56,12 @@ export const GRUPPI: Gruppo[] = [
     ],
   },
   {
+    id: 'prenotazioniCliente', titolo: 'Modifiche dei clienti dal sito', campi: [
+      { chiave: 'prenotazioniCliente.oreTavolo', etichetta: 'Tavolo: fino a quante ore prima', tipo: 'numero', aiuto: 'Il cliente modifica o annulla dal link della mail fino a queste ore prima dell’orario' },
+      { chiave: 'prenotazioniCliente.oreEvento', etichetta: 'Evento: fino a quante ore prima', tipo: 'numero', aiuto: 'Contate dalla mezzanotte del giorno dell’evento' },
+    ],
+  },
+  {
     id: 'tripadvisor', titolo: 'Tripadvisor', campi: [
       { chiave: 'tripadvisor.voto', etichetta: 'Voto', tipo: 'numero' },
       { chiave: 'tripadvisor.recensioni', etichetta: 'Recensioni', tipo: 'numero' },

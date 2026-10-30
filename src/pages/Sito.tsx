@@ -4,7 +4,7 @@ import {
   Loader2, ExternalLink, CalendarCheck, MessageSquare, Star, BarChart3, Globe, Check, X as XIcon,
   Image, Newspaper, Tags, Umbrella, Search, UtensilsCrossed, Inbox, Mail, Ticket, Upload, Save, RotateCcw,
 } from 'lucide-react'
-import type { ContenutoHome, Email, StatoSito, Turno } from '@/data/types'
+import type { AzioneCliente, ContenutoHome, Email, StatoPrenotazioneOnline, StatoSito, Turno } from '@/data/types'
 import { getDisponibilitaSito, getStatoSito } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { useModuli } from '@/context/ModuliContext'
@@ -17,14 +17,15 @@ import { etichetteTipologia } from '@/lib/arenile'
 import { importaImmagini, messaggioFileFalliti } from '@/lib/immagini'
 import { cn } from '@/lib/cn'
 import Marketing from './sito/Marketing'
+import ModificheClienti from './sito/ModificheClienti'
 import { GestioneLavagnetta, GestioneNews } from '@/components/app/GestioneAppClienti'
 import { QrCodice } from '@/components/QrCodice'
 import { useSchede, SchedaProtetta } from '@/hooks/useFunzioni'
 import { urlComandApp } from '@/lib/comandapp'
 import { fotoSito } from '@/assets/sito'
 
-type Sezione = 'panoramica' | 'prenotazioni' | 'posta' | 'contenuti' | 'interazioni' | 'marketing' | 'app'
-const SEZIONI: Sezione[] = ['panoramica', 'prenotazioni', 'posta', 'contenuti', 'interazioni', 'marketing', 'app']
+type Sezione = 'panoramica' | 'prenotazioni' | 'modifiche' | 'posta' | 'contenuti' | 'interazioni' | 'marketing' | 'app'
+const SEZIONI: Sezione[] = ['panoramica', 'prenotazioni', 'modifiche', 'posta', 'contenuti', 'interazioni', 'marketing', 'app']
 const turnoLabel = (t: Turno) => (t === 'pranzo' ? 'Pranzo' : 'Cena')
 
 export default function Sito() {
@@ -92,6 +93,7 @@ export default function Sito() {
           opzioni={([
             { valore: 'panoramica', etichetta: 'Panoramica' },
             { valore: 'prenotazioni', etichetta: `Prenotazioni${daConfermare ? ` (${daConfermare})` : ''}` },
+            { valore: 'modifiche', etichetta: 'Modifiche clienti' },
             { valore: 'posta', etichetta: `Posta${postaNonLetta ? ` (${postaNonLetta})` : ''}` },
             { valore: 'contenuti', etichetta: 'Contenuti' },
             { valore: 'interazioni', etichetta: 'Recensioni e messaggi' },
@@ -106,6 +108,7 @@ export default function Sito() {
 
       <SchedaProtetta modulo="sito" livello={livScheda}>
       {sez === 'marketing' && <Marketing />}
+      {sez === 'modifiche' && <ModificheClienti />}
 
       {sez === 'app' && (
         <div className="space-y-4">
@@ -239,7 +242,7 @@ export default function Sito() {
                         <p className="num text-xs text-profondo/55">{turnoLabel(p.turno)}{p.ora ? ` alle ${p.ora}` : ''} del {fmtData(p.data)}</p>
                         {p.note && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.note}”</p>}
                       </div>
-                      <AzioniRichiesta stato={p.stato} onConferma={() => confermaRistorante(p.id)} onRifiuta={() => rifiutaRistorante(p.id)} />
+                      <AzioniRichiesta stato={p.stato} azione={p.azioneCliente} onConferma={() => confermaRistorante(p.id)} onRifiuta={() => rifiutaRistorante(p.id)} />
                     </li>
                   ))}
                 </ul>
@@ -260,7 +263,7 @@ export default function Sito() {
                         <p className="num text-xs text-profondo/55">{p.eventoNome} · {fmtData(p.eventoData)}</p>
                         {p.note && <p className="mt-0.5 text-xs italic text-profondo/50">“{p.note}”</p>}
                       </div>
-                      <AzioniRichiesta stato={p.stato} onConferma={() => confermaEvento(p.id)} onRifiuta={() => rifiutaEvento(p.id)} />
+                      <AzioniRichiesta stato={p.stato} azione={p.azioneCliente} onConferma={() => confermaEvento(p.id)} onRifiuta={() => rifiutaEvento(p.id)} />
                     </li>
                   ))}
                 </ul>
@@ -479,12 +482,19 @@ function Interruttore({ icona: Icona, etichetta, attivo, onCambia }: { icona: ty
   )
 }
 
-function AzioniRichiesta({ stato, onConferma, onRifiuta }: { stato: 'da_confermare' | 'confermata' | 'rifiutata'; onConferma: () => void; onRifiuta: () => void }) {
+function AzioniRichiesta({ stato, azione, onConferma, onRifiuta }: { stato: StatoPrenotazioneOnline; azione?: AzioneCliente; onConferma: () => void; onRifiuta: () => void }) {
+  const modificata = azione === 'modifica' && <Badge tono="tenda">Modificata dal cliente</Badge>
   if (stato !== 'da_confermare') {
-    return <Badge tono={stato === 'confermata' ? 'acqua' : 'boa'} puntino>{stato === 'confermata' ? 'Confermata' : 'Rifiutata'}</Badge>
+    return (
+      <div className="flex items-center gap-2">
+        {stato !== 'annullata' && modificata}
+        <Badge tono={stato === 'confermata' ? 'acqua' : 'boa'} puntino>{stato === 'confermata' ? 'Confermata' : stato === 'annullata' ? 'Annullata dal cliente' : 'Rifiutata'}</Badge>
+      </div>
+    )
   }
   return (
     <div className="flex items-center gap-2">
+      {modificata}
       <Button variante="primario" dimensione="sm" onClick={onConferma}><Check className="h-4 w-4" /> Conferma</Button>
       <Button variante="secondario" dimensione="sm" onClick={onRifiuta}><XIcon className="h-4 w-4" /> Rifiuta</Button>
     </div>

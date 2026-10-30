@@ -209,6 +209,7 @@ export const FUNZIONI: InfoFunzione[] = [
   f('eventi', 'presenze', 'Presenze e ingressi (scanner)'),
   f('sito', 'panoramica', 'Panoramica'),
   f('sito', 'prenotazioni', 'Prenotazioni online'),
+  f('sito', 'modifiche', 'Modifica e annulla dal sito'),
   f('sito', 'posta', 'Posta'),
   f('sito', 'contenuti', 'Contenuti'),
   f('sito', 'interazioni', 'Recensioni e messaggi'),
