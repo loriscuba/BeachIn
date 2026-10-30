@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, ArrowDown, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Star, Phone, Mail, MapPin,
   Clock, Check, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa, Waves,
@@ -117,6 +117,18 @@ export default function SitoAnteprima() {
       if (Math.abs(el.getBoundingClientRect().top - atteso) > 4) vai()
     }, ms)
   }
+
+  // Link diretto a una sezione (es. pulsante "Prenota" di Google Maps): ?sez=tavolo | ombrellone | <id sezione>.
+  const [parametri] = useSearchParams()
+  const sezIniziale = useRef(parametri.get('sez'))
+  useEffect(() => {
+    const sez = sezIniziale.current
+    if (!sez) return
+    const id = sez === 'tavolo' ? 'prenota-tavolo' : sez === 'ombrellone' || sez === 'ombrelloni' ? idPrenota : sez
+    const t = window.setTimeout(() => scrollTo(document.getElementById(id) ? id : idPrenota), 500)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const titoloHero = homeSito.titolo || config.nome
   const sottoHero = homeSito.sottotitolo
