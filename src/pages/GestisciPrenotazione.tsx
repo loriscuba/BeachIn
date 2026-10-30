@@ -10,7 +10,7 @@ import { CalendarDays, Clock, Loader2, Phone, Ticket, Users, UtensilsCrossed } f
 import { useDemoData } from '@/context/DemoDataContext'
 import { CalendarioDisponibilita } from '@/components/sito/CalendarioDisponibilita'
 import { descriviSistemazione, prenotabilita, statoGiorno } from '@/lib/disponibilita'
-import { supabaseInvii } from '@/lib/supabase'
+import { supabase, supabaseInvii } from '@/lib/supabase'
 import { logoLido } from '@/assets/sito'
 import { config } from '@/data/config'
 import { cn } from '@/lib/cn'
@@ -53,11 +53,20 @@ export default function GestisciPrenotazione() {
   const [modo, setModo] = useState<'vista' | 'modifica' | 'annulla'>('vista')
   const [lavoro, setLavoro] = useState(false)
 
+  // lettura col client normale (senza keepalive: su iPhone una seconda richiesta keepalive subito dopo l'annullamento
+  // non partiva); un tentativo in più e, se la prenotazione era già a schermo, resta quella invece dell'errore
   const carica = useCallback(async () => {
-    if (!supabaseInvii || token.length < 32) { setP(null); return }
-    const { data, error } = await supabaseInvii.rpc('prenotazione_cliente', { p_token: token })
-    if (error) { setErrore('Non riusciamo a caricare la prenotazione: riprova tra poco.'); setP(null); return }
-    setP((data as Prenotazione | null) ?? null)
+    if (!supabase || token.length < 32) { setP(null); return }
+    let r = await supabase.rpc('prenotazione_cliente', { p_token: token })
+    if (r.error) { await new Promise((ok) => setTimeout(ok, 800)); r = await supabase.rpc('prenotazione_cliente', { p_token: token }) }
+    if (r.error) {
+      setP((prima) => {
+        if (!prima) setErrore('Non riusciamo a caricare la prenotazione: riprova tra poco.')
+        return prima ?? null
+      })
+      return
+    }
+    setP((r.data as Prenotazione | null) ?? null)
   }, [token])
   useEffect(() => { void carica() }, [carica])
 
@@ -69,6 +78,8 @@ export default function GestisciPrenotazione() {
     const r = data as { ok?: boolean; errore?: string } | null
     if (error || !r?.ok) { setErrore(r?.errore ?? 'Qualcosa non ha funzionato: riprova o chiamaci.'); return }
     setFatto(ok); setModo('vista')
+    // già giusta a schermo anche se la rilettura non riesce
+    if (fn === 'annulla_prenotazione_cliente') setP((x) => x && { ...x, stato: 'annullata', modificabile: false })
     await carica()
   }
 
