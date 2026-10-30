@@ -483,6 +483,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   con numero (prefisso 39 se manca) e testo già compilati. Nessun invio automatico reale (servirebbe WhatsApp Business API).
 
 ## Prenotazione tavolo dal sito: orario e posti (ott 2026)
+- Link diretto al form (pulsante "Prenota" di Google Maps/Profilo dell'attività): `/sito/anteprima?sez=tavolo` (form tavolo),
+  `?sez=ombrellone` (prenota ombrellone, o tavolo se il canale è spento), oppure `?sez=<id sezione>`; scorre alla sezione ~0,5 s dopo l'apertura.
 - `src/lib/disponibilita.ts`: `ORARI_TURNO` (pranzo 12:00–14:00, cena 19:00–21:30, ogni 30'), `COPERTI_PER_ORARIO` (16 coperti in
   arrivo per mezz'ora), `MAX_COPERTI_SITO` (12). `sistemazionePer(liberi, coperti)` = un tavolo solo o 2–3 tavoli uniti (meno posti
   sprecati, stessa zona). `prenotabilita(...)` siede prima prenotazioni senza tavolo e richieste `da_confermare`, poi dà i coperti
