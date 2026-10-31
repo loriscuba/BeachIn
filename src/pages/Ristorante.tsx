@@ -586,8 +586,8 @@ function NuovaPrenotazione({
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block sm:col-span-2">
-          <span className="mb-1 block text-xs font-medium text-profondo/60">Nome</span>
-          <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="es. Fam. Rossi" className={campo} />
+          <span className="mb-1 block text-xs font-medium text-profondo/60">Nome e cognome</span>
+          <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="es. Mario Rossi" className={campo} />
         </label>
         <label className="block sm:col-span-2">
           <span className="mb-1 block text-xs font-medium text-profondo/60">Telefono</span>
