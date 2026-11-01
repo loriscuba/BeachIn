@@ -401,7 +401,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 ## Ristorante a sottosezioni (tab `?tab=`)
 - `Ristorante.tsx`: KPI + Tabs **Prenotazioni | Menu | Magazzino** (default Prenotazioni; il vecchio `?tab=tavoli` porta lì; componenti in `src/pages/ristorante/`).
 - **Menu** (`PannelloMenu`): traduzioni 5 lingue (it/en/fr/de/es, `src/lib/menuLingue.ts`: seed curato, poi MyMemory
-  + glossario), correzione manuale (`impostaTraduzione`), QR (`src/components/QrCodice.tsx`, lib `qrcode`, `stampaQr`),
+  + glossario), correzione manuale (`impostaTraduzione`), QR (`src/components/QrCodice.tsx`, lib `qrcode`, `stampaQr`; logo del lido `logoLido` al centro, correzione errori H, colore per `tipo`: tavoli blu `#1D4E89`, inviti eventi rosso `#B3261E` anche nella mail, altri navy),
   **Assistente vocale incorporato** (tolto dalla sidebar; `/assistente-vocale` → redirect a `/ristorante?tab=menu`).
   `aggiungiPiatto/rinominaPiatto` ritraducono da soli (`traduzioni: {}` = in corso). Lista unica "Menu" = `EditorMenu` divisa per **sezioni dinamiche** (`sezioniMenu` nel context, `CategoriaPiatto = string` = id sezione; `aggiungiSezione/rinominaSezione/rimuoviSezione/spostaSezione`, nomi tradotti con `nomeSezioneIn`); piatti modificabili al click (nome, prezzo, traduzione, sezione, **foto** `Piatto.foto` via `modificaPiatto`), aggiunta piatto per sezione; la foto appare nel menu pubblico; assistente in riquadro piccolo (`<AssistenteVocale compatto />`, senza la sua lista menu) sotto il QR.
 - **Menu pubblico**: rotta `/menu?tavolo=N&lang=xx` (`MenuPubblico.tsx`, fuori dallo shell), `urlMenu()` per i QR.

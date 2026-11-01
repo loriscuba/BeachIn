@@ -76,7 +76,7 @@ export function Planimetria({ prenGiorno, giorno, oggi }: { prenGiorno: Prenotaz
                 <Button dimensione="sm" className={azione} onClick={() => ripristinaDisposizione(giorno)} title="Il giorno torna alla disposizione standard"><RotateCcw className="h-4 w-4" /> Disposizione standard</Button>
                 <Button dimensione="sm" className={azione} onClick={() => salvaComeStandard(giorno)} title="Usa questa disposizione come nuovo standard"><Save className="h-4 w-4" /> Salva come standard</Button>
               </>}
-              <Button dimensione="sm" className={azione} onClick={() => stampaQr([...tavoli].sort((a, b) => a.numero - b.numero).map((t) => ({ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) })), config.nome)}><Printer className="h-4 w-4" /> QR di tutti i tavoli</Button>
+              <Button dimensione="sm" className={azione} onClick={() => stampaQr([...tavoli].sort((a, b) => a.numero - b.numero).map((t) => ({ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) })), config.nome, 'tavolo')}><Printer className="h-4 w-4" /> QR di tutti i tavoli</Button>
           </div>
         </div>
         <CardBody className="pt-3">
@@ -202,9 +202,9 @@ function PannelloTavolo({ tavolo: t, turno, standard, attive, onModifica, onAsse
       </>}
 
       <div className="flex items-center justify-between gap-2 border-t border-calce-200 pt-3">
-        <QrCodice url={urlMenu(t.numero)} className="w-16" />
+        <QrCodice tipo="tavolo" url={urlMenu(t.numero)} className="w-16" />
         <div className="flex flex-wrap justify-end gap-2">
-          <Button dimensione="sm" onClick={() => stampaQr([{ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) }], config.nome)}><Printer className="h-4 w-4" /> QR</Button>
+          <Button dimensione="sm" onClick={() => stampaQr([{ titolo: `Tavolo ${t.numero}`, sottotitolo: 'Menu · IT EN FR DE ES', url: urlMenu(t.numero) }], config.nome, 'tavolo')}><Printer className="h-4 w-4" /> QR</Button>
           <Button dimensione="sm" onClick={onElimina}><Trash2 className="h-4 w-4 text-boa" /> Elimina</Button>
         </div>
       </div>

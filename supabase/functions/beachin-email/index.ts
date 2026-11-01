@@ -43,7 +43,7 @@ function bloccoModifica(token: string, scadenza: string, base: string): string {
 function bloccoInvito(codice: string, base: string): string {
   const url = `${base.replace(/\/?$/, '/')}invito?c=${encodeURIComponent(codice)}`
   // QR come immagine remota: i client di posta (Gmail, Outlook) bloccano le immagini data: incorporate
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&color=0F3B4C&data=${encodeURIComponent(url)}`
+  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&ecc=H&color=B3261E&data=${encodeURIComponent(url)}`
   return `<div style="margin:24px 0;padding:20px;border:1px solid #DCE4E6;border-radius:16px;text-align:center">
 <p style="margin:0 0 12px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#2E7D9A"><b>Il tuo invito</b></p>
 <img src="${qr}" width="200" height="200" alt="QR dell'invito ${esc(codice)}" style="display:block;margin:0 auto">
