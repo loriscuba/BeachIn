@@ -36,7 +36,7 @@ export default function InvitoEvento() {
 
         {codice ? (
           <div className="mt-6 rounded-3xl bg-white p-5 text-profondo shadow-xl">
-            <QrCodice url={urlInvito(codice)} className="mx-auto w-64 max-w-full" />
+            <QrCodice tipo="evento" url={urlInvito(codice)} className="mx-auto w-64 max-w-full" />
             <p className="mt-3 font-mono text-2xl font-bold tracking-[0.3em]">{codice}</p>
             {entrati
               ? <p className="mt-2 inline-flex items-center gap-1.5 font-semibold text-[#2F6E5F]"><CircleCheck className="h-5 w-5" /> Ingresso registrato alle {oraDa(r?.arrivoTs)}</p>

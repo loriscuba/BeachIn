@@ -31,7 +31,7 @@ export function AzioniQrTavoli() {
 }
 
 const stampaTavoli = (righe: TavoloQr[]) =>
-  void stampaQr(righe.map((q) => ({ titolo: `Tavolo ${q.numero}`, sottotitolo: 'Inquadra e ordina dal telefono', url: urlTavoloQr(q.codice) })), config.nome)
+  void stampaQr(righe.map((q) => ({ titolo: `Tavolo ${q.numero}`, sottotitolo: 'Inquadra e ordina dal telefono', url: urlTavoloQr(q.codice) })), config.nome, 'tavolo')
 
 /** QR di un tavolo con menu, apri/chiudi e stampa (card del tavolo del cameriere). */
 export function DettaglioQr({ numero }: { numero: number }) {
@@ -42,7 +42,7 @@ export function DettaglioQr({ numero }: { numero: number }) {
   if (!q) return null
   return (
     <div className="space-y-3">
-      <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto w-48" />
+      <QrCodice tipo="tavolo" url={urlTavoloQr(q.codice)} className="mx-auto w-48" />
       <p className="break-all text-center text-[11px] text-profondo/50">{urlTavoloQr(q.codice)}</p>
       <div>
         <p className="mb-1 text-xs font-medium text-profondo/60">Menu del tavolo</p>

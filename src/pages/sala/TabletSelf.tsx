@@ -262,7 +262,7 @@ function QrTelefono({ tavolo, onChiudi }: { tavolo: number; onChiudi: () => void
         <Smartphone className={cn('mx-auto h-6 w-6', 'text-[color:var(--acc)]')} />
         <h3 className="mt-2 font-display text-2xl italic">Ordina dal tuo telefono</h3>
         <p className="mt-1 text-sm text-[#3B2A20]/70">Inquadra il codice con la fotocamera: si apre il menu del tavolo {tavolo}.</p>
-        {q && <QrCodice url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />}
+        {q && <QrCodice tipo="tavolo" url={urlTavoloQr(q.codice)} className="mx-auto mt-4 w-52 overflow-hidden rounded-xl bg-white p-2" />}
         <button type="button" onClick={onChiudi} className={cn('mt-5 rounded-full px-6 py-2 text-sm font-semibold', BTN)}>Chiudi</button>
       </div>
     </div>
