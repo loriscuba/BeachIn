@@ -1,3 +1,4 @@
+import { adattaPercorsoAlDominio } from './dominio'
 // Con BrowserRouter (Cloudflare, Vercel, produzione) un link in stile hash va convertito in percorso:
 // i manifest delle app installate partono da "./#/comandapp" e "./#/adminapp" (validi anche su GitHub Pages, HashRouter).
 // Modulo a parte, importato per primo in main.tsx: deve girare PRIMA che `router.tsx` crei il router,
@@ -12,4 +13,6 @@ if (import.meta.env.VITE_ROUTER === 'hash' && !window.location.hash) {
   const resto = window.location.pathname.startsWith(base) ? window.location.pathname.slice(base.length) : ''
   if (resto && resto !== 'index.html') window.history.replaceState(null, '', `${base}#/${resto}${window.location.search}`)
 }
+// Domini propri del lido (lidodeipini.it, app., gestione.): cosa apre la radice. Solo BrowserRouter (Cloudflare).
+if (import.meta.env.VITE_ROUTER !== 'hash') adattaPercorsoAlDominio()
 export {}
