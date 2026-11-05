@@ -1,3 +1,5 @@
+import { urlSuDominio } from './dominio'
+
 /** Indirizzo pubblico dell'app (Cloudflare Pages, BrowserRouter): usato quando la pagina gira dove un telefono non può arrivare. */
 const URL_PUBBLICO = 'https://beachin.pages.dev/'
 
@@ -7,6 +9,8 @@ const URL_PUBBLICO = 'https://beachin.pages.dev/'
  * altrimenti il QR conterrebbe un indirizzo non apribile dal telefono.
  */
 export function urlPubblico(rotta: string): string {
+  const suDominio = urlSuDominio(rotta)
+  if (suDominio) return suDominio
   const { protocol, hostname } = window.location
   const raggiungibile = protocol === 'https:' && /(\.pages\.dev|\.github\.io|\.vercel\.app)$/.test(hostname)
   if (!raggiungibile) return URL_PUBBLICO + rotta

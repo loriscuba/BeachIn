@@ -633,6 +633,13 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   (non citazioni). Menu ristorante = REALE (Menù del proprietario da restaurantguru: 25 piatti con prezzi, `seed/ristorante.ts`; food cost/allergeni stimati, bevande dimostrative). Restano dimostrativi: listino, eventi, recensioni del gestionale, numeri arenile.
 - Tripadvisor e gli altri siti sono bloccati dalla rete dell'ambiente: dati presi via WebSearch.
 
+## Domini propri del lido (nov 2026)
+Una build, più indirizzi: `src/config/domini.ts` (nomi) + `src/lib/dominio.ts` (`ruoloDominio`, `adattaPercorsoAlDominio`
+chiamata da `hashInPercorso.ts` prima del router, `percorsoPagina` per `PAGINE_CLIENTI`, `urlSuDominio` usato da `urlPubblico`).
+`lidodeipini.it`/`www.` → `/` è `SitoAnteprima` (router senza shell staff, `/sito/anteprima` riscritto in `/`, pagine staff → `/`);
+`app.` → radice e pagine staff su `/comandapp`; `gestione.` e ogni altro host (pages.dev, Vercel, localhost) invariati.
+Pagine clienti aperte ovunque: `PERCORSI_CLIENTI`. Guida per Loris: `docs/dominio/README.md`.
+
 ## Deploy produzione (Oracle: prod-web + prod-db)
 - **Ambienti**: *demo* = Pages/Vercel da `main` + Supabase Cloud Demo IPA (schema `beachin`); *produzione* = VM Oracle
   `prod-web` (web, Caddy, IP riservato 158.178.144.127 → https://158-178-144-127.sslip.io) + VM `prod-db` (Supabase

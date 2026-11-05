@@ -9,6 +9,7 @@ import { ModuliProvider } from './context/ModuliContext'
 import { SessioneProvider, useSessione } from './context/SessioneContext'
 import { caricaImpostazioni, sottoscriviImpostazioni } from './lib/impostazioni'
 import { avviaPresenza } from './lib/presenza'
+import { percorsoPagina } from './lib/dominio'
 import './styles/index.css'
 import './lib/bloccoZoom'
 
@@ -22,7 +23,7 @@ function Router() {
 // Al login/logout dello staff i dati si rileggono col nuovo ruolo (le policy RLS cambiano cosa si vede).
 // Le pagine dei clienti (QR del tavolo, menu, ComandApp, sito, invito) scaricano solo le loro tabelle: passando da una
 // all'altra, o al gestionale, i dati si ricaricano (chiave del provider).
-const paginaDi = ({ pathname, search }: { pathname: string; search: string }) => ({ percorso: pathname, cerca: search })
+const paginaDi = ({ pathname, search }: { pathname: string; search: string }) => ({ percorso: percorsoPagina(pathname), cerca: search })
 function Dati({ children }: { children: React.ReactNode }) {
   const { profilo } = useSessione()
   const [pagina, setPagina] = React.useState(() => paginaDi(router.state.location))
