@@ -60,7 +60,7 @@ modello "Redirect from WWW to root". Anche senza, `www.` apre già il sito.
      else perform vault.update_secret(v, 'https://lidodeipini.it/');
      end if;
    end $$;
-  ```
+   ```
 
    Le pagine `/invito` e `/prenotazione` funzionano anche sul dominio del sito, e "Visita il nostro sito" apre la radice.
    In produzione questo valore lo scrive il workflow **Deploy**: va aggiornato anche lì quando si passa in produzione.
