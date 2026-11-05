@@ -53,11 +53,14 @@ modello "Redirect from WWW to root". Anche senza, `www.` apre già il sito.
 
    ```sql
    -- se il segreto esiste già lo aggiorna, altrimenti lo crea
-   select coalesce(
-     (select vault.update_secret(id, 'https://lidodeipini.it/') from vault.secrets where name = 'beachin_app_url'),
-     vault.create_secret('https://lidodeipini.it/', 'beachin_app_url')
-   );
-   ```
+   do $$
+   declare v uuid := (select id from vault.secrets where name = 'beachin_app_url');
+   begin
+     if v is null then perform vault.create_secret('https://lidodeipini.it/', 'beachin_app_url');
+     else perform vault.update_secret(v, 'https://lidodeipini.it/');
+     end if;
+   end $$;
+  ```
 
    Le pagine `/invito` e `/prenotazione` funzionano anche sul dominio del sito, e "Visita il nostro sito" apre la radice.
    In produzione questo valore lo scrive il workflow **Deploy**: va aggiornato anche lì quando si passa in produzione.
