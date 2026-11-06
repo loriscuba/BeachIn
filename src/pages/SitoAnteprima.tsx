@@ -140,7 +140,7 @@ export default function SitoAnteprima() {
   const piatti = menu.filter((p) => ['antipasti', 'primi', 'secondi'].includes(p.categoria)).slice(0, 7)
 
   return (
-    <div className="min-h-screen bg-[#F5F8F9] text-profondo">
+    <div className="min-h-screen bg-white text-profondo">
       {/* Barra: trasparente sull'hero, piena quando si scorre */}
       <header className={cn(
         'fixed inset-x-0 top-0 z-40 transition-all duration-500',
@@ -179,34 +179,34 @@ export default function SitoAnteprima() {
       <div id="top" />
 
       {/* Hero "Prenota subito": titolo e due scelte a sinistra, foto con riquadro dal vivo a destra */}
-      <section className="relative overflow-hidden bg-[#F5F8F9] pt-28 sm:pt-32">
+      <section className="relative overflow-hidden bg-white pt-28 sm:pt-32">
         <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-5 pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:px-8 lg:pb-24">
           <div className="hero-in min-w-0">
             <p className="flex flex-wrap items-center gap-2 text-sm text-profondo/70">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-profondo/10 bg-white px-3 py-1"><MapPin className="h-3.5 w-3.5 text-cabina" /> {config.localita}</span>
               {meteo && <span className="inline-flex items-center gap-1.5 rounded-full border border-profondo/10 bg-white px-3 py-1"><Sun className="h-3.5 w-3.5 text-tenda" /> <span className="num">{Math.round(meteo.temp ?? meteo.max)}°</span> {etichettaMeteo[meteo.meteo]}</span>}
             </p>
-            <h1 className="mt-5 text-balance font-titolo text-[2.6rem] font-extrabold leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="mt-5 text-balance font-titolo text-[2.75rem] font-semibold leading-[1.02] tracking-[-0.035em] sm:text-6xl lg:text-[5.25rem]">
               {titoloHero}
             </h1>
-            {sottoHero && <p className="mt-3 font-titolo text-2xl font-bold sm:text-3xl"><span className="bg-[linear-gradient(transparent_58%,#F2C14E_58%)]">{sottoHero}</span></p>}
-            {homeSito.testo && <p className="mt-5 max-w-xl text-base leading-7 text-profondo/70 sm:text-lg">{homeSito.testo}</p>}
+            {sottoHero && <p className="mt-3 font-titolo text-2xl font-medium tracking-tight text-cabina sm:text-3xl">{sottoHero}</p>}
+            {homeSito.testo && <p className="mt-5 max-w-xl text-base leading-7 text-[#63707C] sm:text-lg">{homeSito.testo}</p>}
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {prenotaOmbrelloni && (
-                <button onClick={() => scrollTo('prenota')} className="group flex items-center gap-4 rounded-3xl bg-profondo p-5 text-left text-white shadow-xl shadow-profondo/20 transition-transform hover:-translate-y-0.5">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10"><Umbrella className="h-6 w-6 text-tenda" /></span>
+                <button onClick={() => scrollTo('prenota')} className="group flex items-center gap-4 rounded-full bg-[#0D2B44] py-3 pl-3 pr-6 text-left text-white transition-transform hover:-translate-y-0.5">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/10"><Umbrella className="h-6 w-6 text-tenda" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-lg font-bold">Ombrellone</span><span className="block text-sm text-white/70">{prezzoMin ? `Da ${euro(prezzoMin)} al giorno` : 'Scegli il posto sulla mappa'}</span></span>
                   <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                 </button>
               )}
-              <button onClick={() => scrollTo('prenota-tavolo')} className={cn('group flex items-center gap-4 rounded-3xl p-5 text-left transition-transform hover:-translate-y-0.5', prenotaOmbrelloni ? 'border border-profondo/10 bg-white text-profondo' : 'bg-profondo text-white shadow-xl shadow-profondo/20')}>
-                <span className={cn('grid h-12 w-12 shrink-0 place-items-center rounded-2xl', prenotaOmbrelloni ? 'bg-calce' : 'bg-white/10')}><UtensilsCrossed className={cn('h-6 w-6', prenotaOmbrelloni ? 'text-cabina' : 'text-tenda')} /></span>
+              <button onClick={() => scrollTo('prenota-tavolo')} className={cn('group flex items-center gap-4 rounded-full py-3 pl-3 pr-6 text-left transition-transform hover:-translate-y-0.5', prenotaOmbrelloni ? 'border border-profondo/10 bg-white text-profondo' : 'bg-[#0D2B44] text-white')}>
+                <span className={cn('grid h-12 w-12 shrink-0 place-items-center rounded-full', prenotaOmbrelloni ? 'bg-calce' : 'bg-white/10')}><UtensilsCrossed className={cn('h-6 w-6', prenotaOmbrelloni ? 'text-cabina' : 'text-tenda')} /></span>
                 <span className="min-w-0 flex-1"><span className="block text-lg font-bold">Tavolo</span><span className={cn('block text-sm', prenotaOmbrelloni ? 'text-profondo/60' : 'text-white/70')}>Pranzo e cena al ristorante</span></span>
                 <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
               </button>
               {!prenotaOmbrelloni && (
-                <button onClick={() => scrollTo('eventi')} className="group flex items-center gap-4 rounded-3xl border border-profondo/10 bg-white p-5 text-left text-profondo transition-transform hover:-translate-y-0.5">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-calce"><CalendarDays className="h-6 w-6 text-cabina" /></span>
+                <button onClick={() => scrollTo('eventi')} className="group flex items-center gap-4 rounded-full border border-profondo/10 bg-white py-3 pl-3 pr-6 text-left text-profondo transition-transform hover:-translate-y-0.5">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-calce"><CalendarDays className="h-6 w-6 text-cabina" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-lg font-bold">Eventi</span><span className="block text-sm text-profondo/60">Serate e appuntamenti</span></span>
                   <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                 </button>
@@ -217,12 +217,12 @@ export default function SitoAnteprima() {
 
           {/* Foto del lido con il riquadro "Oggi in spiaggia" sovrapposto */}
           <div className="relative min-w-0 pb-10 lg:pb-0">
-            <div className="aspect-[4/3] overflow-hidden rounded-[2rem] bg-profondo-900 shadow-2xl shadow-profondo/20 lg:aspect-[4/5]">
+            <div className="aspect-[4/3] overflow-hidden rounded-xl bg-profondo-900 lg:aspect-[4/5]">
               {videoHero && !movimentoRidotto && !homeSito.immagine
                 ? <video src={videoHero} poster={fotoHero} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full object-cover" />
                 : <img src={fotoHero} alt={`${config.nome}: la spiaggia`} className="h-full w-full object-cover object-[center_55%]" fetchPriority="high" />}
             </div>
-            <div className="dissolvi absolute inset-x-3 -bottom-2 rounded-3xl bg-white p-4 text-profondo shadow-[0_20px_50px_rgba(11,47,61,0.18)] sm:inset-x-auto sm:right-4 sm:w-[22rem] lg:-left-10 lg:right-auto lg:bottom-8">
+            <div className="dissolvi absolute inset-x-3 -bottom-2 rounded-2xl bg-white p-4 text-profondo shadow-[0_20px_50px_rgba(11,47,61,0.14)] sm:inset-x-auto sm:right-4 sm:w-[22rem] lg:-left-10 lg:right-auto lg:bottom-8">
               {ombrelloni && disp ? (
                 <button onClick={() => scrollTo(idPrenota)} className="block w-full text-left">
                   <div className="flex items-center justify-between gap-2">
@@ -240,7 +240,7 @@ export default function SitoAnteprima() {
                 <p className="flex items-center gap-2 font-bold"><Waves className="h-4 w-4 text-cabina" /> {config.nome}</p>
               )}
               {piattoGiorno && (
-                <button onClick={() => scrollTo('ristorante')} className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl bg-[#F5F8F9] px-3 py-2.5 text-left text-sm">
+                <button onClick={() => scrollTo('ristorante')} className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl bg-[#F3F6F8] px-3 py-2.5 text-left text-sm">
                   <span className="flex min-w-0 items-center gap-2"><UtensilsCrossed className="h-4 w-4 shrink-0 text-boa" /><span className="truncate"><span className="text-profondo/60">Oggi: </span><b>{piattoGiorno.nome}</b></span></span>
                   {piattoGiorno.prezzo != null && <b className="num shrink-0">{euro(piattoGiorno.prezzo)}</b>}
                 </button>
@@ -254,7 +254,7 @@ export default function SitoAnteprima() {
       <div className="relative -mt-px overflow-hidden border-y border-profondo/5 bg-white py-5">
         <div className="scorri flex w-max gap-10 whitespace-nowrap">
           {[...voceNastro, ...voceNastro].map((t, i) => (
-            <span key={i} className="flex items-center gap-10 font-display text-2xl italic text-profondo/70 sm:text-3xl">
+            <span key={i} className="flex items-center gap-10 font-titolo tracking-tight text-2xl font-medium text-profondo/60 sm:text-3xl">
               {t} <Sun className="h-5 w-5 text-tenda" />
             </span>
           ))}
@@ -264,7 +264,7 @@ export default function SitoAnteprima() {
       {/* Lo stabilimento */}
       <section className="mx-auto grid max-w-7xl items-center gap-14 px-5 py-20 lg:grid-cols-2 lg:gap-20 lg:px-8 lg:py-28">
         <div className="reveal relative mx-auto w-full max-w-lg lg:order-2">
-          <div className="aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl shadow-profondo/20">
+          <div className="aspect-[4/5] overflow-hidden rounded-xl shadow-2xl shadow-profondo/20">
             <img src={fotoSito.ombrelloniCielo} alt="Il lido sotto il cielo di Savona" loading="lazy" className="h-full w-full object-cover transition-transform duration-[1.5s] hover:scale-105" />
           </div>
           <div className="absolute -bottom-10 -left-6 w-40 rotate-[-6deg] overflow-hidden rounded-2xl border-[6px] border-white shadow-2xl sm:-left-12 sm:w-52">
@@ -272,12 +272,12 @@ export default function SitoAnteprima() {
           </div>
           <div className="absolute -right-3 top-8 rounded-2xl bg-tenda px-5 py-4 text-profondo shadow-xl sm:-right-8">
             <p className="text-xs font-semibold uppercase tracking-widest">Aperti ogni giorno</p>
-            <p className="font-display text-2xl font-semibold">{config.orari.apertura} – {config.orari.chiusura}</p>
+            <p className="font-titolo tracking-tight text-2xl font-semibold">{config.orari.apertura} – {config.orari.chiusura}</p>
           </div>
         </div>
         <div className="reveal">
           <Occhiello>Lo stabilimento</Occhiello>
-          <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">Il mare come dovrebbe <em className="text-cabina">essere</em>.</h2>
+          <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">Il mare come dovrebbe <em className="text-cabina">essere</em>.</h2>
           <p className="mt-6 text-lg leading-8 text-profondo/70">A tre chilometri dal centro di Savona, tra hotel, residence e negozi: un lido familiare dove le giornate hanno il ritmo giusto. {ombrelloni && 'Ombrellone e lettini, '}Docce calde e fredde, un’area relax con divanetti e un ristorante di pesce aperto tutto l’anno.</p>
           <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
             <Numero valore={config.tripadvisor.voto} decimali={1} etichetta="su 5 · Tripadvisor" />
@@ -296,7 +296,7 @@ export default function SitoAnteprima() {
           <div className="reveal flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div className="max-w-2xl">
               <Occhiello>I servizi</Occhiello>
-              <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Una giornata perfetta, <em className="text-cabina">dall’alba al tramonto</em>.</h2>
+              <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-5xl">Una giornata perfetta, <em className="text-cabina">dall’alba al tramonto</em>.</h2>
             </div>
             <p className="max-w-sm text-profondo/60">Tutto quello che ti serve è a portata di infradito: noi pensiamo ai dettagli, tu al mare.</p>
           </div>
@@ -320,19 +320,19 @@ export default function SitoAnteprima() {
         <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-2 lg:gap-16 lg:px-8">
           <div className="reveal lg:sticky lg:top-24 lg:self-start">
             <div className="relative">
-              <div className="aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl shadow-profondo/20 sm:aspect-[4/3] lg:aspect-[4/5]">
+              <div className="aspect-[4/5] overflow-hidden rounded-xl shadow-2xl shadow-profondo/20 sm:aspect-[4/3] lg:aspect-[4/5]">
                 <img src={fotoSito.ristorante} alt="La sala del ristorante sulla spiaggia, con vista mare" loading="lazy" className="h-full w-full object-cover" />
               </div>
               <div className="absolute -bottom-6 left-6 right-6 grid grid-cols-2 divide-x divide-white/15 rounded-2xl bg-profondo p-5 text-white shadow-2xl sm:left-auto sm:right-8 sm:w-80">
-                <div className="pr-4"><p className="text-xs uppercase tracking-widest text-tenda">Pranzo</p><p className="mt-1 font-display text-lg">{config.orari.ristorantePranzo}</p></div>
-                <div className="pl-4"><p className="text-xs uppercase tracking-widest text-tenda">Cena</p><p className="mt-1 font-display text-lg">{config.orari.ristoranteCena}</p></div>
+                <div className="pr-4"><p className="text-xs uppercase tracking-widest text-tenda">Pranzo</p><p className="mt-1 font-titolo tracking-tight text-lg">{config.orari.ristorantePranzo}</p></div>
+                <div className="pl-4"><p className="text-xs uppercase tracking-widest text-tenda">Cena</p><p className="mt-1 font-titolo tracking-tight text-lg">{config.orari.ristoranteCena}</p></div>
               </div>
             </div>
           </div>
           <div className="pt-6 lg:pt-0">
             <div className="reveal">
               <Occhiello>Il ristorante</Occhiello>
-              <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Il sapore delle <em className="text-cabina">vacanze</em>.</h2>
+              <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-5xl">Il sapore delle <em className="text-cabina">vacanze</em>.</h2>
               <p className="mt-5 text-lg leading-8 text-profondo/70">Il pesce freschissimo lo scegli direttamente dal banco. Piatti di mare e di terra, opzioni vegetariane, vini e birre artigianali: a pranzo in costume tra le cabine o a cena con vista mare, dentro o all’aperto. Aperto tutto l’anno.</p>
               <div className="mt-6 flex flex-wrap gap-2 text-sm">
                 <span className="rounded-full bg-tenda/25 px-3 py-1.5 font-semibold text-[#7A5A12]">Prezzo medio ~{config.prezzoMedioRistorante} €</span>
@@ -344,7 +344,7 @@ export default function SitoAnteprima() {
               {piatti.map((p) => (
                 <li key={p.id} className="group">
                   <div className="flex items-baseline gap-3">
-                    <span className="font-display text-xl text-profondo transition-colors group-hover:text-cabina">{p.nome}</span>
+                    <span className="font-titolo tracking-tight text-xl text-profondo transition-colors group-hover:text-cabina">{p.nome}</span>
                     <span className="mb-1 flex-1 border-b border-dotted border-profondo/25" />
                     <span className="num font-semibold text-profondo">{euro(p.prezzo)}</span>
                   </div>
@@ -367,7 +367,7 @@ export default function SitoAnteprima() {
         <div className="absolute inset-0 bg-gradient-to-t from-profondo-900/90 via-profondo-900/55 to-profondo-900/40" />
         <div className="relative mx-auto max-w-4xl px-5 text-center">
           <p className="reveal text-xs font-semibold uppercase tracking-[0.3em] text-tenda">Quando il sole scende</p>
-          <h2 className="reveal mt-4 font-display text-4xl font-semibold leading-tight sm:text-6xl">La spiaggia cambia ritmo.</h2>
+          <h2 className="reveal mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-6xl">La spiaggia cambia ritmo.</h2>
           <Recensioni temi={temiRecensioni} />
         </div>
       </section>
@@ -380,13 +380,13 @@ export default function SitoAnteprima() {
         <div className="relative mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-5 lg:gap-16 lg:px-8">
           <div className="reveal lg:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-tenda">Prenota</p>
-            <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Il tuo posto al sole <em className="text-tenda">ti aspetta</em>.</h2>
+            <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-5xl">Il tuo posto al sole <em className="text-tenda">ti aspetta</em>.</h2>
             <p className="mt-5 max-w-md leading-7 text-white/70">Invia la richiesta: ricevi subito la ricevuta (per email, su WhatsApp o entrambi, secondo i recapiti che lasci) e ti confermiamo la postazione in pochi minuti.</p>
             {disp && (
               <div className="mt-10 flex items-center gap-6">
                 <Anello percento={disp.occupazione} />
                 <div>
-                  <p className="font-display text-5xl font-semibold"><Contatore valore={disp.libere} /></p>
+                  <p className="font-titolo tracking-tight text-5xl font-semibold"><Contatore valore={disp.libere} /></p>
                   <p className="text-white/70">ombrelloni liberi su {disp.totali}</p>
                   <p className="mt-1 text-xs capitalize text-white/50">{dataEstesa(config.stagione.oggi)}</p>
                 </div>
@@ -411,7 +411,7 @@ export default function SitoAnteprima() {
         <div className="mx-auto max-w-5xl px-5 lg:px-8">
           <div className="reveal text-center">
             <Occhiello centrato>Listino {config.stagione.anno}</Occhiello>
-            <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Ombrellone + 2 lettini</h2>
+            <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-5xl">Ombrellone + 2 lettini</h2>
             <p className="mt-3 text-profondo/60">Tariffa giornaliera per fila e periodo · prezzi sincronizzati col gestionale.</p>
             <p className="mt-1 text-xs text-profondo/40">Tariffe dimostrative: si aggiornano dal gestionale (Tariffe).</p>
           </div>
@@ -425,7 +425,7 @@ export default function SitoAnteprima() {
                 {file.map((f, i) => (
                   <tr key={f}>
                     <td className="px-4 py-1.5">
-                      <span className="font-display text-lg font-semibold text-profondo">Fila {f}</span>
+                      <span className="font-titolo tracking-tight text-lg font-semibold text-profondo">Fila {f}</span>
                       {i === 0 && <span className="ml-2 rounded-full bg-tenda/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#7A5A12]">fronte mare</span>}
                     </td>
                     {periodi.map((pp) => {
@@ -455,7 +455,7 @@ export default function SitoAnteprima() {
           <div className="reveal flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <Occhiello>Eventi</Occhiello>
-              <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Cosa succede <em className="text-cabina">in spiaggia</em></h2>
+              <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-5xl">Cosa succede <em className="text-cabina">in spiaggia</em></h2>
             </div>
             <p className="max-w-sm text-profondo/60">Tornei, musica, cene sotto le stelle. Aggiornati dal gestionale in tempo reale.</p>
           </div>
@@ -475,14 +475,14 @@ export default function SitoAnteprima() {
                   {e.foto && <img src={e.foto} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-profondo-900/95 via-profondo-900/30 to-transparent" />
                   <div className="absolute left-4 top-4 rounded-2xl bg-white/95 px-3 py-2 text-center text-profondo shadow">
-                    <p className="font-display text-2xl font-semibold leading-none">{Number(gg)}</p>
+                    <p className="font-titolo tracking-tight text-2xl font-semibold leading-none">{Number(gg)}</p>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-profondo/60">{mesi[Number(mm) - 1]}</p>
                   </div>
                   {passato
                     ? <span className="absolute right-4 top-4 rounded-full bg-profondo/80 px-2.5 py-1 text-xs font-bold backdrop-blur">Concluso</span>
                     : !!e.prezzo && <span className="absolute right-4 top-4 rounded-full bg-boa px-2.5 py-1 text-xs font-bold">{euro(e.prezzo)}</span>}
                   <div className="absolute inset-x-0 bottom-0 p-5">
-                    <h3 className="font-display text-2xl font-semibold leading-tight">{e.nome}</h3>
+                    <h3 className="font-titolo tracking-tight text-2xl font-semibold leading-tight">{e.nome}</h3>
                     <p className="mt-1 line-clamp-2 text-sm text-white/75">{e.descrizione}</p>
                     <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-tenda">
                       {passato ? (nFoto > 0 ? `Rivedi le foto (${nFoto})` : 'Rivivi l’evento') : (canaliPrenotazione.eventi ? 'Scopri e prenota' : 'Scopri di più')}
@@ -502,14 +502,14 @@ export default function SitoAnteprima() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="reveal text-center">
               <Occhiello centrato>Galleria</Occhiello>
-              <h2 className="mt-4 font-display text-4xl font-semibold leading-tight sm:text-5xl">Cartoline dalla <em className="text-cabina">nostra spiaggia</em></h2>
+              <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight sm:text-5xl">Cartoline dalla <em className="text-cabina">nostra spiaggia</em></h2>
             </div>
             <div className="mt-12 columns-2 gap-3 md:columns-3 lg:gap-4">
               {fotoGalleria.map((f, i) => (
                 <button key={f.id} onClick={() => setFoto(i)} className="reveal group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-2xl lg:mb-4">
                   <img src={f.immagine} alt={f.titolo} loading="lazy" className="w-full transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 flex items-end bg-gradient-to-t from-profondo-900/70 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <span className="font-display text-lg text-white">{f.titolo}</span>
+                    <span className="font-titolo tracking-tight text-lg text-white">{f.titolo}</span>
                   </div>
                 </button>
               ))}
@@ -520,10 +520,10 @@ export default function SitoAnteprima() {
 
       {/* Contatti */}
       <section id="contatti" className="scroll-mt-20 px-5 pb-20 lg:px-8 lg:pb-28">
-        <div className="reveal mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] bg-profondo text-white shadow-2xl shadow-profondo/20 lg:grid-cols-2">
+        <div className="reveal mx-auto grid max-w-7xl overflow-hidden rounded-xl bg-profondo text-white shadow-2xl shadow-profondo/20 lg:grid-cols-2">
           <div className="p-8 sm:p-12">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-tenda">Contatti</p>
-            <h2 className="mt-4 font-display text-4xl font-semibold leading-tight">Ci vediamo <em className="text-tenda">al mare</em>.</h2>
+            <h2 className="mt-4 font-titolo tracking-tight text-4xl font-semibold leading-tight">Ci vediamo <em className="text-tenda">al mare</em>.</h2>
             <ul className="mt-8 space-y-5">
               {[
                 { i: MapPin, t: 'Dove siamo', v: `${config.indirizzo} ${config.localita} · a 3 km dal centro`, href: config.mappa },
@@ -646,7 +646,7 @@ function Contatore({ valore, decimali = 0 }: { valore: number; decimali?: number
 function Numero({ valore, etichetta, decimali }: { valore: number; etichetta: string; decimali?: number }) {
   return (
     <div className="border-l-2 border-tenda pl-4">
-      <p className="font-display text-4xl font-semibold text-profondo"><Contatore valore={valore} decimali={decimali} /></p>
+      <p className="font-titolo tracking-tight text-4xl font-semibold text-profondo"><Contatore valore={valore} decimali={decimali} /></p>
       <p className="mt-1 text-sm text-profondo/55">{etichetta}</p>
     </div>
   )
@@ -667,7 +667,7 @@ function TesseraFoto({ foto, titolo, testo, icona: Icona, classe }: { foto: stri
       <div className="absolute inset-0 bg-gradient-to-t from-profondo-900/90 via-profondo-900/20 to-transparent transition-opacity duration-500 group-hover:opacity-90" />
       <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-6">
         <span className="mb-2 grid h-9 w-9 place-items-center rounded-full bg-white/15 backdrop-blur"><Icona className="h-4 w-4" /></span>
-        <h3 className="font-display text-xl font-semibold leading-tight sm:text-2xl">{titolo}</h3>
+        <h3 className="font-titolo tracking-tight text-xl font-semibold leading-tight sm:text-2xl">{titolo}</h3>
         <p className="mt-1 hidden text-sm text-white/75 sm:block">{testo}</p>
       </div>
     </div>
@@ -684,7 +684,7 @@ function Recensioni({ temi }: { temi: string[] }) {
   return (
     <div className="reveal mt-12">
       <Quote className="mx-auto h-10 w-10 text-tenda/80" />
-      <p key={i} className="dissolvi mx-auto mt-4 min-h-[6rem] max-w-3xl font-display text-2xl italic leading-snug text-white/95 sm:text-4xl">{temi[i]}</p>
+      <p key={i} className="dissolvi mx-auto mt-4 min-h-[6rem] max-w-3xl font-titolo tracking-tight text-2xl italic leading-snug text-white/95 sm:text-4xl">{temi[i]}</p>
       <p className="mt-2 text-xs uppercase tracking-widest text-white/50">Cosa dicono i clienti · in sintesi dalle recensioni</p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
         <button onClick={() => setI((x) => (x - 1 + temi.length) % temi.length)} aria-label="Precedente" className="rounded-full border border-white/30 p-2 hover:bg-white/10"><ChevronLeft className="h-4 w-4" /></button>
@@ -738,7 +738,7 @@ function Lightbox({ foto, indice, onCambia, onChiudi }: { foto: { src: string; t
       <button onClick={(e) => { e.stopPropagation(); onCambia((indice + 1) % n) }} aria-label="Successiva" className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20"><ChevronRight className="h-5 w-5" /></button>
       <figure key={indice} className="dissolvi max-w-5xl" onClick={(e) => e.stopPropagation()}>
         <img src={f.src} alt={f.titolo} className="max-h-[80vh] w-auto rounded-2xl object-contain shadow-2xl" />
-        <figcaption className="mt-3 text-center text-white/80"><span className="font-display text-lg">{f.titolo}</span> <span className="num ml-2 text-xs text-white/40">{indice + 1} / {n}</span></figcaption>
+        <figcaption className="mt-3 text-center text-white/80"><span className="font-titolo tracking-tight text-lg">{f.titolo}</span> <span className="num ml-2 text-xs text-white/40">{indice + 1} / {n}</span></figcaption>
       </figure>
     </div>
   )
@@ -860,7 +860,7 @@ function FormOmbrellone({ onInviato }: { onInviato: (nome: string, dove: string)
   return (
     <form onSubmit={(e) => { e.preventDefault(); void invio.invia(() => inviaRichiestaOmbrellone({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), dal: f.dal, al: f.al, tipologiaPostazione: f.tipologia, persone: Math.max(1, Number(f.persone) || 1) }), () => { setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }) }}
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 text-profondo shadow-2xl shadow-profondo-900/30 sm:p-8">
-      <p className="col-span-2 font-display text-2xl font-semibold">Richiedi il tuo ombrellone</p>
+      <p className="col-span-2 font-titolo tracking-tight text-2xl font-semibold">Richiedi il tuo ombrellone</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
       <Campo label="Email" mezzo><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
       <Campo label="Cellulare" mezzo><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
@@ -918,7 +918,7 @@ export function FormRistorante({ onInviato }: { onInviato: (nome: string, dove: 
   return (
     <form onSubmit={(e) => { e.preventDefault(); void invio.invia(() => inviaRichiestaRistorante({ nome: f.nome.trim(), email: f.email.trim(), telefono: f.telefono.trim(), data: f.data, turno: f.turno, ora: f.ora, coperti: Math.max(1, nCoperti), note: f.note.trim() || undefined }), () => { setInviato(true); onInviato(f.nome.trim().split(' ')[0], doveScritto(f.email, f.telefono)) }) }}
       className="grid grid-cols-2 gap-4 rounded-3xl bg-white p-6 shadow-xl shadow-profondo/10 ring-1 ring-calce-200 sm:p-8">
-      <p className="col-span-2 font-display text-2xl font-semibold text-profondo">Prenota un tavolo</p>
+      <p className="col-span-2 font-titolo tracking-tight text-2xl font-semibold text-profondo">Prenota un tavolo</p>
       <Campo label="Nome e cognome" span2><input required className={pc} value={f.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Mario Rossi" /></Campo>
       <Campo label="Email" mezzo><input type="email" className={pc} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="tu@email.it" /></Campo>
       <Campo label="Cellulare" mezzo><input type="tel" className={pc} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="340 1234567" /></Campo>
@@ -1034,7 +1034,7 @@ function ConsensoPrivacy({ checked, onChange }: { checked: boolean; onChange: (v
         <div className="fixed inset-0 z-[80] grid place-items-center bg-profondo-900/60 p-4 backdrop-blur-sm" onClick={() => setAperta(false)}>
           <div role="dialog" aria-modal="true" aria-label="Informativa privacy" onClick={(e) => e.stopPropagation()} className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 text-sm leading-6 text-profondo shadow-2xl sm:p-8">
             <div className="flex items-start justify-between gap-3">
-              <p className="font-display text-2xl font-semibold">Informativa privacy</p>
+              <p className="font-titolo tracking-tight text-2xl font-semibold">Informativa privacy</p>
               <button type="button" onClick={() => setAperta(false)} aria-label="Chiudi" className="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-calce"><X className="h-5 w-5" /></button>
             </div>
             <p className="mt-1 text-xs text-profondo/55">ai sensi dell’art. 13 del Regolamento UE 2016/679 (GDPR)</p>
