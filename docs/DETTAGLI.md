@@ -700,3 +700,15 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
   `beachin-push` tipo `cliente` (push allo staff); centro notifiche: categorie prenotazioni/eventi. Le funzioni trigger usate sono quelle già
   esistenti (`email_richiesta`, `notifica_nuova_richiesta`), quindi sul Demo funzionano anche senza Vault.
 - Limite noto: finché manca la fase 2 RLS chi legge apposta le tabelle vede anche i token (come nomi e telefoni).
+
+## Sito pubblico in stile "hotel elegante" (nov 2026)
+- `SitoAnteprima` ridisegnato prendendo ritmo e transizioni dal modello Webflow Elbergo (codice scritto da zero, niente testi/immagini del modello).
+  Colori: blu #00253F, sabbia #E8DCC8, marrone #5C4D40, crema #F9F6F0. Titoli maiuscoli in `font-titolo` (Instrument Serif, Google Fonts OFL).
+- Ordine: barra annunci scorrevole (voci nastro) → testata bianca fissa (Prenota ora, telefono, Menu a tutto schermo) → hero foto/video con
+  pulsanti Ombrellone/Tavolo, play/pausa video e riquadro "Oggi in spiaggia" (liberi + postazioni + meteo, piatto del giorno = 1ª voce lavagnetta)
+  → "Il lido" con capsule di foto che si impilano (sticky) → frase che si colora allo scroll (`TestoRiempito`) → carosello servizi (`Carosello`,
+  numeri e barra) → numeri con barre sabbia (`Barra`) → ristorante in pannello crema (menu + `FormRistorante`) → prenota ombrellone con foto ad arco
+  → listino → eventi → recensioni → galleria → invito finale su foto → piede marrone con voci grandi e contatti (`#contatti`).
+- Transizioni: `.reveal`, `.foto-svela` (foto che si apre dal basso), `.pulsante-el` + `Rotola` (testo che rotola), `.barra-el` (in `src/styles/index.css`).
+- `/sito/anteprima` scarica anche `lavagnetta` (sola lettura, `PAGINE_CLIENTI`).
+- Storia: 3 direzioni https://claude.ai/artifact/HW9Hj3FNroJTuR8JfiR4y4 (C scelta il 06/11), poi Caladan, poi Elbergo su richiesta di Loris.

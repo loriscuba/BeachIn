@@ -41,6 +41,7 @@ export default {
       },
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],
+        titolo: ['"Instrument Serif"', 'Georgia', 'serif'],
         gesso: ['Caveat', 'Comic Sans MS', 'cursive'],
         sans: [
           'Inter',
