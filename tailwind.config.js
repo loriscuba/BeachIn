@@ -41,7 +41,7 @@ export default {
       },
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],
-        titolo: ['"Inter Tight"', 'Inter', 'system-ui', 'sans-serif'],
+        titolo: ['"Instrument Serif"', 'Georgia', 'serif'],
         gesso: ['Caveat', 'Comic Sans MS', 'cursive'],
         sans: [
           'Inter',
