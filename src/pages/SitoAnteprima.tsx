@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowDown, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Star, Phone, Mail, MapPin,
+  ArrowLeft, ArrowRight, Umbrella, Home, Coffee, UtensilsCrossed, Star, Phone, Mail, MapPin,
   Clock, Check, CalendarDays, Menu as MenuIcon, X, Sparkles, Ticket, ChevronLeft, ChevronRight, Quote, Sun, ShowerHead, Sofa, Waves,
   MessageCircle,
 } from 'lucide-react'
-import type { Evento, FilaId, Periodo, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
+import type { Evento, FilaId, Meteo, Periodo, Turno, TipologiaPostazione, VoceTariffa } from '@/data/types'
 import { getDisponibilitaSito, getListinoPubblicato } from '@/data/api'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
 import { fotoSito, logoLido, videoHero } from '@/assets/sito'
 import { useModuli } from '@/context/ModuliContext'
+import { useMeteoOggi } from '@/hooks/useMeteoOggi'
 import { Modal } from '@/components/ui/Modal'
 import { euro, dataEstesa } from '@/lib/formatters'
 import { etichettePeriodo, etichetteCategoriaPiatto } from '@/lib/etichette'
@@ -35,10 +36,12 @@ const temiRecensioni = [
   'Accoglienza familiare, cortese e sempre disponibile',
   'Tavoli tra le cabine, con il mare a due passi',
 ]
+const etichettaMeteo: Record<Meteo, string> = { sole: 'sole', poco_nuvoloso: 'poco nuvoloso', nuvoloso: 'nuvoloso', pioggia: 'pioggia', temporale: 'temporale' }
 const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 
 export default function SitoAnteprima() {
-  const { eventi: tuttiEventi, canaliPrenotazione, galleria, menu, sezioniMenu, homeSito, prezziListino } = useDemoData()
+  const { eventi: tuttiEventi, canaliPrenotazione, galleria, menu, sezioniMenu, homeSito, prezziListino, lavagnetta } = useDemoData()
+  const meteo = useMeteoOggi()
   const eventi = tuttiEventi.filter((e) => e.pubblicato !== false) // le bozze non si vedono
   // Gestione ombrelloni (modulo Arenile): se spento, dal sito spariscono prenotazione, listino e disponibilità.
   const ombrelloni = useModuli().moduloAttivo('arenile')
@@ -55,7 +58,6 @@ export default function SitoAnteprima() {
   const [scrollato, setScrollato] = useState(false)
   const [oltreHero, setOltreHero] = useState(false)
   const [foto, setFoto] = useState<number>()
-  const heroImg = useRef<HTMLDivElement>(null)
   const [movimentoRidotto] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 
   useEffect(() => {
@@ -67,14 +69,12 @@ export default function SitoAnteprima() {
   // Barra che si riempie allo scroll + parallasse leggera sulla foto dell'hero.
   useEffect(() => {
     let raf = 0
-    const ridotto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const onScroll = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         const y = window.scrollY
         setScrollato(y > 40)
         setOltreHero(y > window.innerHeight * 0.8)
-        if (heroImg.current && !ridotto && y < window.innerHeight * 1.2) heroImg.current.style.transform = `translate3d(0, ${y * 0.35}px, 0)`
       })
     }
     onScroll()
@@ -135,124 +135,123 @@ export default function SitoAnteprima() {
   // foto di apertura scelta dal gestore (Sito → Contenuti); senza, video o foto dal drone
   const fotoHero = homeSito.immagine || fotoSito.spiaggiaAlto
   const waSito = (config.whatsapp || '').replace(/[^\d]/g, '')
+  // piatto del giorno nel riquadro dell'hero: prima voce della lavagnetta pubblicata, se c'è
+  const piattoGiorno = lavagnetta[0]
   const piatti = menu.filter((p) => ['antipasti', 'primi', 'secondi'].includes(p.categoria)).slice(0, 7)
 
   return (
-    <div className="min-h-screen bg-[#FBF8F2] text-profondo">
+    <div className="min-h-screen bg-[#F5F8F9] text-profondo">
       {/* Barra: trasparente sull'hero, piena quando si scorre */}
       <header className={cn(
         'fixed inset-x-0 top-0 z-40 transition-all duration-500',
-        scrollato || menuMobile ? 'bg-profondo/90 shadow-[0_8px_30px_rgba(11,44,57,0.25)] backdrop-blur-md' : 'bg-gradient-to-b from-profondo-900/60 to-transparent',
+        scrollato || menuMobile ? 'bg-white/90 shadow-[0_8px_30px_rgba(11,44,57,0.10)] backdrop-blur-md' : 'bg-transparent',
       )}>
         <div className={cn('mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 transition-all duration-500 lg:px-8', scrollato ? 'py-2.5' : 'py-4')}>
-          <button onClick={() => scrollTo('top')} className="shrink-0" aria-label={config.nome}><img src={logoLido} alt={config.nome} className={cn('w-auto brightness-0 invert drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] transition-all duration-500', scrollato ? 'h-12' : 'h-20 sm:h-24')} /></button>
+          <button onClick={() => scrollTo('top')} className="shrink-0" aria-label={config.nome}><img src={logoLido} alt={config.nome} className={cn('w-auto transition-all duration-500', scrollato ? 'h-11' : 'h-14 sm:h-16')} /></button>
           <nav className="hidden items-center gap-6 lg:flex">
             {voci.map(([id, label]) => (
-              <button key={id} onClick={() => scrollTo(id)} className="group relative text-sm font-medium text-white/80 transition-colors hover:text-white">
+              <button key={id} onClick={() => scrollTo(id)} className="group relative text-sm font-medium text-profondo/70 transition-colors hover:text-profondo">
                 {label}
                 <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-tenda transition-transform duration-300 group-hover:scale-x-100" />
               </button>
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/sito" className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20 sm:inline-flex">
+            <Link to="/sito" className="hidden items-center gap-2 rounded-full border border-profondo/10 bg-white px-3 py-2 text-sm font-medium text-profondo hover:bg-calce sm:inline-flex">
               <ArrowLeft className="h-4 w-4" /> Gestionale
             </Link>
             <button onClick={() => scrollTo(idPrenota)} className="hidden rounded-full bg-boa px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-boa/30 transition-transform hover:scale-105 xl:inline-flex">Prenota</button>
-            <button onClick={() => setMenuMobile((v) => !v)} className="rounded-full p-2 text-white lg:hidden" aria-label="Menu">
+            <button onClick={() => setMenuMobile((v) => !v)} className="rounded-full p-2 text-profondo lg:hidden" aria-label="Menu">
               {menuMobile ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
             </button>
           </div>
         </div>
         {menuMobile && (
-          <div className="border-t border-white/10 px-5 pb-5 pt-2 lg:hidden">
+          <div className="border-t border-profondo/10 px-5 pb-5 pt-2 lg:hidden">
             {voci.map(([id, label]) => (
-              <button key={id} onClick={() => scrollTo(id)} className="block w-full border-b border-white/10 py-3 text-left font-display text-2xl text-white">{label}</button>
+              <button key={id} onClick={() => scrollTo(id)} className="block w-full border-b border-profondo/10 py-3 text-left font-titolo text-2xl font-bold text-profondo">{label}</button>
             ))}
-            <Link to="/sito" className="mt-3 block py-2 text-sm text-tenda">Vai al gestionale →</Link>
+            <Link to="/sito" className="mt-3 block py-2 text-sm text-cabina">Vai al gestionale →</Link>
           </div>
         )}
       </header>
 
       <div id="top" />
 
-      {/* Hero a tutto schermo */}
-      <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-profondo-900 text-white">
-        <div ref={heroImg} className="absolute inset-0 will-change-transform">
-          {videoHero && !movimentoRidotto && !homeSito.immagine
-            ? <video src={videoHero} poster={fotoHero} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full scale-105 object-cover" />
-            : <img src={fotoHero} alt={`${config.nome}: la spiaggia`} className="kenburns h-full w-full object-cover object-[center_55%]" fetchPriority="high" />}
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-profondo-900 via-profondo-900/35 to-profondo-900/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-profondo-900/60 via-transparent to-transparent" />
-
-        <div className="relative mx-auto w-full max-w-7xl px-5 pb-40 pt-32 lg:px-8 lg:pb-48">
-          <div className="hero-in max-w-3xl">
-            <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-tenda">
-              <span className="h-px w-10 bg-tenda" /> {config.localita}
+      {/* Hero "Prenota subito": titolo e due scelte a sinistra, foto con riquadro dal vivo a destra */}
+      <section className="relative overflow-hidden bg-[#F5F8F9] pt-28 sm:pt-32">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-5 pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:px-8 lg:pb-24">
+          <div className="hero-in min-w-0">
+            <p className="flex flex-wrap items-center gap-2 text-sm text-profondo/70">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-profondo/10 bg-white px-3 py-1"><MapPin className="h-3.5 w-3.5 text-cabina" /> {config.localita}</span>
+              {meteo && <span className="inline-flex items-center gap-1.5 rounded-full border border-profondo/10 bg-white px-3 py-1"><Sun className="h-3.5 w-3.5 text-tenda" /> <span className="num">{Math.round(meteo.temp ?? meteo.max)}°</span> {etichettaMeteo[meteo.meteo]}</span>}
             </p>
-            <h1 className="mt-5 font-display text-5xl font-semibold leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl">
+            <h1 className="mt-5 text-balance font-titolo text-[2.6rem] font-extrabold leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
               {titoloHero}
             </h1>
-            {sottoHero && <p className="mt-3 font-display text-3xl italic text-white/90 sm:text-4xl lg:text-5xl">{sottoHero}</p>}
-            <p className="mt-6 max-w-xl text-base leading-7 text-white/80 sm:text-lg">{homeSito.testo}</p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              {prenotaOmbrelloni ? (
-                <>
-                  <button onClick={() => scrollTo('prenota')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
-                    <Umbrella className="h-5 w-5" /> Prenota l’ombrellone <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </button>
-                  <button onClick={() => scrollTo('prenota-tavolo')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
-                    <UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => scrollTo('prenota-tavolo')} className="group inline-flex items-center gap-2 rounded-full bg-boa px-7 py-4 font-semibold text-white shadow-xl shadow-boa/30 transition-all hover:scale-[1.03] hover:bg-[#ee6440]">
-                    <UtensilsCrossed className="h-5 w-5" /> Prenota un tavolo <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </button>
-                  <button onClick={() => scrollTo('eventi')} className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20">
-                    <CalendarDays className="h-5 w-5" /> Scopri gli eventi
-                  </button>
-                </>
+            {sottoHero && <p className="mt-3 font-titolo text-2xl font-bold sm:text-3xl"><span className="bg-[linear-gradient(transparent_58%,#F2C14E_58%)]">{sottoHero}</span></p>}
+            {homeSito.testo && <p className="mt-5 max-w-xl text-base leading-7 text-profondo/70 sm:text-lg">{homeSito.testo}</p>}
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              {prenotaOmbrelloni && (
+                <button onClick={() => scrollTo('prenota')} className="group flex items-center gap-4 rounded-3xl bg-profondo p-5 text-left text-white shadow-xl shadow-profondo/20 transition-transform hover:-translate-y-0.5">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10"><Umbrella className="h-6 w-6 text-tenda" /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-lg font-bold">Ombrellone</span><span className="block text-sm text-white/70">{prezzoMin ? `Da ${euro(prezzoMin)} al giorno` : 'Scegli il posto sulla mappa'}</span></span>
+                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
+                </button>
+              )}
+              <button onClick={() => scrollTo('prenota-tavolo')} className={cn('group flex items-center gap-4 rounded-3xl p-5 text-left transition-transform hover:-translate-y-0.5', prenotaOmbrelloni ? 'border border-profondo/10 bg-white text-profondo' : 'bg-profondo text-white shadow-xl shadow-profondo/20')}>
+                <span className={cn('grid h-12 w-12 shrink-0 place-items-center rounded-2xl', prenotaOmbrelloni ? 'bg-calce' : 'bg-white/10')}><UtensilsCrossed className={cn('h-6 w-6', prenotaOmbrelloni ? 'text-cabina' : 'text-tenda')} /></span>
+                <span className="min-w-0 flex-1"><span className="block text-lg font-bold">Tavolo</span><span className={cn('block text-sm', prenotaOmbrelloni ? 'text-profondo/60' : 'text-white/70')}>Pranzo e cena al ristorante</span></span>
+                <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
+              </button>
+              {!prenotaOmbrelloni && (
+                <button onClick={() => scrollTo('eventi')} className="group flex items-center gap-4 rounded-3xl border border-profondo/10 bg-white p-5 text-left text-profondo transition-transform hover:-translate-y-0.5">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-calce"><CalendarDays className="h-6 w-6 text-cabina" /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-lg font-bold">Eventi</span><span className="block text-sm text-profondo/60">Serate e appuntamenti</span></span>
+                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
+                </button>
               )}
             </div>
-            {ombrelloni && disp && (
-              <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm backdrop-blur-md md:hidden">
-                <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-acqua opacity-75" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-acqua" /></span>
-                <span><span className="num font-bold">{disp.libere}</span> ombrelloni liberi oggi</span>
-              </div>
-            )}
+            <p className="mt-4 flex items-center gap-2 text-sm text-profondo/60"><Check className="h-4 w-4 text-cabina" /> Conferma via email, senza pagare online</p>
           </div>
-        </div>
 
-        {/* Disponibilità in tempo reale */}
-        {ombrelloni && disp && (
-          <div className="absolute bottom-28 right-5 hidden rounded-3xl border border-white/20 bg-white/10 p-5 text-white shadow-2xl backdrop-blur-xl dissolvi md:block lg:right-8 lg:bottom-36">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/70">
-              <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-acqua opacity-75" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-acqua" /></span>
-              In tempo reale
+          {/* Foto del lido con il riquadro "Oggi in spiaggia" sovrapposto */}
+          <div className="relative min-w-0 pb-10 lg:pb-0">
+            <div className="aspect-[4/3] overflow-hidden rounded-[2rem] bg-profondo-900 shadow-2xl shadow-profondo/20 lg:aspect-[4/5]">
+              {videoHero && !movimentoRidotto && !homeSito.immagine
+                ? <video src={videoHero} poster={fotoHero} autoPlay muted loop playsInline preload="auto" aria-hidden className="h-full w-full object-cover" />
+                : <img src={fotoHero} alt={`${config.nome}: la spiaggia`} className="h-full w-full object-cover object-[center_55%]" fetchPriority="high" />}
             </div>
-            <p className="mt-2 font-display text-5xl font-semibold"><Contatore valore={disp.libere} /></p>
-            <p className="text-sm text-white/80">ombrelloni liberi oggi</p>
-            <div className="mt-3 h-1.5 w-48 overflow-hidden rounded-full bg-white/20"><div className="h-full rounded-full bg-gradient-to-r from-acqua to-tenda" style={{ width: `${disp.occupazione * 100}%` }} /></div>
-            <p className="mt-1.5 text-xs text-white/60">{Math.round(disp.occupazione * 100)}% occupato · {disp.totali} postazioni</p>
+            <div className="dissolvi absolute inset-x-3 -bottom-2 rounded-3xl bg-white p-4 text-profondo shadow-[0_20px_50px_rgba(11,47,61,0.18)] sm:inset-x-auto sm:right-4 sm:w-[22rem] lg:-left-10 lg:right-auto lg:bottom-8">
+              {ombrelloni && disp ? (
+                <button onClick={() => scrollTo(idPrenota)} className="block w-full text-left">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 font-bold"><span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" /></span> Oggi in spiaggia</span>
+                    <span className="rounded-full bg-calce px-2.5 py-1 text-xs font-semibold"><span className="num">{disp.libere}</span> liberi su <span className="num">{disp.totali}</span></span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-10 gap-1" aria-hidden>
+                    {Array.from({ length: 40 }, (_, i) => (
+                      <i key={i} className={cn('aspect-square rounded-[5px]', ((i * 37) % 40) / 40 < disp.occupazione ? 'bg-calce' : 'bg-acqua')} />
+                    ))}
+                  </div>
+                  <div className="mt-2 flex gap-4 text-[11px] text-profondo/60"><span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-sm bg-acqua" /> Libero</span><span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-sm bg-calce" /> Occupato</span></div>
+                </button>
+              ) : (
+                <p className="flex items-center gap-2 font-bold"><Waves className="h-4 w-4 text-cabina" /> {config.nome}</p>
+              )}
+              {piattoGiorno && (
+                <button onClick={() => scrollTo('ristorante')} className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl bg-[#F5F8F9] px-3 py-2.5 text-left text-sm">
+                  <span className="flex min-w-0 items-center gap-2"><UtensilsCrossed className="h-4 w-4 shrink-0 text-boa" /><span className="truncate"><span className="text-profondo/60">Oggi: </span><b>{piattoGiorno.nome}</b></span></span>
+                  {piattoGiorno.prezzo != null && <b className="num shrink-0">{euro(piattoGiorno.prezzo)}</b>}
+                </button>
+              )}
+            </div>
           </div>
-        )}
-
-        <button onClick={() => scrollTo('servizi')} aria-label="Scorri" className="galleggia absolute bottom-24 left-1/2 hidden -translate-x-1/2 place-items-center rounded-full border border-white/40 p-3 text-white/80 hover:text-white sm:grid lg:bottom-32">
-          <ArrowDown className="h-4 w-4" />
-        </button>
-
-        {/* Onde animate verso la sezione successiva */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 overflow-hidden lg:h-32">
-          <svg className="onda-lenta absolute bottom-0 h-full w-[200%] text-acqua/40" viewBox="0 0 2880 120" preserveAspectRatio="none"><path fill="currentColor" d="M0 60c240 40 480 40 720 0s480-40 720 0 480 40 720 0 480-40 720 0v60H0z" /></svg>
-          <svg className="onda absolute bottom-0 h-3/4 w-[200%] text-[#FBF8F2]" viewBox="0 0 2880 120" preserveAspectRatio="none"><path fill="currentColor" d="M0 70c240-45 480-45 720 0s480 45 720 0 480-45 720 0 480 45 720 0v50H0z" /></svg>
         </div>
       </section>
 
       {/* Nastro scorrevole */}
-      <div className="relative -mt-px overflow-hidden bg-[#FBF8F2] py-5">
+      <div className="relative -mt-px overflow-hidden border-y border-profondo/5 bg-white py-5">
         <div className="scorri flex w-max gap-10 whitespace-nowrap">
           {[...voceNastro, ...voceNastro].map((t, i) => (
             <span key={i} className="flex items-center gap-10 font-display text-2xl italic text-profondo/70 sm:text-3xl">

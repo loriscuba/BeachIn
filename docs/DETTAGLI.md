@@ -700,3 +700,11 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
   `beachin-push` tipo `cliente` (push allo staff); centro notifiche: categorie prenotazioni/eventi. Le funzioni trigger usate sono quelle già
   esistenti (`email_richiesta`, `notifica_nuova_richiesta`), quindi sul Demo funzionano anche senza Vault.
 - Limite noto: finché manca la fase 2 RLS chi legge apposta le tabelle vede anche i token (come nomi e telefoni).
+
+## Sito pubblico: prima schermata "Prenota subito" (nov 2026)
+- `SitoAnteprima` apre con sfondo chiaro `#F5F8F9`: a sinistra località + meteo (`useMeteoOggi`), titolo/sottotitolo/testo di
+  Sito → Contenuti (font `font-titolo` = Bricolage Grotesque) e due scelte grandi **Ombrellone** (da prezzo minimo listino) /
+  **Tavolo** (senza ombrelloni: Tavolo / Eventi). A destra foto/video hero arrotondata con riquadro **Oggi in spiaggia**
+  (liberi su totali + mini mappa proporzionale all'occupazione) e **piatto del giorno** = prima voce della lavagnetta.
+- Barra in alto chiara con logo a colori. `/sito/anteprima` ora scarica anche `lavagnetta` (sola lettura, `PAGINE_CLIENTI`).
+- Scelta da 3 direzioni: https://claude.ai/artifact/HW9Hj3FNroJTuR8JfiR4y4 (C scelta da Loris il 06/11).

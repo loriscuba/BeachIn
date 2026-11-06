@@ -41,6 +41,7 @@ export default {
       },
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],
+        titolo: ['"Bricolage Grotesque"', 'Inter', 'system-ui', 'sans-serif'],
         gesso: ['Caveat', 'Comic Sans MS', 'cursive'],
         sans: [
           'Inter',
