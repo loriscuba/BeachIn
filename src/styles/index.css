@@ -350,24 +350,3 @@
 /* cucina e coda bar a schermo intero: sfondo pieno sopra testata e barre */
 .schermo-intero { background: #edf1f2; }
 [data-tema='scuro'] .schermo-intero { background: #06161d; }
-
-/* ——— Sito pubblico in stile "hotel elegante" ——— */
-.pulsante-el { display: inline-flex; align-items: center; border-radius: 4px; background: #E8DCC8; color: #00253F; padding: 0.7rem 1.25rem;
-  font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; transition: background-color .4s ease; }
-.pulsante-el:hover { background: #dccdb3; }
-.pulsante-el--vuoto { background: transparent; color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.6); }
-.pulsante-el--vuoto:hover { background: rgba(255,255,255,.12); }
-.rotola { position: relative; display: inline-block; overflow: hidden; line-height: 1.25; }
-.rotola > span { display: block; transition: transform .5s cubic-bezier(.7,0,.2,1); }
-.rotola > span + span { position: absolute; inset: 0; transform: translateY(105%); }
-.pulsante-el:hover .rotola > span:first-child { transform: translateY(-105%); }
-.pulsante-el:hover .rotola > span + span { transform: translateY(0); }
-.barra-el__riempi { width: 0; transition: width 1.6s cubic-bezier(.2,.7,.2,1) .2s; }
-.barra-el.visibile .barra-el__riempi { width: var(--l); }
-@media (prefers-reduced-motion: no-preference) {
-  .foto-svela { clip-path: inset(100% 0 0 0); transition: clip-path 1.2s cubic-bezier(.7,0,.2,1); opacity: 1 !important; transform: none !important; }
-  .foto-svela img { transform: scale(1.25); transition: transform 1.6s cubic-bezier(.2,.7,.2,1); }
-  .foto-svela.visibile { clip-path: inset(0 0 0 0); }
-  .foto-svela.visibile img { transform: scale(1); }
-}
-@media (prefers-reduced-motion: reduce) { .barra-el__riempi { width: var(--l); transition: none; } }

@@ -85,7 +85,7 @@ const SITO: Record<string, AccessoSync> = {
   prenotazioni_ristorante: { modo: 'lettura', colonne: 'id,data,turno,ora,coperti,tavolo_id,stato' },
   richieste_ristorante: { modo: 'nuove', colonne: 'id,ricevuta_il,data,turno,ora,coperti,stato,ts' },
   richieste_eventi: { modo: 'scrittura' }, prenotazioni_online: { modo: 'scrittura' },
-  eventi: LETTURA, galleria_sito: LETTURA, sito_contenuti: LETTURA, lavagnetta: LETTURA,
+  eventi: LETTURA, galleria_sito: LETTURA, sito_contenuti: LETTURA,
 }
 export const PAGINE_CLIENTI: Record<string, (cerca: URLSearchParams) => Record<string, AccessoSync>> = {
   '/tavolo': () => ({ ...LISTINI, tavoli_qr: { modo: 'nuove' }, comande_sala: { modo: 'nuove' } }),
