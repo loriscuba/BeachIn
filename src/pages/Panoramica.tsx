@@ -142,6 +142,14 @@ export default function Panoramica() {
                   <p className="num text-3xl font-bold leading-none text-profondo">{traGiorni}</p>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-profondo/55">{traGiorni === 0 ? 'oggi!' : traGiorni === 1 ? 'giorno' : 'giorni'}</p>
                 </div>
+                {prossimo.foto && (
+                  <img
+                    src={prossimo.foto}
+                    alt=""
+                    loading="lazy"
+                    className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                  />
+                )}
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-profondo">{prossimo.nome}</p>
                   <p className="text-xs text-profondo/55">{dataEstesa(prossimo.data)}{prossimo.partecipanti ? ` · ${prossimo.partecipanti} iscritti` : ''}</p>
