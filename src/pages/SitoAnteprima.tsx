@@ -141,29 +141,31 @@ export default function SitoAnteprima() {
 
   return (
     <div className="min-h-screen bg-white text-[#00253F]">
-      {/* Barra annunci scorrevole */}
-      <div className="relative z-40 overflow-hidden bg-[#E8DCC8] py-2 text-[12px] text-[#00253F]">
-        <div className="scorri flex w-max gap-6 whitespace-nowrap">
-          {[...voceNastro, ...voceNastro, ...voceNastro].map((t, i) => (
-            <span key={i} className="flex items-center gap-6">{t} <Asterisco /></span>
-          ))}
-        </div>
-      </div>
-
-      {/* Testata bianca, fissa allo scroll */}
-      <header className={cn('sticky top-0 z-40 bg-white transition-shadow duration-500', scrollato && 'shadow-[0_10px_30px_rgba(0,37,63,0.08)]')}>
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-5 py-3 lg:px-8">
-          <button onClick={() => scrollTo('top')} className="shrink-0" aria-label={config.nome}><img src={logoLido} alt={config.nome} className="h-11 w-auto sm:h-12" /></button>
-          <div className="flex items-center gap-3 sm:gap-6">
-            <button onClick={() => scrollTo(idPrenota)} className="pulsante-el hidden sm:inline-flex"><Rotola>Prenota ora</Rotola></button>
-            <a href={`tel:${config.telefono.replace(/\s/g, '')}`} className="hidden text-sm text-[#00253F] hover:text-[#5C4D40] md:inline">{config.telefono}</a>
-            <button onClick={() => setMenuMobile(true)} className="group flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" aria-label="Apri il menu">
-              Menu
-              <span className="flex w-6 flex-col gap-1.5"><span className="h-px w-full bg-current transition-all group-hover:w-4" /><span className="h-px w-4 bg-current transition-all group-hover:w-full" /></span>
-            </button>
+      {/* Barra annunci + testata trasparente, fisse sopra la pagina: allo scroll la barra annunci si chiude
+          e la testata resta trasparente con un velo sfocato (effetto vetro), senza mai diventare piena */}
+      <div className="fixed inset-x-0 top-0 z-40">
+        <div className={cn('overflow-hidden bg-[#E8DCC8] text-[12px] text-[#00253F] transition-[max-height] duration-500', scrollato ? 'max-h-0' : 'max-h-10')}>
+          <div className="scorri flex w-max gap-6 whitespace-nowrap py-2">
+            {[...voceNastro, ...voceNastro, ...voceNastro].map((t, i) => (
+              <span key={i} className="flex items-center gap-6">{t} <Asterisco /></span>
+            ))}
           </div>
         </div>
-      </header>
+        <header className={cn('text-white transition-[background-color,backdrop-filter] duration-500',
+          scrollato ? 'bg-[#00253F]/25 backdrop-blur-md backdrop-saturate-150' : 'bg-gradient-to-b from-black/45 to-transparent')}>
+          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-5 py-3 lg:px-8">
+            <button onClick={() => scrollTo('top')} className="shrink-0" aria-label={config.nome}><img src={logoLido} alt={config.nome} className="h-11 w-auto brightness-0 invert drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] sm:h-12" /></button>
+            <div className="flex items-center gap-3 sm:gap-6 [text-shadow:0_1px_8px_rgba(0,0,0,0.45)]">
+              <button onClick={() => scrollTo(idPrenota)} className="pulsante-el hidden [text-shadow:none] sm:inline-flex"><Rotola>Prenota ora</Rotola></button>
+              <a href={`tel:${config.telefono.replace(/\s/g, '')}`} className="hidden text-sm hover:text-[#E8DCC8] md:inline">{config.telefono}</a>
+              <button onClick={() => setMenuMobile(true)} className="group flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" aria-label="Apri il menu">
+                Menu
+                <span className="flex w-6 flex-col gap-1.5"><span className="h-px w-full bg-current transition-all group-hover:w-4" /><span className="h-px w-4 bg-current transition-all group-hover:w-full" /></span>
+              </button>
+            </div>
+          </div>
+        </header>
+      </div>
 
       {/* Menu a tutto schermo */}
       <div className={cn('fixed inset-0 z-50 flex flex-col bg-[#5C4D40] text-white transition-[clip-path] duration-700 ease-[cubic-bezier(.7,0,.2,1)]', menuMobile ? '[clip-path:inset(0_0_0_0)]' : 'pointer-events-none [clip-path:inset(0_0_100%_0)]')} aria-hidden={!menuMobile}>
@@ -203,7 +205,7 @@ export default function SitoAnteprima() {
             {inPausa ? <Play className="ml-1 h-6 w-6 fill-current" /> : <Pause className="h-6 w-6 fill-current" />}
           </button>
         )}
-        <div className="mx-auto flex min-h-[88svh] max-w-[1400px] flex-col justify-between gap-10 px-5 pb-8 pt-10 lg:px-8 lg:pt-14">
+        <div className="mx-auto flex min-h-[88svh] max-w-[1400px] flex-col justify-between gap-10 px-5 pb-8 pt-36 lg:px-8 lg:pt-40">
           <div className="hero-in max-w-3xl">
             <h1 className="text-balance font-titolo text-[3.2rem] uppercase leading-[0.95] sm:text-7xl lg:text-[6.2rem]">{titoloHero}</h1>
             {sottoHero && <p className="mt-3 font-titolo text-2xl uppercase text-[#E8DCC8] sm:text-3xl">{sottoHero}</p>}

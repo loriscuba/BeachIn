@@ -704,7 +704,7 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
 ## Sito pubblico in stile "hotel elegante" (nov 2026)
 - `SitoAnteprima` ridisegnato prendendo ritmo e transizioni dal modello Webflow Elbergo (codice scritto da zero, niente testi/immagini del modello).
   Colori: blu #00253F, sabbia #E8DCC8, marrone #5C4D40, crema #F9F6F0. Titoli maiuscoli in `font-titolo` (Instrument Serif, Google Fonts OFL).
-- Ordine: barra annunci scorrevole (voci nastro) → testata bianca fissa (Prenota ora, telefono, Menu a tutto schermo) → hero foto/video con
+- Ordine: barra annunci scorrevole (voci nastro, si chiude allo scroll) → testata fissa sempre trasparente sulla pagina (sfumatura scura sull’hero, poi velo blu 25% sfocato; logo e testi bianchi; Prenota ora, telefono, Menu a tutto schermo) → hero foto/video con
   pulsanti Ombrellone/Tavolo, play/pausa video e riquadro "Oggi in spiaggia" (liberi + postazioni + meteo, piatto del giorno = 1ª voce lavagnetta)
   → "Il lido" con capsule di foto che si impilano (sticky) → frase che si colora allo scroll (`TestoRiempito`) → carosello servizi (`Carosello`,
   numeri e barra) → numeri con barre sabbia (`Barra`) → ristorante in pannello crema (menu + `FormRistorante`) → prenota ombrellone con foto ad arco
