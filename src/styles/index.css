@@ -265,6 +265,7 @@
   box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.8);
 }
 [data-tema='scuro'] .bi-card:hover { border-color: rgba(127, 183, 168, 0.3); }
+.bi-card.bi-sezione { border-top-width: 4px; border-top-color: var(--accento) !important; }
 .bi-tacca {
   display: inline-block;
   width: 4px;
