@@ -6,6 +6,7 @@ import { Caricamento } from '@/components/ui/Caricamento'
 import { ModuloGate } from '@/components/ModuloGate'
 import { lazyRiprova } from '@/lib/lazyRiprova'
 import type { ModuloId } from '@/config/moduli'
+import { ruoloDominio } from '@/lib/dominio'
 
 // Su hosting statico (es. anteprima pubblicata) si usa il routing via hash,
 // impostando VITE_ROUTER=hash in fase di build. L'app reale resta su history.
@@ -41,8 +42,8 @@ const s = (el: ReactNode): ReactNode => <Suspense fallback={<Caricamento />}>{el
 // Rotta protetta da modulo: se non attivo mostra l'upsell.
 const g = (id: ModuloId, el: ReactNode, oppure?: ModuloId[]): ReactNode => s(<ModuloGate id={id} oppure={oppure}>{el}</ModuloGate>)
 
-export const router = creaRouter([
-  {
+// App staff (gestionale). Sul dominio del sito clienti non c'è: la radice è la vetrina e ogni altro percorso ci torna.
+const gestionale = {
     path: '/',
     element: <AppShell />,
     children: [
@@ -67,7 +68,13 @@ export const router = creaRouter([
       { path: 'impostazioni', element: s(<Impostazioni />) },
       { path: '*', element: s(<NonTrovata />) },
     ],
-  },
+}
+const radice = ruoloDominio === 'sito'
+  ? [{ path: '/', element: s(<SitoAnteprima />) }, { path: '*', element: <Navigate to="/" replace /> }]
+  : [gestionale]
+
+export const router = creaRouter([
+  ...radice,
   // Vetrina pubblica, fuori dallo shell gestionale
   { path: '/sito/anteprima', element: s(<SitoAnteprima />) },
   // Menu pubblico multilingua (QR sui tavoli)
