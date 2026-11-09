@@ -700,3 +700,6 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
   `beachin-push` tipo `cliente` (push allo staff); centro notifiche: categorie prenotazioni/eventi. Le funzioni trigger usate sono quelle già
   esistenti (`email_richiesta`, `notifica_nuova_richiesta`), quindi sul Demo funzionano anche senza Vault.
 - Limite noto: finché manca la fase 2 RLS chi legge apposta le tabelle vede anche i token (come nomi e telefoni).
+
+## Sito pubblico: barra in alto sempre trasparente (nov 2026)
+- In `SitoAnteprima` la testata resta trasparente anche scorrendo: sfumatura scura sull'hero, poi velo `bg-profondo/25` sfocato; piena solo col menu mobile aperto.

@@ -139,10 +139,11 @@ export default function SitoAnteprima() {
 
   return (
     <div className="min-h-screen bg-[#FBF8F2] text-profondo">
-      {/* Barra: trasparente sull'hero, piena quando si scorre */}
+      {/* Barra sempre trasparente: sfumatura sull'hero, poi velo sfocato (effetto vetro) quando si scorre; piena solo col menu aperto */}
       <header className={cn(
-        'fixed inset-x-0 top-0 z-40 transition-all duration-500',
-        scrollato || menuMobile ? 'bg-profondo/90 shadow-[0_8px_30px_rgba(11,44,57,0.25)] backdrop-blur-md' : 'bg-gradient-to-b from-profondo-900/60 to-transparent',
+        'fixed inset-x-0 top-0 z-40 transition-all duration-500 [text-shadow:0_1px_8px_rgba(0,0,0,0.35)]',
+        menuMobile ? 'bg-profondo/90 backdrop-blur-md'
+          : scrollato ? 'bg-profondo/25 backdrop-blur-md backdrop-saturate-150' : 'bg-gradient-to-b from-profondo-900/60 to-transparent',
       )}>
         <div className={cn('mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 transition-all duration-500 lg:px-8', scrollato ? 'py-2.5' : 'py-4')}>
           <button onClick={() => scrollTo('top')} className="shrink-0" aria-label={config.nome}><img src={logoLido} alt={config.nome} className={cn('w-auto brightness-0 invert drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] transition-all duration-500', scrollato ? 'h-12' : 'h-20 sm:h-24')} /></button>
