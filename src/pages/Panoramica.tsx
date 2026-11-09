@@ -16,6 +16,17 @@ import { Badge } from '@/components/ui/Badge'
 import { numero, dataEstesa } from '@/lib/formatters'
 import { statoSito } from '@/data/seed/sito'
 
+/** Un colore per tipologia di sezione: tacca del titolo, bordo in alto e icona dei KPI. */
+const COLORE = {
+  ristorante: '#E4572E',
+  sito: '#2E7D9A',
+  eventi: '#D9A21B',
+  magazzino: '#4F9A87',
+  generale: '#64748B',
+} as const
+type Tipo = keyof typeof COLORE
+const sezione = (t: Tipo) => ({ className: 'bi-sezione', style: { '--accento': COLORE[t] } as React.CSSProperties })
+
 const meteoIcona: Record<Meteo, typeof Sun> = {
   sole: Sun, poco_nuvoloso: CloudSun, nuvoloso: Cloud, pioggia: CloudRain, temporale: CloudLightning,
 }
@@ -65,19 +76,20 @@ export default function Panoramica() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Kpi
           icona={meteoIcona[meteo.meteo]}
+          tipo="generale"
           etichetta="Meteo oggi"
           valore={`${meteo.temp ?? meteo.max}°`}
           sotto={`${meteoLabel[meteo.meteo]} · ${meteo.min != null ? `${meteo.min}°/` : 'max '}${meteo.max}°${meteo.vento != null ? ` · vento ${meteo.vento} km/h` : ''}`}
         />
-        <Kpi icona={Users} etichetta="Coperti oggi" valore={numero(kpi.pranzo + kpi.cena)} sotto={`${kpi.pranzo} pranzo · ${kpi.cena} cena`} />
-        <Kpi icona={Inbox} etichetta="Dal sito da confermare" valore={numero(daConfermareSito)} />
-        <Kpi icona={Globe} etichetta="Visite sito ieri" valore={numero(ieri)} sotto={`${deltaVisite >= 0 ? '+' : ''}${deltaVisite}% sulla media 7 gg`} />
-        <Kpi icona={Sun} etichetta="Stagione" valore={giorniAllaFine > 0 ? `${giorniAllaFine} gg` : 'Ultimo giorno'} sotto={giorniAllaFine > 0 ? `alla chiusura (${dataEstesa(chiusura)})` : 'buona chiusura!'} />
+        <Kpi icona={Users} tipo="ristorante" etichetta="Coperti oggi" valore={numero(kpi.pranzo + kpi.cena)} sotto={`${kpi.pranzo} pranzo · ${kpi.cena} cena`} />
+        <Kpi icona={Inbox} tipo="sito" etichetta="Dal sito da confermare" valore={numero(daConfermareSito)} />
+        <Kpi icona={Globe} tipo="sito" etichetta="Visite sito ieri" valore={numero(ieri)} sotto={`${deltaVisite >= 0 ? '+' : ''}${deltaVisite}% sulla media 7 gg`} />
+        <Kpi icona={Sun} tipo="generale" etichetta="Stagione" valore={giorniAllaFine > 0 ? `${giorniAllaFine} gg` : 'Ultimo giorno'} sotto={giorniAllaFine > 0 ? `alla chiusura (${dataEstesa(chiusura)})` : 'buona chiusura!'} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Ristorante: prenotazioni di oggi */}
-        <Card>
+        <Card {...sezione('ristorante')}>
           <CardHeader
             titolo="Ristorante · oggi"
             sottotitolo={`${prenOggi.length} prenotazioni${prenOggi.length > 8 ? ' · le prime 8' : ''}`}
@@ -102,7 +114,7 @@ export default function Panoramica() {
         </Card>
 
         {/* Sito: richieste da confermare */}
-        <Card>
+        <Card {...sezione('sito')}>
           <CardHeader
             titolo="Sito · da confermare"
             sottotitolo={`${daConfermareSito} richieste online`}
@@ -130,7 +142,7 @@ export default function Panoramica() {
         </Card>
 
         {/* Eventi: countdown al prossimo */}
-        <Card>
+        <Card {...sezione('eventi')}>
           <CardHeader
             titolo="Prossimo evento"
             azione={moduloAttivo('eventi') ? <Link to="/eventi" className="text-sm font-medium text-cabina hover:underline">Apri</Link> : undefined}
@@ -166,7 +178,7 @@ export default function Panoramica() {
         </Card>
 
         {/* Magazzino: sotto scorta */}
-        <Card>
+        <Card {...sezione('magazzino')}>
           <CardHeader
             titolo="Magazzino · da riordinare"
             sottotitolo={`${sottoScorta.length} articoli sotto scorta`}
@@ -194,12 +206,12 @@ export default function Panoramica() {
   )
 }
 
-function Kpi({ icona: Icona, etichetta, valore, sotto }: { icona: typeof Users; etichetta: string; valore: string; sotto?: string }) {
+function Kpi({ icona: Icona, etichetta, valore, sotto, tipo }: { icona: typeof Users; etichetta: string; valore: string; sotto?: string; tipo: Tipo }) {
   return (
-    <Card>
+    <Card {...sezione(tipo)}>
       <CardBody>
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-profondo/50">
-          <Icona className="h-3.5 w-3.5 text-cabina" /> {etichetta}
+          <Icona className="h-3.5 w-3.5" style={{ color: COLORE[tipo] }} /> {etichetta}
         </p>
         <p className="num mt-0.5 text-2xl font-bold text-profondo">{valore}</p>
         {sotto && <p className="text-xs text-profondo/55">{sotto}</p>}
