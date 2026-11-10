@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Drawer } from '@/components/ui/Drawer'
 import { Modal } from '@/components/ui/Modal'
+import { FotoIngrandita } from '@/components/ui/FotoIngrandita'
 import { Select } from '@/components/ui/Select'
 import { euro, numero, dataEstesa, giornoMese } from '@/lib/formatters'
 import { etichetteTipoEvento } from '@/lib/etichette'
@@ -175,6 +176,7 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onPubblic
   onRimuoviFoto: (id: string, indice: number) => void
 }) {
   const Icona = e ? iconaTipo[e.tipo] : Trophy
+  const [fotoAperta, setFotoAperta] = useState<number | null>(null)
   const caricaAlbum = async (files: FileList | null) => {
     if (!e) return
     const falliti = await importaImmagini(files, (uri) => onAggiungiFoto(e.id, uri), 'eventi')
@@ -248,12 +250,13 @@ function SchedaEvento({ evento: e, partecipanti, onChiudi, onModifica, onPubblic
                 <div className="grid grid-cols-3 gap-2">
                   {e.galleria!.map((src, idx) => (
                     <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border border-calce-200">
-                      <img src={src} alt="" className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => setFotoAperta(idx)} className="h-full w-full cursor-zoom-in" aria-label={`Ingrandisci foto ${idx + 1}`}><img src={src} alt="" className="h-full w-full object-cover" /></button>
                       <button type="button" onClick={() => onRimuoviFoto(e.id, idx)} className="absolute right-1 top-1 grid h-6 w-6 place-content-center rounded-md bg-profondo-900/60 text-white hover:bg-boa" aria-label="Rimuovi foto"><X className="h-3.5 w-3.5" /></button>
                     </div>
                   ))}
                 </div>
               )}
+              <FotoIngrandita foto={e.galleria ?? []} indice={fotoAperta} onCambia={setFotoAperta} />
             </div>
           </div>
         </div>

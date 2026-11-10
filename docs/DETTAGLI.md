@@ -575,6 +575,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Album foto evento**: `Evento.galleria?: string[]` (data URI); mutazioni context
   `aggiungiFotoEvento/rimuoviFotoEvento`; upload multiplo nella scheda evento (Drawer di `Eventi`, usa
   l'evento "live" da `eventi`); il sito pubblico mostra l'album nella scheda evento (es. foto di un torneo).
+  Tocco su una foto (sito e gestionale) = `components/ui/FotoIngrandita` a schermo intero (chiudi, frecce, swipe, Esc).
 - Sito pubblico: navbar, hero, servizi, listino, ristorante, prenota ombrellone,
   **eventi (card con foto → modal con descrizione e form "Prenota")**, galleria,
   recensioni, contatti, "La mia posta" (cliente).

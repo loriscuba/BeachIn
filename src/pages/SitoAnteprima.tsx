@@ -12,6 +12,7 @@ import { config } from '@/data/config'
 import { fotoSito, logoLido, videoHero } from '@/assets/sito'
 import { useModuli } from '@/context/ModuliContext'
 import { Modal } from '@/components/ui/Modal'
+import { FotoIngrandita } from '@/components/ui/FotoIngrandita'
 import { euro, dataEstesa } from '@/lib/formatters'
 import { etichettePeriodo, etichetteCategoriaPiatto } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
@@ -750,12 +751,13 @@ export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: {
   const { inviaRichiestaEvento } = useDemoData()
   const [f, setF] = useState({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false })
   const [inviato, setInviato] = useState(false)
+  const [fotoAperta, setFotoAperta] = useState<number | null>(null)
   const set = (k: string, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
   const valido = f.nome.trim() && contattoValido(f.email, f.telefono) && f.privacy
   const passato = !!e && e.data < config.oggi
 
   // reset del form quando cambia l'evento selezionato
-  useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false }); setInviato(false) }, [e?.id])
+  useEffect(() => { setF({ nome: '', email: '', telefono: '', persone: '2', note: '', privacy: false }); setInviato(false); setFotoAperta(null) }, [e?.id])
 
   const invio = useInvio()
   const invia = (ev: React.FormEvent) => {
@@ -787,9 +789,12 @@ export function EventoModal({ evento: e, prenotabile, onChiudi, onPrenotato }: {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-profondo/45">Foto dell’evento</p>
               <div className="grid grid-cols-3 gap-2">
                 {e.galleria.map((src, i) => (
-                  <img key={i} src={src} alt="" className="aspect-square w-full rounded-lg object-cover" />
+                  <button key={i} type="button" onClick={() => setFotoAperta(i)} className="overflow-hidden rounded-lg" aria-label={`Ingrandisci foto ${i + 1}`}>
+                    <img src={src} alt="" className="aspect-square w-full cursor-zoom-in object-cover transition-transform hover:scale-105" />
+                  </button>
                 ))}
               </div>
+              <FotoIngrandita foto={e.galleria} indice={fotoAperta} onCambia={setFotoAperta} />
             </div>
           )}
 
