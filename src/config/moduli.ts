@@ -205,6 +205,7 @@ export const FUNZIONI: InfoFunzione[] = [
   f('sala', 'cucina', 'Monitor cucina'),
   f('sala', 'self', 'Tablet self-service'),
   f('sala', 'qr', 'Ordini col QR del tavolo'),
+  f('personale', 'buste-paga', 'Importa buste paga (PDF)'),
   f('eventi', 'calendario', 'Calendario'),
   f('eventi', 'presenze', 'Presenze e ingressi (scanner)'),
   f('sito', 'panoramica', 'Panoramica'),

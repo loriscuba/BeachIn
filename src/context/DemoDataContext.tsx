@@ -10,6 +10,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
+  Dipendente,
   ArticoloMagazzino,
   GiornoChiuso,
   CategoriaPiatto,
@@ -118,6 +119,7 @@ const codiceQr = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b
 import { statoSito } from '@/data/seed/sito'
 import { clienti } from '@/data/seed/clienti'
 import { eventi as seedEventi } from '@/data/seed/eventi'
+import { dipendenti as seedDipendenti } from '@/data/seed/personale'
 import { notizie as seedNotizie, lavagnetta as seedLavagnetta } from '@/data/seed/app'
 import { config } from '@/data/config'
 import { posInZona, zonaDaPos } from '@/lib/zoneTavoli'
@@ -400,6 +402,11 @@ interface DemoDataValue {
   rimuoviFoto: (id: string) => void
   rinominaFoto: (id: string, titolo: string) => void
 
+  // Personale: dipendenti (con Supabase nella tabella `dipendenti`; le buste paga importate dal PDF stanno nel dipendente)
+  dipendenti: Dipendente[]
+  /** Crea o aggiorna il dipendente (stesso id). */
+  salvaDipendente: (d: Dipendente) => void
+
   // App clienti (/comandapp): news del gestore e lavagnetta del giorno
   notizie: Notizia[]
   pubblicaNotizia: (dati: Pick<Notizia, 'titolo' | 'testo' | 'foto' | 'fissata' | 'eventoId'>) => void
@@ -558,6 +565,21 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     daRiga: (r) => ({ id: r.id, titolo: (r.titolo as string) ?? '', ordine: Number(r.ordine), ...(fotoDaRif(r.immagine) ? { immagine: fotoDaRif(r.immagine) } : {}) }),
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
+  // Personale: niente semina, una tabella vuota resta vuota (sul Demo si parte da zero e si importano le buste paga)
+  const [dipendenti, setDipendenti] = useState<Dipendente[]>(() => clona(seedDipendenti))
+  useSyncSupabase({
+    tabella: 'dipendenti', accesso: accessoDi('dipendenti'), righe: dipendenti, setRighe: setDipendenti,
+    aRiga: ({ id, nome, cognome, codiceFiscale, ruolo, ...dati }) => ({ id, nome, cognome, codice_fiscale: codiceFiscale ?? null, ruolo, dati }),
+    daRiga: (r) => ({
+      ...(r.dati as Omit<Dipendente, 'id' | 'nome' | 'cognome' | 'ruolo'>),
+      id: r.id, nome: r.nome as string, cognome: r.cognome as string, ruolo: r.ruolo as Dipendente['ruolo'],
+      ...(r.codice_fiscale ? { codiceFiscale: r.codice_fiscale as string } : {}),
+    }),
+    ordina: (a, b) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'),
+  })
+  const salvaDipendente = useCallback((d: Dipendente) => {
+    setDipendenti((prev) => (prev.some((x) => x.id === d.id) ? prev.map((x) => (x.id === d.id ? d : x)) : [...prev, d]))
+  }, [])
   // App clienti: news e lavagnetta, condivise via Supabase (il gestore pubblica, i telefoni dei clienti leggono)
   const [notizie, setNotizie] = useState<Notizia[]>(() => clona(seedNotizie))
   const [lavagnetta, setLavagnetta] = useState<VoceLavagnetta[]>(() => clona(seedLavagnetta))
@@ -1634,6 +1656,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       aggiungiFoto,
       rimuoviFoto,
       rinominaFoto,
+      dipendenti, salvaDipendente,
       notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia,
       lavagnetta, bozzaLavagnetta, salvaBozzaLavagnetta, pubblicaLavagnetta,
       tavoli,
@@ -1754,6 +1777,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       aggiungiFoto,
       rimuoviFoto,
       rinominaFoto,
+      dipendenti, salvaDipendente,
       notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia,
       lavagnetta, bozzaLavagnetta, salvaBozzaLavagnetta, pubblicaLavagnetta,
       tavoli,

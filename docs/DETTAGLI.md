@@ -704,3 +704,19 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
 
 ## Sito pubblico: barra in alto sempre trasparente (nov 2026)
 - In `SitoAnteprima` la testata resta trasparente anche scorrendo: sfumatura scura sull'hero, poi velo `bg-profondo/25` sfocato; piena solo col menu mobile aperto.
+
+## Personale: dipendenti su DB + importazione buste paga PDF (migrazione 0029, nov 2026)
+- Dipendenti nella tabella `beachin.dipendenti` (id, nome, cognome, codice_fiscale unico, ruolo, `dati` jsonb col resto del
+  `Dipendente`: contratto, ore, costi, turni, anagrafica, `bustePaga`). Sync in `DemoDataContext` (`dipendenti`, `salvaDipendente`),
+  **senza semina**: tabella vuota = pagina vuota. Niente accesso anon (dati sensibili): lettura con permesso `personale` ≥ 1, modifica ≥ 2.
+  La migrazione inserisce i 14 dipendenti del seed; sul **Demo** sono stati tolti (10/11/2026, `sql/0029_dipendenti_demo.sql` nei file del progetto).
+  Senza Supabase restano quelli di `src/data/seed/personale.ts`. Costi e Conto economico usano ancora il costo del seed.
+- **Importa busta paga** (Personale → Organico, funzionalità `personale.buste-paga`, attivabile in Impostazioni → Moduli e per ruolo):
+  `src/lib/bustaPaga.ts` legge il PDF nel browser con pdf.js (`pdfjs-dist` legacy, caricato solo quando serve, nessun upload) e
+  ricava i dati dal modello **TeamSystem**: etichetta della casella in alto, valore nella riga sotto; ogni parola va nella casella la cui
+  etichetta inizia più a destra prima della fine della parola (numeri allineati a destra). Voci del corpo per colonne
+  (ORE/GIORNI, BASE, COMPETENZE, TRATTENUTE, DATI STATISTICI). CF e IBAN anche con regex su tutto il testo.
+  Anteprima modificabile (`src/pages/personale/ImportaBustaPaga.tsx`): nome, cognome, CF, CCNL, ruolo (dalla qualifica), contratto.
+  Stesso CF (o stesso nome senza CF) = aggiorna il dipendente; la busta va in `bustePaga` (una per periodo). Costo aziendale stimato =
+  lordo × 1,30 + TFR del mese; ore/settimana = ore CCNL × part-time / 4,33. Dettaglio dipendente: `SchedaDipendente.tsx` (tocco sul nome).
+- Busta paga di esempio (dati inventati, barista Lido dei Pini): `buste-paga/busta-paga-esempio-barista-ROSSI-MARCO.pdf` nei file del progetto.
