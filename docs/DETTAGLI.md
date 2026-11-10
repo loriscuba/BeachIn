@@ -710,7 +710,7 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
   `Dipendente`: contratto, ore, costi, turni, anagrafica, `bustePaga`). Sync in `DemoDataContext` (`dipendenti`, `salvaDipendente`),
   **senza semina**: tabella vuota = pagina vuota. Niente accesso anon (dati sensibili): lettura con permesso `personale` ≥ 1, modifica ≥ 2.
   La migrazione inserisce i 14 dipendenti del seed; sul **Demo** sono stati tolti (10/11/2026, `sql/0029_dipendenti_demo.sql` nei file del progetto).
-  Senza Supabase restano quelli di `src/data/seed/personale.ts`. Costi e Conto economico usano ancora il costo del seed.
+  Senza Supabase restano quelli di `src/data/seed/personale.ts`. Costi e Conto economico usano ancora il costo personale del seed.
 - **Importa busta paga** (Personale → Organico, funzionalità `personale.buste-paga`, attivabile in Impostazioni → Moduli e per ruolo):
   `src/lib/bustaPaga.ts` legge il PDF nel browser con pdf.js (`pdfjs-dist` legacy, caricato solo quando serve, nessun upload) e
   ricava i dati dal modello **TeamSystem**: etichetta della casella in alto, valore nella riga sotto; ogni parola va nella casella la cui
@@ -720,3 +720,15 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
   Stesso CF (o stesso nome senza CF) = aggiorna il dipendente; la busta va in `bustePaga` (una per periodo). Costo aziendale stimato =
   lordo × 1,30 + TFR del mese; ore/settimana = ore CCNL × part-time / 4,33. Dettaglio dipendente: `SchedaDipendente.tsx` (tocco sul nome).
 - Busta paga di esempio (dati inventati, barista Lido dei Pini): `buste-paga/busta-paga-esempio-barista-ROSSI-MARCO.pdf` nei file del progetto.
+
+## Costi: voci su DB + importazione fatture fornitori PDF/XML (migrazione 0030, nov 2026)
+- Voci di costo nella tabella `beachin.costi` (id, data, categoria, fornitore, `dati` jsonb col resto di `VoceCosto`). Sync in
+  `DemoDataContext` con **semina** (tabella vuota → voci del seed). Niente anon: lettura permesso `costi` ≥ 1, modifica ≥ 2.
+- **Importa fattura** (Costi → Elenco costi, funzionalità `costi.fatture`): `src/lib/fatturaFornitore.ts` legge nel browser
+  il PDF (pdf.js tramite `leggiPdf` di `bustaPaga.ts`: righe di testo per altezza, riga articolo = finisce con "importo aliquota%",
+  descrizioni andate a capo attaccate alla riga più vicina) oppure l'XML FatturaPA (DettaglioLinee, DatiRiepilogo, DettaglioPagamento).
+  Categoria proposta per riga con parole chiave (`REGOLE`: acque, bibite e succhi, birre, cantina, liquori, caffetteria, cauzioni,
+  trasporto, monouso, pulizia, food). Anteprima `src/pages/costi/ImportaFattura.tsx`: testata e categoria/centro per riga modificabili,
+  controllo totale e fattura già importata (numero + P.IVA). Salva una voce per categoria + centro + aliquota con `fattura` (righe, file).
+  Tocco su una voce importata = dettaglio fattura.
+- Fattura di esempio (dati inventati): `fatture/fattura-bevande-ligure-2026-0487.pdf` nei file del progetto.
