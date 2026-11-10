@@ -523,6 +523,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   mostra i moduli bloccati col lucchetto. Il Cruscotto completo è ora rotta `/cruscotto` (modulo `cruscotto`).
 - Piano di default: `ristorante_web` (Panoramica, Ristorante, Assistente vocale, Comande, Eventi, Sito, Impostazioni).
 - Attivazione dal vivo (demo/vendita) da **Impostazioni → Moduli e funzionalità** (`applicaPiano`, `toggle`, `toggleFunzione`).
+- **Moduli al volo** (`components/layout/ModuliAlVolo.tsx`, solo `profilo.amministratore`): icona a cursori accanto al titolo di ogni
+  sezione del menu (PC/tablet: Operatività, Gestione, Presenza online; telefono "Altro": ogni riquadro, "Generale" = tutte le aree)
+  apre i moduli dell'area con Visibile/Nascosto e le loro funzionalità Sì/No. Stesso stato di Impostazioni → Moduli; l'amministratore
+  vede la sezione anche con tutti i moduli nascosti.
 
 - (ott 2026) **Colori parlanti** sugli stati (toni `verde/giallo/rosso` di `Badge`): giallo *Da accogliere* (+ bottone
   verde **Accogli**), verde *Arrivati* (badge, scheda verdina, piccola ↺ per annullare l'arrivo), rosso *Annullata* con
