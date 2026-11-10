@@ -11,6 +11,7 @@ import { accento } from '@/config/accenti'
 import { cn } from '@/lib/cn'
 import { useConHome, useConteggiNav } from '@/hooks/useNavStaff'
 import { useFunzioni } from '@/hooks/useFunzioni'
+import { PulsanteModuli, moduliDiArea, usePuoModuliAlVolo } from './ModuliAlVolo'
 
 interface SidebarProps {
   aperta: boolean
@@ -47,6 +48,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const { pathname, search } = useLocation()
   const [aperti, setAperti] = useState<Record<string, boolean>>({})
   const conta = useConteggiNav()
+  const alVolo = usePuoModuliAlVolo()
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
   const dentro = (v: VoceNav) => (v.figli ?? []).some((f) => pathname === f.percorso.split('?')[0])
   return (
@@ -90,12 +92,14 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
               .filter((v) => v.gruppo === gruppo)
               .map((v) => (v.figli ? { ...v, figli: v.figli.filter(figlioVisibile) } : v))
               .filter((v) => (v.figli ? v.figli.length > 0 : visibile(v.modulo)))
-            if (voci.length === 0) return null
+            // l'amministratore vede la sezione anche con tutti i moduli nascosti, per riattivarli dal pulsante
+            if (voci.length === 0 && !(alVolo && moduliDiArea(gruppo).length > 0)) return null
             return (
               <div key={gruppo}>
-                <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/40">
-                  {gruppo}
-                </p>
+                <div className="mb-1.5 flex items-center justify-between pl-3 pr-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">{gruppo}</p>
+                  <PulsanteModuli aree={[gruppo]} />
+                </div>
                 <ul className="space-y-0.5">
                   {voci.map((v) => {
                     const bloccato = v.figli ? !v.figli.some((f) => moduloAttivo(f.modulo)) : !moduloAttivo(v.modulo)

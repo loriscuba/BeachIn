@@ -7,6 +7,8 @@ import { useConteggiNav, useVociMenu } from '@/hooks/useNavStaff'
 import type { SottoVoce } from '@/config/navigazione'
 import { cn } from '@/lib/cn'
 import { POSTI_PREFERITI, useBarraPreferiti } from '@/hooks/useBarraPreferiti'
+import { PulsanteModuli, areeConModuli } from './ModuliAlVolo'
+import type { VoceNav } from '@/config/navigazione'
 
 interface Tessera { percorso: string; etichetta: string; icona: LucideIcon; colore: string; badge?: SottoVoce['badge'] }
 
@@ -82,10 +84,12 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
 
   // sezioni senza sottomenu insieme in "Generale", le altre ognuna col suo gruppo
   const singole: Tessera[] = voci.filter((v) => !v.figli).map((v) => ({ percorso: v.percorso, etichetta: v.etichetta, icona: v.icona, colore: accento(v.percorso) }))
-  const gruppi: { titolo: string; tessere: Tessera[] }[] = [
-    ...(singole.length ? [{ titolo: 'Generale', tessere: singole }] : []),
+  // aree del pulsante moduli (solo amministratore): "Generale" le raccoglie tutte, le altre la loro area
+  const gruppi: { titolo: string; tessere: Tessera[]; aree: VoceNav['gruppo'][] }[] = [
+    ...(singole.length ? [{ titolo: 'Generale', tessere: singole, aree: areeConModuli }] : []),
     ...voci.filter((v) => v.figli).map((v) => ({
       titolo: v.etichetta,
+      aree: [v.gruppo],
       tessere: v.figli!.map((f) => ({ percorso: f.percorso, etichetta: f.etichetta, icona: f.icona ?? v.icona, colore: accento(v.percorso), badge: f.badge })),
     })),
   ]
@@ -162,9 +166,12 @@ export function MenuGriglia({ aperto, onChiudi }: { aperto: boolean; onChiudi: (
             <section key={g.titolo} className="rounded-2xl p-2 pt-2.5"
               style={{ background: `color-mix(in srgb, ${g.tessere[0]?.colore} 11%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${g.tessere[0]?.colore} 18%, transparent)` }}>
               {/* colore dell'area: puntino accanto al titolo e velo del riquadro; icone sobrie come nella barra in basso */}
-              <p className="mb-1.5 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: g.tessere[0]?.colore }} />{g.titolo}
-              </p>
+              <div className="mb-1.5 flex items-center justify-between px-1">
+                <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-white/50">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: g.tessere[0]?.colore }} />{g.titolo}
+                </p>
+                {!modifica && <PulsanteModuli aree={g.aree} className="-my-1.5 h-9 w-9" />}
+              </div>
               <div className="grid grid-cols-4 gap-1">
                 {g.tessere.map((t) => {
                   const att = qui === t.percorso || (!t.percorso.includes('?') && pathname === t.percorso)
