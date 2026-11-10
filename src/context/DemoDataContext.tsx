@@ -302,6 +302,8 @@ interface DemoDataValue {
 
   // Costi
   aggiungiCosto: (voce: VoceCosto) => void
+  /** più voci insieme (una fattura importata diventa una voce per categoria) */
+  aggiungiCosti: (voci: VoceCosto[]) => void
 
   // Sito — prenotazioni ombrellone
   confermaPrenotazione: (id: string) => void
@@ -469,6 +471,16 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
     ordina: (a, b) => (a.ordine as number) - (b.ordine as number),
   })
   const [costi, setCosti] = useState<VoceCosto[]>(() => clona(seedCosti))
+  // Costi su DB (permesso Costi): al primo avvio la tabella vuota riceve le voci di esempio; le fatture importate stanno in `dati`
+  useSyncSupabase({
+    tabella: 'costi', accesso: accessoDi('costi'), righe: costi, setRighe: setCosti, semina: true,
+    aRiga: ({ id, data, categoria, fornitore, ...dati }) => ({ id, data, categoria, fornitore, dati }),
+    daRiga: (r) => ({
+      ...(r.dati as Omit<VoceCosto, 'id' | 'data' | 'categoria' | 'fornitore'>),
+      id: r.id, data: r.data as string, categoria: r.categoria as string, fornitore: r.fornitore as string,
+    }),
+    ordina: (a, b) => String(b.data).localeCompare(String(a.data)),
+  })
   const [prenotazioniOnline, setPrenotazioni] = useState<PrenotazioneOnline[]>(() =>
     clona(statoSito.prenotazioni)
   )
@@ -1047,6 +1059,9 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const aggiungiCosto = useCallback((voce: VoceCosto) => {
     setCosti((prev) => [voce, ...prev])
   }, [])
+  const aggiungiCosti = useCallback((voci: VoceCosto[]) => {
+    setCosti((prev) => [...voci, ...prev])
+  }, [])
 
   const aggiungiCliente = useCallback((cliente: Cliente) => {
     setClientiAggiunti((prev) => [cliente, ...prev])
@@ -1613,7 +1628,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       giorniComande,
       clientiAggiunti,
       aggiungiCliente,
-      aggiungiCosto,
+      aggiungiCosto, aggiungiCosti,
       confermaPrenotazione,
       rifiutaPrenotazione,
       inviaRichiestaOmbrellone,
@@ -1734,7 +1749,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
       giorniComande,
       clientiAggiunti,
       aggiungiCliente,
-      aggiungiCosto,
+      aggiungiCosto, aggiungiCosti,
       confermaPrenotazione,
       rifiutaPrenotazione,
       inviaRichiestaOmbrellone,

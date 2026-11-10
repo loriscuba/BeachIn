@@ -441,6 +441,33 @@ export interface VoceCosto {
   scadenza?: string
   statoPagamento: StatoPagamento
   metodo: MetodoPagamento
+  /** Presente se la voce viene da una fattura importata (Costi → Importa fattura). */
+  fattura?: FatturaCosto
+}
+
+/** Riga di una fattura fornitore importata, con la categoria scelta. */
+export interface RigaFatturaCosto {
+  codice?: string
+  descrizione: string
+  um?: string
+  quantita?: number
+  prezzo?: number
+  /** sconto in % (es. 5) */
+  sconto?: number
+  importo: number
+  /** aliquota es. 0.22 */
+  iva: number
+}
+
+export interface FatturaCosto {
+  numero: string
+  data: string
+  partitaIva?: string
+  file: string
+  importataIl: string
+  /** totale documento (tutta la fattura, non solo questa voce) */
+  totaleDocumento?: number
+  righe: RigaFatturaCosto[]
 }
 
 // ————————————————————————————————————————————————————————————

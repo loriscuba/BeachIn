@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, Receipt, Lock, Activity, AlertTriangle } from 'lucide-react'
+import { Plus, Receipt, Lock, Activity, AlertTriangle, FileUp, FileText } from 'lucide-react'
 import type { CentroCosto, Ricorrenza, StatoPagamento, TipoCosto, VoceCosto } from '@/data/types'
 import { useDemoData } from '@/context/DemoDataContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -12,19 +12,30 @@ import { euro, percento, data as fmtData } from '@/lib/formatters'
 import { etichetteCentro } from '@/lib/graficoColori'
 import { etichetteRicorrenza, etichetteStatoPagamento } from '@/lib/etichette'
 import { cn } from '@/lib/cn'
+import { useFunzioni } from '@/hooks/useFunzioni'
+import { ImportaFattura } from '@/pages/costi/ImportaFattura'
 
-const mesi: Record<string, string> = { '05': 'Maggio', '06': 'Giugno', '07': 'Luglio', '08': 'Agosto', '09': 'Settembre' }
+const mesi: Record<string, string> = {
+  '01': 'Gennaio', '02': 'Febbraio', '03': 'Marzo', '04': 'Aprile', '05': 'Maggio', '06': 'Giugno',
+  '07': 'Luglio', '08': 'Agosto', '09': 'Settembre', '10': 'Ottobre', '11': 'Novembre', '12': 'Dicembre',
+}
 const centri: CentroCosto[] = ['spiaggia', 'bar', 'ristorante', 'noleggi', 'eventi', 'struttura']
 const tonoStato: Record<StatoPagamento, 'acqua' | 'tenda' | 'boa'> = { pagato: 'acqua', da_pagare: 'tenda', scaduto: 'boa' }
 
 export default function Costi() {
   const { costi, aggiungiCosto } = useDemoData()
+  const { ok } = useFunzioni()
+  const puoImportare = ok('costi.fatture', 2)
   const [modaleAperta, setModale] = useState(false)
+  const [importa, setImporta] = useState(false)
+  const [esito, setEsito] = useState<string | null>(null)
+  const [dettaglio, setDettaglio] = useState<VoceCosto | null>(null)
   const [fCategoria, setFCategoria] = useState('tutte')
   const [fCentro, setFCentro] = useState<CentroCosto | 'tutti'>('tutti')
   const [fStato, setFStato] = useState<StatoPagamento | 'tutti'>('tutti')
   const [fMese, setFMese] = useState('tutti')
 
+  const mesiPresenti = useMemo(() => Object.keys(mesi).filter((m) => costi.some((c) => c.data.slice(5, 7) === m)), [costi])
   const categorie = useMemo(() => Array.from(new Set(costi.map((c) => c.categoria))).sort(), [costi])
 
   const sintesi = useMemo(() => {
@@ -77,7 +88,10 @@ export default function Costi() {
       cella: (c) => (
         <div>
           <p className="font-medium text-profondo">{c.sottocategoria}</p>
-          <p className="text-xs text-profondo/50">{c.categoria} · {c.fornitore}</p>
+          <p className="text-xs text-profondo/50">
+            {c.categoria} · {c.fornitore}
+            {c.fattura && <span className="ml-1 inline-flex items-center gap-0.5 text-cabina"><FileText className="inline h-3 w-3" />Fatt. {c.fattura.numero}</span>}
+          </p>
         </div>
       ),
     },
@@ -150,12 +164,24 @@ export default function Costi() {
           titolo="Elenco costi"
           sottotitolo={`${filtrati.length} voci`}
           azione={
-            <Button variante="primario" dimensione="sm" onClick={() => setModale(true)}>
-              <Plus className="h-4 w-4" /> Aggiungi costo
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {puoImportare && (
+                <Button variante="secondario" dimensione="sm" onClick={() => setImporta(true)}>
+                  <FileUp className="h-4 w-4" /> Importa fattura
+                </Button>
+              )}
+              <Button variante="primario" dimensione="sm" onClick={() => setModale(true)}>
+                <Plus className="h-4 w-4" /> Aggiungi costo
+              </Button>
+            </div>
           }
         />
         <CardBody className="space-y-3">
+          {esito && (
+            <button type="button" onClick={() => setEsito(null)} className="w-full rounded-xl bg-acqua/15 px-3 py-2 text-left text-sm text-profondo">
+              {esito}
+            </button>
+          )}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <Select value={fCategoria} onChange={(e) => setFCategoria(e.target.value)}
               opzioni={[{ valore: 'tutte', etichetta: 'Tutte le categorie' }, ...categorie.map((c) => ({ valore: c, etichetta: c }))]} />
@@ -164,11 +190,18 @@ export default function Costi() {
             <Select value={fStato} onChange={(e) => setFStato(e.target.value as StatoPagamento | 'tutti')}
               opzioni={[{ valore: 'tutti', etichetta: 'Tutti gli stati' }, ...Object.entries(etichetteStatoPagamento).map(([v, l]) => ({ valore: v, etichetta: l }))]} />
             <Select value={fMese} onChange={(e) => setFMese(e.target.value)}
-              opzioni={[{ valore: 'tutti', etichetta: 'Tutti i mesi' }, ...Object.entries(mesi).map(([v, l]) => ({ valore: v, etichetta: l }))]} />
+              opzioni={[{ valore: 'tutti', etichetta: 'Tutti i mesi' }, ...mesiPresenti.map((v) => ({ valore: v, etichetta: mesi[v] }))]} />
           </div>
-          <Tabella colonne={colonne} righe={filtrati} chiaveRiga={(c) => c.id} denso />
+          <Tabella colonne={colonne} righe={filtrati} chiaveRiga={(c) => c.id} denso onRigaClick={(c) => c.fattura && setDettaglio(c)} />
         </CardBody>
       </Card>
+
+      <ImportaFattura
+        aperto={importa}
+        onChiudi={() => setImporta(false)}
+        onImportata={(n) => { setEsito(`Fattura importata: ${n === 1 ? '1 voce di costo aggiunta' : `${n} voci di costo aggiunte`}.`); setFCategoria('tutte'); setFMese('tutti') }}
+      />
+      <DettaglioFattura voce={dettaglio} onChiudi={() => setDettaglio(null)} />
 
       <NuovoCosto
         aperto={modaleAperta}
@@ -240,6 +273,37 @@ function NuovoCosto({ aperto, onChiudi, onSalva }: { aperto: boolean; onChiudi: 
         <Campo label="Data"><input type="date" className={ic} value={f.data} onChange={(e) => set('data', e.target.value)} /></Campo>
         <Campo label="Scadenza"><input type="date" className={ic} value={f.scadenza} onChange={(e) => set('scadenza', e.target.value)} /></Campo>
       </div>
+    </Modal>
+  )
+}
+
+function DettaglioFattura({ voce, onChiudi }: { voce: VoceCosto | null; onChiudi: () => void }) {
+  const f = voce?.fattura
+  return (
+    <Modal aperto={!!f} onChiudi={onChiudi} titolo={f ? `Fattura ${f.numero}` : ''} larghezza="max-w-2xl">
+      {voce && f && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-2xl bg-calce/60 p-3 text-sm">
+            <p className="col-span-2 font-semibold text-profondo">{voce.fornitore}{f.partitaIva ? <span className="font-normal text-profondo/55"> · P.IVA {f.partitaIva}</span> : null}</p>
+            <p className="text-profondo/70">Data {fmtData(f.data)}{voce.scadenza ? ` · scade ${fmtData(voce.scadenza)}` : ''}</p>
+            <p className="text-right text-profondo/70">{f.totaleDocumento != null ? `Totale fattura ${euro(f.totaleDocumento)}` : ''}</p>
+            <p className="col-span-2 text-profondo">
+              Questa voce: <b>{voce.categoria} › {voce.sottocategoria}</b> · {etichetteCentro[voce.centroCosto]} · {euro(voce.imponibile)} + IVA {Math.round(voce.iva * 100)}%
+            </p>
+          </div>
+          <table className="w-full text-xs">
+            <tbody>
+              {f.righe.map((r, i) => (
+                <tr key={i} className="border-b border-calce-200/70 last:border-0">
+                  <td className="py-1 pr-2 text-profondo">{r.descrizione}<span className="num block text-profondo/45">{[r.codice, r.quantita != null && `${r.quantita} ${r.um ?? ''}`.trim(), r.prezzo != null && `× ${euro(r.prezzo)}`, r.sconto ? `−${r.sconto}%` : ''].filter(Boolean).join(' · ')}</span></td>
+                  <td className="num py-1 text-right font-medium text-profondo">{euro(r.importo)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-xs text-profondo/45">Importata da {f.file}</p>
+        </div>
+      )}
     </Modal>
   )
 }
