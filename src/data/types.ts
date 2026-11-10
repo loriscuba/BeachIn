@@ -483,6 +483,54 @@ export interface Dipendente {
   costoOrarioLordo: number
   costoAziendaleMensile: number
   turni: TurnoLavoro[]
+  /** Anagrafica e contratto (arrivano dall'importazione della busta paga) */
+  codiceFiscale?: string
+  dataNascita?: string
+  comuneResidenza?: string
+  matricola?: string
+  qualifica?: string
+  ccnl?: string
+  iban?: string
+  /** Buste paga importate, la più recente per prima */
+  bustePaga?: BustaPaga[]
+}
+
+export interface VoceBustaPaga {
+  codice: string
+  descrizione: string
+  quantita?: number
+  base?: number
+  competenza?: number
+  trattenuta?: number
+  statistico?: number
+}
+
+/** Dati principali di un cedolino importato dal PDF. */
+export interface BustaPaga {
+  /** "2026-07" */
+  periodo: string
+  file: string
+  importataIl: string
+  ditta?: string
+  livello?: string
+  retribuzioneFatto?: number
+  pagaBase?: number
+  contingenza?: number
+  oreMensiliCcnl?: number
+  percentualePartTime?: number
+  giorniLavorati?: number
+  oreStraordinario?: number
+  totaleLordo?: number
+  contributiDipendente?: number
+  imponibileIrpef?: number
+  irpefNetta?: number
+  totaleTrattenute?: number
+  netto?: number
+  tfrMese?: number
+  tfrMaturato?: number
+  ferieResidue?: number
+  rolResidui?: number
+  voci: VoceBustaPaga[]
 }
 
 // ————————————————————————————————————————————————————————————

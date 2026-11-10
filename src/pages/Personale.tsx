@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Users, Wallet, Clock, CalendarClock } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Users, Wallet, Clock, CalendarClock, FileUp } from 'lucide-react'
 import type { Dipendente, RuoloDipendente } from '@/data/types'
-import { getPersonale } from '@/data/api'
+import { useDemoData } from '@/context/DemoDataContext'
+import { useFunzioni } from '@/hooks/useFunzioni'
+import { Button } from '@/components/ui/Button'
+import { ImportaBustaPaga } from './personale/ImportaBustaPaga'
+import { SchedaDipendente } from './personale/SchedaDipendente'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Tabella, type Colonna } from '@/components/ui/Tabella'
@@ -10,12 +14,11 @@ import { etichetteContratto, etichetteRuolo, giorniSettimanaBrevi } from '@/lib/
 import { cn } from '@/lib/cn'
 
 export default function Personale() {
-  const [dip, setDip] = useState<Dipendente[]>([])
-  const [caricato, setCaricato] = useState(false)
-
-  useEffect(() => {
-    getPersonale().then((d) => { setDip(d); setCaricato(true) })
-  }, [])
+  const { dipendenti: dip } = useDemoData()
+  const { ok } = useFunzioni()
+  const puoImportare = ok('personale.buste-paga', 2)
+  const [importa, setImporta] = useState(false)
+  const [scelto, setScelto] = useState<string | null>(null)
 
   const sintesi = useMemo(() => {
     const costoMensile = dip.reduce((s, d) => s + d.costoAziendaleMensile, 0)
@@ -29,10 +32,6 @@ export default function Personale() {
     ).map(([ruolo, v]) => ({ ruolo: ruolo as RuoloDipendente, ...v })).sort((a, b) => b.costo - a.costo)
     return { costoMensile, oreContratto, oreLavorate, perRuolo, maxRuolo: Math.max(1, ...perRuolo.map((r) => r.costo)) }
   }, [dip])
-
-  if (!caricato) {
-    return <div className="grid h-64 place-items-center text-profondo/50"><Loader2 className="h-6 w-6 animate-spin" /></div>
-  }
 
   const colonne: Colonna<Dipendente>[] = [
     {
@@ -91,11 +90,20 @@ export default function Personale() {
 
       {/* Organico */}
       <Card>
-        <CardHeader titolo="Organico" sottotitolo={`${dip.length} dipendenti`} />
+        <CardHeader
+          titolo="Organico"
+          sottotitolo={`${dip.length} dipendenti · tocca un nome per i dettagli`}
+          azione={puoImportare ? <Button dimensione="sm" onClick={() => setImporta(true)}><FileUp className="h-4 w-4" />Importa busta paga</Button> : undefined}
+        />
         <CardBody className="px-1 py-1 sm:px-2">
-          <Tabella colonne={colonne} righe={dip} chiaveRiga={(d) => d.id} />
+          <Tabella
+            colonne={colonne} righe={dip} chiaveRiga={(d) => d.id} onRigaClick={(d) => setScelto(d.id)}
+            vuoto={puoImportare ? 'Nessun dipendente: importa una busta paga in PDF per crearne uno.' : 'Nessun dipendente.'}
+          />
         </CardBody>
       </Card>
+      <ImportaBustaPaga aperto={importa} onChiudi={() => setImporta(false)} onImportato={(d) => setScelto(d.id)} />
+      <SchedaDipendente dipendente={dip.find((d) => d.id === scelto) ?? null} onChiudi={() => setScelto(null)} />
 
       {/* Turni settimanali */}
       <Card>
