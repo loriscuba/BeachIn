@@ -117,7 +117,8 @@ Aggiornare qui quando cambia un modulo.
   a login/logout (`main.tsx`, rilegge i dati col nuovo ruolo). `Sidebar` = modulo attivo **e** permesso; `ModuloGate` →
   `AccessoNegato` (livello 0) o `SolaLettura` (livello 1: blocca clic/digitazione tranne schede `data-naviga`, select e filtri data).
   Impostazioni a schede `?tab=generali|utenti`; **Utenti e ruoli** = `src/pages/impostazioni/UtentiRuoli.tsx` (elenco utenti,
-  nuovo/modifica/password/disattiva/elimina, griglia ruoli×sezioni modificabile, nuovo ruolo). `Prenotazioni` (ex AdminApp): schede secondo il
+  nuovo/modifica/password/disattiva/elimina, griglia ruoli×sezioni modificabile con permesso `utenti` 2 = Amministratore e Responsabile da 0031; la bozza della griglia
+  resta fino a Salva anche se i ruoli si ricaricano in tempo reale, nuovo ruolo). `Prenotazioni` (ex AdminApp): schede secondo il
   permesso di modifica (Prenotazioni/Menu = ristorante, App = sito, Ingressi = eventi).
 - **Foto profilo** (migrazione 0013, `beachin.utenti.foto`): scelta toccando il cerchio in Nuovo/Modifica utente (`SceltaFoto`,
   `fileAImmagine(file, 'utenti', 320)` → Storage `beachin/utenti/`), salvata dalla Edge Function; `Avatar` tondo (iniziali se manca)

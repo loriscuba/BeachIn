@@ -250,9 +250,10 @@ function ModalePassword({ utente, onChiudi, esegui }: { utente: Utente; onChiudi
 
 /** Griglia ruoli × sezioni: ogni cella Nessuno / Lettura / Modifica. L'amministratore ha sempre tutto. */
 function MatricePermessi({ ruoli, utenti, modifica, esegui }: { ruoli: Ruolo[]; utenti: Utente[]; modifica: boolean; esegui: Esegui }) {
+  // La bozza resta finché non si salva: ogni accesso di un utente aggiorna beachin.utenti e fa ricaricare i ruoli
+  // (in tempo reale), e prima questo cancellava le modifiche appena scelte.
   const [bozza, setBozza] = useState<Record<string, Permessi>>({})
   const [nuovo, setNuovo] = useState(false)
-  useEffect(() => { setBozza({}) }, [ruoli])
   const permessi = (r: Ruolo) => bozza[r.id] ?? r.permessi
   const cambiati = useMemo(() => ruoli.filter((r) => bozza[r.id] && JSON.stringify(bozza[r.id]) !== JSON.stringify(r.permessi)), [ruoli, bozza])
   const imposta = (r: Ruolo, s: string, l: Livello) => setBozza({ ...bozza, [r.id]: { ...permessi(r), [s]: l } })
@@ -268,6 +269,7 @@ function MatricePermessi({ ruoli, utenti, modifica, esegui }: { ruoli: Ruolo[]; 
     for (const r of cambiati) {
       if (!(await esegui(salvaRuolo({ ...r, permessi: bozza[r.id] }, false), 'Permessi salvati'))) return
     }
+    setBozza({})
   }
   const assegnati = (id: string) => utenti.filter((u) => u.ruolo_id === id).length
   const ristrette = (sezione: string, ids: string[]) => ruoli.some((r) => !r.amministratore && ids.some((id) => (permessi(r)[id] ?? 2) < (permessi(r)[sezione] ?? 0)))
