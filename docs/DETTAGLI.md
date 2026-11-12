@@ -384,8 +384,9 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   ha sempre un evento prenotabile.
 - Ogni `RichiestaEvento` ha `codice` (8 caratteri senza ambigui, `nuovoCodiceInvito` in `src/lib/invitiEventi.ts`; sul DB default
   `beachin.nuovo_codice_invito()`), `arrivati` e `arrivoTs`. Migrazione `0006_inviti_eventi.sql` (indice unico sul codice).
-- **Mail di conferma** (`beachin-email`): per gli eventi confermati blocco "Il tuo invito" con QR (immagine da api.qrserver.com,
-  le immagini `data:` sono bloccate dai client di posta), codice e bottone. Il QR contiene `<app>/invito?c=CODICE`; base da Vault
+- **Mail di conferma** (`beachin-email`): per gli eventi confermati blocco "Il tuo invito" con QR (PNG col logo del lido al centro,
+  generato dalla funzione con `qr.ts` e salvato in Storage `beachin/inviti-qr/CODICE.png`, perché i client di posta bloccano SVG e
+  immagini `data:`; logo da `<img>logo.png`; se fallisce torna al QR semplice di api.qrserver.com), codice e bottone. Il QR contiene `<app>/invito?c=CODICE`; base da Vault
   `beachin_app_url` (default https://beachin.pages.dev/; in produzione lo imposta il workflow Deploy). Posta/WhatsApp simulati
   in app portano lo stesso link.
 - **Pagina pubblica** `/invito?c=` (`src/pages/InvitoEvento.tsx`): QR grande + codice + dettagli; dice se l'ingresso è registrato.
@@ -405,7 +406,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 ## Ristorante a sottosezioni (tab `?tab=`)
 - `Ristorante.tsx`: KPI + Tabs **Prenotazioni | Menu | Magazzino** (default Prenotazioni; il vecchio `?tab=tavoli` porta lì; componenti in `src/pages/ristorante/`).
 - **Menu** (`PannelloMenu`): traduzioni 5 lingue (it/en/fr/de/es, `src/lib/menuLingue.ts`: seed curato, poi MyMemory
-  + glossario), correzione manuale (`impostaTraduzione`), QR (`src/components/QrCodice.tsx`, lib `qrcode`, `stampaQr`; logo del lido `logoLido` al centro, correzione errori H, colore per `tipo`: tavoli blu `#1D4E89`, inviti eventi rosso `#B3261E` anche nella mail, altri navy),
+  + glossario), correzione manuale (`impostaTraduzione`), QR (`src/components/QrCodice.tsx`, lib `qrcode`, `stampaQr`; logo del lido `logoLido` al centro, correzione errori H, colore per `tipo`: tavoli blu `#1D4E89`, inviti eventi rosso `#B3261E` col logo anche nella mail, altri navy),
   **Assistente vocale incorporato** (tolto dalla sidebar; `/assistente-vocale` → redirect a `/ristorante?tab=menu`).
   `aggiungiPiatto/rinominaPiatto` ritraducono da soli (`traduzioni: {}` = in corso). Lista unica "Menu" = `EditorMenu` divisa per **sezioni dinamiche** (`sezioniMenu` nel context, `CategoriaPiatto = string` = id sezione; `aggiungiSezione/rinominaSezione/rimuoviSezione/spostaSezione`, nomi tradotti con `nomeSezioneIn`); piatti modificabili al click (nome, prezzo, traduzione, sezione, **foto** `Piatto.foto` via `modificaPiatto`), aggiunta piatto per sezione; la foto appare nel menu pubblico; assistente in riquadro piccolo (`<AssistenteVocale compatto />`, senza la sua lista menu) sotto il QR.
 - **Menu pubblico**: rotta `/menu?tavolo=N&lang=xx` (`MenuPubblico.tsx`, fuori dallo shell), `urlMenu()` per i QR.
