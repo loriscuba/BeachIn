@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, RotateCcw, Users, UserCheck, Clock, Ticket, ExternalLink, ScanLine, Mail } from 'lucide-react'
+import { Check, X, RotateCcw, Users, UserCheck, Clock, Ticket, ExternalLink, ScanLine, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useDemoData } from '@/context/DemoDataContext'
 import { config } from '@/data/config'
@@ -12,7 +12,7 @@ import { oraDa, urlInvito } from '@/lib/invitiEventi'
 
 /** Eventi → Presenze: chi ha l'invito confermato e chi è già entrato (ingressi registrati dall'app admin col QR). */
 export function PresenzeEventi() {
-  const { eventi, richiesteEventi, segnaArrivoEvento, reinviaInvito } = useDemoData()
+  const { eventi, richiesteEventi, segnaArrivoEvento, reinviaInvito, confermaEvento, rifiutaEvento } = useDemoData()
   const [inviati, setInviati] = useState<Record<string, boolean>>({})
   const reinvia = (id: string) => {
     reinviaInvito(id)
@@ -28,6 +28,11 @@ export function PresenzeEventi() {
   const invitati = richiesteEventi
     .filter((r) => r.eventoId === eventoId && r.stato === 'confermata')
     .sort((a, b) => a.nome.localeCompare(b.nome))
+  // richieste dal sito non ancora confermate: in elenco con stato "Da confermare", fuori dai conteggi
+  const daConfermare = richiesteEventi
+    .filter((r) => r.eventoId === eventoId && r.stato === 'da_confermare')
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+  const righe = [...daConfermare, ...invitati]
   const attese = invitati.reduce((s, r) => s + r.persone, 0)
   const entrate = invitati.reduce((s, r) => s + (r.arrivati ?? 0), 0)
 
@@ -53,8 +58,8 @@ export function PresenzeEventi() {
       <Card>
         <CardHeader titolo={evento ? `Presenze · ${evento.nome}` : 'Presenze'} sottotitolo="Gli ingressi si registrano scansionando il QR dell’invito; qui puoi anche segnarli a mano" />
         <CardBody className="pt-1">
-          {invitati.length === 0 ? (
-            <p className="py-6 text-center text-sm text-profondo/50">Nessun invito confermato per questo evento.</p>
+          {righe.length === 0 ? (
+            <p className="py-6 text-center text-sm text-profondo/50">Nessun invito per questo evento.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -63,8 +68,19 @@ export function PresenzeEventi() {
                   <th className="py-2 pr-3 font-semibold">Codice invito</th><th className="py-2 pr-3 font-semibold">Stato</th><th className="py-2" />
                 </tr></thead>
                 <tbody className="divide-y divide-calce-200">
-                  {invitati.map((r) => {
+                  {righe.map((r) => {
                     const arr = r.arrivati ?? 0
+                    if (r.stato === 'da_confermare') return (
+                      <tr key={r.id} className="bg-tenda/5">
+                        <td className="py-2.5 pr-3"><p className="font-medium text-profondo">{r.nome}</p><p className="text-profondo/55">{r.email || r.telefono}</p></td>
+                        <td className="num py-2.5 pr-3">{r.persone}</td>
+                        <td className="py-2.5 pr-3"><span className="text-profondo/40">—</span></td>
+                        <td className="py-2.5 pr-3"><Badge tono="giallo">Da confermare</Badge></td>
+                        <td className="space-x-2 whitespace-nowrap py-2.5 text-right">
+                          <Button variante="primario" dimensione="sm" onClick={() => confermaEvento(r.id)}><Check className="h-4 w-4" /> Conferma</Button>
+                          <Button variante="secondario" dimensione="sm" onClick={() => { if (confirm(`Rifiutare la richiesta di ${r.nome}? Riceverà la mail “posti esauriti”.`)) rifiutaEvento(r.id) }}><X className="h-4 w-4" /> Rifiuta</Button></td>
+                      </tr>
+                    )
                     return (
                       <tr key={r.id}>
                         <td className="py-2.5 pr-3"><p className="font-medium text-profondo">{r.nome}</p><p className="text-profondo/55">{r.email || r.telefono || (r.origine === 'manuale' ? 'inserito a mano' : '')}</p></td>

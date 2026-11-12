@@ -97,7 +97,7 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
     ...richiesteEventi.filter((r) => r.azioneCliente && r.azioneTs).map((r) => ({
       id: `eventi-cliente-${r.id}-${r.azioneTs}`, categoria: 'eventi' as const,
       titolo: r.azioneCliente === 'annulla' ? `${r.eventoNome}: annullata dal cliente` : `${r.eventoNome}: modificata dal cliente`,
-      testo: `${r.nome} · ${r.persone} persone`, percorso: '/eventi?tab=presenze',
+      testo: `${r.nome} · ${r.persone} persone`, percorso: r.stato === 'da_confermare' ? '/eventi?tab=richieste' : '/eventi?tab=presenze',
     })),
     ...prenotazioniOnline.filter((p) => p.stato === 'da_confermare').map((p) => ({
       id: `spiaggia-${p.id}`, categoria: 'spiaggia' as const, titolo: 'Prenotazione ombrellone dal sito',
@@ -105,7 +105,7 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
     })),
     ...richiesteEventi.filter((r) => r.stato === 'da_confermare' && r.origine !== 'manuale').map((r) => ({
       id: `eventi-${r.id}`, categoria: 'eventi' as const, titolo: `Richiesta per ${r.eventoNome}`,
-      testo: `${r.nome} · ${r.persone} persone`, percorso: '/eventi?tab=presenze',
+      testo: `${r.nome} · ${r.persone} persone`, percorso: '/eventi?tab=richieste',
     })),
     // le comande prese al banco le ha appena fatte chi è lì: niente notifica
     ...comande.filter((c) => c.stato === 'in_attesa' && c.origine !== 'bar').map((c) => ({

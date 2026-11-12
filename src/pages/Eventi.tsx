@@ -22,6 +22,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { useSchede, SchedaProtetta } from '@/hooks/useFunzioni'
 import { PresenzeEventi } from '@/components/eventi/PresenzeEventi'
 import { IngressiEventi } from '@/components/eventi/IngressiEventi'
+import { RichiesteEventi } from '@/components/eventi/RichiesteEventi'
 
 const iconaTipo: Record<TipoEvento, typeof Trophy> = {
   sport: Trophy, musica: Music, festa: PartyPopper, gastronomia: UtensilsCrossed, benessere: Flower2, privato: Gift,
@@ -29,19 +30,22 @@ const iconaTipo: Record<TipoEvento, typeof Trophy> = {
 const mesiLabel = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 
 export default function Eventi() {
-  // Sottosezione da `?tab=` (sottomenu laterale): calendario o presenze, secondo funzionalità attive e permessi.
+  // Sottosezione da `?tab=` (sottomenu laterale): calendario, richieste o presenze, secondo funzionalità attive e permessi.
   const [q, setQ] = useSearchParams()
-  const { visibili, tab, livello } = useSchede('eventi', ['calendario', 'presenze'] as const, q.get('tab'))
-  const nomi = { calendario: 'Calendario', presenze: 'Presenze' }
+  const { visibili, tab, livello } = useSchede('eventi', ['calendario', 'richieste', 'presenze'] as const, q.get('tab'))
+  const nomi = { calendario: 'Calendario', richieste: 'Richieste', presenze: 'Presenze' }
+  // bollino sulla scheda Richieste: quelle dal sito ancora da confermare
+  const { richiesteEventi } = useDemoData()
+  const daConfermare = richiesteEventi.filter((r) => r.stato === 'da_confermare' && r.origine !== 'manuale').length
   // Presenze → "Registra ingressi col QR" (`&ingressi=1&evento=`): solo la parte QR, con ritorno a Presenze
   const ingressi = tab === 'presenze' && q.has('ingressi')
   return (
     <div className="space-y-4">
       {ingressi && <Link to="/eventi?tab=presenze" className="inline-flex items-center gap-1 text-sm font-semibold text-cabina"><ChevronLeft className="h-4 w-4" /> Presenze</Link>}
-      {!ingressi && visibili.length > 1 && tab && <Tabs opzioni={visibili.map((v) => ({ valore: v, etichetta: nomi[v] }))}
+      {!ingressi && visibili.length > 1 && tab && <Tabs opzioni={visibili.map((v) => ({ valore: v, etichetta: nomi[v], badge: v === 'richieste' ? daConfermare : undefined }))}
         valore={tab} onChange={(v) => setQ({ tab: v }, { replace: true })} />}
       <SchedaProtetta modulo="eventi" livello={livello}>
-        {ingressi ? <IngressiEventi /> : tab === 'presenze' ? <PresenzeEventi /> : <CalendarioEventi />}
+        {ingressi ? <IngressiEventi /> : tab === 'presenze' ? <PresenzeEventi /> : tab === 'richieste' ? <RichiesteEventi /> : <CalendarioEventi />}
       </SchedaProtetta>
     </div>
   )

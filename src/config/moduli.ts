@@ -208,6 +208,7 @@ export const FUNZIONI: InfoFunzione[] = [
   f('personale', 'buste-paga', 'Importa buste paga (PDF)'),
   f('costi', 'fatture', 'Importa fatture fornitori (PDF/XML)'),
   f('eventi', 'calendario', 'Calendario'),
+  f('eventi', 'richieste', 'Richieste dal sito da confermare'),
   f('eventi', 'presenze', 'Presenze e ingressi (scanner)'),
   f('sito', 'panoramica', 'Panoramica'),
   f('sito', 'prenotazioni', 'Prenotazioni online'),
