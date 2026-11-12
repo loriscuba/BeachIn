@@ -1,15 +1,25 @@
 {
-  "name": "Lido dei Pini",
-  "short_name": "Lido dei Pini",
+  "name": "Lido dei Pini App",
+  "short_name": "Lido dei Pini App",
   "description": "L'app del Lido dei Pini: ordini dall'ombrellone, prenotazioni, news, eventi e lavagnetta",
   "id": "./",
   "start_url": "./comandapp",
   "scope": "./comandapp",
   "display": "standalone",
-  "background_color": "#F2C14E",
+  "background_color": "#FFFFFF",
   "theme_color": "#F2C14E",
   "icons": [
-    { "src": "comandapp-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "comandapp-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "comandapp-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "comandapp-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

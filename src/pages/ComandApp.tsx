@@ -44,7 +44,14 @@ function leggiSessione(): Utente | undefined {
 export default function ComandApp() {
   // installabile come app a sé (icona gialla, distinta dall'app Admin)
   useEffect(() => {
-    impostaManifest('comandapp.webmanifest', 'comandapp-icon-192.png', config.nome)
+    impostaManifest('comandapp.webmanifest', 'comandapp-icon-192.png', 'Lido dei Pini App')
+    // titolo e icona della scheda del browser col logo del lido (anche arrivando da altre pagine o su GitHub Pages)
+    document.title = 'Lido dei Pini App'
+    const base = import.meta.env.BASE_URL
+    document.head.querySelectorAll('link[rel="icon"]').forEach((l) => l.remove())
+    for (const [href, sizes] of [['lido-favicon.ico', 'any'], ['lido-favicon-32.png', '32x32']]) {
+      const l = document.createElement('link'); l.rel = 'icon'; l.href = `${base}${href}`; l.sizes.value = sizes; document.head.appendChild(l)
+    }
     // service worker: richiesto da alcuni browser Android per proporre l'installazione
     if ('serviceWorker' in navigator) void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw-admin.js`, { scope: import.meta.env.BASE_URL }).catch(() => undefined)
   }, [])
@@ -107,7 +114,7 @@ export default function ComandApp() {
         </div>
       </header>
       <main className="mx-auto max-w-md md:max-w-3xl lg:max-w-5xl px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
-        <PulsanteInstalla nome={config.nome} />
+        <PulsanteInstalla nome="Lido dei Pini App" />
         <InvitoNotifiche app="clienti" titolo="Resta aggiornato" descrizione="Ricevi una notifica quando pubblichiamo una news o aggiorniamo la lavagna del giorno." />
         {sez === 'news' && <News scorciatoie={voci.filter((v) => v.id !== 'news' && v.id !== 'contatti')} vai={vai} />}
         {sez === 'ombrellone' && (utente ? <Area utente={utente} /> : <Login onEntra={(u) => { try { localStorage.setItem(CHIAVE, u.utente) } catch { /* */ } setUtente(u) }} />)}
