@@ -10,6 +10,7 @@
 //   beachin_email_img       → (facoltativo) cartella pubblica delle immagini della mail, default <app>/email/ (file in public/email)
 // Grafica: testata blu col logo, foto (ristorante dal sito; evento = foto caricata dell'evento), scheda col riepilogo.
 import postgres from 'npm:postgres@3.4.5'
+import { pngQr } from './qr.ts'
 
 const NOME = 'Lido dei Pini'
 const sql = postgres(Deno.env.get('SUPABASE_DB_URL')!, { prepare: false })
@@ -39,11 +40,37 @@ function bloccoModifica(token: string, scadenza: string, base: string): string {
 <p style="margin:8px 0 0;font-size:12px;color:#6B8590">Puoi cambiare online fino a ${esc(entro)}.</p></div>`
 }
 
+const COLORE_INVITO = '#B3261E' // rosso degli inviti eventi, come COLORE_QR.evento dell'app
+const urlInvito = (codice: string, base: string) => `${base.replace(/\/?$/, '/')}invito?c=${encodeURIComponent(codice)}`
+
+/** QR col logo del lido al centro, salvato come PNG pubblico nello Storage (bucket beachin, cartella inviti-qr).
+ *  I client di posta bloccano SVG e immagini data: incorporate, quindi serve un'immagine remota.
+ *  Se qualcosa va storto si torna al QR semplice di qrserver (stesso colore, senza logo). */
+async function qrInvito(codice: string, base: string, img: string): Promise<string> {
+  const url = urlInvito(codice, base)
+  const semplice = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&ecc=H&color=${COLORE_INVITO.slice(1)}&data=${encodeURIComponent(url)}`
+  try {
+    const supa = Deno.env.get('SUPABASE_URL'), chiave = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!supa || !chiave) return semplice
+    const logo = await fetch(`${img}logo.png`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null)
+    const png = pngQr(url, COLORE_INVITO, logo ? new Uint8Array(logo) : null)
+    const percorso = `inviti-qr/${codice.replace(/[^A-Za-z0-9_-]/g, '_')}.png`
+    const up = await fetch(`${supa}/storage/v1/object/beachin/${percorso}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${chiave}`, apikey: chiave, 'Content-Type': 'image/png', 'x-upsert': 'true', 'cache-control': '3600' },
+      body: png,
+    })
+    if (!up.ok) { console.error('qr storage', up.status, await up.text().catch(() => '')); return semplice }
+    return `${supa}/storage/v1/object/public/beachin/${percorso}`
+  } catch (e) {
+    console.error('qr', e)
+    return semplice
+  }
+}
+
 /** Blocco invito con QR (solo eventi confermati): il QR contiene il link alla pagina dell'invito, letto all'ingresso dall'app admin. */
-function bloccoInvito(codice: string, base: string): string {
-  const url = `${base.replace(/\/?$/, '/')}invito?c=${encodeURIComponent(codice)}`
-  // QR come immagine remota: i client di posta (Gmail, Outlook) bloccano le immagini data: incorporate
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&ecc=H&color=B3261E&data=${encodeURIComponent(url)}`
+function bloccoInvito(codice: string, base: string, qr: string): string {
+  const url = urlInvito(codice, base)
   return `<div style="margin:24px 0;padding:20px;border:1px solid #DCE4E6;border-radius:16px;text-align:center">
 <p style="margin:0 0 12px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#2E7D9A"><b>Il tuo invito</b></p>
 <img src="${qr}" width="200" height="200" alt="QR dell'invito ${esc(codice)}" style="display:block;margin:0 auto">
@@ -92,7 +119,7 @@ function riepilogo(tabella: string, r: Richiesta): [string, string][] {
 }
 
 /** Mail completa (tabelle e stili in linea, come vogliono i client di posta). */
-function pagina(tabella: string, r: Richiesta, t: Omit<Testo, 'oggetto'>, app: string, img: string, modifica: string): string {
+function pagina(tabella: string, r: Richiesta, t: Omit<Testo, 'oggetto'>, app: string, img: string, modifica: string, qr: string): string {
   const evento = tabella === 'richieste_eventi'
   const foto = evento && r.evento_foto?.startsWith('https://') ? r.evento_foto : `${img}${evento ? 'evento' : 'ristorante'}.jpg`
   const righe = riepilogo(tabella, r).map(([k, v]) => `<tr><td style="padding:6px 0;color:#6B8590;font-size:13px;text-transform:uppercase;letter-spacing:.08em">${k}</td>
@@ -111,7 +138,7 @@ function pagina(tabella: string, r: Richiesta, t: Omit<Testo, 'oggetto'>, app: s
 <p style="margin:0 0 12px;font-size:15px;line-height:1.6">Gentile ${esc(r.nome)},</p>
 ${t.righe.map((x) => `<p style="margin:0 0 12px;font-size:15px;line-height:1.6">${x}</p>`).join('')}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 8px;padding:12px 18px;background:#EDF1F2;border-radius:14px">${righe}</table>
-${evento && r.stato === 'confermata' && r.codice ? bloccoInvito(r.codice, app) : ''}
+${evento && r.stato === 'confermata' && r.codice ? bloccoInvito(r.codice, app, qr) : ''}
 ${modifica}
 </td></tr>
 <tr><td style="padding:16px 28px 28px;font-size:15px;line-height:1.6">A presto,<br><b>${NOME}</b></td></tr>
@@ -138,7 +165,9 @@ Deno.serve(async (req) => {
       const [{ p }] = await sql`select beachin.prenotazione_cliente(${r.token_cliente}) as p`
       if (p?.modificabile) modifica = bloccoModifica(r.token_cliente, p.scadenza, app)
     }
-    const html = pagina(tabella, r, t, app, s.beachin_email_img || `${app.replace(/\/?$/, '/')}email/`, modifica)
+    const img = s.beachin_email_img || `${app.replace(/\/?$/, '/')}email/`
+    const qr = tabella === 'richieste_eventi' && r.stato === 'confermata' && r.codice ? await qrInvito(r.codice, app, img) : ''
+    const html = pagina(tabella, r, t, app, img, modifica, qr)
 
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
