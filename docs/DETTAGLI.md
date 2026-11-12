@@ -393,7 +393,11 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   oggi/prossimo, `eventoPredefinito`), contatori entrate/attese, `ScannerQr` (getUserMedia + `jsqr`, fotocamera posteriore `ideal` 1920×1080, ripiego `video:true`; ~11 letture/s alternando riquadro centrale
   a piena risoluzione e fotogramma intero ridotto, ogni 4 giri anche colori invertiti; errore spiegato per tipo con Riprova) o codice scritto nel campo unico "Cerca nome o codice invito" (Invio: verifica l'unico invitato trovato, altrimenti il testo come codice) → `verificaInvito`: valido (scelta "entrano N", ding) / già entrato (con annulla) / altro evento (tasto "Passa a quell'evento") / non confermata / sconosciuto
   (campanello); l'esito viene portato in vista (sta sotto la fotocamera). Lista invitati con "Entrati" e ↺. Azione context `segnaArrivoEvento(id, n)` (0 = annulla).
-- **Gestionale Eventi** a sottomenu `?tab=calendario|presenze`: Calendario con schede **In corso e prossimi** (data ≥ oggi reale, dal più vicino) e **Passati** (dal più recente), raggruppati per mese; Presenze (`src/components/eventi/PresenzeEventi.tsx`, tendina con solo eventi da oggi in poi, dal più vicino) con KPI
+- **Eventi → Richieste** (`?tab=richieste`, funzionalità `eventi.richieste`, `src/components/eventi/RichiesteEventi.tsx`): richieste dal sito
+  (`origine !== 'manuale'`) con schede **Da confermare** (bollino col numero, anche sulla scheda della pagina) / **Già gestite** (eventi da oggi in poi);
+  Conferma/Rifiuta = `confermaEvento`/`rifiutaEvento`. Le notifiche "Richiesta per <evento>" (e le modifiche del cliente ancora da confermare)
+  del centro notifiche aprono questa scheda. In Presenze le richieste da confermare compaiono in cima con "Da confermare" (fuori dai KPI) e Conferma/Rifiuta.
+- **Gestionale Eventi** a sottomenu `?tab=calendario|richieste|presenze`: Calendario con schede **In corso e prossimi** (data ≥ oggi reale, dal più vicino) e **Passati** (dal più recente), raggruppati per mese; Presenze (`src/components/eventi/PresenzeEventi.tsx`, tendina con solo eventi da oggi in poi, dal più vicino) con KPI
   (inviti, attese, entrate, mancanti) e tabella invitati: codice (link all'invito), stato, segna/annulla a mano.
   **Reinvia invito** (se c'è l'email): `reinviaInvito(id)` imposta `invioTs` → colonna `invio_ts` (migrazione `0007_reinvia_invito.sql`),
   trigger `email_reinvio_invito` → `beachin-email` manda "Il tuo invito — evento" con lo stesso blocco QR.

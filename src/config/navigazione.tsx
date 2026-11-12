@@ -98,6 +98,7 @@ export const navigazione: VoceNav[] = [
     percorso: '/eventi', etichetta: 'Eventi', icona: CalendarDays, modulo: 'eventi', fase: 7, gruppo: 'Gestione',
     figli: [
       { percorso: '/eventi?tab=calendario', etichetta: 'Calendario', icona: CalendarDays, modulo: 'eventi' },
+      { percorso: '/eventi?tab=richieste', etichetta: 'Richieste', icona: Inbox, modulo: 'eventi' },
       { percorso: '/eventi?tab=presenze', etichetta: 'Presenze', icona: ScanLine, modulo: 'eventi' },
     ],
   },
