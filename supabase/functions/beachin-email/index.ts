@@ -40,7 +40,6 @@ function bloccoModifica(token: string, scadenza: string, base: string): string {
 <p style="margin:8px 0 0;font-size:12px;color:#6B8590">Puoi cambiare online fino a ${esc(entro)}.</p></div>`
 }
 
-/** Blocco invito con QR (solo eventi confermati): il QR contiene il link alla pagina dell'invito, letto all'ingresso dall'app admin. */
 const COLORE_INVITO = '#B3261E' // rosso degli inviti eventi, come COLORE_QR.evento dell'app
 const urlInvito = (codice: string, base: string) => `${base.replace(/\/?$/, '/')}invito?c=${encodeURIComponent(codice)}`
 
@@ -69,6 +68,7 @@ async function qrInvito(codice: string, base: string, img: string): Promise<stri
   }
 }
 
+/** Blocco invito con QR (solo eventi confermati): il QR contiene il link alla pagina dell'invito, letto all'ingresso dall'app admin. */
 function bloccoInvito(codice: string, base: string, qr: string): string {
   const url = urlInvito(codice, base)
   return `<div style="margin:24px 0;padding:20px;border:1px solid #DCE4E6;border-radius:16px;text-align:center">
