@@ -9,15 +9,21 @@ const chiaveRimandata = (app: AppPush) => `beachin.push.${app}.rimandata`
  * Invito all'entrata dell'app: finestra che chiede di attivare le notifiche (il permesso del browser
  * va chiesto da un tocco, non in automatico). "Non ora" la nasconde per qualche giorno.
  */
-export function InvitoNotifiche({ app, titolo, descrizione }: { app: AppPush; titolo: string; descrizione: string }) {
+export function InvitoNotifiche({ app, titolo, descrizione, rimandaGiorni = RIMANDA_GIORNI, conInstallazione = true }: {
+  app: AppPush; titolo: string; descrizione: string
+  /** giorni di pausa dopo "Non ora" */
+  rimandaGiorni?: number
+  /** false = su iPhone non installata non mostra la spiegazione (ci pensa già la schermata "Installa") */
+  conInstallazione?: boolean
+}) {
   const [stato, setStato] = useState<StatoPush>()
   const [errore, setErrore] = useState<string>()
   const [lavoro, setLavoro] = useState(false)
   const [chiuso, setChiuso] = useState(() => {
-    try { return Date.now() - Number(localStorage.getItem(chiaveRimandata(app)) ?? 0) < RIMANDA_GIORNI * 864e5 } catch { return false }
+    try { return Date.now() - Number(localStorage.getItem(chiaveRimandata(app)) ?? 0) < rimandaGiorni * 864e5 } catch { return false }
   })
   useEffect(() => { statoPush(app).then(setStato).catch(() => setStato('non-supportato')) }, [])
-  if (chiuso || (stato !== 'da-attivare' && stato !== 'serve-installazione')) return null
+  if (chiuso || (stato !== 'da-attivare' && !(stato === 'serve-installazione' && conInstallazione))) return null
   const nonOra = () => { try { localStorage.setItem(chiaveRimandata(app), String(Date.now())) } catch { /* */ } setChiuso(true) }
   const attiva = async () => {
     setLavoro(true); setErrore(undefined)

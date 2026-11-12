@@ -166,6 +166,8 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `richiesteRistorante` sincronizzate su Supabase (`beachin.richieste_ristorante`); un effect nel
   context crea la `PrenotazioneRistorante` `PR-<id>` per ogni richiesta confermata (anche da altro dispositivo).
   Link "Apri sul telefono" in Ristorante → Prenotazioni.
+- **Invito notifiche app staff**: dopo l'accesso `AppShell` mostra `InvitoNotifiche app="admin"` se il dispositivo non è
+  iscritto (Attiva notifiche / Non ora = pausa 1 giorno); su iPhone solo con app installata (prima c'è la schermata Installa).
 - **Notifiche push app admin** (anche a schermo bloccato): PWA installabile (`public/admin.webmanifest`, icone
   `public/admin-icon-*.png`, ora manifest unico `staff.webmanifest` dell'app staff), service worker
   `public/sw-admin.js`, logica in `src/lib/notifichePush.ts` (VAPID pubblica nel codice; privata nel **Vault** Supabase

@@ -18,6 +18,7 @@ import { LoginGestore } from '@/components/LoginGestore'
 import { useSessione } from '@/context/SessioneContext'
 import { Caricamento } from '@/components/ui/Caricamento'
 import PulsanteInstalla from '@/components/PulsanteInstalla'
+import { InvitoNotifiche } from '@/components/AttivaNotifiche'
 
 /** Sottotitoli per pagina mostrati nella topbar. */
 const sottotitoli: Record<string, string> = {
@@ -122,6 +123,9 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
         </main>
       </div>
 
+      {/* subito dopo l'accesso, se questo dispositivo non riceve ancora le notifiche (iPhone: solo app installata) */}
+      <InvitoNotifiche app="admin" titolo="Attiva le notifiche" rimandaGiorni={1} conInstallazione={false}
+        descrizione="Ricevi subito sul telefono le richieste di prenotazione dal sito, gli ordini e gli avvisi del lido, anche ad app chiusa." />
       <DemoPlayer />
       <AnteprimaWhatsApp />
     </div>
