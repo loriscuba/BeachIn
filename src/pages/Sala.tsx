@@ -59,7 +59,7 @@ export default function Sala() {
             { valore: 'cucina' as const, etichetta: 'Cucina', badge: daFareCucina(comandeSala) },
             { valore: 'self' as const, etichetta: 'Tablet self' },
           ].filter((x) => schedeSala.includes(x.valore)),
-          ...(conBar ? [{ valore: 'bar', etichetta: 'Bar', badge: codaBar(comande, comandeSala).daFare.length }] : []),
+          ...(conBar ? [{ valore: 'bar', etichetta: 'Monitor Bar', badge: codaBar(comande, comandeSala).daFare.length }] : []),
         ]}
       />}
       <SchedaProtetta modulo={tab === 'bar' ? 'bar-tavolo' : 'sala'} livello={livScheda as Livello}>

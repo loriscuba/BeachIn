@@ -241,7 +241,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Cucina** (`<Cucina reparto>`): vede solo le sue righe (`perReparto`, indici originali per le azioni). Badge `daFareCucina`.
 - **Coda unica bar** = `<Cucina reparto="bar" />` (stesse tre colonne Da fare / In lavorazione / Pronte) con anche le comande dagli
   ombrelloni (`ComandaCard` in `sala/ComandaOmbrellone.tsx`; nuova = Da fare, presa in carico/in preparazione = In lavorazione,
-  pronta = Pronte, ultime 12 non incassate); al bar niente X sulle comande dei tavoli. `CodaBar compatta` = elenco unico in Comande. Dove: scheda **Bar** in `/sala?tab=bar` (voce "Coda bar", badge `bar`), quarta scheda dell'app
+  pronta = Pronte, ultime 12 non incassate); al bar niente X sulle comande dei tavoli. `CodaBar compatta` = elenco unico in Comande. Dove: scheda **Monitor Bar** in `/sala?tab=bar` (voce "Monitor Bar" nel menu **Bar**, non più sotto Ristorante; badge `bar`), quarta scheda dell'app
   `/salaapp`, e al posto della coda nella pagina Comande quando il modulo è attivo (`<CodaBar compatta suoni />`).
 
 ## QR tavoli e scelta tavolo per zona (ott 2026)

@@ -25,14 +25,15 @@ export function BadgeConta({ n, className }: { n: number; className?: string }) 
 }
 
 /** Il sottomenu è attivo se pagina e `?tab=` coincidono (senza tab = il primo della pagina). */
-function sottoAttivo(f: SottoVoce, fratelli: SottoVoce[], pathname: string, search: string) {
+function sottoAttivo(f: SottoVoce, pathname: string, search: string) {
   const [base, qs] = f.percorso.split('?')
   if (pathname !== base) return false
   const tabFiglio = new URLSearchParams(qs).get('tab')
   if (!tabFiglio) return true
   const tab = new URLSearchParams(search).get('tab')
   if (tab) return tab === tabFiglio
-  return fratelli.find((x) => x.percorso.startsWith(base + '?')) === f
+  // senza ?tab= vale la prima sottovoce della pagina in tutto il menu (la Sala sta sia sotto Ristorante sia sotto Bar)
+  return navigazione.flatMap((v) => v.figli ?? []).find((x) => x.percorso.startsWith(base + '?')) === f
 }
 
 export function Sidebar({ aperta, onChiudi }: SidebarProps) {
@@ -50,7 +51,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
   const conta = useConteggiNav()
   const alVolo = usePuoModuliAlVolo()
   const chiudiSeMobile = () => { if (!window.matchMedia('(min-width: 1024px)').matches) onChiudi() }
-  const dentro = (v: VoceNav) => (v.figli ?? []).some((f) => pathname === f.percorso.split('?')[0])
+  const dentro = (v: VoceNav) => (v.figli ?? []).some((f) => sottoAttivo(f, pathname, search))
   return (
     <>
       {/* Backdrop su mobile */}
@@ -129,7 +130,7 @@ export function Sidebar({ aperta, onChiudi }: SidebarProps) {
                           {espanso && (
                             <ul className="mb-1 ml-[1.35rem] space-y-0.5 border-l border-white/10 pl-3">
                               {v.figli.map((f) => {
-                                const att = sottoAttivo(f, v.figli!, pathname, search)
+                                const att = sottoAttivo(f, pathname, search)
                                 const blocc = !moduloAttivo(f.modulo)
                                 return (
                                   <li key={f.percorso}>
