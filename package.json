@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/pagina-comandapp.mjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "node scripts/verifica-marketing.mjs && node scripts/verifica-dettatura.mjs",

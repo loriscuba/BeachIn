@@ -300,6 +300,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   tutte le 60 voci (`fotoBar` in `seed/bar.ts`); il gestore le cambia da Bar → Listino (miniatura cliccabile).
 
 ## App clienti (`/comandapp`, ott 2026)
+- **Nome e icona** (nov 2026): "Lido dei Pini App" col logo del lido (manifest, favicon `lido-favicon.*`, icone `comandapp-icon-*`). Le anteprime link leggono l'HTML statico: `scripts/pagina-comandapp.mjs` (dopo `vite build`) crea `dist/comandapp.html` con titolo, favicon e meta og/twitter (immagine `comandapp-og.png`, URL assoluto da `SITO_URL`, default beachin.pages.dev). Cloudflare la serve su `/comandapp`, Vercel via rewrite; in produzione Caddy deve servire `{path}.html` prima di `index.html`.
 - `ComandApp.tsx` è ora l'**app del Lido** (PWA, manifest `comandapp.webmanifest` nome "Lido dei Pini"): barra in basso a
   sezioni `?sez=` **News · Ombrellone · Prenota · Eventi · Lavagna · Contatti** (nascoste se il modulo è spento: `comande`,
   `ristorante`, `eventi`). Default: Ombrellone se loggato, altrimenti News; pallino sulle news non viste (`comandapp.news.vista`).
