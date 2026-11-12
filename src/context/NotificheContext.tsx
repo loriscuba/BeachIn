@@ -124,7 +124,7 @@ export function NotificheProvider({ children }: { children: ReactNode }) {
     ...codaBar(senzaOmbrelloni ? comande.filter((c) => c.stato === 'in_attesa' && c.origine !== 'bar') : [], comandeSala.filter((c) => c.cameriere !== mio || c.origine !== 'cameriere')).daFare.map((v) => ({
       id: `bar-${v.tipo}-${v.c.id}`, categoria: 'bar' as const,
       titolo: v.tipo === 'tavolo' ? `Ordine al bar dal tavolo ${v.c.tavolo}` : `Comanda dall'ombrellone ${v.c.ombrellone}`,
-      testo: 'Da preparare in Coda bar', percorso: '/sala?tab=bar',
+      testo: 'Da preparare nel Monitor Bar', percorso: '/sala?tab=bar',
     })),
     ...comandeSala.filter((c) => c.stato === 'pronta' && !c.pagata).map((c) => ({
       id: `pronte-${c.id}`, categoria: 'pronte' as const, titolo: `Tavolo ${c.tavolo}: pronto da servire`,

@@ -70,6 +70,7 @@ export const navigazione: VoceNav[] = [
       { percorso: '/bar?tab=listino', etichetta: 'Listino', icona: BookOpen, modulo: 'bar' },
       { percorso: '/bar?tab=conti', etichetta: 'Conti', icona: Wallet, modulo: 'bar' },
       { percorso: '/comande', etichetta: 'Comande', icona: Bell, modulo: 'comande', badge: 'comande' },
+      { percorso: '/sala?tab=bar', etichetta: 'Monitor Bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
     ],
   },
   {
@@ -80,7 +81,6 @@ export const navigazione: VoceNav[] = [
       { percorso: '/sala?tab=cameriere', etichetta: 'Comande sala', icona: ConciergeBell, modulo: 'sala' },
       { percorso: '/sala?tab=cucina', etichetta: 'Cucina', icona: ChefHat, modulo: 'sala', badge: 'cucina' },
       { percorso: '/sala?tab=self', etichetta: 'Tablet self', icona: Tablet, modulo: 'sala' },
-      { percorso: '/sala?tab=bar', etichetta: 'Coda bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
       { percorso: '/ristorante?tab=menu', etichetta: 'Menu', icona: UtensilsCrossed, modulo: 'ristorante' },
       { percorso: '/ristorante?tab=magazzino', etichetta: 'Magazzino', icona: Package, modulo: 'ristorante' },
       { percorso: '/ristorante?tab=giorni', etichetta: 'Gestione giorni', icona: CalendarX2, modulo: 'ristorante' },
@@ -152,7 +152,7 @@ export const SCHEDE_RAPIDE: SchedaRapida[] = [
   { id: 'home', percorso: '/', etichetta: 'Home', icona: Home, modulo: 'panoramica' },
   { id: 'cameriere', percorso: '/sala?tab=cameriere', etichetta: 'Cameriere', icona: ConciergeBell, modulo: 'sala' },
   { id: 'cucina', percorso: '/sala?tab=cucina', etichetta: 'Cucina', icona: ChefHat, modulo: 'sala', badge: 'cucina' },
-  { id: 'bar', percorso: '/sala?tab=bar', etichetta: 'Bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
+  { id: 'bar', percorso: '/sala?tab=bar', etichetta: 'Monitor Bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
   { id: 'comande', percorso: '/comande', etichetta: 'Ombrelloni', icona: Bell, modulo: 'comande', badge: 'comande' },
   { id: 'arenile', percorso: '/arenile', etichetta: 'Arenile', icona: Umbrella, modulo: 'arenile' },
 ]

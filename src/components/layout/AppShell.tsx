@@ -76,7 +76,7 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
       try { localStorage.setItem(CHIAVE_MENU, aperto ? 'aperto' : 'chiuso') } catch { /* storage non disponibile */ }
     }
   }
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const [tema] = useTema()
   const schede = useSchedeRapide()
   const [griglia, setGriglia] = useState(false)
@@ -87,7 +87,10 @@ function Gestionale({ onEsci }: { onEsci: () => void }) {
     v.percorso === '/' ? pathname === '/' : pathname.startsWith(v.percorso)
   )
   // pagine raggiungibili solo da un sottomenu (es. Comande sotto Bar)
+  const tabUrl = new URLSearchParams(search).get('tab')
   const figlio = voce ? undefined : navigazione.flatMap((v) => v.figli ?? []).find((f) => f.percorso === pathname)
+    // il Monitor Bar (/sala?tab=bar, sotto Bar) ha il suo titolo
+    ?? (pathname === '/sala' && tabUrl === 'bar' ? navigazione.flatMap((v) => v.figli ?? []).find((f) => f.percorso === '/sala?tab=bar') : undefined)
   const titolo = voce?.etichetta ?? figlio?.etichetta ?? 'BeachIn'
   const coloreArea = accento(figlio?.percorso ?? voce?.percorso)
   const sottotitolo = sottotitoli[voce?.percorso ?? figlio?.percorso ?? ''] ?? undefined

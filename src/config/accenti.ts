@@ -17,6 +17,7 @@ const perPercorso: Record<string, string> = {
   '/': RIVIERA.sole,
   '/bar': RIVIERA.agrume,
   '/comande': RIVIERA.agrume,
+  '/sala?tab=bar': RIVIERA.agrume,
   '/ristorante': RIVIERA.corallo,
   '/assistente-vocale': RIVIERA.corallo,
   '/cruscotto': RIVIERA.mare,
