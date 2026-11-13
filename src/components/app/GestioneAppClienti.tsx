@@ -3,7 +3,7 @@
  * Usata dal gestionale (Sito → App clienti) e dall'app admin (tab "App"): layout mobile-first.
  */
 import { useEffect, useState } from 'react'
-import { ArrowDown, ArrowUp, CalendarDays, ImagePlus, Pin, PinOff, Plus, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CalendarDays, ImagePlus, Pencil, Pin, PinOff, Plus, Trash2, X } from 'lucide-react'
 import { useDemoData } from '@/context/DemoDataContext'
 import type { VoceLavagnetta } from '@/data/types'
 import { useModuli } from '@/context/ModuliContext'
@@ -19,16 +19,29 @@ export const prezzoLavagna = (p: number) => (Number.isInteger(p) ? euro(p) : eur
 
 export function GestioneNews() {
   const { notizie, pubblicaNotizia, modificaNotizia, eliminaNotizia, eventi } = useDemoData()
-  const [f, setF] = useState({ titolo: '', testo: '', foto: '' as string | undefined, fissata: false, eventoId: '' })
-  // si collegano solo gli eventi pubblicati e non passati: le bozze i clienti non le vedono
-  const collegabili = eventi.filter((e) => e.pubblicato !== false && e.data >= config.oggi).sort((a, b) => a.data.localeCompare(b.data))
+  const vuoto = { titolo: '', testo: '', foto: '' as string | undefined, fissata: false, eventoId: '' }
+  const [f, setF] = useState(vuoto)
+  // news già pubblicata in modifica: il salvataggio aggiorna la riga e NON rimanda la push ai clienti (il trigger è solo sull'inserimento)
+  const [inModifica, setInModifica] = useState<string | null>(null)
+  // si collegano solo gli eventi pubblicati e non passati: le bozze i clienti non le vedono (in modifica resta anche quello già collegato)
+  const collegabili = eventi.filter((e) => (e.pubblicato !== false && e.data >= config.oggi) || (!!f.eventoId && e.id === f.eventoId)).sort((a, b) => a.data.localeCompare(b.data))
   const nomeEvento = (id?: string) => eventi.find((e) => e.id === id)?.nome
   const ordinate = [...notizie].sort((a, b) => Number(!!b.fissata) - Number(!!a.fissata) || b.ts - a.ts)
   const pubblica = (e: React.FormEvent) => {
     e.preventDefault()
     if (!f.titolo.trim()) return
-    pubblicaNotizia({ titolo: f.titolo.trim(), testo: f.testo.trim(), foto: f.foto || undefined, fissata: f.fissata, eventoId: f.eventoId || undefined })
-    setF({ titolo: '', testo: '', foto: undefined, fissata: false, eventoId: '' })
+    const dati = { titolo: f.titolo.trim(), testo: f.testo.trim(), foto: f.foto || undefined, fissata: f.fissata, eventoId: f.eventoId || undefined }
+    if (inModifica) modificaNotizia(inModifica, dati)
+    else pubblicaNotizia(dati)
+    annulla()
+  }
+  const annulla = () => { setF(vuoto); setInModifica(null) }
+  const apriModifica = (id: string) => {
+    const n = notizie.find((x) => x.id === id)
+    if (!n) return
+    setF({ titolo: n.titolo, testo: n.testo, foto: n.foto, fissata: !!n.fissata, eventoId: n.eventoId ?? '' })
+    setInModifica(id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const caricaFoto = async (file?: File) => {
     if (!file) return
@@ -37,8 +50,9 @@ export function GestioneNews() {
 
   return (
     <div className="space-y-3">
-      <form onSubmit={pubblica} className="space-y-2 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-calce-200">
-        <p className="font-semibold text-profondo">Nuova news</p>
+      <form onSubmit={pubblica} className={cn('space-y-2 rounded-2xl bg-white p-4 shadow-sm ring-1', inModifica ? 'ring-2 ring-cabina' : 'ring-calce-200')}>
+        <p className="font-semibold text-profondo">{inModifica ? 'Modifica news' : 'Nuova news'}</p>
+        {inModifica && <p className="text-xs text-profondo/55">Le modifiche si vedono subito nell'app clienti, senza inviare di nuovo la notifica.</p>}
         <input value={f.titolo} onChange={(e) => setF({ ...f, titolo: e.target.value })} placeholder="Titolo (es. Stasera musica dal vivo)" className={campo} />
         <textarea value={f.testo} onChange={(e) => setF({ ...f, testo: e.target.value })} placeholder="Testo della news" rows={3} className={cn(campo, 'h-auto py-2')} />
         {f.foto && (
@@ -61,7 +75,8 @@ export function GestioneNews() {
           <label className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-calce px-3 text-sm font-medium text-profondo/75">
             <input type="checkbox" checked={f.fissata} onChange={(e) => setF({ ...f, fissata: e.target.checked })} /> In evidenza
           </label>
-          <button disabled={!f.titolo.trim()} className="ml-auto h-9 rounded-lg bg-cabina px-4 text-sm font-semibold text-white disabled:opacity-40">Pubblica</button>
+          {inModifica && <button type="button" onClick={annulla} className="ml-auto h-9 rounded-lg bg-calce px-4 text-sm font-medium text-profondo/75">Annulla</button>}
+          <button disabled={!f.titolo.trim()} className={cn('h-9 rounded-lg bg-cabina px-4 text-sm font-semibold text-white disabled:opacity-40', !inModifica && 'ml-auto')}>{inModifica ? 'Salva modifiche' : 'Pubblica'}</button>
         </div>
       </form>
 
@@ -76,10 +91,11 @@ export function GestioneNews() {
             {nomeEvento(n.eventoId) && <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-cabina"><CalendarDays className="h-3.5 w-3.5" /> {nomeEvento(n.eventoId)}</p>}
           </div>
           <div className="flex shrink-0 flex-col gap-1">
+            <button onClick={() => apriModifica(n.id)} className={cn('grid h-8 w-8 place-content-center rounded-lg hover:bg-calce', inModifica === n.id ? 'bg-cabina/10 text-cabina' : 'text-profondo/50')} aria-label="Modifica"><Pencil className="h-4 w-4" /></button>
             <button onClick={() => modificaNotizia(n.id, { fissata: !n.fissata })} className="grid h-8 w-8 place-content-center rounded-lg text-profondo/50 hover:bg-calce" aria-label={n.fissata ? 'Togli evidenza' : 'Metti in evidenza'}>
               {n.fissata ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
             </button>
-            <button onClick={() => { if (confirm(`Eliminare la news "${n.titolo}"?`)) eliminaNotizia(n.id) }} className="grid h-8 w-8 place-content-center rounded-lg text-boa hover:bg-boa/10" aria-label="Elimina"><Trash2 className="h-4 w-4" /></button>
+            <button onClick={() => { if (confirm(`Eliminare la news "${n.titolo}"?`)) { eliminaNotizia(n.id); if (inModifica === n.id) annulla() } }} className="grid h-8 w-8 place-content-center rounded-lg text-boa hover:bg-boa/10" aria-label="Elimina"><Trash2 className="h-4 w-4" /></button>
           </div>
         </div>
       ))}
