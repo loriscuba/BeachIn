@@ -1,4 +1,4 @@
-import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useLayoutEffect, useRef, type Dispatch, type SetStateAction } from 'react'
 import { supabase, supabaseInvii, SCHEMA } from '@/lib/supabase'
 
 type Riga = Record<string, unknown> & { id: string }
@@ -61,6 +61,12 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
   const righeRef = useRef(righe)
   righeRef.current = righe
   const ricaricaRef = useRef(async () => {})
+  // Dati iniziali locali (dimostrativi): servono solo per seminare una tabella vuota. Con Supabase non si mostrano
+  // mai, altrimenti a ogni apertura comparivano per qualche secondo dati finti (es. eventi demo) prima di quelli veri.
+  const seme = useRef(righe)
+  useLayoutEffect(() => {
+    if (supabase && modo !== 'spento' && modo !== 'scrittura') setRighe([])
+  }, [setRighe, modo])
 
   // Lettura iniziale + Realtime
   useEffect(() => {
@@ -83,11 +89,12 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
       const { data, error } = await leggi()
       if (!attivo) return
       if (error) { console.error(`[supabase] ${tabella}:`, error.message); return }
-      if (!data.length && semina && modo === 'completo' && righeRef.current.length) {
-        const iniziali = righeRef.current.map(opz.current.aRiga)
+      if (!data.length && semina && modo === 'completo' && seme.current.length) {
+        const iniziali = seme.current.map(opz.current.aRiga)
         const { error: e } = await db.from(tabella).upsert(iniziali)
         if (e) console.error(`[supabase] semina ${tabella}:`, e.message)
         foto.current = new Map(iniziali.map((r) => [r.id, JSON.stringify(r)]))
+        setRighe(seme.current)
       } else {
         applica(data as Riga[])
       }
