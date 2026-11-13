@@ -17,6 +17,7 @@ import { supabaseAttivo } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
 import { aspettaVia, azioneStatoSala, daPreparare, minutiDa, nomeUscita, perReparto, statoRiga, uscitaChiamata, uscitaDi, usciteDi, type Reparto } from '@/lib/sala'
 import { ComandaCard } from './ComandaOmbrellone'
+import { StrumentiOmbrelloni } from './StrumentiOmbrelloni'
 import { PulsanteSchermoIntero, SchermoIntero, useSchermoIntero } from '@/components/SchermoIntero'
 
 const COLONNE: { stato: StatoComandaSala; titolo: string; colore: string }[] = [
@@ -101,6 +102,7 @@ export default function Cucina({ reparto = 'cucina' }: { reparto?: Reparto }) {
             ? reparto === 'bar' ? '● Coda unica del bar: tavoli del ristorante e ombrelloni, su tutti i dispositivi' : '● Comande condivise tra tutti i dispositivi (sala, tablet, cucina)'
             : '● Modalità demo: comande condivise solo tra schede di questo browser'}
         </p>
+        {reparto === 'bar' && <StrumentiOmbrelloni />}
         <PulsanteSchermoIntero onClick={intero.entra} />
       </div>
       {tabellone}
