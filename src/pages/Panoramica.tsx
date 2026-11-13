@@ -62,10 +62,12 @@ export default function Panoramica() {
   const chiusura = prossimaChiusuraEstiva(oggi)
   const giorniAllaFine = differenceInCalendarDays(parseISO(chiusura), parseISO(oggi))
 
-  // Eventi: il prossimo in calendario (countdown)
-  const prossimo = [...eventi].filter((e) => e.data >= oggi).sort((a, b) => a.data.localeCompare(b.data))[0]
+  // Eventi: i prossimi 3 pubblicati in calendario (countdown)
+  const prossimi = eventi
+    .filter((e) => e.data >= oggi && e.pubblicato !== false)
+    .sort((a, b) => a.data.localeCompare(b.data))
+    .slice(0, 3)
   const ultimo = [...eventi].filter((e) => e.data < oggi).sort((a, b) => b.data.localeCompare(a.data))[0]
-  const traGiorni = prossimo ? differenceInCalendarDays(parseISO(prossimo.data), parseISO(oggi)) : 0
 
   // Magazzino: articoli sotto la scorta minima
   const sottoScorta = magazzino.filter((a) => a.quantita < a.scortaMinima).sort((a, b) => a.quantita / a.scortaMinima - b.quantita / b.scortaMinima)
@@ -141,33 +143,35 @@ export default function Panoramica() {
           </CardBody>
         </Card>
 
-        {/* Eventi: countdown al prossimo */}
+        {/* Eventi: i prossimi 3 con countdown */}
         <Card {...sezione('eventi')}>
           <CardHeader
-            titolo="Prossimo evento"
+            titolo="Prossimi eventi"
             azione={moduloAttivo('eventi') ? <Link to="/eventi" className="text-sm font-medium text-cabina hover:underline">Apri</Link> : undefined}
           />
           <CardBody className="pt-1">
-            {prossimo ? (
-              <div className="flex items-center gap-4">
-                <div className="shrink-0 rounded-xl bg-tenda/20 px-4 py-2 text-center">
-                  <p className="num text-3xl font-bold leading-none text-profondo">{traGiorni}</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-profondo/55">{traGiorni === 0 ? 'oggi!' : traGiorni === 1 ? 'giorno' : 'giorni'}</p>
-                </div>
-                {prossimo.foto && (
-                  <img
-                    src={prossimo.foto}
-                    alt=""
-                    loading="lazy"
-                    className="h-16 w-16 shrink-0 rounded-xl object-cover"
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-profondo">{prossimo.nome}</p>
-                  <p className="text-xs text-profondo/55">{dataEstesa(prossimo.data)}{prossimo.partecipanti ? ` · ${prossimo.partecipanti} iscritti` : ''}</p>
-                  <p className="mt-1 line-clamp-2 text-xs text-profondo/60">{prossimo.descrizione}</p>
-                </div>
-              </div>
+            {prossimi.length > 0 ? (
+              <ul className="divide-y divide-calce-200">
+                {prossimi.map((ev) => {
+                  const traGiorni = differenceInCalendarDays(parseISO(ev.data), parseISO(oggi))
+                  return (
+                    <li key={ev.id} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                      <div className="w-14 shrink-0 rounded-xl bg-tenda/20 px-1 py-1.5 text-center">
+                        <p className="num text-2xl font-bold leading-none text-profondo">{traGiorni}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-profondo/55">{traGiorni === 0 ? 'oggi!' : traGiorni === 1 ? 'giorno' : 'giorni'}</p>
+                      </div>
+                      {ev.foto && (
+                        <img src={ev.foto} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-profondo">{ev.nome}</p>
+                        <p className="text-xs text-profondo/55">{dataEstesa(ev.data)}{ev.partecipanti ? ` · ${ev.partecipanti} iscritti` : ''}</p>
+                        <p className="mt-0.5 line-clamp-1 text-xs text-profondo/60">{ev.descrizione}</p>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
             ) : (
               <p className="py-6 text-center text-sm text-profondo/45">
                 Nessun evento in programma.

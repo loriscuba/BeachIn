@@ -526,7 +526,7 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
   `src/hooks/useMeteoOggi.ts`, riserva = `giornoOggi` della demo) · coperti oggi · dal sito da confermare · visite sito ieri
   (vs media 7 gg, da `statoSito.visite`) · giorni alla prossima chiusura estiva (`prossimaChiusuraEstiva`: ultima domenica di
   settembre, dell'anno dopo se già passata; non tocca `config.stagione.fine` dei dati demo). Il prossimo evento sta solo nella card. Card: Ristorante oggi, Sito da confermare,
-  Prossimo evento (countdown + miniatura della foto se c'è; se nessuno, l'ultimo passato), Magazzino sotto scorta (`quantita < scortaMinima`). Colore per tipologia (`COLORE` + classe `bi-sezione`: bordo in alto, tacca, icona KPI): ristorante boa, sito cabina, eventi giallo, magazzino verde acqua, generale grigio.
+  Prossimi eventi (i primi 3 futuri pubblicati, ognuno con countdown + miniatura della foto se c'è; se nessuno, l'ultimo passato), Magazzino sotto scorta (`quantita < scortaMinima`). Colore per tipologia (`COLORE` + classe `bi-sezione`: bordo in alto, tacca, icona KPI): ristorante boa, sito cabina, eventi giallo, magazzino verde acqua, generale grigio.
 - Gating: ogni voce nav ha `modulo`; `src/components/ModuloGate.tsx` protegge le rotte → se il modulo
   non è attivo mostra `src/pages/ModuloBloccato.tsx` (pagina di upsell, deep-link non fa 404). La Sidebar
   mostra i moduli bloccati col lucchetto. Il Cruscotto completo è ora rotta `/cruscotto` (modulo `cruscotto`).
