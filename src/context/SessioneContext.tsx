@@ -8,7 +8,7 @@
  * Si esce solo con Esci o quando il server dice che l'utente non è (più) abilitato: un errore di rete alla riapertura
  * dell'app (tipico della PWA su iPhone, rete non ancora pronta) non fa più uscire; resta l'ultimo profilo salvato.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { credenzialiValide, entraGestore, esciGestore, profiloDemo, sessioneGestore } from '@/lib/adminapp'
 import { emailAccesso, livelloDi, livelloFunzioneDi, sezioneDi, type Livello, type Profilo, type Sezione } from '@/lib/permessi'
@@ -84,13 +84,24 @@ export function SessioneProvider({ children }: { children: ReactNode }) {
   }, [aggiorna])
 
   // Modifiche alla propria riga (ruolo cambiato, disattivazione) → ricarico il profilo.
+  // Solo se cambia qualcosa del profilo: mio_profilo() segna ultimo_accesso sulla stessa riga, e rileggere a ogni
+  // modifica faceva un giro infinito (centinaia di richieste al minuto che rallentavano tutto il database).
   const idUtente = profilo?.id
+  const profiloRef = useRef(profilo)
+  profiloRef.current = profilo
   useEffect(() => {
     if (!supabase || !idUtente) return
     const db = supabase
     const canale = db
       .channel(`utente-${idUtente}`)
-      .on('postgres_changes', { event: '*', schema: 'beachin', table: 'utenti', filter: `id=eq.${idUtente}` }, () => { void aggiorna() })
+      .on('postgres_changes', { event: '*', schema: 'beachin', table: 'utenti', filter: `id=eq.${idUtente}` }, (ev) => {
+        const r = ev.new as Record<string, unknown> | undefined
+        const p = profiloRef.current
+        const uguale = ev.eventType === 'UPDATE' && r && p && r.attivo === true && r.ruolo_id === p.ruolo_id &&
+          (r.nome ?? null) === (p.nome ?? null) && (r.foto ?? null) === (p.foto ?? null) &&
+          (r.username ?? null) === (p.username ?? null) && (r.email ?? null) === (p.email ?? null)
+        if (!uguale) void aggiorna()
+      })
       .subscribe()
     return () => { void db.removeChannel(canale) }
   }, [idUtente, aggiorna])
