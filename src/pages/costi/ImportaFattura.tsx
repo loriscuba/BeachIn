@@ -5,12 +5,13 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { useDemoData } from '@/context/DemoDataContext'
-import { CATEGORIE_IMPORT, categoriaPer, leggiFattura, type DatiFattura, type RigaLetta } from '@/lib/fatturaFornitore'
+import { CATEGORIE_IMPORT, categoriaDocumento, categoriaPer, leggiFattura, type DatiFattura, type RigaLetta } from '@/lib/fatturaFornitore'
 import { etichetteCentro } from '@/lib/graficoColori'
 import { euro, numero } from '@/lib/formatters'
 
 const r2 = (n: number) => Math.round(n * 100) / 100
 const chiaveCat = (categoria: string, sottocategoria: string) => `${categoria} › ${sottocategoria}`
+const NUOVA = '__nuova__'
 const centri: CentroCosto[] = ['spiaggia', 'bar', 'ristorante', 'noleggi', 'eventi', 'struttura']
 
 interface RigaModulo extends RigaLetta { cat: string; centro: CentroCosto }
@@ -30,10 +31,20 @@ export function ImportaFattura({ aperto, onChiudi, onImportata }: { aperto: bool
   const [righe, setRighe] = useState<RigaModulo[]>([])
 
   // categorie: quelle già usate nei costi + quelle che l'importazione sa proporre
+  const [nuoveCat, setNuoveCat] = useState<string[]>([])
   const opzioniCat = useMemo(() => {
-    const s = new Set([...CATEGORIE_IMPORT.map((c) => chiaveCat(c.categoria, c.sottocategoria)), ...costi.map((c) => chiaveCat(c.categoria, c.sottocategoria))])
-    return [...s].sort((a, b) => a.localeCompare(b, 'it')).map((v) => ({ valore: v, etichetta: v }))
-  }, [costi])
+    const s = new Set([...CATEGORIE_IMPORT.map((c) => chiaveCat(c.categoria, c.sottocategoria)), ...costi.map((c) => chiaveCat(c.categoria, c.sottocategoria)), ...nuoveCat])
+    return [...[...s].sort((a, b) => a.localeCompare(b, 'it')).map((v) => ({ valore: v, etichetta: v })), { valore: NUOVA, etichetta: '+ Nuova categoria…' }]
+  }, [costi, nuoveCat])
+  /** Scelta dal menu: "+ Nuova categoria…" chiede il nome (es. "Utenze › Telefonia" o solo "Telefonia"). */
+  const scegliCat = (v: string, applica: (cat: string) => void) => {
+    if (v !== NUOVA) { applica(v); return }
+    const nome = window.prompt('Nome della nuova categoria (es. "Utenze › Telefonia" oppure solo "Telefonia")')?.trim()
+    if (!nome) return
+    const cat = nome.includes('›') ? nome.split('›').map((x) => x.trim()).filter(Boolean).join(' › ') : nome
+    setNuoveCat((p) => (p.includes(cat) ? p : [...p, cat]))
+    applica(cat)
+  }
 
   const giaImportata = useMemo(() => {
     const n = testa.numero.trim().toLowerCase()
@@ -81,8 +92,10 @@ export function ImportaFattura({ aperto, onChiudi, onImportata }: { aperto: bool
         data: d.data ?? new Date().toISOString().slice(0, 10), scadenza: d.scadenza ?? d.data ?? '',
         metodo: d.metodo ?? 'bonifico', pagata: false,
       })
+      // bolletta o servizio: tutta la fattura in una categoria; merce: categoria riga per riga
+      const unica = categoriaDocumento(d)
       setRighe(d.righe.map((r) => {
-        const c = categoriaPer(r.descrizione)
+        const c = unica ?? categoriaPer(r.descrizione)
         return { ...r, cat: chiaveCat(c.categoria, c.sottocategoria), centro: c.centro }
       }))
       setStato('anteprima')
@@ -94,6 +107,9 @@ export function ImportaFattura({ aperto, onChiudi, onImportata }: { aperto: bool
   }
 
   const cambiaRiga = (i: number, p: Partial<RigaModulo>) => setRighe((prev) => prev.map((r, j) => (j === i ? { ...r, ...p } : r)))
+  /** Cambia categoria o centro a tutte le righe di una voce. */
+  const cambiaGruppo = (g: { cat: string; centro: CentroCosto; iva: number }, p: Partial<RigaModulo>) =>
+    setRighe((prev) => prev.map((r) => (r.cat === g.cat && r.centro === g.centro && r.iva === g.iva ? { ...r, ...p } : r)))
 
   const importa = () => {
     const base = Date.now()
@@ -192,33 +208,42 @@ export function ImportaFattura({ aperto, onChiudi, onImportata }: { aperto: bool
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-profondo/50">Righe e categorie</p>
-            {righe.map((r, i) => (
-              <div key={i} className="rounded-xl border border-calce-200 bg-white p-2.5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-profondo">{r.descrizione}</p>
-                    <p className="num text-xs text-profondo/50">
-                      {[r.codice, r.quantita != null && `${numero(r.quantita)} ${r.um ?? ''}`.trim(), r.prezzo != null && `× ${euro(r.prezzo)}`, r.sconto && `sconto ${numero(r.sconto)}%`, `IVA ${Math.round(r.iva * 100)}%`].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  <span className="num shrink-0 text-sm font-semibold text-profondo">{euro(r.importo)}</span>
-                </div>
-                <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
-                  <Select value={r.cat} onChange={(e) => cambiaRiga(i, { cat: e.target.value })} opzioni={opzioniCat} />
-                  <Select value={r.centro} onChange={(e) => cambiaRiga(i, { centro: e.target.value as CentroCosto })}
+            <p className="text-xs font-semibold uppercase tracking-wide text-profondo/50">
+              {gruppi.length === 1 ? 'Voce di costo che verrà creata' : `${gruppi.length} voci di costo che verranno create`}
+            </p>
+            {gruppi.map((g) => (
+              <div key={`${g.cat}|${g.centro}|${g.iva}`} className="rounded-xl border border-calce-200 bg-white p-2.5">
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <Select value={g.cat} onChange={(e) => scegliCat(e.target.value, (cat) => cambiaGruppo(g, { cat }))} opzioni={opzioniCat} />
+                  <Select value={g.centro} onChange={(e) => cambiaGruppo(g, { centro: e.target.value as CentroCosto })}
                     opzioni={centri.map((c) => ({ valore: c, etichetta: etichetteCentro[c] }))} />
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-2xl bg-calce/60 p-3">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-profondo/50">Voci di costo che verranno create</p>
-            {gruppi.map((g) => (
-              <div key={`${g.cat}|${g.centro}|${g.iva}`} className="flex items-center justify-between gap-3 py-0.5 text-sm">
-                <span className="min-w-0 truncate text-profondo">{g.cat} <span className="text-profondo/50">· {etichetteCentro[g.centro]} · {g.righe.length} righe</span></span>
-                <span className="num shrink-0 font-medium text-profondo">{euro(g.imponibile)} <span className="text-xs text-profondo/50">+ IVA</span></span>
+                <details className="group mt-1.5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm text-profondo/60">
+                    <span>{g.righe.length === 1 ? '1 riga' : `${g.righe.length} righe`} · IVA {Math.round(g.iva * 100)}% <span className="text-cabina group-open:hidden">· vedi</span></span>
+                    <span className="num font-semibold text-profondo">{euro(g.imponibile)} <span className="text-xs font-normal text-profondo/50">+ IVA</span></span>
+                  </summary>
+                  <div className="mt-2 space-y-2 border-t border-calce-200 pt-2">
+                    {g.righe.map((r) => {
+                      const i = righe.indexOf(r)
+                      return (
+                        <div key={i}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm text-profondo">{r.descrizione}</p>
+                              <p className="num text-xs text-profondo/50">
+                                {[r.codice, r.quantita != null && `${numero(r.quantita)} ${r.um ?? ''}`.trim(), r.prezzo != null && `× ${euro(r.prezzo)}`, r.sconto && `sconto ${numero(r.sconto)}%`].filter(Boolean).join(' · ')}
+                              </p>
+                            </div>
+                            <span className="num shrink-0 text-sm text-profondo">{euro(r.importo)}</span>
+                          </div>
+                          {/* spostare una sola riga in un'altra voce */}
+                          <div className="mt-1"><Select value={r.cat} onChange={(e) => scegliCat(e.target.value, (cat) => cambiaRiga(i, { cat }))} opzioni={opzioniCat} /></div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </details>
               </div>
             ))}
           </div>

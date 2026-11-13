@@ -40,27 +40,67 @@ export interface DatiFattura {
 
 export interface Categoria { categoria: string; sottocategoria: string; centro: CentroCosto }
 
-const REGOLE: { re: RegExp; c: Categoria }[] = [
-  { re: /cauzion|vuot[oi]\b|vuoti a rendere|\bpallet/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Cauzioni vuoti', centro: 'bar' } },
-  { re: /trasport|consegn|spedizion|\bnolo\b/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Trasporto merce', centro: 'bar' } },
-  { re: /\bbirr|\blager\b|\bipa\b|\bweiss/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Birre', centro: 'bar' } },
-  { re: /\bvin[oi]\b|spumant|prosecco|champagne|vermentino|pigato|rossese|\bdoc\b|\bdocg\b/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Cantina', centro: 'ristorante' } },
-  { re: /liquor|amaro|grappa|\bgin\b|vodka|\brum\b|whisk|aperitiv|spritz|bitter|limoncello/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Liquori e aperitivi', centro: 'bar' } },
-  { re: /\bacqua\b(?!.*tonic)|\bacque\b|minerale|frizzante|naturale/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Acque minerali', centro: 'bar' } },
-  { re: /cola|aranciat|limonat|chinott|gassos|tonic|\bt[eè]\b|\bthe\b|succ[oh]i?\b|energy|bibit|soda|ginger|cedrata|spremut/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Bibite e succhi', centro: 'bar' } },
-  { re: /caff[eè]|cialde|capsul|ginseng|orzo|cacao|latte\b/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Caffetteria', centro: 'bar' } },
-  { re: /gelat|ghiacciol|cono\b|coppett/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Gelateria', centro: 'bar' } },
-  { re: /bicchier|cannucc|tovagliol|piatt[io] (?:carta|plastic|monouso)|posate|monouso|vaschett|sacchett/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Materiale monouso', centro: 'bar' } },
-  { re: /detersiv|sgrassat|igienizz|candeggin|carta igienica|sapone|pulizia/i, c: { categoria: 'Lavanderia e pulizia', sottocategoria: 'Prodotti pulizia e consumo', centro: 'struttura' } },
-  { re: /pesce|carne|pasta|farin|olio|pomodor|verdur|frutta|formagg|salum|pane|uova|riso|surgelat/i, c: { categoria: 'Acquisto merce', sottocategoria: 'Food ristorante', centro: 'ristorante' } },
-]
-export const CATEGORIA_ALTRO: Categoria = { categoria: 'Acquisto merce', sottocategoria: 'Altro', centro: 'bar' }
+const cat = (categoria: string, sottocategoria: string, centro: CentroCosto = 'struttura'): Categoria => ({ categoria, sottocategoria, centro })
 
-/** Categorie che le regole possono proporre (per i menu a tendina dell'anteprima). */
-export const CATEGORIE_IMPORT: Categoria[] = [...new Map([...REGOLE.map((r) => r.c), CATEGORIA_ALTRO].map((c) => [`${c.categoria}|${c.sottocategoria}`, c])).values()]
+/**
+ * Fatture di servizi (bollette, assicurazioni, consulenti…): si riconoscono dal fornitore e dal testo di tutte le righe,
+ * e TUTTA la fattura va in una sola categoria (le righe "quota energia", "oneri di sistema", "linea IP"… restano solo
+ * come dettaglio). L'ordine conta: vince la prima regola che trova qualcosa.
+ */
+const REGOLE_DOCUMENTO: { re: RegExp; c: Categoria }[] = [
+  { re: /telefon|linea (?:fissa|ip|voce|dati|isdn)|\bfibra\b|internet|\badsl\b|\bvdsl\b|\bftth\b|\bfttc\b|\bsim\b|\bvoip\b|centralino|\bmodem\b|\brouter\b|\btim\b|telecom|fastweb|vodafone|wind ?tre|iliad|\beolo\b|tiscali/i, c: cat('Utenze', 'Internet e telefonia') },
+  { re: /energia elettrica|materia energia|quota potenza|\benel\b|edison energia|sorgenia|\bkwh\b|\bpod\b|potenza (?:impegnata|disponibile)|dispacciamento|\bluce\b/i, c: cat('Utenze', 'Energia elettrica') },
+  { re: /(?<!con |senza )\bgas\b(?! ?frizz)|metano|\bsmc\b|\bstdmc\b|\bpdr\b|gas naturale/i, c: cat('Utenze', 'Gas') },
+  { re: /servizio idrico|acquedott|fognatur|depurazion|consumo acqua|\bquota (?:fissa )?acqua/i, c: cat('Utenze', 'Acqua') },
+  { re: /\bsiae\b|diritti d.autore|scf\b/i, c: cat('SIAE e intrattenimento', 'SIAE', 'eventi') },
+  { re: /assicura|polizza|premio (?:annuo|assicurativo)|\brca?\b.*terzi|unipol|allianz|\baxa\b|reale mutua|cattolica ass|generali ital/i, c: cat('Assicurazioni', 'RC verso terzi') },
+  { re: /commercialist|tenuta (?:della )?contabilit|dichiarazion[ei] (?:dei redditi|iva)|bilancio d.esercizio|consulenza (?:fiscale|tributaria)/i, c: cat('Consulenze e obblighi', 'Commercialista') },
+  { re: /elaborazione (?:buste|cedolini|paghe)|consulen(?:te|za) del lavoro|\bcedolin/i, c: cat('Consulenze e obblighi', 'Consulente del lavoro') },
+  { re: /\bhaccp\b|autocontrollo alimentare/i, c: cat('Consulenze e obblighi', 'HACCP', 'ristorante') },
+  { re: /antincendi|estintor/i, c: cat('Consulenze e obblighi', 'Antincendio') },
+  { re: /commission[ei].{0,20}(?:pos|transazion|incass)|\bnexi\b|sumup|satispay|canone (?:pos|terminale)/i, c: cat('Bancari', 'Commissioni POS') },
+  { re: /hosting|registrazione dominio|rinnovo dominio|\bdominio\b|aruba|register\.it|siteground|certificato ssl/i, c: cat('Marketing', 'Sito web e hosting') },
+  { re: /meta platforms|facebook|instagram|google ads|sponsorizzaz|campagna pubblicitar|inserzion/i, c: cat('Marketing', 'Social e ADV') },
+  { re: /booking\.com|expedia|tripadvisor|thefork|commission[ei] (?:su )?prenotazion/i, c: cat('Marketing', 'Commissioni OTA') },
+  { re: /abbonamento (?:software|gestionale|app)|licenz[ae] (?:software|d.uso)|canone (?:software|gestionale|cloud)|\bsaas\b|microsoft 365|google workspace/i, c: cat('Software e servizi', 'Abbonamenti software') },
+  { re: /lavanderia|lavaggio (?:teli|biancheria|tovagli)|noleggio biancheria/i, c: cat('Lavanderia e pulizia', 'Lavanderia teli') },
+  { re: /smaltimento|raccolta rifiuti|\brifiuti\b|codice cer/i, c: cat('Arenile', 'Smaltimento rifiuti', 'spiaggia') },
+  { re: /idraulic|elettricist|impianto (?:elettrico|idrico)|manutenzione impiant/i, c: cat('Manutenzioni', 'Impianto idrico ed elettrico') },
+  { re: /noleggio (?:mezzi|ruspa|escavator|trattore|pala)|livellamento|ripasciment/i, c: cat('Arenile', 'Noleggio mezzi', 'spiaggia') },
+]
+
+/** Merce: categoria proposta riga per riga (una fattura di bibite può avere birre, acque e cauzioni insieme). */
+const REGOLE: { re: RegExp; c: Categoria }[] = [
+  { re: /cauzion|vuot[oi]\b|vuoti a rendere|\bpallet/i, c: cat('Acquisto merce', 'Cauzioni vuoti', 'bar') },
+  { re: /trasport|consegn|spedizion|\bnolo\b/i, c: cat('Acquisto merce', 'Trasporto merce', 'bar') },
+  { re: /\bbirr|\blager\b|\bipa\b|\bweiss/i, c: cat('Acquisto merce', 'Birre', 'bar') },
+  { re: /\bvin[oi]\b|spumant|prosecco|champagne|vermentino|pigato|rossese|\bdoc\b|\bdocg\b/i, c: cat('Acquisto merce', 'Cantina', 'ristorante') },
+  { re: /liquor|amaro|grappa|\bgin\b|vodka|\brum\b|whisk|aperitiv|spritz|bitter|limoncello/i, c: cat('Acquisto merce', 'Liquori e aperitivi', 'bar') },
+  { re: /\bacqua\b(?!.*tonic)|\bacque\b|minerale|frizzante/i, c: cat('Acquisto merce', 'Acque minerali', 'bar') },
+  { re: /cola|aranciat|limonat|chinott|gassos|tonic|\bt[eè]\b|\bthe\b|succ[oh]i?\b|energy drink|bibit|soda|ginger|cedrata|spremut/i, c: cat('Acquisto merce', 'Bibite e succhi', 'bar') },
+  { re: /caff[eè]|cialde|capsul|ginseng|orzo|cacao|latte\b/i, c: cat('Acquisto merce', 'Caffetteria', 'bar') },
+  { re: /gelat|ghiacciol|cono\b|coppett/i, c: cat('Acquisto merce', 'Gelateria', 'bar') },
+  { re: /bicchier|cannucc|tovagliol|piatt[io] (?:carta|plastic|monouso)|posate|monouso|vaschett|sacchett/i, c: cat('Acquisto merce', 'Materiale monouso', 'bar') },
+  { re: /detersiv|sgrassat|igienizz|candeggin|carta igienica|sapone|pulizia/i, c: cat('Lavanderia e pulizia', 'Prodotti pulizia e consumo') },
+  { re: /pesce|carne|pasta|farin|olio|pomodor|verdur|frutta|formagg|salum|pane|uova|riso|surgelat/i, c: cat('Acquisto merce', 'Food ristorante', 'ristorante') },
+]
+export const CATEGORIA_ALTRO: Categoria = cat('Acquisto merce', 'Altro', 'bar')
+
+/** Categorie che l'importazione sa proporre (per i menu a tendina dell'anteprima). */
+export const CATEGORIE_IMPORT: Categoria[] = [...new Map([...REGOLE_DOCUMENTO.map((r) => r.c), ...REGOLE.map((r) => r.c), CATEGORIA_ALTRO]
+  .map((c) => [`${c.categoria}|${c.sottocategoria}`, c])).values()]
 
 export function categoriaPer(descrizione: string): Categoria {
   return REGOLE.find((r) => r.re.test(descrizione))?.c ?? CATEGORIA_ALTRO
+}
+
+/** Se la fattura è di un servizio (bolletta, assicurazione…) la sua unica categoria, altrimenti undefined (si va riga per riga). */
+export function categoriaDocumento(d: Pick<DatiFattura, 'fornitore' | 'righe'>): Categoria | undefined {
+  // una fattura di merce (la maggior parte delle righe è roba da bar/cucina) resta riga per riga anche se cita "gas" o "luce"
+  const merce = d.righe.filter((r) => REGOLE.slice(2) /* senza cauzioni e trasporto, che ci sono anche nelle bollette */.some((x) => x.re.test(r.descrizione))).length
+  if (merce * 2 >= d.righe.length && d.righe.length) return undefined
+  const testo = [d.fornitore ?? '', ...d.righe.map((r) => r.descrizione)].join('\n')
+  return REGOLE_DOCUMENTO.find((r) => r.re.test(testo))?.c
 }
 
 // ——— utilità ———

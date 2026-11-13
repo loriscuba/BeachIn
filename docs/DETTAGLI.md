@@ -744,8 +744,12 @@ binario `/opt/pw-browsers/chromium-1194/chrome-linux/chrome --no-sandbox`.
 - **Importa fattura** (Costi → Elenco costi, funzionalità `costi.fatture`): `src/lib/fatturaFornitore.ts` legge nel browser
   il PDF (pdf.js tramite `leggiPdf` di `bustaPaga.ts`: righe di testo per altezza, riga articolo = finisce con "importo aliquota%",
   descrizioni andate a capo attaccate alla riga più vicina) oppure l'XML FatturaPA (DettaglioLinee, DatiRiepilogo, DettaglioPagamento).
-  Categoria proposta per riga con parole chiave (`REGOLE`: acque, bibite e succhi, birre, cantina, liquori, caffetteria, cauzioni,
-  trasporto, monouso, pulizia, food). Anteprima `src/pages/costi/ImportaFattura.tsx`: testata e categoria/centro per riga modificabili,
+  Fatture di servizi (`REGOLE_DOCUMENTO` + `categoriaDocumento`: telefonia/internet, luce, gas, acqua, SIAE, assicurazioni,
+  commercialista, consulente lavoro, HACCP, antincendio, POS, hosting, social/ADV, OTA, software, lavanderia, rifiuti, manutenzioni,
+  mezzi arenile) = tutta la fattura in una categoria, se meno di metà righe sono merce. Altrimenti categoria per riga (`REGOLE`: acque,
+  bibite e succhi, birre, cantina, liquori, caffetteria, cauzioni, trasporto, monouso, pulizia, food). Anteprima
+  `src/pages/costi/ImportaFattura.tsx`: le voci da creare con categoria/centro modificabili per voce, righe a scomparsa ("vedi") con
+  categoria per singola riga, "+ Nuova categoria…" (nome libero, "Categoria › Sotto" o solo nome),
   controllo totale e fattura già importata (numero + P.IVA). Salva una voce per categoria + centro + aliquota con `fattura` (righe, file).
   Tocco su una voce importata = dettaglio fattura.
 - Fattura di esempio (dati inventati): `fatture/fattura-bevande-ligure-2026-0487.pdf` nei file del progetto.
