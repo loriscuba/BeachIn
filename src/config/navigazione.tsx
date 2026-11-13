@@ -56,6 +56,8 @@ export interface SottoVoce {
   permesso?: 'utenti'
   /** Icona propria (pulsanti di "Altro" sul telefono); senza, quella della voce padre. */
   icona?: LucideIcon
+  /** Nascosta quando questo modulo è attivo (es. Comande ombrelloni sostituita dal Monitor Bar). */
+  senza?: ModuloId
 }
 
 /**
@@ -69,7 +71,7 @@ export const navigazione: VoceNav[] = [
     figli: [
       { percorso: '/bar?tab=listino', etichetta: 'Listino', icona: BookOpen, modulo: 'bar' },
       { percorso: '/bar?tab=conti', etichetta: 'Conti', icona: Wallet, modulo: 'bar' },
-      { percorso: '/comande', etichetta: 'Comande', icona: Bell, modulo: 'comande', badge: 'comande' },
+      { percorso: '/comande', etichetta: 'Comande', icona: Bell, modulo: 'comande', badge: 'comande', senza: 'bar-tavolo' },
       { percorso: '/sala?tab=bar', etichetta: 'Monitor Bar', icona: Beer, modulo: 'bar-tavolo', badge: 'bar' },
     ],
   },

@@ -15,7 +15,7 @@ Aggiornare qui quando cambia un modulo.
 - **Schede per ruolo**: `SCHEDE_RAPIDE` e `SCHEDE_PER_RUOLO` in `config/navigazione.tsx`, hook `hooks/useNavStaff.ts`
   (`useSchedeRapide`, `useConteggiNav` per i badge, `useConHome`). Home (Panoramica) solo per amministratore o chi vede le
   Impostazioni; gli altri ruoli aprono la loro prima scheda (cameriere → Cameriere, cucina → Cucina, barista → Bar) e non vedono Panoramica nel menu.
-  Con la scheda Bar (Coda bar) visibile, la scheda "Ombrelloni" (`/comande`) resta solo all'amministratore (la pagina resta nel menu).
+  Con il modulo Bar al tavolo (Monitor Bar) la scheda "Ombrelloni" e la voce Bar → Comande spariscono per tutti (`senza: 'bar-tavolo'` nella sottovoce) e `/comande` reindirizza a `/sala?tab=bar` (13/11/2026).
 - **Velocità**: service worker `public/sw-admin.js` registrato da `attivaCacheApp()` (`lib/notifichePush.ts`, solo build di
   produzione, non single-file): pagina dalla rete con ripiego sulla copia dopo 3 s o offline, `/assets/` con hash dalla cache,
   icone e font dalla cache aggiornata in sottofondo; dati Supabase mai in cache. `lib/precarica.ts` scarica a riposo il codice
@@ -131,6 +131,10 @@ Cruscotto, Arenile, Clienti, **Comande**, **Sala** (comande ristorante), Tariffe
 Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico), Impostazioni.
 
 ## Comande dall'ombrellone (servizio in spiaggia)
+- **Dal 13/11/2026 con il modulo `bar-tavolo` la pagina non c'è più**: `/comande` → `/sala?tab=bar`; in testa al Monitor Bar
+  `StrumentiOmbrelloni` (`src/pages/sala/StrumentiOmbrelloni.tsx`, solo con modulo/permesso `comande`) ha "Nuova comanda"
+  (finestra con `FormComandaOmbrellone`, aperta anche da `?nuova=1` = scorciatoia in testata) e "App clienti" (`CartaComandApp`, QR/link ComandApp).
+  Senza `bar-tavolo` la pagina sotto resta com'è (usa gli stessi componenti).
 - Pagina `Comande` (rotta `/comande`, modulo `comande`, gruppo Operatività): a sinistra si compone
   l'ordine (numero ombrellone + articoli bar da `getArticoliBar`), a destra la coda al bar con stato.
 - Context: `comande` + `inviaComanda(ombrellone, righe, note?)` / `avanzaComanda(id)` (in_attesa→in_preparazione→consegnata)

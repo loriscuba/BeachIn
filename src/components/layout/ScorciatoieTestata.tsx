@@ -7,6 +7,7 @@ import { useVociMenu } from '@/hooks/useNavStaff'
 const SCORCIATOIE = [
   { id: 'prenotazione', testo: 'Nuova prenotazione', Icona: CalendarPlus, voce: '/ristorante?tab=prenotazioni', percorso: '/ristorante?tab=prenotazioni&nuova=1' },
   { id: 'comanda', testo: 'Nuova comanda', Icona: ClipboardPlus, voce: '/sala?tab=cameriere', percorso: '/sala?tab=cameriere' },
+  { id: 'comanda', testo: 'Nuova comanda', Icona: ClipboardPlus, voce: '/sala?tab=bar', percorso: '/sala?tab=bar&nuova=1' },
   { id: 'comanda', testo: 'Nuova comanda', Icona: ClipboardPlus, voce: '/comande', percorso: '/comande' },
 ]
 

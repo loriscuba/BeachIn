@@ -33,9 +33,8 @@ export function useSchedeRapide(): SchedaRapida[] {
   const { ok } = useFunzioni()
   const fz = (s: SchedaRapida) => { const id = funzioneDiVoce(s); return !id || ok(id, s.minimo ?? 1) }
   const tutte = SCHEDE_RAPIDE.filter((s) => (s.id === 'home' ? conHome : moduloAttivo(s.modulo) && puo(s.modulo, s.minimo ?? 1) && fz(s)))
-  // con la Coda bar le comande degli ombrelloni sono già lì: la scheda "Ombrelloni" resta solo all'amministratore
-  const conBar = tutte.some((s) => s.id === 'bar')
-  const visibili = conBar && !profilo?.amministratore ? tutte.filter((s) => s.id !== 'comande') : tutte
+  // con il Monitor Bar (modulo Bar al tavolo) le comande degli ombrelloni sono già lì: niente scheda "Ombrelloni"
+  const visibili = moduloAttivo('bar-tavolo') ? tutte.filter((s) => s.id !== 'comande') : tutte
   const ordine = profilo && SCHEDE_PER_RUOLO[profilo.ruolo_id]
   if (!ordine) return visibili
   const prima = ordine.map((id) => visibili.find((s) => s.id === id)).filter((s): s is SchedaRapida => !!s)
@@ -58,7 +57,7 @@ export function useVociMenu(): VoceNav[] {
   const conHome = useConHome()
   const { ok } = useFunzioni()
   const visibile = (m: VoceNav['modulo'], permesso?: 'utenti') => (m !== 'panoramica' || conHome) && moduloAttivo(m) && puo(permesso ?? m)
-  const figlioVisibile = (f: SottoVoce) => { const id = funzioneDiVoce(f); return visibile(f.modulo, f.permesso) && (!id || ok(id)) }
+  const figlioVisibile = (f: SottoVoce) => { const id = funzioneDiVoce(f); return visibile(f.modulo, f.permesso) && !(f.senza && moduloAttivo(f.senza)) && (!id || ok(id)) }
   return navigazione
     .map((v) => (v.figli ? { ...v, figli: v.figli.filter(figlioVisibile) } : v))
     .filter((v) => (v.figli ? v.figli.length > 0 : visibile(v.modulo)))
