@@ -16,8 +16,15 @@ const dataIt = (d: string) =>
 
 const taglia = (t?: string) => (t && t.length > 120 ? `${t.slice(0, 117)}…` : t ?? '')
 
+// Solo i trigger del database possono chiamare questa funzione: mandano il segreto interno (migrazione 0034).
+const chiamataInterna = async (req: Request) => {
+  const [r] = await sql`select valore from beachin.segreti_interni where nome = 'funzioni'`
+  return !!r?.valore && req.headers.get('x-beachin-segreto') === r.valore
+}
+
 Deno.serve(async (req) => {
   try {
+    if (!(await chiamataInterna(req))) return Response.json({ errore: 'non autorizzato' }, { status: 401 })
     const { record: r, tipo = 'richiesta' } = await req.json()
     const app = ['richiesta', 'ombrellone', 'evento', 'cliente'].includes(tipo) ? 'admin' : 'clienti'
     const annullata = r?.azione_cliente === 'annulla'

@@ -473,7 +473,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const [costi, setCosti] = useState<VoceCosto[]>(() => clona(seedCosti))
   // Costi su DB (permesso Costi): al primo avvio la tabella vuota riceve le voci di esempio; le fatture importate stanno in `dati`
   useSyncSupabase({
-    tabella: 'costi', accesso: accessoDi('costi'), righe: costi, setRighe: setCosti, semina: true,
+    tabella: 'costi', accesso: accessoDi('costi'), righe: costi, setRighe: setCosti,
     aRiga: ({ id, data, categoria, fornitore, ...dati }) => ({ id, data, categoria, fornitore, dati }),
     daRiga: (r) => ({
       ...(r.dati as Omit<VoceCosto, 'id' | 'data' | 'categoria' | 'fornitore'>),
@@ -486,7 +486,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   )
   // Prenotazioni ombrellone dal sito: su Supabase (il trigger manda la notifica push allo staff).
   const syncOmbrelloni = useSyncSupabase({
-    tabella: 'prenotazioni_online', accesso: accessoDi('prenotazioni_online'), righe: prenotazioniOnline, setRighe: setPrenotazioni, semina: true,
+    tabella: 'prenotazioni_online', accesso: accessoDi('prenotazioni_online'), righe: prenotazioniOnline, setRighe: setPrenotazioni,
     aRiga: (p) => ({
       id: p.id, ricevuta_il: p.ricevutaIl, nome: p.nome, email: p.email, telefono: p.telefono, dal: p.dal, al: p.al,
       tipologia_postazione: p.tipologiaPostazione, persone: p.persone, stato: p.stato, messaggio: p.messaggio ?? null,
@@ -530,7 +530,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const [postaAdmin, setPostaAdmin] = useState<Email[]>([])
   const [eventi, setEventi] = useState<Evento[]>(() => clona(seedEventi))
   useSyncSupabase({
-    tabella: 'eventi', accesso: accessoDi('eventi'), righe: eventi, setRighe: setEventi, semina: true,
+    tabella: 'eventi', accesso: accessoDi('eventi'), righe: eventi, setRighe: setEventi,
     aRiga: (e) => ({
       id: e.id, nome: e.nome, tipo: e.tipo, data: e.data, budget: e.budget, costi_sostenuti: e.costiSostenuti, ricavi: e.ricavi,
       partecipanti: e.partecipanti, descrizione: e.descrizione, foto: rifFoto(e.foto), prezzo: e.prezzo ?? null,
@@ -743,7 +743,7 @@ export function DemoDataProvider({ children, pagina }: { children: ReactNode; pa
   const [magazzino, setMagazzino] = useState<ArticoloMagazzino[]>(() => clona(seedMagazzino))
   const [prenotazioniRistorante, setPrenotazioniRistorante] = useState<PrenotazioneRistorante[]>(() => clona(seedPrenotazioniRist))
   useSyncSupabase({
-    tabella: 'prenotazioni_ristorante', accesso: accessoDi('prenotazioni_ristorante'), righe: prenotazioniRistorante, setRighe: setPrenotazioniRistorante, semina: true,
+    tabella: 'prenotazioni_ristorante', accesso: accessoDi('prenotazioni_ristorante'), righe: prenotazioniRistorante, setRighe: setPrenotazioniRistorante,
     aRiga: (p) => ({
       id: p.id, data: p.data, turno: p.turno, ora: p.ora ?? null, nome: p.nome, coperti: p.coperti, tavolo_id: p.tavoloId ?? null, stato: p.stato,
       note: p.note ?? null, telefono: p.telefono ?? null, origine: p.origine ?? null,

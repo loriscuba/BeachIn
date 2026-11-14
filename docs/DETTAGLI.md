@@ -156,8 +156,10 @@ Personale, **Eventi**, **Sito** (gestionale) + **SitoAnteprima** (sito pubblico)
 - **Supabase** (solo comande + menu/sezioni): `src/lib/supabase.ts` (env `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`,
   vedi `.env.example`; Pages li legge da GitHub Actions *Variables*), schema **`beachin`** (progetto Supabase condiviso tra demo; client con `db.schema`, Realtime su `SCHEMA`; va aggiunto agli *Exposed schemas* della Data API) in `supabase/migrations/` (tabelle `comande`,
   `menu_sezioni`, `menu_piatti`, RLS aperta ad anon = solo demo, Realtime). Hook generico `src/hooks/useSyncSupabase.ts`:
-  lettura iniziale (con Supabase lo stato parte vuoto, i seed non si vedono mai: servono solo a seminare una tabella vuota), upsert/delete delle differenze a ogni cambio di stato, ricarica su
+  lettura iniziale (con Supabase lo stato parte vuoto, i seed non si vedono mai: servono solo a seminare una tabella vuota, e solo con `VITE_DEMO_SEMINA=1`; prenotazioni, costi ed eventi non si seminano mai), upsert/delete delle differenze a ogni cambio di stato, ricarica su
   evento Realtime. Progetto: **Demo IPA** (`exchjppslwhbnbzuhfqs`, eu-west-1, condiviso tra demo), schema già creato via connettore MCP Supabase (migration `beachin_schema`). Senza env → tutto come prima (localStorage per le comande). Con Supabase il `reset()` non tocca menu/comande.
+  Edge Function: `beachin-push` e `beachin-email` rispondono solo ai trigger del DB (header `x-beachin-segreto`, valore in
+  `beachin.segreti_interni`, migrazione 0034); `beachin-interpreta` e `beachin-trascrivi` solo a un utente staff collegato (`e_staff()`).
 - **IPA Monitor**: vista `beachin.monitor_riepilogo` (migrazione 0009, solo conteggi/date, nessun grant ad anon/authenticated) letta dal collettore `ipa-collect` del cruscotto IPA Monitor (schema `ipamonitor` nello stesso progetto Demo IPA).
   Utenti online (migrazione 0014): `src/lib/presenza.ts` chiama `beachin.monitor_segnale` ogni minuto a pagina visibile se lo staff è collegato → tabella `beachin.presenze_staff`, vista `beachin.monitor_utenti` (nome, ruolo, ultimo accesso, ultima attività) letta dal collettore.
 

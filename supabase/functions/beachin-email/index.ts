@@ -147,8 +147,15 @@ ${NOME} · Savona<br><a href="${app.replace(/\/?$/, '/')}sito/anteprima" style="
 </table></td></tr></table></body></html>`
 }
 
+// Solo i trigger del database possono chiamare questa funzione: mandano il segreto interno (migrazione 0034).
+const chiamataInterna = async (req: Request) => {
+  const [r] = await sql`select valore from beachin.segreti_interni where nome = 'funzioni'`
+  return !!r?.valore && req.headers.get('x-beachin-segreto') === r.valore
+}
+
 Deno.serve(async (req) => {
   try {
+    if (!(await chiamataInterna(req))) return Response.json({ errore: 'non autorizzato' }, { status: 401 })
     const { tabella = 'richieste_ristorante', record: r } = (await req.json()) as { tabella?: string; record: Richiesta }
     if (!r?.email?.includes('@')) return Response.json({ saltata: 'email mancante' })
 
