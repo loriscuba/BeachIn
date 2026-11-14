@@ -1,5 +1,6 @@
 // Edge Function "beachin-trascrivi": riceve un audio (multipart, campo "audio") dall'assistente vocale
 // e lo trascrive con Whisper su Groq (piano gratuito). Chiave nel segreto GROQ_API_KEY (Edge Functions → Secrets).
+import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -7,8 +8,19 @@ const CORS = {
 }
 const json = (dati: unknown, status = 200) => new Response(JSON.stringify(dati), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
 
+// Solo lo staff collegato (utente attivo in beachin.utenti) può usare la voce: la quota Groq non è pubblica.
+const URL_SUPA = Deno.env.get('SUPABASE_URL')!, ANON = Deno.env.get('SUPABASE_ANON_KEY')!
+const eStaff = async (req: Request) => {
+  const auth = req.headers.get('Authorization') ?? ''
+  if (!auth.startsWith('Bearer ')) return false
+  const c = createClient(URL_SUPA, ANON, { db: { schema: 'beachin' }, global: { headers: { Authorization: auth } }, auth: { persistSession: false } })
+  const { data, error } = await c.rpc('e_staff')
+  return !error && data === true
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  if (!(await eStaff(req))) return json({ errore: 'Serve un utente dello staff collegato' }, 401)
   const chiave = Deno.env.get('GROQ_API_KEY')
   if (!chiave) return json({ errore: 'GROQ_API_KEY non configurata su Supabase' }, 503)
   try {

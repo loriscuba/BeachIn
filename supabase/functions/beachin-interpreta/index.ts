@@ -1,6 +1,7 @@
 // Edge Function "beachin-interpreta": quando il parser a regole dell'assistente vocale non capisce una frase,
 // la fa interpretare a un LLM su Groq (piano gratuito) e restituisce i comandi strutturati per il menu.
 // Body JSON: { testo, piatti: string[], sezioni: {id,nome}[] } → { comandi: [...] }. Chiave nel segreto GROQ_API_KEY.
+import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -29,8 +30,19 @@ Esempi:
 «togli il tiramisù e metti la panna cotta a 6» → {"comandi":[{"azione":"rimuovi","nome":"Tiramisù"},{"azione":"aggiungi","nome":"Panna cotta","prezzo":6,"categoria":"dolci"}]}
 «la carbonara da adesso costa 13 e mezzo» → {"comandi":[{"azione":"prezzo","nome":"Carbonara","prezzo":13.5}]}`
 
+// Solo lo staff collegato (utente attivo in beachin.utenti) può usare la voce: la quota Groq non è pubblica.
+const URL_SUPA = Deno.env.get('SUPABASE_URL')!, ANON = Deno.env.get('SUPABASE_ANON_KEY')!
+const eStaff = async (req: Request) => {
+  const auth = req.headers.get('Authorization') ?? ''
+  if (!auth.startsWith('Bearer ')) return false
+  const c = createClient(URL_SUPA, ANON, { db: { schema: 'beachin' }, global: { headers: { Authorization: auth } }, auth: { persistSession: false } })
+  const { data, error } = await c.rpc('e_staff')
+  return !error && data === true
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  if (!(await eStaff(req))) return json({ errore: 'Serve un utente dello staff collegato' }, 401)
   const chiave = Deno.env.get('GROQ_API_KEY')
   if (!chiave) return json({ errore: 'GROQ_API_KEY non configurata su Supabase' }, 503)
   try {

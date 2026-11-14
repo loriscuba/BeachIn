@@ -27,7 +27,10 @@ interface Opzioni<T extends { id: string }> {
   daRiga: (r: Riga) => T
   /** Ordinamento delle righe lette dal DB. */
   ordina: (a: Riga, b: Riga) => number
-  /** Se la tabella è vuota al primo avvio, la popola con i dati iniziali locali. */
+  /**
+   * Se la tabella è vuota al primo avvio, la popola con i dati iniziali locali (menu, bar, sito...).
+   * Solo con VITE_DEMO_SEMINA=1: in produzione un lido nuovo parte vuoto, mai con dati finti.
+   */
   semina?: boolean
   /**
    * Solo le righe che servono (es. comande non pagate o di oggi): `or` è il filtro della lettura (sintassi PostgREST),
@@ -50,6 +53,9 @@ interface Opzioni<T extends { id: string }> {
  * lettura iniziale, scrittura delle differenze (upsert/delete) a ogni modifica locale
  * e aggiornamento dal vivo via Realtime. Senza Supabase configurato non fa nulla.
  */
+/** Semina dei dati dimostrativi nelle tabelle vuote: solo per installazioni demo. */
+const SEMINA_DEMO = import.meta.env.VITE_DEMO_SEMINA === '1'
+
 export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setRighe, aRiga, daRiga, ordina, semina, nuoveSenzaSovrascrivere, filtro: filtroTabella, perRiga, accesso }: Opzioni<T>) {
   const modo = accesso?.modo ?? 'completo'
   const filtro = accesso?.filtro ?? filtroTabella
@@ -89,7 +95,7 @@ export function useSyncSupabase<T extends { id: string }>({ tabella, righe, setR
       const { data, error } = await leggi()
       if (!attivo) return
       if (error) { console.error(`[supabase] ${tabella}:`, error.message); return }
-      if (!data.length && semina && modo === 'completo' && seme.current.length) {
+      if (!data.length && semina && SEMINA_DEMO && modo === 'completo' && seme.current.length) {
         const iniziali = seme.current.map(opz.current.aRiga)
         const { error: e } = await db.from(tabella).upsert(iniziali)
         if (e) console.error(`[supabase] semina ${tabella}:`, e.message)
